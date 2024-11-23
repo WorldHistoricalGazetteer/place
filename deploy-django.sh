@@ -3,6 +3,9 @@
 # Define script directory
 SCRIPT_DIR=$(dirname "$0")
 
+# Make entrypoint scripts executable
+chmod +x "$SCRIPT_DIR/django/entrypoints/*.sh"
+
 # Deploy Secrets and ConfigMap
 echo "Deploying Secrets..."
 kubectl apply -f "$SCRIPT_DIR/secrets.yaml"

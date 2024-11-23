@@ -61,7 +61,8 @@ A tool that generates vector tiles from large collections of GeoJSON data, enabl
 To deploy the application with these configurations, follow these steps:
 
 1. Clone this repository and navigate to the project directory.
-2. Run `deploy.sh`:
+2. Acquire the necessary `secret.yaml` credentials file from the WHG team and place it in the root directory.
+3. Run `deploy.sh`:
 
 ```bash
 SCRIPT_DIR="./server-configuration"
