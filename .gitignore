@@ -1,2 +1,2 @@
 # Ignore Kubernetes secrets
-server-configuration/secret.yaml
+secret.yaml
