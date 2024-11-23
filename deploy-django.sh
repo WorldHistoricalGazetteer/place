@@ -11,7 +11,6 @@ kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 
 # Deploy PostgreSQL components
 echo "Deploying PostgreSQL..."
-# TODO: Check if custom pg_hba is required
 kubectl apply -f "$SCRIPT_DIR/django/postgres-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-service.yaml"

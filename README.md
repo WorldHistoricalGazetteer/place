@@ -80,14 +80,99 @@ A tool that generates vector tiles from large collections of GeoJSON data, enabl
 
 ## Setup
 
-To deploy the application with these configurations, follow these steps:
+### Prepare the Server Environment
 
-1. Clone this repository and navigate to the project root directory.
-2. Acquire the necessary `secret.yaml` credentials file from the WHG team and place it in the root directory.
-3. Run the `deploy.sh` script to deploy the application, specifying the role as `master` or `worker`. The master node
-   sets up the entire application stack, including Vespa, Django, and related services. The worker nodes should be set
-   up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and, for workers,
-   provide the Kubernetes join command.
+To deploy the application with these configurations to a remote server, you will need:
+
+- A server running Ubuntu 20.04 LTS
+- The server's IP address
+- A user with sudo privileges
+- SSH access
+- A `secret.yaml` file containing the necessary credentials (contact the WHG team for this), which should be placed in
+  the server's
+  home directory
+
+Once you have these, follow these steps:
+
+#### Update repositories and install essential packages:
+
+```bash
+cd ~ # Change to the home directory
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git unzip htop ufw
+git clone https://github.com/WorldHistoricalGazetteer/place.git
+```
+
+#### SSH Keys
+
+```bash
+ssh-keygen -t rsa -b 4096 -C "no.reply.whgazetteer@gmail.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_rsa
+ssh-copy-id <sudo-user@server-IP>
+```
+
+Edit the /etc/ssh/sshd_config file to enhance security:
+
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+
+Change the following settings:
+
+```bash
+# Disable root login
+PermitRootLogin no
+
+# Change default SSH port (optional - pick a port number in the range 1024-49151)
+Port <nnnn>
+
+# Restrict user access
+AllowUsers <users>
+AllowGroups <groups>
+
+# Enable public key authentication and disable password authentication
+PubkeyAuthentication yes
+PasswordAuthentication no
+
+# Configure idle timeout
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+# Limit authentication attempts
+MaxAuthTries 3
+```
+
+Restart the SSH service:
+
+```bash
+sudo systemctl restart sshd
+```
+
+#### Firewall
+
+**_It is advisable to skip this step until the application is fully deployed and tested as it may interfere with the
+Kubernetes setup._**
+
+```bash
+sudo ufw allow 6443/tcp     # Kubernetes API Server
+sudo ufw allow 8472/udp     # Flannel VXLAN
+sudo ufw allow 10250/tcp    # Kubelet
+sudo ufw allow 10255/tcp    # Kubelet read-only
+sudo ufw allow 30000:32767/tcp   # NodePort services
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp    # Allow HTTP traffic
+sudo ufw allow 443/tcp   # Allow HTTPS traffic
+sudo ufw enable
+sudo ufw status
+```
+
+### Deploy the Application
+
+Run the `deploy.sh` script to deploy the application, specifying the role as `master` or `worker`. The master node
+sets up the entire application stack, including Vespa, Django, and related services. The worker nodes should be set
+up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and, for workers,
+provide the Kubernetes join command.
 
 ### Master Node
 

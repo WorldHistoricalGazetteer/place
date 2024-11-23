@@ -13,3 +13,10 @@ data:
   # Database
   db-user: "whgadmin"
   db-name: "whgv3beta"
+
+  # Postgres HBA - IP range defined by flannel (see flannel-config.yaml)
+  pg-hba: |
+    local   all             all                                  trust
+    host    all             all             10.244.0.0/16        trust
+    host    replication     all             10.244.0.0/16        trust
+    host    all             all             0.0.0.0/0            reject
