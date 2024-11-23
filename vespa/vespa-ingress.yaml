@@ -4,9 +4,15 @@ metadata:
   name: vespa-ingress
   annotations:
     networking.k8s.io/ingress.class: contour
+    ingress.kubernetes.io/force-ssl-redirect: "true" # Redirect HTTP to HTTPS
+    cert-manager.io/cluster-issuer: letsencrypt-prod  # For automated TLS certificates using Cert-Manager
 spec:
+  tls:
+  - hosts:
+    - index.whgazetteer.org
+    secretName: vespa-tls-secret
   rules:
-  - host: vespa.example.com
+  - host: index.whgazetteer.org
     http:
       paths:
       - path: /search

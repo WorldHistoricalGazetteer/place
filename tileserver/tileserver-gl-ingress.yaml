@@ -3,13 +3,19 @@ kind: Ingress
 metadata:
   name: tileserver-gl-ingress
   annotations:
-    networking.k8s.io/ingress.class: contour  # Ensure Contour is the Ingress controller
+    networking.k8s.io/ingress.class: contour
+    ingress.kubernetes.io/force-ssl-redirect: "true" # Redirect HTTP to HTTPS
+    cert-manager.io/cluster-issuer: letsencrypt-prod  # For automated TLS certificates using Cert-Manager
 spec:
+  tls:
+  - hosts:
+    - tileserver.whgazetteer.org
+    secretName: tileserver-tls-secret
   rules:
-    - host: tileserver.example.com  # Replace with your domain or IP
+    - host: tileserver.whgazetteer.org
       http:
         paths:
-          - path: /  # Adjust the path as necessary
+          - path: /
             pathType: Prefix
             backend:
               service:

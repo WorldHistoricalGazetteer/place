@@ -6,5 +6,5 @@ spec:
   selector:
     app: webpack
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 4000
+    targetPort: 4000

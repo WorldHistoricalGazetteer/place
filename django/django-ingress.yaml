@@ -10,7 +10,7 @@ spec:
   tls:
   - hosts:
     - place.whgazetteer.org # Temporary subdomain, pending switch to 'whgazetteer.org'
-    secretName: django-tls # TLS secret for HTTPS
+    secretName: django-tls-secret
   rules:
   - host: place.whgazetteer.org # Temporary subdomain, pending switch to 'whgazetteer.org'
     http:

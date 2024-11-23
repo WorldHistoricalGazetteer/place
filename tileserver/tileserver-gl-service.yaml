@@ -9,4 +9,4 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
-  clusterIP: None  # Optionally you can use None for headless service
+  clusterIP: None

@@ -31,7 +31,7 @@ spec:
       - name: webpack
         image: node:18-alpine
         ports:
-        - containerPort: 8080
+        - containerPort: 4000
         volumeMounts:
         - mountPath: /usr/src/app
           name: webpack-source
@@ -39,13 +39,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 8080
+            port: 4000
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
           httpGet:
             path: /
-            port: 8080
+            port: 4000
           initialDelaySeconds: 5
           periodSeconds: 10
       volumes:
