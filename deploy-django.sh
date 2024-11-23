@@ -3,9 +3,6 @@
 # Define script directory
 SCRIPT_DIR=$(dirname "$0")
 
-# Make entrypoint scripts executable
-chmod +x "$SCRIPT_DIR/django/entrypoints/*.sh"
-
 # Deploy Secrets and ConfigMap
 echo "Deploying Secrets..."
 kubectl apply -f "$SCRIPT_DIR/secrets.yaml"
@@ -14,6 +11,7 @@ kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 
 # Deploy PostgreSQL components
 echo "Deploying PostgreSQL..."
+# TODO: Check if custom pg_hba is required
 kubectl apply -f "$SCRIPT_DIR/django/postgres-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-service.yaml"
@@ -35,10 +33,12 @@ kubectl apply -f "$SCRIPT_DIR/django/django-ingress.yaml"
 echo "Deploying Celery components..."
 kubectl apply -f "$SCRIPT_DIR/django/celery-worker-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/celery-beat-deployment.yaml"
+kubectl apply -f "$SCRIPT_DIR/django/celery-flower-deployment.yaml"
 
 # Deploy Webpack
 echo "Deploying Webpack..."
 kubectl apply -f "$SCRIPT_DIR/django/webpack-config.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/webpack-deployment.yaml"
+kubectl apply -f "$SCRIPT_DIR/django/webpack-service.yaml"
 
 echo "Django application deployed successfully!"

@@ -21,4 +21,4 @@ spec:
           service:
             name: django-service
             port:
-              number: 8000 # Must match Django service port
+              number: 443 # Must match Django service port

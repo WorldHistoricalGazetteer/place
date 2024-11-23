@@ -18,7 +18,7 @@ spec:
       - name: redis
         image: "redis:bullseye"
         ports:
-        - containerPort: ${REDIS_PORT}
+        - containerPort: 6379
         resources:
           requests:
             memory: "256Mi"
@@ -34,7 +34,7 @@ spec:
         - "yes"
         livenessProbe:
           tcpSocket:
-            port: ${REDIS_PORT}
+            port: 6379
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:

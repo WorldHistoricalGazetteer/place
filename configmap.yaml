@@ -8,8 +8,8 @@ data:
   hostname: "place.whgazetteer.org" # Temporary subdomain, pending switch to 'whgazetteer.org'
 
   # Django
-  image_version: "0.1.4"
+  image-version: "0.1.4"
 
   # Database
-  db_user: "whgadmin"
-  db_name: "whgv3beta"
+  db-user: "whgadmin"
+  db-name: "whgv3beta"

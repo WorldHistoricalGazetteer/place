@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webpack
+spec:
+  selector:
+    app: webpack
+  ports:
+  - port: 8080
+    targetPort: 8080

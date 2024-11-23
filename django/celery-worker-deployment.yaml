@@ -17,15 +17,30 @@ spec:
         app: django
         component: celery-worker
     spec:
+      initContainers:
+        - name: create-user
+          image: busybox:1.35.0-uclibc
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              adduser -D whgadmin
+              echo "whgadmin:$user-password" | chpasswd
+          envFrom:
+            - secretRef:
+                name: whg-secret
       containers:
         - name: celery-worker
-          image: your-django-app-image:latest
-          command: ["celery", "-A", "your_project_name", "worker", "--loglevel=info"]
-          envFrom:
-            - configMapRef:
-                name: django-config
-            - secretRef:
-                name: django-secrets
+          image: worldhistoricalgazetteer/web:${IMAGE_VERSION}"
+          command: ["celery", "-A", "whg", "worker", "--loglevel=debug"]
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "whg.settings"
+            - name: IMAGE_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: whg-config
+                  key: image-version
           resources:
             limits:
               memory: "256Mi"
@@ -44,14 +59,14 @@ spec:
                 - ps aux | grep 'celery worker' | grep -v grep
             initialDelaySeconds: 30
             periodSeconds: 20
-          readinessProbe:
+          readinessProbe: # Wait until redis is available
             exec:
               command:
-                - sh
-                - -c
-                - ps aux | grep 'celery worker' | grep -v grep
-            initialDelaySeconds: 5
-            periodSeconds: 10
+                - "sh"
+                - "-c"
+                - "nc -z redis 6379"
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
         - name: shared-volume
           emptyDir: {}

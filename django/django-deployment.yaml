@@ -24,12 +24,29 @@ spec:
           volumeMounts:
             - name: repo
               mountPath: /repo
+        - name: create-user
+          image: busybox:1.35.0-uclibc
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              adduser -D whgadmin
+              echo "whgadmin:$user-password" | chpasswd
+          envFrom:
+            - secretRef:
+                name: whg-secret
+        - name: collectstatic
+          image: python:3.9
+          command: ["sh", "-c", "python manage.py collectstatic --no-input"]
+          volumeMounts:
+            - name: static-files
+              mountPath: /app/static
       containers:
         - name: django-container
           image: worldhistoricalgazetteer/web:${IMAGE_VERSION}"
-          command: ["/bin/bash", "/app/entrypoints/entrypoint-web.sh"]
+          command: ["gunicorn", "whg.wsgi:application", "--bind", "0.0.0.0:443", "--timeout", "1200", "-w", "4"]
           ports:
-            - containerPort: 8000
+            - containerPort: 443
           env:
             - name: DJANGO_SETTINGS_MODULE
               value: "whg.settings"
@@ -37,22 +54,22 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: whg-config
-                  key: image_version
+                  key: image-version
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
                   name: whg-config
-                  key: db_user
+                  key: db-user
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: whg-secret
-                  key: db_password
+                  key: db-password
             - name: DB_NAME
               valueFrom:
                 configMapKeyRef:
                   name: whg-config
-                  key: db_name
+                  key: db-name
             - name: DATABASE_URL
               value: "postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}"
             - name: REDIS_URL
@@ -61,7 +78,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: whg-secret
-                  key: secret_key
+                  key: secret-key
           volumeMounts:
             - name: repo
               mountPath: /app
@@ -75,12 +92,14 @@ spec:
               port: 8000
             initialDelaySeconds: 15
             periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 10
+          readinessProbe: # Wait until the database is ready
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "nc -z postgres 5432"
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
         - name: repo
           emptyDir: {}

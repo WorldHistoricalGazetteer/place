@@ -14,6 +14,19 @@ spec:
       labels:
         app: webpack
     spec:
+      initContainers:
+        - name: webpack-build
+          image: node:18-alpine
+          command:
+            - "/bin/bash"
+            - "-c"
+            - |
+              cd /app
+              npm install
+              npx webpack --config webpack.config.js
+          volumeMounts:
+            - name: app-volume
+              mountPath: /app
       containers:
       - name: webpack
         image: node:18-alpine
@@ -23,12 +36,6 @@ spec:
         - mountPath: /usr/src/app
           name: webpack-source
         workingDir: /usr/src/app
-        command: ["sh", "-c"]
-        args:
-        - |
-          npm install && \
-          npm run build && \
-          npx http-server ./dist -p 8080
         livenessProbe:
           httpGet:
             path: /
@@ -45,14 +52,3 @@ spec:
       - name: webpack-source
         configMap:
           name: webpack-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webpack
-spec:
-  selector:
-    app: webpack
-  ports:
-  - port: 8080
-    targetPort: 8080

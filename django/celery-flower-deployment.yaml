@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celery-beat
+  name: celery-flower
   labels:
     app: django
-    component: celery-beat
+    component: celery-flower
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: django
-      component: celery-beat
+      component: celery-flower
   template:
     metadata:
       labels:
         app: django
-        component: celery-beat
+        component: celery-flower
     spec:
       initContainers:
         - name: create-user
@@ -30,9 +30,9 @@ spec:
             - secretRef:
                 name: whg-secret
       containers:
-        - name: celery-beat
-          image: worldhistoricalgazetteer/web:${IMAGE_VERSION}"
-          command: ["/bin/bash", "-c", "rm -f /app/celerybeat.pid && celery -A whg beat --loglevel=debug --scheduler django_celery_beat.schedulers:DatabaseScheduler"]
+        - name: celery-flower
+          image: worldhistoricalgazetteer/web:${IMAGE_VERSION}
+          command: ["celery", "-A", "whg", "flower", "--broker=redis://redis:6379/0"]
           env:
             - name: DJANGO_SETTINGS_MODULE
               value: "whg.settings"
@@ -51,12 +51,12 @@ spec:
           volumeMounts:
             - name: shared-volume
               mountPath: /shared-data
-          readinessProbe: # Wait until redis is available
+          readinessProbe:
             exec:
               command:
                 - "sh"
                 - "-c"
-                - "nc -z redis 6379"
+                - "celery -A whg inspect ping || exit 1"  # Exit non-zero if ping fails
             initialDelaySeconds: 10
             periodSeconds: 5
       volumes:

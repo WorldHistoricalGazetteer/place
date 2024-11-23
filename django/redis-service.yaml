@@ -6,7 +6,7 @@ metadata:
     app: redis
 spec:
   ports:
-  - port: ${REDIS_PORT}
-    targetPort: ${REDIS_PORT}
+  - port: 6379
+    targetPort: 6379
   selector:
     app: redis

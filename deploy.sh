@@ -152,6 +152,21 @@ if [ "$ROLE" == "master" ]; then
       echo "Error occurred during Contour installation."
       exit 1
   fi
+
+  # Install Cert-Manager
+  echo "Installing Cert-Manager..."
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+  kubectl wait --for=condition=Available deployment --all -n cert-manager --timeout=120s
+  if [ $? -ne 0 ]; then
+      echo "Error: Cert-Manager installation failed."
+      exit 1
+  fi
+  kubectl apply -f "$SCRIPT_DIR/system/certificate-config.yaml"
+  if [ $? -ne 0 ]; then
+      echo "Error: Failed to create ClusterIssuer."
+      exit 1
+  fi
+
 fi
 
 # Install Vespa CLI
