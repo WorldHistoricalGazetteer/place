@@ -1,2 +1,5 @@
 # Ignore Kubernetes secrets
 secret.yaml
+
+# Ignore PyCharm files
+.idea/
