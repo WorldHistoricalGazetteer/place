@@ -84,9 +84,10 @@ To deploy the application with these configurations, follow these steps:
 
 1. Clone this repository and navigate to the project root directory.
 2. Acquire the necessary `secret.yaml` credentials file from the WHG team and place it in the root directory.
-3. Run the `deploy.sh` script to deploy the application, specifying the role as master or worker. The master node sets up
-   the entire application stack, including Vespa, Django, and related services. The worker nodes replicate only Vespa
-   components for horizontal scaling. Pass the role and, for workers, provide the Kubernetes join command.
+3. Run the `deploy.sh` script to deploy the application, specifying the role as `master` or `worker`. The master node
+   sets up the entire application stack, including Vespa, Django, and related services. The worker nodes should be set
+   up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and, for workers,
+   provide the Kubernetes join command.
 
 ### Master Node
 
