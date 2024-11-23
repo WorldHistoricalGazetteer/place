@@ -1,0 +1,208 @@
+# Django Deployment Values
+replicaCount: 1
+revisionHistoryLimit: 2
+image:
+  repository: worldhistoricalgazetteer/web
+  pullPolicy: IfNotPresent
+  tag: "${IMAGE_VERSION}"
+
+command: '/bin/bash /app/entrypoints/entrypoint-web.sh'
+
+# Env Secret Values (Base64 encoded data)
+envSecrets: { }
+
+# Environment Variables
+envConfigs:
+  STATIC_ROOT: "staticfiles"
+  CELERY_BROKER_URL: ""
+
+  # Custom Environment Variables
+  DJANGO_SETTINGS_MODULE: "whg.settings"
+  IMAGE_VERSION: "latest" # Can be set to a specific version
+  DB_USER: "{{ .Values.db_user }}"
+  DB_PASSWORD: "{{ .Values.db_password }}"
+  DB_NAME: "{{ .Values.db_name }}"
+  DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}"
+  REDIS_URL: "redis://redis:6379"
+  SECRET_KEY: "{{ .Values.secret_key }}"
+
+# Init Container Settings
+collect_static:
+  enabled: true
+  name: staticfiles
+  command: "python3 manage.py collectstatic --noinput"
+
+# Database Migrations
+db_migrations:
+  enabled: true
+  name: db-migration
+  command: "python3 manage.py migrate --noinput"
+  resources: {}
+  safeToEvict: true
+
+# Static and Media Files
+data:
+  staticfiles: "app/staticfiles/"
+  data_media: "app/data_media/"
+
+# Probes
+probes:
+  liveness:
+    enabled: true
+    path: /healthy
+  readiness:
+    enabled: true
+    path: /ready
+
+imagePullSecrets: [ ]
+nameOverride: ""
+fullnameOverride: ""
+
+# Django Service Values
+service:
+  type: ClusterIP
+  port: 80
+
+#Caddy Settings ( Proxy Setup )
+proxy:
+  repository: caddy
+  pullPolicy: IfNotPresent
+  tag: "2.1.1-alpine"
+  containerPort: 8000
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  annotations: {}
+  hosts:
+    - host: place.whgazetteer.org # Pending switch to whgazetteer.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+celery:
+  # Celery Beat Values
+  beat:
+    enabled: true
+    componentName: celery-beat
+    command: 'celery -A blog.celery beat -l DEBUG'
+    replicaCount: 1
+    strategy: Recreate
+  # Celery Worker Settings
+  worker:
+    componentName: celery-worker
+    command: 'celery -A blog.celery worker -l DEBUG'
+    replicaCount: 1
+    strategy: RollingUpdate
+  # Celery Flower Settings
+  flower:
+    componentName: celery-flower
+    command: 'celery -A blog.celery flower'
+    replicaCount: 1
+    strategy: RollingUpdate
+    service:
+      type: ClusterIP
+      port:
+        number: 5555
+        name: flower
+    ingress:
+      enabled: false
+      annotations: { }
+      hosts:
+        - host: example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls: [ ]
+
+# Disable subchart by setting enabled value to false
+redis:
+  enabled: true
+  password: redis
+  master:
+    podSecurityContext:
+      enabled: true
+      fsGroup: 1001
+
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 1001
+
+  replica:
+    podSecurityContext:
+      enabled: true
+      fsGroup: 1001
+
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 1001
+
+  volumePermissions:
+    enabled: true
+    runAsUser: 1001
+
+
+
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: { }
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: { }
+
+podSecurityContext: { }
+# fsGroup: 2000
+
+securityContext: { }
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+# runAsUser: 1000
+
+
+resources: { }
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+#   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }
+
+
+  
+
+
+
+
+
+
+
+

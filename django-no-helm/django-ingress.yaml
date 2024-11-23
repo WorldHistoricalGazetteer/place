@@ -9,10 +9,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - django.example.com
+    - place.whgazetteer.org # Temporary subdomain, pending switch to 'whgazetteer.org'
     secretName: django-tls # TLS secret for HTTPS
   rules:
-  - host: django.example.com
+  - host: place.whgazetteer.org # Temporary subdomain, pending switch to 'whgazetteer.org'
     http:
       paths:
       - path: /
@@ -21,4 +21,4 @@ spec:
           service:
             name: django-service
             port:
-              number: 8000 # Ensure this matches your Django service port
+              number: 8000 # Must match Django service port

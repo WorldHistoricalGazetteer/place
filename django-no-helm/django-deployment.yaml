@@ -37,20 +37,31 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: whg-config
-                  key: IMAGE_VERSION
-
-
-
-
-            - name: DATABASE_URL
-              value: "postgres://your_username:your_password@postgres:5432/your_database_name"
-            - name: REDIS_URL
-              value: "redis://redis:6379"
-            - name: DJANGO_SECRET_KEY
+                  key: image_version
+            - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: kubernetes-secrets
-                  key: secret-key
+                  name: whg-config
+                  key: db_user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: whg-secret
+                  key: db_password
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: whg-config
+                  key: db_name
+            - name: DATABASE_URL
+              value: "postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: whg-secret
+                  key: secret_key
           volumeMounts:
             - name: repo
               mountPath: /app

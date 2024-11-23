@@ -4,5 +4,12 @@ metadata:
   name: whg-config
 data:
 
+  # Hostname
+  hostname: "place.whgazetteer.org" # Temporary subdomain, pending switch to 'whgazetteer.org'
+
   # Django
-  IMAGE_VERSION: "0.1.4"
+  image_version: "0.1.4"
+
+  # Database
+  db_user: "whgadmin"
+  db_name: "whgv3beta"
