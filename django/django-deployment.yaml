@@ -20,10 +20,10 @@ spec:
       initContainers:
         - name: git-sync
           image: alpine/git
-          command: ["git", "clone", "-b", "main", "https://github.com/WorldHistoricalGazetteer/whg3.git", "/repo"]
+          command: ["git", "clone", "-b", "main", "https://github.com/WorldHistoricalGazetteer/whg3.git", "/app"]
           volumeMounts:
-            - name: repo
-              mountPath: /repo
+            - name: app
+              mountPath: /app
         - name: create-user
           image: busybox:1.35.0-uclibc
           command:
@@ -80,12 +80,18 @@ spec:
                   name: whg-secret
                   key: secret-key
           volumeMounts:
-            - name: repo
+            - name: app
               mountPath: /app
             - name: static-files
               mountPath: /app/static
             - name: media-files
               mountPath: /app/media
+            - name: config-volume
+              mountPath: /app/config/configMap
+              readOnly: true
+            - name: secret-volume
+              mountPath: /app/config/secret
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /health
@@ -101,7 +107,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
       volumes:
-        - name: repo
+        - name: app
           emptyDir: {}
         - name: static-files
           persistentVolumeClaim:
@@ -109,3 +115,9 @@ spec:
         - name: media-files
           persistentVolumeClaim:
             claimName: django-media-pvc
+        - name: config-volume
+          configMap:
+            name: whg-config
+        - name: secret-volume
+          secret:
+            secretName: whg-secret
