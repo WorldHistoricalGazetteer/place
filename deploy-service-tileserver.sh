@@ -15,5 +15,3 @@ yq e "$YQ_TLS" "$SCRIPT_DIR/tileserver/tileserver-gl-ingress.yaml" | kubectl app
 # TODO: Build and push the docker image to DockerHub
 kubectl apply -f "$SCRIPT_DIR/tileserver/tippecanoe-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/tileserver/tippecanoe-service.yaml"
-
-echo "Tile services deployed successfully!"

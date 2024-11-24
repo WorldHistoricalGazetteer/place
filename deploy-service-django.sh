@@ -39,5 +39,3 @@ echo "Deploying Webpack..."
 kubectl apply -f "$SCRIPT_DIR/django/webpack-config.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/webpack-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/webpack-service.yaml"
-
-echo "Django application deployed successfully!"
