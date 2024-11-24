@@ -33,14 +33,12 @@ This repository includes configuration files for deploying the following compone
 - ##### Flannel
 
   > A networking solution for Kubernetes that provides a virtual network to manage IP address assignments for containers
-  and
-  nodes.
+  and nodes.
 
 - ##### Contour
 
   > An ingress controller for Kubernetes that uses the Envoy Proxy to manage incoming HTTP and HTTPS requests, acting as
-  a
-  reverse proxy and load balancer.
+  a reverse proxy and load balancer.
 
 ### Application Components
 
@@ -51,8 +49,7 @@ This repository includes configuration files for deploying the following compone
 - ##### Django
 
   > A high-level Python web framework used to build the WHG application, providing a structure for building web
-  applications
-  quickly.
+  applications quickly.
 
 - ##### PostgreSQL
 
@@ -67,14 +64,16 @@ This repository includes configuration files for deploying the following compone
 - ##### Celery
 
   > A distributed task queue that allows the WHG application to handle asynchronous tasks efficiently, improving
-  performance
-  by offloading long-running tasks.
+  performance by offloading long-running tasks.
 
 - ##### Celery Beat
 
   > A scheduler that manages periodic tasks, automating the execution of routine operations like database cleanups or
-  batch
-  jobs.
+  batch jobs.
+
+- ##### Celery Flower
+
+  > A monitoring tool for Celery, providing insights into the status and performance of Celery workers and tasks.
 
 - ##### Tileserver-GL
 
@@ -94,14 +93,12 @@ This repository includes configuration files for deploying the following compone
 - ##### Prometheus
 
   > A monitoring and alerting toolkit that collects metrics from the WHG application and its components, helping to
-  ensure
-  the system is running smoothly.
+  ensure the system is running smoothly.
 
 - ##### Grafana
 
   > A visualization tool that displays metrics collected by Prometheus, providing insights into the performance and
-  health
-  of the WHG application.
+  health of the WHG application.
 
 - ##### Plausible
 
@@ -111,8 +108,7 @@ This repository includes configuration files for deploying the following compone
 - ##### Glitchtip
 
   > An error monitoring tool that collects and aggregates error reports from the WHG application, helping to identify
-  and
-  resolve issues quickly.
+  and resolve issues quickly.
 
 ## Setup
 
