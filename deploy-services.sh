@@ -32,6 +32,15 @@ fi
 # Print summary of all resources
 kubectl get all
 
+# Print instructions for describing or starting a shell in a pod
+echo "-------------------------------------------------------------"
+echo "To describe a pod, run:"
+echo "kubectl describe pod <pod-name>"
+echo "-------------------------------------------------------------"
+echo "To start a shell in a pod, run:"
+echo "kubectl exec -it <pod-name> -- /bin/bash"
+echo "-------------------------------------------------------------"
+
 # Print instructions for deployment of worker nodes
 if [ "$ROLE" == "master" ]; then
   # Print the join command for workers
