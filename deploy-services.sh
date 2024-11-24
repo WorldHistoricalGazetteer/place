@@ -29,6 +29,9 @@ if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   yq e "$YQ_TLS" "$SCRIPT_DIR/vespa/vespa-ingress.yaml" | kubectl apply -f -
 fi
 
+# TODO: Deploy Wordpress and its MySQL database for blog.whgazetteer.org
+# See https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/
+
 # Print summary of all resources
 kubectl get all
 

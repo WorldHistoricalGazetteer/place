@@ -11,6 +11,7 @@ kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 
 # Deploy PostgreSQL components
 echo "Deploying PostgreSQL..."
+# TODO: Create a Persistent Volume (PV) with hostPath for use by the PostgreSQL PVC - this can initially use the existing database folder
 kubectl apply -f "$SCRIPT_DIR/django/postgres-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-service.yaml"
@@ -23,6 +24,7 @@ kubectl apply -f "$SCRIPT_DIR/django/redis-service.yaml"
 
 # Deploy Django app
 echo "Deploying Django app..."
+# TODO: Create a Persistent Volume (PV) with hostPath for use by the Django PVC
 kubectl apply -f "$SCRIPT_DIR/django/django-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/django-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/django-service.yaml"

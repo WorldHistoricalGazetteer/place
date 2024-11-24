@@ -6,6 +6,7 @@ SCRIPT_DIR=$(dirname "$0")
 echo "Deploying Tile services..."
 
 # Deploy TileServer-GL
+# TODO: Create a Persistent Volume (PV) with hostPath for use by the TileServer-GL PVC - and consider Cloud Storage options
 kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-service.yaml"
