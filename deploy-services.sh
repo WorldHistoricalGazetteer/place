@@ -32,7 +32,6 @@ fi
 if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
 
 #  NAME                    URL
-#  django                  https://itswcg.github.io/django-helm/charts/
 #  bitnami                 https://charts.bitnami.com/bitnami
 #  zekker6                 https://zekker6.github.io/helm-charts/
 #  glitchtip               https://gitlab.com/api/v4/projects/16325141/packages/helm/stable
