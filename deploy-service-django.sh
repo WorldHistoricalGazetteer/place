@@ -5,7 +5,7 @@ SCRIPT_DIR=$(dirname "$0")
 
 # Deploy Secrets and ConfigMap
 echo "Deploying Secrets..."
-kubectl apply -f "$SCRIPT_DIR/secrets.yaml"
+kubectl apply -f "$SCRIPT_DIR/secret.yaml"
 echo "Deploying ConfigMap..."
 kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 

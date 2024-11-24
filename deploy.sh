@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Check if a role (master or worker) was passed as an argument
+# Get role (master, worker, or local)
 ROLE=$1
-
-# Ensure role is provided
 if [ -z "$ROLE" ]; then
     echo "Error: Role (master, worker, or local) must be specified."
     exit 1
@@ -233,28 +231,6 @@ sudo mv vespa-cli_${VESPA_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
 sudo rm -rf vespa-cli_${VESPA_VERSION}_linux_amd64 vespa-cli_${VESPA_VERSION}_linux_amd64.tar.gz
 vespa version || { echo "Vespa CLI installation failed"; exit 1; }
 
-echo "Deployment complete!"
+echo "Completed server configuration and deployment of Kubernetes components."
 
-# Deploy Vespa manifests
-echo "Deploying Vespa components..."
-kubectl apply -f "$SCRIPT_DIR/vespa/content-node-deployment.yaml"
-kubectl apply -f "$SCRIPT_DIR/vespa/search-node-deployment.yaml"
-if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
-  kubectl apply -f "$SCRIPT_DIR/vespa/config-server-deployment.yaml"
-  yq e "$YQ_TLS" "$SCRIPT_DIR/django/vespa-ingress.yaml" | kubectl apply -f -
-fi
-
-# Deploy Django and Tile services
-if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
-  bash "$SCRIPT_DIR/deploy-django.sh"
-  bash "$SCRIPT_DIR/deploy-tile-services.sh"
-fi
-
-# Print instructions for deployment of worker nodes
-if [ "$ROLE" == "master" ]; then
-  # Print the join command for workers
-  JOIN_COMMAND=$(kubeadm token create --print-join-command)
-  echo "-------------------------------------------------------------"
-  echo "To join worker nodes to the cluster, run this deployment script with the following parameters:"
-  echo "sudo ./server-configuration/deploy.sh ROLE=worker JOIN_COMMAND=\"$JOIN_COMMAND\""
-fi
+bash "$SCRIPT_DIR/deploy-services.sh"

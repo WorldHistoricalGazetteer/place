@@ -24,4 +24,8 @@ spec:
             mountPath: /var/lib/tileserver-gl
         env:
           - name: TILESERVER_GL_GLOBALLINKS
-            value: "true" # Customize your environment variables as necessary
+            value: "true" # TODO: Customize environment variables as necessary
+      volumes:
+        - name: tiles-data
+          persistentVolumeClaim:
+            claimName: tiles-data

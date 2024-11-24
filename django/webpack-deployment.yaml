@@ -25,7 +25,7 @@ spec:
               npm install
               npx webpack --config webpack.config.js
           volumeMounts:
-            - name: app-volume
+            - name: django-app-volume
               mountPath: /app
       containers:
       - name: webpack
@@ -52,3 +52,6 @@ spec:
       - name: webpack-source
         configMap:
           name: webpack-config
+      - name: django-app-volume
+        persistentVolumeClaim:
+          claimName: django-app-pvc
