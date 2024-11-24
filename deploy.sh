@@ -231,6 +231,8 @@ sudo mv vespa-cli_${VESPA_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
 sudo rm -rf vespa-cli_${VESPA_VERSION}_linux_amd64 vespa-cli_${VESPA_VERSION}_linux_amd64.tar.gz
 vespa version || { echo "Vespa CLI installation failed"; exit 1; }
 
+# TODO: Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
+
 echo "Completed server configuration and deployment of Kubernetes components."
 
 bash "$SCRIPT_DIR/deploy-services.sh"
