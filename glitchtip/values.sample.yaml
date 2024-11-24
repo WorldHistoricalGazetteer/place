@@ -1,0 +1,20 @@
+image:
+  tag: v2.0.4  # Make this the latest version, then change it to upgrade
+  pullPolicy: IfNotPresent
+env:
+  normal:
+    GLITCHTIP_DOMAIN: https://change_this.example.com
+  secret:
+    SECRET_KEY: change_this
+    # Specify if using external postgres (not managed by this chart)
+    # DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres 
+postgresql:
+  enabled: true  # Be careful upgrading. The postgresql helm chart does not support major upgrades.
+  auth:
+    postgresPassword: change_this  # Without setting this, you'll have to set the password on each upgrade
+  primary:
+    persistence:
+      size: 10Gi  # Default is 8, may want this considerably higher
+valkey:
+  auth:
+    password: change_this

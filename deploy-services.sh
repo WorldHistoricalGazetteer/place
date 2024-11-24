@@ -29,8 +29,36 @@ if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   yq e "$YQ_TLS" "$SCRIPT_DIR/vespa/vespa-ingress.yaml" | kubectl apply -f -
 fi
 
-# TODO: Deploy Wordpress and its MySQL database for blog.whgazetteer.org
-# See https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/
+if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
+
+#  NAME                    URL
+#  django                  https://itswcg.github.io/django-helm/charts/
+#  bitnami                 https://charts.bitnami.com/bitnami
+#  zekker6                 https://zekker6.github.io/helm-charts/
+#  glitchtip               https://gitlab.com/api/v4/projects/16325141/packages/helm/stable
+#  grafana                 https://grafana.github.io/helm-charts
+#  prometheus-community    https://prometheus-community.github.io/helm-charts
+
+  echo "Deploying monitoring components..."
+  # TODO: Configure all values.yaml files for monitoring components
+
+#  Deploy Wordpress (for blog.whgazetteer.org)
+#  helm install wordpress bitnami/wordpress
+
+#  Deploy Prometheus
+#  helm install prometheus prometheus-community/prometheus
+
+#  Deploy Grafana
+#  helm install grafana grafana/grafana
+
+#  Deploy Plausible
+#  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
+#  helm install plausible-analytics zekker6/plausible-analytics
+
+#  Deploy Glitchtip
+#  helm install glitchtip glitchtip/glitchtip
+
+fi
 
 # Print summary of all resources
 kubectl get all

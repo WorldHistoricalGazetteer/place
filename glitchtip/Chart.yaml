@@ -1,0 +1,16 @@
+apiVersion: v2
+appVersion: 4.1.5
+dependencies:
+- condition: postgresql.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: ^16.1.2
+- condition: valkey.enabled
+  name: valkey
+  repository: https://charts.bitnami.com/bitnami
+  version: ^2.0.2
+description: Open source error tracking that is compatible with Sentry
+icon: https://glitchtip.gitlab.io/glitchtip-helm-chart/icon.svg
+name: glitchtip
+type: application
+version: 5.0.1
