@@ -2,11 +2,11 @@
 
 # World Historical Gazetteer: PLACE
 
-This is the repository for **WHG PLACE** (Place Linkage, Alignment, and Concordance Engine).
+### This is the repository for the **WHG PLACE** (Place Linkage, Alignment, and Concordance Engine).
 
 It contains the Kubernetes server configuration files for deploying and managing the World Historical Gazetteer (WHG)
 application. This repository is separate from the main Django application
-code ([here](https://github.com/WorldHistoricalGazetteer/whg3)), providing a dedicated space for
+code ([here](https://github.com/WorldHistoricalGazetteer/whg3)), and provides a dedicated space for
 configuring and orchestrating the server environment.
 
 ## Overview
