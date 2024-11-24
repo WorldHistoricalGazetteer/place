@@ -15,94 +15,104 @@ This repository includes configuration files for deploying the following compone
 
 - ##### kubeadm
 
-  >A tool for bootstrapping Kubernetes clusters, providing easy and consistent cluster creation.
+  > A tool for bootstrapping Kubernetes clusters, providing easy and consistent cluster creation.
 
 - ##### kubelet
 
-  >The node agent running on each Kubernetes node, ensuring containers are running as expected.
+  > The node agent running on each Kubernetes node, ensuring containers are running as expected.
 
 - ##### kubectl
 
-  >A command-line tool for interacting with Kubernetes clusters, allowing users to deploy and manage applications.
+  > A command-line tool for interacting with Kubernetes clusters, allowing users to deploy and manage applications.
 
 - ##### Helm
 
-  >A Kubernetes package manager that simplifies the deployment and management of Kubernetes applications using Helm charts.
+  > A Kubernetes package manager that simplifies the deployment and management of Kubernetes applications using Helm
+  charts.
 
 - ##### Flannel
 
-  >A networking solution for Kubernetes that provides a virtual network to manage IP address assignments for containers and
-nodes.
+  > A networking solution for Kubernetes that provides a virtual network to manage IP address assignments for containers
+  and
+  nodes.
 
 - ##### Contour
 
-  >An ingress controller for Kubernetes that uses the Envoy Proxy to manage incoming HTTP and HTTPS requests, acting as a
-reverse proxy and load balancer.
+  > An ingress controller for Kubernetes that uses the Envoy Proxy to manage incoming HTTP and HTTPS requests, acting as
+  a
+  reverse proxy and load balancer.
 
 ### Application Components
 
 - ##### Vespa
 
-  >A platform for serving scalable data and content, commonly used in search and recommendation systems.
+  > A platform for serving scalable data and content, commonly used in search and recommendation systems.
 
 - ##### Django
 
-  >A high-level Python web framework used to build the WHG application, providing a structure for building web applications
-quickly.
+  > A high-level Python web framework used to build the WHG application, providing a structure for building web
+  applications
+  quickly.
 
 - ##### PostgreSQL
 
-  >An open-source relational database system, storing the historical geographic data and other application-related
-information.
+  > An open-source relational database system, storing the historical geographic data and other application-related
+  information.
 
 - ##### Redis
 
-  >An in-memory key-value store used for caching and as a message broker, supporting the speed and scalability of the
-application.
+  > An in-memory key-value store used for caching and as a message broker, supporting the speed and scalability of the
+  application.
 
 - ##### Celery
 
-  >A distributed task queue that allows the WHG application to handle asynchronous tasks efficiently, improving performance
-by offloading long-running tasks.
+  > A distributed task queue that allows the WHG application to handle asynchronous tasks efficiently, improving
+  performance
+  by offloading long-running tasks.
 
 - ##### Celery Beat
 
-  >A scheduler that manages periodic tasks, automating the execution of routine operations like database cleanups or batch
-jobs.
+  > A scheduler that manages periodic tasks, automating the execution of routine operations like database cleanups or
+  batch
+  jobs.
 
 - ##### Tileserver-GL
 
-  >A server used for serving vector map tiles, providing geographical visualizations for the WHG.
+  > A server used for serving vector map tiles, providing geographical visualizations for the WHG.
 
 - ##### Tippecanoe
 
-  >A tool that generates vector tiles from large collections of GeoJSON data, enabling efficient rendering of map layers.
+  > A tool that generates vector tiles from large collections of GeoJSON data, enabling efficient rendering of map
+  layers.
 
 - ##### Wordpress
 
-  >A content management system used for the WHG blog, providing a platform for creating and managing blog posts.
+  > A content management system used for the WHG blog, providing a platform for creating and managing blog posts.
 
 ### Monitoring and Analytics Components
 
 - ##### Prometheus
 
-  >A monitoring and alerting toolkit that collects metrics from the WHG application and its components, helping to ensure
-the system is running smoothly.
+  > A monitoring and alerting toolkit that collects metrics from the WHG application and its components, helping to
+  ensure
+  the system is running smoothly.
 
 - ##### Grafana
 
-  >A visualization tool that displays metrics collected by Prometheus, providing insights into the performance and health
-of the WHG application.
+  > A visualization tool that displays metrics collected by Prometheus, providing insights into the performance and
+  health
+  of the WHG application.
 
 - ##### Plausible
 
-  >An open-source analytics platform that tracks user interactions with the WHG website, providing insights into user
-behavior and engagement.
+  > An open-source analytics platform that tracks user interactions with the WHG website, providing insights into user
+  behavior and engagement.
 
 - ##### Glitchtip
 
-  >An error monitoring tool that collects and aggregates error reports from the WHG application, helping to identify and
-resolve issues quickly.
+  > An error monitoring tool that collects and aggregates error reports from the WHG application, helping to identify
+  and
+  resolve issues quickly.
 
 ## Setup
 
@@ -195,10 +205,11 @@ sudo ufw status
 
 ### Deploy the Application
 
-Run the `deploy.sh` script to deploy the application, specifying the role as `master` or `worker`. The master node
-sets up the entire application stack, including Vespa, Django, and related services. The worker nodes should be set
-up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and, for workers,
-provide the Kubernetes join command.
+Run the `deploy.sh` script to deploy the application, specifying the role as `master`, `worker`, or `local`. The master
+and local options set up the entire application stack, including Vespa, Django, and related services. The worker nodes
+should be set up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and,
+for workers, provide the Kubernetes join command. The master option is dependent on DNS having been set up to point
+various subdomains to the server's IP address.
 
 > NOTE: If you have already run this script and need to re-run it, you will need to tear down the existing cluster. No
 > reliable way to do this has been identified, other than rebooting the server. The script at `./remove-kubernetes.sh`
