@@ -26,7 +26,7 @@ echo "Deploying Django app..."
 kubectl apply -f "$SCRIPT_DIR/django/django-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/django-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/django-service.yaml"
-kubectl apply -f "$SCRIPT_DIR/django/django-ingress.yaml"
+yq e "$YQ_TLS" "$SCRIPT_DIR/django/django-ingress.yaml" | kubectl apply -f -
 
 # Deploy Celery components
 echo "Deploying Celery components..."

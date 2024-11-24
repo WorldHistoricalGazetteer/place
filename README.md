@@ -174,10 +174,14 @@ sets up the entire application stack, including Vespa, Django, and related servi
 up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and, for workers,
 provide the Kubernetes join command.
 
+> NOTE: If you have already run this script and need to re-run it, you will need to tear down the existing cluster. No
+> reliable way to do this has been identified, other than rebooting the server. The script at `./remove-kubernetes.sh`
+> follows official Kubernetes documentation, but does not release the ports as expected.
+
 ### Master Node
 
 ```bash
-sudo chmod +x ./*.sh && ROLE=master ./deploy.sh
+sudo chmod +x ./*.sh && ./deploy.sh master
 ```
 
 ### Worker Node
@@ -185,4 +189,10 @@ sudo chmod +x ./*.sh && ROLE=master ./deploy.sh
 ```bash
 # You MUST replace <kubeadm-join-command> with the actual join command from the master node.
 sudo chmod +x ./*.sh && ROLE=worker JOIN_COMMAND="<kubeadm-join-command>" ./deploy.sh
+```
+
+### Local Node (for development)
+
+```bash
+sudo chmod +x ./*.sh && ./deploy.sh local
 ```

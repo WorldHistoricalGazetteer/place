@@ -3,7 +3,6 @@ kind: Ingress
 metadata:
   name: django-ingress
   annotations:
-    kubernetes.io/ingress.class: contour
     ingress.kubernetes.io/force-ssl-redirect: "true" # Redirect HTTP to HTTPS
     cert-manager.io/cluster-issuer: "letsencrypt-prod" # For automated TLS certificates using Cert-Manager
 spec:
@@ -11,6 +10,7 @@ spec:
   - hosts:
     - place.whgazetteer.org # Temporary subdomain, pending switch to 'whgazetteer.org'
     secretName: django-tls-secret
+  ingressClassName: contour
   rules:
   - host: place.whgazetteer.org # Temporary subdomain, pending switch to 'whgazetteer.org'
     http:

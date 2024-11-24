@@ -20,7 +20,15 @@ spec:
       initContainers:
         - name: git-sync
           image: alpine/git
-          command: ["git", "clone", "-b", "main", "https://github.com/WorldHistoricalGazetteer/whg3.git", "/app"]
+          command:
+            - "sh"
+            - "-c"
+            - |
+              if [ -d "/app/.git" ]; then
+                cd /app && git pull origin main
+              else
+                git clone -b main https://github.com/WorldHistoricalGazetteer/whg3.git /app
+              fi
           volumeMounts:
             - name: app
               mountPath: /app
@@ -108,7 +116,8 @@ spec:
             periodSeconds: 5
       volumes:
         - name: app
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: django-app-pvc
         - name: static-files
           persistentVolumeClaim:
             claimName: django-static-pvc

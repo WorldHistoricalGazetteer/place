@@ -5,9 +5,21 @@ ROLE=$1
 
 # Ensure role is provided
 if [ -z "$ROLE" ]; then
-    echo "Error: Role (master or worker) must be specified."
+    echo "Error: Role (master, worker, or local) must be specified."
     exit 1
 fi
+
+if [ "$ROLE" == "master" ]; then
+  YQ_TLS='.'  # No changes to the file (pass it as is)
+else
+  YQ_TLS='del(.metadata.annotations["cert-manager.io/cluster-issuer"], .spec.tls)'  # Remove cert-manager and tls section
+fi
+
+# Define script directory
+SCRIPT_DIR=$(dirname "$0")
+
+# Remove any previous Kubernetes installation
+# bash "$SCRIPT_DIR/remove-kubernetes.sh" # This fails to release the necessary ports: server reboot is required
 
 # Update and install dependencies
 echo "Updating package list..."
@@ -17,7 +29,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common jq
+sudo apt-get install -qy apt-transport-https ca-certificates curl software-properties-common jq containerd
 if [ $? -ne 0 ]; then
     echo "Error occurred during the installation of dependencies."
     exit 1
@@ -31,45 +43,74 @@ fi
 
 sudo chmod +x /usr/local/bin/yq
 
-# Define script directory
-SCRIPT_DIR=$(dirname "$0")
-
 # Load configuration from YAML files
-DOCKER_VERSION=$(yq eval '.docker.version' "$SCRIPT_DIR/system/docker-config.yaml")
-DOCKER_REPO_URL=$(yq eval '.docker.repo_url' "$SCRIPT_DIR/system/docker-config.yaml")
-DOCKER_REPO_KEY=$(yq eval '.docker.repo_key' "$SCRIPT_DIR/system/docker-config.yaml")
 KUBE_VERSION=$(yq eval '.kubernetes.version' "$SCRIPT_DIR/system/kubernetes-config.yaml")
+KUBE_REPO_URL=$(yq eval '.kubernetes.repo_url' "$SCRIPT_DIR/system/kubernetes-config.yaml")
 POD_NETWORK_CIDR=$(yq eval '.kubernetes.pod_network_cidr' "$SCRIPT_DIR/system/kubernetes-config.yaml")
 HELM_VERSION=$(yq eval '.helm.version' "$SCRIPT_DIR/system/helm-config.yaml")
 HELM_REPO_URL=$(yq eval '.helm.repo_url' "$SCRIPT_DIR/system/helm-config.yaml")
 VESPA_VERSION=$(yq eval '.vespa.version' "$SCRIPT_DIR/system/vespa-config.yaml")
 VESPA_DOWNLOAD_URL=$(yq eval '.vespa.download_url' "$SCRIPT_DIR/system/vespa-config.yaml")
 
-# Install Docker
-echo "Installing Docker version $DOCKER_VERSION..."
-curl -fsSL "$DOCKER_REPO_KEY" | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] $DOCKER_REPO_URL $(lsb_release -cs) stable"
-sudo apt-get update
-sudo apt-get install -y docker-ce=$DOCKER_VERSION
-if [ $? -ne 0 ]; then
-    echo "Error occurred while adding Docker repository key."
+# Enable and start containerd
+echo "Enabling and starting containerd..."
+
+# Ensure the containerd config file exists
+if [ ! -f /etc/containerd/config.toml ]; then
+    echo "Containerd config file not found! Exiting."
     exit 1
 fi
 
-sudo systemctl enable docker
-sudo systemctl start docker
-sudo docker --version
-sudo usermod -aG docker $USER
+# Modify the containerd configuration to ensure the 'cri' plugin is enabled
+echo "Enabling the CRI plugin in containerd configuration..."
+sudo sed -i '/disabled_plugins = \["cri"\]/d' /etc/containerd/config.toml
 
-# Install Kubernetes
+# Start containerd to apply changes
+echo "Starting containerd..."
+sudo systemctl start containerd
+
+# Check containerd version to ensure it's running correctly
+containerd --version
+if [ $? -ne 0 ]; then
+    echo "Error occurred while starting containerd."
+    exit 1
+fi
+
+echo "Containerd is running with the CRI plugin enabled."
+
+# Add Kubernetes GPG key
+echo "Adding Kubernetes GPG key..."
+if sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg; then
+    echo "Kubernetes GPG key added successfully."
+else
+    echo "Failed to add Kubernetes GPG key."
+    exit 1
+fi
+
+# Add Kubernetes repository with the signed-by option
+echo "Adding Kubernetes repository..."
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+
+# Update the package index
+echo "Updating package list..."
+sudo apt-get update -q
+
+# Install Kubernetes components
 echo "Installing Kubernetes version $KUBE_VERSION..."
-sudo apt-get install -y kubeadm=$KUBE_VERSION kubelet=$KUBE_VERSION kubectl=$KUBE_VERSION
-if [ $? -ne 0 ]; then
-    echo "Error occurred during Kubernetes installation."
-    exit 1
+if sudo apt-get install -qy kubelet="$KUBE_VERSION" kubeadm="$KUBE_VERSION" kubectl="$KUBE_VERSION"; then
+    echo "Kubernetes $KUBE_VERSION installed successfully."
+else
+    echo "Specified Kubernetes version $KUBE_VERSION not found. Installing the latest version instead."
+    # Install the latest Kubernetes version
+    if sudo apt-get install -qy kubelet kubeadm kubectl conntrack cri-tools kubernetes-cni; then
+        echo "Latest Kubernetes version installed successfully."
+    else
+        echo "Failed to install Kubernetes. Please check the repository configuration."
+        exit 1
+    fi
 fi
 
-sudo apt-mark hold kubeadm kubelet kubectl
+# Check if kubectl was installed correctly
 kubectl version --client
 if [ $? -ne 0 ]; then
     echo "Error occurred while checking Kubernetes version."
@@ -81,7 +122,16 @@ echo "Disabling swap..."
 sudo swapoff -a
 sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
-if [ "$ROLE" == "master" ]; then
+# Enable and start kubelet
+echo "Enabling and starting kubelet..."
+sudo systemctl enable kubelet
+sudo systemctl start kubelet
+if [ $? -ne 0 ]; then
+    echo "Error occurred while starting kubelet."
+    exit 1
+fi
+
+if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   # Initialize Kubernetes cluster
   echo "Initializing Kubernetes cluster with pod network CIDR $POD_NETWORK_CIDR..."
   sudo kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR
@@ -108,7 +158,7 @@ fi
 # Configure kubectl
 echo "Configuring kubectl..."
 mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 kubectl get nodes
 kubectl get pods -n kube-system
@@ -143,7 +193,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ "$ROLE" == "master" ]; then
+if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   # Install Contour
   echo "Installing Contour Ingress controller..."
   kubectl apply -f "$SCRIPT_DIR/system/contour-config.yaml"
@@ -152,7 +202,9 @@ if [ "$ROLE" == "master" ]; then
       echo "Error occurred during Contour installation."
       exit 1
   fi
+fi
 
+if [ "$ROLE" == "master" ]; then
   # Install Cert-Manager
   echo "Installing Cert-Manager..."
   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
@@ -166,7 +218,6 @@ if [ "$ROLE" == "master" ]; then
       echo "Error: Failed to create ClusterIssuer."
       exit 1
   fi
-
 fi
 
 # Install Vespa CLI
@@ -188,13 +239,13 @@ echo "Deployment complete!"
 echo "Deploying Vespa components..."
 kubectl apply -f "$SCRIPT_DIR/vespa/content-node-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/vespa/search-node-deployment.yaml"
-if [ "$ROLE" == "master" ]; then
+if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   kubectl apply -f "$SCRIPT_DIR/vespa/config-server-deployment.yaml"
-  kubectl apply -f "$SCRIPT_DIR/vespa/vespa-ingress.yaml"
+  yq e "$YQ_TLS" "$SCRIPT_DIR/django/vespa-ingress.yaml" | kubectl apply -f -
 fi
 
 # Deploy Django and Tile services
-if [ "$ROLE" == "master" ]; then
+if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   bash "$SCRIPT_DIR/deploy-django.sh"
   bash "$SCRIPT_DIR/deploy-tile-services.sh"
 fi
