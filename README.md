@@ -1,3 +1,5 @@
+![img.png](img.png)
+
 # World Historical Gazetteer: PLACE
 
 This is the repository for **WHG PLACE** (Place Linkage, Alignment, and Concordance Engine).
@@ -77,7 +79,7 @@ This repository includes configuration files for deploying the following compone
 
 - ##### Tileserver-GL
 
-  > A server used for serving vector map tiles, providing geographical visualizations for the WHG.
+  > A server used for serving vector map tiles, providing geographical visualisations for the WHG.
 
 - ##### Tippecanoe
 
