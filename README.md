@@ -201,6 +201,13 @@ sudo ufw enable
 sudo ufw status
 ```
 
+### Clone WHG Database
+
+Before deploying the application, you will need to clone the WHG database to the server. This is dependent on a having
+first set up SSH keys to connect to the original WHG server. Cloning can be achieved using the
+`server-admin/replicate_live_db.sh` script as
+described [here](https://github.com/WorldHistoricalGazetteer/whg3/blob/staging/developer/database-management.md).
+
 ### Deploy the Application
 
 Run the `deploy.sh` script to deploy the application, specifying the role as `master`, `worker`, or `local`. The master

@@ -17,17 +17,17 @@ done
 # Deploy Django and Tile services
 if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   bash "$SCRIPT_DIR/deploy-service-django.sh"
-  bash "$SCRIPT_DIR/deploy-service-tileserver.sh"
+#  bash "$SCRIPT_DIR/deploy-service-tileserver.sh"
 fi
 
 # Deploy Vespa manifests
 echo "Deploying Vespa components..."
-kubectl apply -f "$SCRIPT_DIR/vespa/content-node-deployment.yaml"
-kubectl apply -f "$SCRIPT_DIR/vespa/search-node-deployment.yaml"
-if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
-  kubectl apply -f "$SCRIPT_DIR/vespa/config-server-deployment.yaml"
-  yq e "$YQ_TLS" "$SCRIPT_DIR/vespa/vespa-ingress.yaml" | kubectl apply -f -
-fi
+#kubectl apply -f "$SCRIPT_DIR/vespa/content-node-deployment.yaml"
+#kubectl apply -f "$SCRIPT_DIR/vespa/search-node-deployment.yaml"
+#if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
+#  kubectl apply -f "$SCRIPT_DIR/vespa/config-server-deployment.yaml"
+#  yq e "$YQ_TLS" "$SCRIPT_DIR/vespa/vespa-ingress.yaml" | kubectl apply -f -
+#fi
 
 if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
 
