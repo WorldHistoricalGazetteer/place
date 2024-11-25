@@ -53,7 +53,7 @@ This repository includes configuration files for deploying the following compone
   > A high-level Python web framework used to build the WHG application, providing a structure for building web
   applications quickly.
 
-- ##### PostgreSQL
+- ##### PostgreSQL (with PostGIS)
 
   > An open-source relational database system, storing the historical geographic data and other application-related
   information.
