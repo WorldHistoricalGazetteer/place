@@ -208,6 +208,11 @@ first set up SSH keys to connect to the original WHG server. Cloning can be achi
 `server-admin/replicate_live_db.sh` script as
 described [here](https://github.com/WorldHistoricalGazetteer/whg3/blob/staging/developer/database-management.md).
 
+#### Clone most-recent backup of the WHG Database into a local Persistent Volume
+```bash
+sudo chmod +x ./*.sh && sudo ./clone-database.sh
+```
+
 ### Deploy the Application
 
 Run the `deploy.sh` script to deploy the application, specifying the role as `master`, `worker`, or `local`. The master
@@ -223,20 +228,20 @@ various subdomains to the server's IP address.
 #### Master Node
 
 ```bash
-sudo chmod +x ./*.sh && ./deploy.sh master
+sudo chmod +x ./*.sh && sudo ./deploy.sh master
 ```
 
 #### Worker Node
 
 ```bash
 # You MUST replace <kubeadm-join-command> with the actual join command from the master node.
-sudo chmod +x ./*.sh && ./deploy.sh worker "<kubeadm-join-command>"
+sudo chmod +x ./*.sh && sudo ./deploy.sh worker "<kubeadm-join-command>"
 ```
 
 #### Local Node (for development)
 
 ```bash
-sudo chmod +x ./*.sh && ./deploy.sh local
+sudo chmod +x ./*.sh && sudo ./deploy.sh local
 ```
 
 ### Re-deploy Services
@@ -244,5 +249,5 @@ sudo chmod +x ./*.sh && ./deploy.sh local
 To re-deploy services after making changes to their configuration files, run the `deploy-services.sh` script:
 
 ```bash
-sudo chmod +x ./*.sh && ./deploy-services.sh local # or master or worker
+sudo chmod +x ./*.sh && sudo ./deploy-services.sh local # or master or worker
 ```

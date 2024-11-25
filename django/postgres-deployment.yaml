@@ -1,3 +1,38 @@
+# Service Account definition
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres-service-account
+  namespace: default
+
+---
+# Role or ClusterRole definition
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: postgres-job-creator
+rules:
+  - apiGroups: [""]
+    resources: ["jobs"]
+    verbs: ["create", "list"]
+
+---
+# ClusterRoleBinding to link the ServiceAccount with the ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: postgres-job-creator-binding
+subjects:
+  - kind: ServiceAccount
+    name: postgres-service-account
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: postgres-job-creator
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# PostgreSQL Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,12 +49,13 @@ spec:
       labels:
         app: postgres
     spec:
+      serviceAccountName: postgres-service-account
       containers:
         - name: postgres
           image: postgis/postgis:15-3.4
           ports:
             - containerPort: 5432
-          command: [ "postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf" ]
+          command: [ "postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
           env:
             - name: POSTGRES_DB
               valueFrom:
@@ -36,12 +72,34 @@ spec:
                 secretKeyRef:
                   name: whg-secret
                   key: db-password
+          lifecycle:
+            postStart:
+                exec:
+                    command:
+                      - "/bin/sh"
+                      - "-c"
+                      - |
+                        # Initialize pgBackRest stanza only once
+                        if ! kubectl get job pgbackrest-stanza-init; then
+                          kubectl create -f /etc/pgbackrest/pgbackrest-stanza-init.yaml
+                        else
+                          echo "Stanza already initialized."
+                        fi
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
             - name: pg-hba-config
               mountPath: /etc/postgresql/pg_hba.conf
               subPath: pg-hba
+            - name: pgbackrest-config
+              mountPath: /etc/pgbackrest
+              subPath: pgbackrest.conf
+            - name: postgresql-config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+            - name: pgbackrest-yaml
+              mountPath: /etc/pgbackrest/pgbackrest-stanza-init.yaml
+              subPath: pgbackrest-stanza-init.yaml
           livenessProbe:
             tcpSocket:
               port: 5432
@@ -55,6 +113,19 @@ spec:
                 - postgres
             initialDelaySeconds: 5
             periodSeconds: 10
+
+        - name: pgbackrest
+          image: pgbackrest/pgbackrest:latest
+          command:
+            - pgbackrest
+            - server
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: pgbackrest-config
+              mountPath: /etc/pgbackrest
+            - name: pgbackrest-backups
+              mountPath: /var/lib/pgbackrest/backups
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
@@ -62,3 +133,15 @@ spec:
         - name: pg-hba-config
           configMap:
             name: whg-config
+        - name: pgbackrest-config
+          configMap:
+            name: whg-config
+        - name: postgresql-config
+          configMap:
+            name: whg-config
+        - name: pgbackrest-yaml
+          configMap:
+            name: whg-config
+        - name: pgbackrest-backups
+          persistentVolumeClaim:
+            claimName: pgbackrest-pvc

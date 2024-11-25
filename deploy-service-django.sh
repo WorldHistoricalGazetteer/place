@@ -11,9 +11,10 @@ kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 
 # Deploy PostgreSQL components
 echo "Deploying PostgreSQL..."
-# TODO: Create a Persistent Volume (PV) with hostPath for use by the PostgreSQL PVC - this can initially use the existing database folder
+kubectl apply -f "$SCRIPT_DIR/django/postgres-pv.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-pvc.yaml"
-# TODO: Deploy pgBackrest as a sidecar container in the PostgreSQL pod - perhaps using cloud storage for disaster recovery
+kubectl apply -f "$SCRIPT_DIR/django/pgbackrest-pv.yaml"
+kubectl apply -f "$SCRIPT_DIR/django/pgbackrest-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-service.yaml"
 

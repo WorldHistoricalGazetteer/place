@@ -17,7 +17,7 @@ fi
 SCRIPT_DIR=$(dirname "$0")
 
 # Remove any previous Kubernetes installation
-# bash "$SCRIPT_DIR/remove-kubernetes.sh" # This fails to release the necessary ports: server reboot is required
+# sudo bash "$SCRIPT_DIR/remove-kubernetes.sh" # This fails to release the necessary ports: server reboot is required
 
 # Update and install dependencies
 echo "Updating package list..."
@@ -235,4 +235,4 @@ vespa version || { echo "Vespa CLI installation failed"; exit 1; }
 
 echo "Completed server configuration and deployment of Kubernetes components."
 
-bash "$SCRIPT_DIR/deploy-services.sh"
+sudo bash "$SCRIPT_DIR/deploy-services.sh"
