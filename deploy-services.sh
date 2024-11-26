@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Define script directory
 
 # Get role (master, worker, or local)
@@ -7,16 +9,28 @@ if [ -z "$ROLE" ]; then
     exit 1
 fi
 
+if [ "$ROLE" == "master" ]; then
+  YQ_TLS='.'  # No changes to the file (pass it as is)
+  YQ_TOLERATIONS='.'  # No changes to the file (pass it as is)
+elif [ "$ROLE" == "worker" ]; then
+  YQ_TLS='del(.metadata.annotations["cert-manager.io/cluster-issuer"], .spec.tls)'  # Remove cert-manager and tls section
+  YQ_TOLERATIONS='.'  # No changes to the file (pass it as is)
+else # local
+  YQ_TLS='del(.metadata.annotations["cert-manager.io/cluster-issuer"], .spec.tls)'  # Remove cert-manager and tls section
+  YQ_TOLERATIONS='.spec.template.spec.tolerations += [{"key": "node-role.kubernetes.io/control-plane", "operator": "Exists", "effect": "NoSchedule"}]' # Add tolerations for local node
+fi
+
 SCRIPT_DIR=$(dirname "$0")
 
-# Remove any previous service installations, keeping persistent volume claims
-for dir in "$SCRIPT_DIR/django" "$SCRIPT_DIR/tileserver" "$SCRIPT_DIR/vespa"; do
-  find "$dir" -type f -name "*.yaml" ! -name "*-pvc.yaml" -exec kubectl delete -f {} \; || true
-done
+## Remove any previous service installations, keeping persistent volumes
+#for dir in "$SCRIPT_DIR/django" "$SCRIPT_DIR/tileserver" "$SCRIPT_DIR/vespa"; do
+#  find "$dir" -type f -name "*.yaml" ! -name "*-pvc.yaml" -exec kubectl delete -f {} \; || true
+##  find "$dir" -type f -name "*.yaml" -exec kubectl delete -f {} \; || true
+#done
 
 # Deploy Django and Tile services
 if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
-  bash "$SCRIPT_DIR/deploy-service-django.sh"
+  bash "$SCRIPT_DIR/deploy-service-django.sh" "$ROLE"
 #  bash "$SCRIPT_DIR/deploy-service-tileserver.sh"
 fi
 

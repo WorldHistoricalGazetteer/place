@@ -141,6 +141,27 @@ sudo apt install -y curl git unzip htop ufw
 git clone https://github.com/WorldHistoricalGazetteer/place.git
 ```
 
+#### Enable IPv6 Forwarding
+
+Edit the `/etc/sysctl.conf` file:
+
+```bash
+sudo nano /etc/sysctl.conf
+```
+
+Uncomment (or add) the following lines:
+
+```plaintext
+net.ipv6.conf.all.forwarding=1
+net.ipv6.conf.default.forwarding=1
+```
+
+Apply the changes:
+
+```bash
+sudo sysctl -p
+```
+
 #### SSH Keys
 
 ```bash
@@ -158,7 +179,7 @@ sudo nano /etc/ssh/sshd_config
 
 Change the following settings:
 
-```bash
+```plaintext
 # Disable root login
 PermitRootLogin no
 
@@ -224,10 +245,6 @@ and local options set up the entire application stack, including Vespa, Django, 
 should be set up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and,
 for workers, provide the Kubernetes join command. The master option is dependent on DNS having been set up to point
 various subdomains to the server's IP address.
-
-> NOTE: If you have already run this script and need to re-run it, you will need to tear down the existing cluster. No
-> reliable way to do this has been identified, other than rebooting the server. The script at `./remove-kubernetes.sh`
-> follows official Kubernetes documentation, but does not release the ports as expected.
 
 #### Master Node
 

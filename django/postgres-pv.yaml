@@ -11,3 +11,12 @@ spec:
   storageClassName: django-postgres
   local:
     path: /data/k8s/postgres
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - localhost
+                - desktop

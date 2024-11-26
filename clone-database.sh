@@ -5,12 +5,16 @@ REMOTE_USER="whgadmin"
 REMOTE_HOST="144.126.204.70"
 REMOTE_BACKUP_DIR="/home/whgadmin/backup/whgazetteer-org"
 LOCAL_DATABASE_DIR="/data/k8s/postgres"
+LOCAL_DATABASE_BACKUP_DIR="/data/k8s/pgbackrest"
 SSH_KEY="/home/stephen/.ssh/id_rsa_whg"
 
-# Prepare the local directory
+# Prepare the local directories
 sudo mkdir -p "$LOCAL_DATABASE_DIR"
 sudo chown -R 999:999 "$LOCAL_DATABASE_DIR"
 sudo chmod 700 "$LOCAL_DATABASE_DIR"
+sudo mkdir -p "$LOCAL_DATABASE_BACKUP_DIR"
+sudo chown -R 999:999 "$LOCAL_DATABASE_BACKUP_DIR"
+sudo chmod 700 "$LOCAL_DATABASE_BACKUP_DIR"
 
 # Find the most recent backup file
 echo "Finding the latest backup file on the remote server..."

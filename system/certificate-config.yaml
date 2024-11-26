@@ -9,6 +9,8 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
-    - http01:
-        ingress:
-          class: contour
+    - dns01:
+        digitalOcean:
+          tokenSecretRef:
+            name: whg-secret
+            key: kubernetes-cluster-issuer

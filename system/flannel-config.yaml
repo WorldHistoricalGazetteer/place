@@ -93,6 +93,8 @@ data:
   net-conf.json: |
     {
       "Network": "10.244.0.0/16",
+      "IPv6Network": "fd00:10:244::/48",
+      "EnableIPv6": true,
       "EnableNFTables": false,
       "Backend": {
         "Type": "vxlan"
