@@ -141,25 +141,15 @@ sudo apt install -y curl git unzip htop ufw
 git clone https://github.com/WorldHistoricalGazetteer/place.git
 ```
 
-#### Enable IPv6 Forwarding
-
-Edit the `/etc/sysctl.conf` file:
+#### Enable IPv4 packet forwarding
 
 ```bash
-sudo nano /etc/sysctl.conf
-```
-
-Uncomment (or add) the following lines:
-
-```plaintext
-net.ipv6.conf.all.forwarding=1
-net.ipv6.conf.default.forwarding=1
-```
-
-Apply the changes:
-
-```bash
-sudo sysctl -p
+# sysctl params required by setup, params persist across reboots
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.ipv4.ip_forward = 1
+EOF
+# Apply sysctl params without reboot
+sudo sysctl --system
 ```
 
 #### SSH Keys
@@ -210,20 +200,11 @@ sudo systemctl restart sshd
 
 #### Firewall
 
-**_It is advisable to skip this step until the application is fully deployed and tested as it may interfere with the
-Kubernetes setup._**
+Ensure that `ufw` is disabled (firewall rules are managed by the Kubernetes cluster using IPTables directly):
 
 ```bash
-sudo ufw allow 6443/tcp     # Kubernetes API Server
-sudo ufw allow 8472/udp     # Flannel VXLAN
-sudo ufw allow 10250/tcp    # Kubelet
-sudo ufw allow 10255/tcp    # Kubelet read-only
-sudo ufw allow 30000:32767/tcp   # NodePort services
-sudo ufw allow OpenSSH
-sudo ufw allow 80/tcp    # Allow HTTP traffic
-sudo ufw allow 443/tcp   # Allow HTTPS traffic
-sudo ufw enable
-sudo ufw status
+sudo ufw disable
+sudo systemctl disable ufw
 ```
 
 ### Clone WHG Database

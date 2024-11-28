@@ -24,7 +24,7 @@ sudo rm -rf /etc/kubernetes
 sudo rm -rf /var/lib/kubelet
 sudo rm -rf /var/lib/etcd
 sudo rm -rf /var/run/kubernetes
-sudo rm -rf ~/.kube
+sudo rm -rf /root/.kube
 
 # Check if Kubernetes components are removed
 echo "Checking for remaining Kubernetes components on port 6443..."
