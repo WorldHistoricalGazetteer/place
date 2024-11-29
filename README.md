@@ -141,13 +141,27 @@ sudo apt install -y curl git unzip htop ufw
 git clone https://github.com/WorldHistoricalGazetteer/place.git
 ```
 
-#### Enable IPv4 packet forwarding
+#### Configure Networking
+
+- Flannel's vxlan backend requires the br_netfilter kernel module for proper network filtering in bridged networks.
+- The required networking parameters should persist across reboots to ensure consistent network behavior.
 
 ```bash
-# sysctl params required by setup, params persist across reboots
+# Load the br_netfilter module
+sudo modprobe br_netfilter
+echo "br_netfilter" | sudo tee -a /etc/modules
+
+# Enable IPv4 packet forwarding
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.ipv4.ip_forward = 1
 EOF
+
+# Enable the bridge-nf-call-iptables and bridge-nf-call-ip6tables
+cat <<EOF | sudo tee -a /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+
 # Apply sysctl params without reboot
 sudo sysctl --system
 ```

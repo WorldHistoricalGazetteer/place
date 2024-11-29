@@ -131,8 +131,8 @@ fi
 # Load configuration from YAML files
 HELM_VERSION=$(yq eval '.helm.version' "$SCRIPT_DIR/system/helm-config.yaml")
 HELM_REPO_URL=$(yq eval '.helm.repo_url' "$SCRIPT_DIR/system/helm-config.yaml")
-#VESPA_VERSION=$(yq eval '.vespa.version' "$SCRIPT_DIR/system/vespa-config.yaml")
-#VESPA_DOWNLOAD_URL=$(yq eval '.vespa.download_url' "$SCRIPT_DIR/system/vespa-config.yaml")
+VESPA_VERSION=$(yq eval '.vespa.version' "$SCRIPT_DIR/system/vespa-config.yaml")
+VESPA_DOWNLOAD_URL=$(yq eval '.vespa.download_url' "$SCRIPT_DIR/system/vespa-config.yaml")
 
 # Install Helm
 echo "Installing Helm version $HELM_VERSION..."
@@ -179,6 +179,18 @@ elif [ "$ROLE" == "worker" ]; then
   # Worker Node
   iptables -A INPUT -p tcp --dport 30000:32767 -j ACCEPT # Allow NodePort Services
 fi
+
+# Install Vespa CLI
+echo "Installing Vespa CLI version $VESPA_VERSION..."
+curl -LO $VESPA_DOWNLOAD_URL
+if [ $? -ne 0 ]; then
+    echo "Error occurred while downloading Vespa CLI."
+    exit 1
+fi
+tar -xvf vespa-cli_${VESPA_VERSION}_linux_amd64.tar.gz
+mv vespa-cli_${VESPA_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
+rm -rf vespa-cli_${VESPA_VERSION}_linux_amd64 vespa-cli_${VESPA_VERSION}_linux_amd64.tar.gz
+vespa version || { echo "Vespa CLI installation failed"; exit 1; }
 
 #### Helper functions ####
 
@@ -252,10 +264,10 @@ kubectl rollout status daemonset/kube-flannel-ds -n kube-system
 
 # Allow local node to run pods
 if [ "$ROLE" == "local" ]; then
-  if kubectl describe node $(hostname) | grep -q "Taints:.*node-role.kubernetes.io/master"; then
-    kubectl taint nodes --all node-role.kubernetes.io/master-
+  if kubectl describe node $(hostname) | grep -q "Taints:.*node-role.kubernetes.io/control-plane"; then
+    kubectl taint nodes --all node-role.kubernetes.io/control-plane-
   else
-    echo "No taint found for node-role.kubernetes.io/master, skipping removal."
+    echo "No taint found for node-role.kubernetes.io/control-plane, skipping removal."
   fi
 fi
 
@@ -302,13 +314,40 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Install MetalLB
+kubectl get namespace metallb-system || kubectl create namespace metallb-system
+kubectl label namespace metallb-system \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/audit=privileged \
+  pod-security.kubernetes.io/warn=privileged
+helm install metallb ./metallb -n metallb-system
+echo "Waiting for MetalLB pods to be ready..."
+kubectl rollout status deployment/metallb-controller -n metallb-system
+kubectl wait --for=condition=Available deployment --all -n metallb-system --timeout=300s
+kubectl apply -f "$SCRIPT_DIR/system/metallb-config.yaml"
+echo "MetalLB installation and configuration complete."
+
+# Install Contour Ingress controller (used for routing external traffic to services)
+if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
+  echo "Installing Contour Ingress controller..."
+  helm install contour ./contour -n projectcontour --create-namespace --set ingressController.service.type=LoadBalancer
+  if [ $? -ne 0 ]; then
+      echo "Error occurred during Contour installation."
+      exit 1
+  fi
+  kubectl rollout status deployment/contour-contour -n projectcontour
+  echo "Waiting for Envoy DaemonSet pods to be ready..."
+  kubectl wait --for=condition=Ready pod -l app.kubernetes.io/component=envoy -n projectcontour --timeout=300s
+  kubectl get all -n projectcontour  # Check after rollout
+fi
+
 # Create the RoleBinding for kube-scheduler
-#echo "Creating RoleBinding for kube-scheduler..."
-#kubectl create rolebinding -n kube-system extension-apiserver-authentication-reader --role=extension-apiserver-authentication-reader --serviceaccount=kube-system:kube-scheduler
-#if [ $? -ne 0 ]; then
-#    echo "Error occurred while creating the RoleBinding."
-#    exit 1
-#fi
+echo "Creating RoleBinding for kube-scheduler..."
+kubectl create rolebinding -n kube-system extension-apiserver-authentication-reader --role=extension-apiserver-authentication-reader --serviceaccount=kube-system:kube-scheduler
+if [ $? -ne 0 ]; then
+    echo "Error occurred while creating the RoleBinding."
+    exit 1
+fi
 
 #if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
 #  # Install Cert-Manager: used for managing TLS certificates for external services
@@ -326,77 +365,41 @@ fi
 #  fi
 #fi
 
-#if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
-#  # Install Contour
-#  echo "Installing Contour Ingress controller..."
-#  helm install contour bitnami/contour -n projectcontour --create-namespace
-#  if [ $? -ne 0 ]; then
-#      echo "Error occurred during Contour installation."
-#      exit 1
-#  fi
-#  kubectl get pods -n projectcontour
-#fi
+# Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
+if [ "$ROLE" == "local" ]; then
+  echo "Deploying Kubernetes Dashboard via LoadBalancer..."
 
-## Install Vespa CLI
-#echo "Installing Vespa CLI version $VESPA_VERSION..."
-#curl -LO $VESPA_DOWNLOAD_URL
-#if [ $? -ne 0 ]; then
-#    echo "Error occurred while downloading Vespa CLI."
-#    exit 1
-#fi
-#
-#tar -xvf vespa-cli_${VESPA_VERSION}_linux_amd64.tar.gz
-#mv vespa-cli_${VESPA_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
-#rm -rf vespa-cli_${VESPA_VERSION}_linux_amd64 vespa-cli_${VESPA_VERSION}_linux_amd64.tar.gz
-#vespa version || { echo "Vespa CLI installation failed"; exit 1; }
+  # Install Kubernetes Dashboard
+  echo "Installing Kubernetes Dashboard..."
+#  kubectl create namespace kubernetes-dashboard  # Ensure the kubernetes-dashboard namespace exists
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+  kubectl rollout status deployment/kubernetes-dashboard -n kubernetes-dashboard
+  kubectl apply -f "$SCRIPT_DIR/system/dashboard-service.yaml" # Apply Dashboard Service configuration
 
-# TODO: Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
+  # Wait for LoadBalancer IP assignment
+  echo "Waiting for LoadBalancer IP for Kubernetes Dashboard..."
+  while true; do
+    LB_IP=$(kubectl get svc kubernetes-dashboard-lb -n kubernetes-dashboard -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    if [[ -n "$LB_IP" ]]; then
+      echo "Kubernetes Dashboard is accessible at https://$LB_IP"
+      break
+    fi
+    echo "Still waiting for LoadBalancer IP..."
+    sleep 5
+  done
 
-#if [ "$ROLE" == "local" ]; then
-#  echo "Deploying Kubernetes Dashboard via LoadBalancer..."
-#
-#  # Install MetalLB
-#  echo "Installing MetalLB..."
-#  kubectl create namespace metallb-system  # Ensure the metallb-system namespace exists
-#  kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/main/config/manifests/metallb-native.yaml  # Install MetalLB
-#  kubectl get pods -n metallb-system  # Verify MetalLB components are running
-#
-#  # Apply the MetalLB config
-#  CONFIG_PATH="/home/stephen/PycharmProjects/place/system/metallb-config.yaml"
-#  if [ -f "$CONFIG_PATH" ]; then
-#    kubectl apply -f "$CONFIG_PATH"  # Apply the MetalLB config
-#    kubectl get configmap config -n metallb-system -o yaml  # Verify MetalLB config
-#  else
-#    echo "Error: $CONFIG_PATH not found. Please ensure the file exists."
-#    exit 1
-#  fi
-#
-#  # Install Kubernetes Dashboard
-#  kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-#
-#  # Create ServiceAccount and ClusterRoleBinding
-#  kubectl create serviceaccount dashboard-admin -n default
-#  kubectl create clusterrolebinding dashboard-admin-binding --clusterrole=cluster-admin --serviceaccount=default:dashboard-admin
-#
-#  # Get the Dashboard token
-#  TOKEN=$(kubectl -n default create token dashboard-admin)
-#  echo "Dashboard token: $TOKEN"
-#
-#  # Modify the dashboard service to use LoadBalancer type
-#  kubectl patch svc kubernetes-dashboard -n kubernetes-dashboard \
-#    -p '{"spec": {"type": "LoadBalancer"}}'
-#
-#  # Wait for the LoadBalancer to be provisioned
-#  echo "Waiting for LoadBalancer external IP to be assigned..."
-#  kubectl wait --for=condition=external-ip --timeout=300s svc/kubernetes-dashboard -n kubernetes-dashboard
-#
-#  # Get the External IP address of the LoadBalancer service
-#  EXTERNAL_IP=$(kubectl get svc kubernetes-dashboard -n kubernetes-dashboard -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-#
-#  # Echo the URL and token
-#  echo "Kubernetes Dashboard is available at: https://$EXTERNAL_IP"
-#  echo "Use the following token to log in: $TOKEN"
-#fi
+  # Create ServiceAccount and ClusterRoleBinding in the kubernetes-dashboard namespace
+  echo "Creating ServiceAccount for Dashboard access..."
+  kubectl create serviceaccount dashboard-admin -n kubernetes-dashboard
+  kubectl create clusterrolebinding dashboard-admin-binding --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin
+
+  # Get the Dashboard token
+  TOKEN=$(kubectl -n kubernetes-dashboard create token dashboard-admin)
+
+  # Echo the URL and token
+  echo "Kubernetes Dashboard is available at: https://$LB_IP"
+  echo "Use the following token to log in: $TOKEN"
+fi
 
 echo "Completed server configuration and deployment of Kubernetes components."
 
