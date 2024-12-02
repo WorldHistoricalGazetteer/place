@@ -394,11 +394,19 @@ if [ "$ROLE" == "local" ]; then
   kubectl create clusterrolebinding dashboard-admin-binding --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin
 
   # Get the Dashboard token
-  TOKEN=$(kubectl -n kubernetes-dashboard create token dashboard-admin)
+  TOKEN=$(kubectl -n kubernetes-dashboard create token dashboard-admin --duration=876600h) # Create a token with 100-year validity
+
+  # Add the credentials to the user kubeconfig files
+  USER_HOME="/home/$SUDO_USER"
+  USER_KUBE_CONFIG="$USER_HOME/.kube/config"
+  kubectl --kubeconfig="$USER_KUBE_CONFIG" config set-credentials "dashboard-admin" --token="$TOKEN"
+  kubectl --kubeconfig="$USER_KUBE_CONFIG" config set-context "dashboard-context" --cluster=$(kubectl --kubeconfig="$USER_KUBE_CONFIG" config view -o=jsonpath='{.current-context}') --user="dashboard-admin"
+  kubectl --kubeconfig="$USER_KUBE_CONFIG" config use-context "dashboard-context"
 
   # Echo the URL and token
   echo "Kubernetes Dashboard is available at: https://$LB_IP"
-  echo "Use the following token to log in: $TOKEN"
+  echo "Log in using either the config file at $USER_KUBE_CONFIG or the following token:"
+  echo "$TOKEN"
 fi
 
 echo "Completed server configuration and deployment of Kubernetes components."

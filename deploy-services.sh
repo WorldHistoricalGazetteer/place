@@ -22,9 +22,10 @@ fi
 
 SCRIPT_DIR=$(dirname "$0")
 
-## Remove any previous service installations, keeping persistent volumes
+## Remove any previous service installations
 #for dir in "$SCRIPT_DIR/django" "$SCRIPT_DIR/tileserver" "$SCRIPT_DIR/vespa"; do
-#  find "$dir" -type f -name "*.yaml" ! -name "*-pvc.yaml" -exec kubectl delete -f {} \; || true
+##  find "$dir" -type f -name "*.yaml" ! -name "*-pvc.yaml" -exec kubectl delete -f {} \; || true # Do not delete PVCs
+#  find "$dir" -type f -name "*.yaml" ! -name "*-pv.yaml" -exec kubectl delete -f {} \; || true # Do not delete PVs
 ##  find "$dir" -type f -name "*.yaml" -exec kubectl delete -f {} \; || true
 #done
 
@@ -35,7 +36,7 @@ if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
 fi
 
 # Deploy Vespa manifests
-echo "Deploying Vespa components..."
+#echo "Deploying Vespa components..."
 #kubectl apply -f "$SCRIPT_DIR/vespa/content-node-deployment.yaml"
 #kubectl apply -f "$SCRIPT_DIR/vespa/search-node-deployment.yaml"
 #if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
@@ -43,7 +44,7 @@ echo "Deploying Vespa components..."
 #  yq e "$YQ_TLS" "$SCRIPT_DIR/vespa/vespa-ingress.yaml" | kubectl apply -f -
 #fi
 
-if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
+#if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
 
 #  NAME                    URL
 #  bitnami                 https://charts.bitnami.com/bitnami
@@ -52,8 +53,8 @@ if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
 #  grafana                 https://grafana.github.io/helm-charts
 #  prometheus-community    https://prometheus-community.github.io/helm-charts
 
-  echo "Deploying monitoring components..."
-  # TODO: Configure all values.yaml files for monitoring components
+#  echo "Deploying monitoring components..."
+#  # TODO: Configure all values.yaml files for monitoring components
 
 #  Deploy Wordpress (for blog.whgazetteer.org)
 #  helm install wordpress bitnami/wordpress
@@ -71,7 +72,7 @@ if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
 #  Deploy Glitchtip
 #  helm install glitchtip glitchtip/glitchtip
 
-fi
+#fi
 
 # Print summary of all resources
 kubectl get all

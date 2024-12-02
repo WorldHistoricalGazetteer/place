@@ -8,7 +8,7 @@ data:
   hostname: "place.whgazetteer.org" # Temporary subdomain, pending switch to 'whgazetteer.org'
 
   # Django
-  image-version: "0.1.4"
+  image-version: "0.1.7"
 
   # Database
   db-user: "whgadmin"
@@ -16,16 +16,25 @@ data:
 
   # Postgres HBA - IP range defined by flannel (see flannel-config.yaml)
   pg-hba: |
+    # Local connections (IPv4 and IPv6)
     local   all             all                                  trust
-    host    all             all             10.244.0.0/16        trust
-    host    replication     all             10.244.0.0/16        trust
-    host    all             all             0.0.0.0/0            reject
+    host    all             all             127.0.0.1/32           trust   # IPv4 loopback
+    host    all             all             ::1/128                trust   # IPv6 loopback
+    
+    # Allow connections from the 10.244.0.0/16 range (Kubernetes network)
+    host    all             all             10.244.0.0/16          trust
+    host    replication     all             10.244.0.0/16          trust
+    
+    # Reject all other connections by default (optional but secure)
+    host    all             all             0.0.0.0/0              reject
+    
 
   # Extend PostgreSQL configuration to include pgBackRest settings
   postgresql.conf: |
     # Other PostgreSQL settings...
-    archive_mode = on
-    archive_command = 'pgbackrest --stanza=whgdb archive-push %p'
+    listen_addresses = '*'
+#    archive_mode = on
+#    archive_command = 'pgbackrest --stanza=whgdb archive-push %p'
 
 #  # pgBackRest configuration
 #  pgbackrest.conf: |

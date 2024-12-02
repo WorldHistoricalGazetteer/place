@@ -3,3 +3,8 @@ secret.yaml
 
 # Ignore PyCharm files
 .idea/
+
+# Ignore Django secret configuration
+whg-secrets.py
+ca-cert.pem
+local_settings.py

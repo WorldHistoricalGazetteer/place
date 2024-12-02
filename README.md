@@ -147,17 +147,13 @@ git clone https://github.com/WorldHistoricalGazetteer/place.git
 - The required networking parameters should persist across reboots to ensure consistent network behavior.
 
 ```bash
-# Load the br_netfilter module
+# Load br_netfilter module and ensure that it reloads on boot
 sudo modprobe br_netfilter
-echo "br_netfilter" | sudo tee -a /etc/modules
+echo "br_netfilter" | sudo tee /etc/modules-load.d/br_netfilter.conf
 
-# Enable IPv4 packet forwarding
-cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+# Enable IPv4 packet forwarding and bridge-nf-call-iptables
+sudo tee /etc/sysctl.d/k8s.conf <<EOF
 net.ipv4.ip_forward = 1
-EOF
-
-# Enable the bridge-nf-call-iptables and bridge-nf-call-ip6tables
-cat <<EOF | sudo tee -a /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
@@ -231,6 +227,25 @@ described [here](https://github.com/WorldHistoricalGazetteer/whg3/blob/staging/d
 #### Clone most-recent backup of the WHG Database into a local Persistent Volume
 ```bash
 sudo chmod +x ./*.sh && sudo ./clone-database.sh
+```
+
+#### Create storage directories
+
+The script above will create the necessary directory for the database. You will also need to create directories for other services:
+
+```bash
+sudo mkdir -p /data/k8s/redis
+sudo chown -R 1000:1000 /data/k8s/redis
+sudo chmod -R 755 /data/k8s/redis
+sudo mkdir -p /data/k8s/django-app
+sudo chown -R 1000:1000 /data/k8s/django-app
+sudo chmod -R 755 /data/k8s/django-app
+sudo mkdir -p /data/k8s/django-static
+sudo chown -R 1000:1000 /data/k8s/django-static
+sudo chmod -R 755 /data/k8s/django-static
+sudo mkdir -p /data/k8s/django-media
+sudo chown -R 1000:1000 /data/k8s/django-media
+sudo chmod -R 755 /data/k8s/django-media
 ```
 
 ### Deploy the Application

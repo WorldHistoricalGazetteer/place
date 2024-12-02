@@ -124,18 +124,25 @@ spec:
 #            - name: pgbackrest-backups
 #              mountPath: /var/lib/pgbackrest/backups
           livenessProbe:
-            tcpSocket:
-              port: 5432
+            exec:
+              command:
+                - pg_isready
             initialDelaySeconds: 30
-            periodSeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
           readinessProbe:
             exec:
               command:
                 - pg_isready
-                - -U
-                - postgres
-            initialDelaySeconds: 5
+            initialDelaySeconds: 30
             periodSeconds: 10
+          startupProbe:
+            exec:
+              command:
+                - pg_isready
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 15
       volumes:
         - name: postgres-data
           persistentVolumeClaim:

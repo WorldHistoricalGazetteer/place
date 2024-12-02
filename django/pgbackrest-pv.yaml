@@ -11,12 +11,12 @@ spec:
   storageClassName: django-pgbackrest
   local:
     path: /data/k8s/pgbackrest
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - localhost
-                - desktop
+#  nodeAffinity:
+#    required:
+#      nodeSelectorTerms:
+#        - matchExpressions:
+#            - key: kubernetes.io/hostname
+#              operator: In
+#              values:
+#                - localhost
+#                - desktop

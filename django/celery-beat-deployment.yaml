@@ -31,7 +31,7 @@ spec:
                 name: whg-secret
       containers:
         - name: celery-beat
-          image: worldhistoricalgazetteer/web:${IMAGE_VERSION}"
+          image: worldhistoricalgazetteer/web:latest
           command: ["/bin/bash", "-c", "rm -f /app/celerybeat.pid && celery -A whg beat --loglevel=debug --scheduler django_celery_beat.schedulers:DatabaseScheduler"]
           env:
             - name: DJANGO_SETTINGS_MODULE

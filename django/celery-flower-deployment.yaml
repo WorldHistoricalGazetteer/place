@@ -31,7 +31,7 @@ spec:
                 name: whg-secret
       containers:
         - name: celery-flower
-          image: worldhistoricalgazetteer/web:${IMAGE_VERSION}
+          image: worldhistoricalgazetteer/web:latest
           command: ["celery", "-A", "whg", "flower", "--broker=redis://redis:6379/0"]
           env:
             - name: DJANGO_SETTINGS_MODULE
