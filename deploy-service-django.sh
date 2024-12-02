@@ -25,14 +25,14 @@ SCRIPT_DIR=$(dirname "$0")
 IMAGE_VERSION=$(yq eval '.data["image-version"]' "$SCRIPT_DIR/configmap.yaml")
 DB_NAME=$(yq eval '.data["db-name"]' "$SCRIPT_DIR/configmap.yaml")
 DB_USER=$(yq eval '.data["db-user"]' "$SCRIPT_DIR/configmap.yaml")
-DB_PASSWORD_BASE64=$(yq eval '.data["db-password"]' "$SCRIPT_DIR/secret.yaml")
+DB_PASSWORD_BASE64=$(yq eval '.data["db-password"]' "$SCRIPT_DIR/whg-private/secret.yaml")
 DB_PASSWORD=$(echo "$DB_PASSWORD_BASE64" | base64 --decode)
 DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@postgres:5432/$DB_NAME"
 DATABASE_URL_BASE64=$(echo -n "$DATABASE_URL" | base64)
 
 # Deploy Secrets and ConfigMap
 echo "Deploying Secrets..."
-yq eval ".data.\"db-url\" = \"$DATABASE_URL_BASE64\"" "$SCRIPT_DIR/secret.yaml" | kubectl apply -f -
+yq eval ".data.\"db-url\" = \"$DATABASE_URL_BASE64\"" "$SCRIPT_DIR/whg-private/secret.yaml" | kubectl apply -f -
 echo "Deploying ConfigMap..."
 kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 
@@ -69,21 +69,21 @@ yq e ".spec.template.spec.volumes += [{
 .spec.template.spec.volumes += [{
   \"name\": \"whg-env-template\",
   \"hostPath\": {
-    \"path\": \"$SCRIPT_DIR/env_template.py\",
+    \"path\": \"$SCRIPT_DIR/whg-private/env_template.py\",
     \"type\": \"File\"
   }
 }] |
 .spec.template.spec.volumes += [{
   \"name\": \"whg-local-settings\",
   \"hostPath\": {
-    \"path\": \"$SCRIPT_DIR/local_settings.py\",
+    \"path\": \"$SCRIPT_DIR/whg-private/local_settings.py\",
     \"type\": \"File\"
   }
 }] |
 .spec.template.spec.volumes += [{
   \"name\": \"whg-ca-cert\",
   \"hostPath\": {
-    \"path\": \"$SCRIPT_DIR/ca-cert.pem\",
+    \"path\": \"$SCRIPT_DIR/whg-private/ca-cert.pem\",
     \"type\": \"File\"
   }
 }] |
@@ -104,23 +104,23 @@ kubectl rollout status deployment/django -n default --timeout=600s
 
 # Deploy Celery components
 echo "Deploying Celery components..."
-yq e ".spec.template.spec.volumes += [{
+YQ_CONFIGURATION=".spec.template.spec.volumes += [{
   \"name\": \"whg-local-settings\",
   \"hostPath\": {
-    \"path\": \"$SCRIPT_DIR/local_settings.py\",
+    \"path\": \"$SCRIPT_DIR/whg-private/local_settings.py\",
     \"type\": \"File\"
   }
 }] |
 .spec.template.spec.volumes += [{
   \"name\": \"whg-ca-cert\",
   \"hostPath\": {
-    \"path\": \"$SCRIPT_DIR/ca-cert.pem\",
+    \"path\": \"$SCRIPT_DIR/whg-private/ca-cert.pem\",
     \"type\": \"File\"
   }
-}] |
-.spec.template.spec.containers[0].image |= sub(\"web:latest\", \"web:$IMAGE_VERSION\")" "$SCRIPT_DIR/django/celery-worker-deployment.yaml" | kubectl apply -f -
-#yq e ".spec.template.spec.containers[0].image |= sub(\"web:latest\", \"web:$IMAGE_VERSION\")" "$SCRIPT_DIR/django/celery-beat-deployment.yaml" | kubectl apply -f -
-#yq e ".spec.template.spec.containers[0].image |= sub(\"web:latest\", \"web:$IMAGE_VERSION\")" "$SCRIPT_DIR/django/celery-flower-deployment.yaml" | kubectl apply -f -
+}] | .spec.template.spec.containers[0].image |= sub(\"web:latest\", \"web:$IMAGE_VERSION\")"
+yq e "$YQ_CONFIGURATION" "$SCRIPT_DIR/django/celery-worker-deployment.yaml" | kubectl apply -f -
+yq e "$YQ_CONFIGURATION" "$SCRIPT_DIR/django/celery-beat-deployment.yaml" | kubectl apply -f -
+yq e "$YQ_CONFIGURATION" "$SCRIPT_DIR/django/celery-flower-deployment.yaml" | kubectl apply -f -
 
 ## Deploy Webpack
 #echo "Deploying Webpack..."

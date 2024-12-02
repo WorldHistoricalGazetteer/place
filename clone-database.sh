@@ -1,12 +1,14 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Define variables
 REMOTE_USER="whgadmin"
 REMOTE_HOST="144.126.204.70"
 REMOTE_BACKUP_DIR="/home/whgadmin/backup/whgazetteer-org"
 LOCAL_DATABASE_DIR="/data/k8s/postgres"
 LOCAL_DATABASE_BACKUP_DIR="/data/k8s/pgbackrest"
-SSH_KEY="/home/stephen/.ssh/id_rsa_whg"
+SSH_KEY="$SCRIPT_DIR/keys/id_rsa_whg"
 
 # Prepare the local directories
 sudo mkdir -p "$LOCAL_DATABASE_DIR"

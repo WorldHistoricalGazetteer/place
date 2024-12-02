@@ -17,18 +17,9 @@ spec:
         app: django
         component: celery-beat
     spec:
-      initContainers:
-        - name: create-user
-          image: busybox:1.35.0-uclibc
-          command:
-            - "/bin/sh"
-            - "-c"
-            - |
-              adduser -D whgadmin
-              echo "whgadmin:$user-password" | chpasswd
-          envFrom:
-            - secretRef:
-                name: whg-secret
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
       containers:
         - name: celery-beat
           image: worldhistoricalgazetteer/web:latest
@@ -36,11 +27,33 @@ spec:
           env:
             - name: DJANGO_SETTINGS_MODULE
               value: "whg.settings"
-            - name: IMAGE_VERSION
+            - name: DB_USER
               valueFrom:
                 configMapKeyRef:
                   name: whg-config
-                  key: image-version
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: whg-secret
+                  key: db-password
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: whg-config
+                  key: db-name
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: whg-secret
+                  key: db-url
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: whg-secret
+                  key: secret-key
           resources:
             limits:
               memory: "256Mi"
@@ -51,14 +64,67 @@ spec:
           volumeMounts:
             - name: shared-volume
               mountPath: /shared-data
-          readinessProbe: # Wait until redis is available
+            - name: app
+              mountPath: /app
+            - name: static-files
+              mountPath: /app/static
+            - name: media-files
+              mountPath: /app/media
+            - name: config-volume
+              mountPath: /app/config/configMap
+              readOnly: true
+            - name: secret-volume
+              mountPath: /app/config/secret
+              readOnly: true
+            - name: whg-local-settings
+              mountPath: /app/whg/local_settings.py
+            - name: whg-ca-cert
+              mountPath: /app/whg/authorisation/ca-cert.pem
+          livenessProbe:
             exec:
               command:
-                - "sh"
-                - "-c"
-                - "nc -z redis 6379"
+                - sh
+                - -c
+                - pgrep -f "celery beat"
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pgrep -f "celery beat"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe: # Wait until celery worker is available
+            exec:
+              command:
+                - sh
+                - -c
+                - pgrep -f "celery worker"
             initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 5
       volumes:
         - name: shared-volume
           emptyDir: {}
+        - name: app
+          persistentVolumeClaim:
+            claimName: django-app-pvc
+        - name: static-files
+          persistentVolumeClaim:
+            claimName: django-static-pvc
+        - name: media-files
+          persistentVolumeClaim:
+            claimName: django-media-pvc
+        - name: config-volume
+          configMap:
+            name: whg-config
+        - name: secret-volume
+          secret:
+            secretName: whg-secret

@@ -125,10 +125,13 @@ To deploy the application with these configurations to a remote server, you will
 - A server running Ubuntu 20.04 LTS
 - The server's IP address
 - A user with sudo privileges
-- SSH access
-- A `secret.yaml` file containing the necessary credentials (contact the WHG team for this), which should be placed in
-  the server's
-  home directory
+- A set of private files containing the necessary credentials for the application. These should be placed in a directory
+  named `whg-private` in the project root directory. The files include:
+  - ca-cert.pem (for Kubernetes)
+  - env_template.py (for Django settings)
+  - id_rsa_whg (for SSH access to original WHG server)
+  - local_settings.py (for Django settings)
+  - secret.yaml (for Kubernetes secrets)
 
 Once you have these, follow these steps:
 
@@ -225,27 +228,18 @@ first set up SSH keys to connect to the original WHG server. Cloning can be achi
 described [here](https://github.com/WorldHistoricalGazetteer/whg3/blob/staging/developer/database-management.md).
 
 #### Clone most-recent backup of the WHG Database into a local Persistent Volume
+
 ```bash
 sudo chmod +x ./*.sh && sudo ./clone-database.sh
 ```
 
 #### Create storage directories
 
-The script above will create the necessary directory for the database. You will also need to create directories for other services:
+The script above will create the necessary directory for the database. You will also need to create directories for
+other services, and populate the static and media files by cloning them from the original WHG server:
 
 ```bash
-sudo mkdir -p /data/k8s/redis
-sudo chown -R 1000:1000 /data/k8s/redis
-sudo chmod -R 755 /data/k8s/redis
-sudo mkdir -p /data/k8s/django-app
-sudo chown -R 1000:1000 /data/k8s/django-app
-sudo chmod -R 755 /data/k8s/django-app
-sudo mkdir -p /data/k8s/django-static
-sudo chown -R 1000:1000 /data/k8s/django-static
-sudo chmod -R 755 /data/k8s/django-static
-sudo mkdir -p /data/k8s/django-media
-sudo chown -R 1000:1000 /data/k8s/django-media
-sudo chmod -R 755 /data/k8s/django-media
+sudo chmod +x ./*.sh && sudo ./clone-static-media.sh
 ```
 
 ### Deploy the Application

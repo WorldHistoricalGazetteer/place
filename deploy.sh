@@ -411,4 +411,4 @@ fi
 
 echo "Completed server configuration and deployment of Kubernetes components."
 
-#bash "$SCRIPT_DIR/deploy-services.sh" "$ROLE"
+bash "$SCRIPT_DIR/deploy-services.sh" "$ROLE"
