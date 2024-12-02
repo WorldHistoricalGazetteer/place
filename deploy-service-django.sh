@@ -123,7 +123,9 @@ yq e "$YQ_CONFIGURATION" "$SCRIPT_DIR/django/celery-beat-deployment.yaml" | kube
 yq e "$YQ_CONFIGURATION" "$SCRIPT_DIR/django/celery-flower-deployment.yaml" | kubectl apply -f -
 
 ## Deploy Webpack
-#echo "Deploying Webpack..."
-#kubectl apply -f "$SCRIPT_DIR/django/webpack-config.yaml"
-#kubectl apply -f "$SCRIPT_DIR/django/webpack-deployment.yaml"
-#kubectl apply -f "$SCRIPT_DIR/django/webpack-service.yaml"
+if [ "$ROLE" == "local" ]; then
+  echo "Deploying Webpack..."
+  kubectl apply -f "$SCRIPT_DIR/django/webpack-pv-pvc.yaml"
+  kubectl apply -f "$SCRIPT_DIR/django/webpack-config.yaml"
+  kubectl apply -f "$SCRIPT_DIR/django/webpack-deployment.yaml"
+fi

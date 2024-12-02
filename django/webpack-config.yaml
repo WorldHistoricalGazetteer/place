@@ -95,7 +95,7 @@ data:
       },
       output: {
         filename: '[name].bundle.js',
-        path: path.resolve(__dirname, 'static/webpack')
+        path: path.resolve('/app/static/webpack')
       },
       module: {
         rules: [
