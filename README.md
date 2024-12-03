@@ -269,6 +269,8 @@ sudo chmod +x ./*.sh && sudo ./deploy.sh worker "<kubeadm-join-command>"
 sudo chmod +x ./*.sh && sudo ./deploy.sh local
 ```
 
+Local deployments can be accessed in a browser at <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>.
+
 ### Re-deploy Services
 
 To re-deploy services after making changes to their configuration files, run the `deploy-services.sh` script:

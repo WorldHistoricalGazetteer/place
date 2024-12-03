@@ -86,7 +86,7 @@ spec:
                 - sh
                 - -c
                 - pgrep -f "celery flower"
-            initialDelaySeconds: 10
+            initialDelaySeconds: 60
             periodSeconds: 20
             timeoutSeconds: 5
           readinessProbe:

@@ -91,12 +91,13 @@ yq e ".spec.template.spec.volumes += [{
 .spec.template.spec.initContainers[0].image |= sub(\"web:latest\", \"web:$IMAGE_VERSION\") |
 .spec.template.spec.initContainers[1].image |= sub(\"web:latest\", \"web:$IMAGE_VERSION\")" \
   "$SCRIPT_DIR/django/django-deployment.yaml" | kubectl apply -f -
+kubectl apply -f "$SCRIPT_DIR/django/django-service.yaml"
 if [ "$ROLE" == "local" ]; then
-  yq e '.spec.type = "NodePort" | .spec.ports[0].port = 80 | .spec.ports[0].nodePort = 32123' "$SCRIPT_DIR/django/django-service.yaml" | kubectl apply -f -
+  kubectl apply -f "$SCRIPT_DIR/django/django-ingress-local.yaml" # Serve on localhost
+  kubectl port-forward svc/django-service 8000:8000 & # Run in background
 else
-  kubectl apply -f "$SCRIPT_DIR/django/django-service.yaml"
+  yq e "$YQ_TLS" "$SCRIPT_DIR/django/django-ingress.yaml" | kubectl apply -f - # Remove cert-manager and tls section for worker nodes
 fi
-yq e "$YQ_TLS" "$SCRIPT_DIR/django/django-ingress.yaml" | kubectl apply -f -
 
 # Wait for Django deployment to complete
 echo "Waiting for Django deployment to complete..."

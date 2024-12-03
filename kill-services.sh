@@ -103,6 +103,31 @@ clean_namespaces() {
   fi
 }
 
+# Function to kill kubectl port-forward processes with retry
+kill_port_forward_processes() {
+  echo "Killing any running kubectl port-forward processes..."
+
+  # Loop for multiple attempts if new processes spawn
+  for attempt in {1..5}; do
+    pids=$(sudo pgrep -f "kubectl port-forward")
+    if [ -n "$pids" ]; then
+      echo "Found running kubectl port-forward processes with PIDs: $pids"
+      for pid in $pids; do
+        if sudo kill "$pid"; then
+          echo "Successfully killed process $pid"
+        else
+          echo "Failed to kill process $pid. Trying SIGKILL..."
+          sudo kill -9 "$pid" && echo "Successfully killed process $pid with SIGKILL"
+        fi
+      done
+    else
+      echo "No kubectl port-forward processes found."
+      break
+    fi
+    sleep 1  # Wait before retrying
+  done
+}
+
 # Execute the cleanup functions
 clean_pvcs
 clean_pvs
@@ -115,5 +140,6 @@ clean_jobs
 clean_cronjobs
 # Uncomment if you want to delete namespaces too
 # clean_namespaces
+kill_port_forward_processes
 
 echo "Cleanup completed."
