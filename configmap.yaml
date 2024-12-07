@@ -17,7 +17,7 @@ data:
   # Postgres HBA - IP range defined by flannel (see flannel-config.yaml)
   pg-hba: |
     # Local connections (IPv4 and IPv6)
-    local   all             all                                  trust
+    local   all             all                                    trust
     host    all             all             127.0.0.1/32           trust   # IPv4 loopback
     host    all             all             ::1/128                trust   # IPv6 loopback
     
@@ -29,55 +29,24 @@ data:
     host    all             all             0.0.0.0/0              reject
     
 
-  # Extend PostgreSQL configuration to include pgBackRest settings
+  # Extend PostgreSQL configuration
   postgresql.conf: |
-    # Other PostgreSQL settings...
     listen_addresses = '*'
-#    archive_mode = on
-#    archive_command = 'pgbackrest --stanza=whgdb archive-push %p'
+    archive_command = 'pgbackrest --stanza=whgdb archive-push %p'
+    archive_mode = on
+    max_wal_senders = 3
+    wal_level = replica
 
-#  # pgBackRest configuration
-#  pgbackrest.conf: |
-#    [global]
-#    repo1-path=/var/lib/pgbackrest/backups # This is the mounted path of the pgbackrest-pv
-#    repo1-retention-full=2
-#    log-level-console=info
-#
-#    [global:archive-push]
-#    compress-level=3
-#
-#    [whgdb] # This matches the stanza name used in the `pgbackrest-stanza-init.yaml` Job below
-#    pg1-path=/var/lib/postgresql/data # This is the mounted path of the postgres-pv
-#
-#  pgbackrest-stanza-init.yaml: |
-#    apiVersion: batch/v1
-#    kind: Job
-#    metadata:
-#      name: pgbackrest-stanza-init
-#    spec:
-#      template:
-#        spec:
-#          containers:
-#            - name: pgbackrest
-#              image: pgbackrest/pgbackrest:latest
-#              command:
-#                - pgbackrest
-#                - --stanza=whgdb
-#                - stanza-create
-#              volumeMounts:
-#                - name: pgbackrest-config
-#                  mountPath: /etc/pgbackrest
-#                  subPath: pgbackrest.conf
-#                - name: pgbackrest-config
-#                  mountPath: /etc/pgbackrest/pgbackrest-stanza-init.yaml
-#                  subPath: pgbackrest-stanza-init.yaml
-#                - name: postgres-data
-#                  mountPath: /var/lib/postgresql/data
-#          restartPolicy: Never
-#          volumes:
-#            - name: pgbackrest-config
-#              configMap:
-#                name: whg-config
-#            - name: postgres-data
-#              persistentVolumeClaim:
-#                claimName: postgres-pvc
+
+  # pgBackRest configuration
+  pgbackrest.conf: |
+    [whgdb]
+    pg1-path=/var/lib/postgresql/data
+    
+    [global]
+    repo1-path=/var/lib/pgbackrest/backups
+    repo1-retention-full=2
+    repo1-retention-diff=5
+
+    [global:archive-push]
+    compress-level=3

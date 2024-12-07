@@ -1,38 +1,3 @@
-## Service Account definition
-#apiVersion: v1
-#kind: ServiceAccount
-#metadata:
-#  name: postgres-service-account
-#  namespace: default
-#
-#---
-## Role or ClusterRole definition
-#apiVersion: rbac.authorization.k8s.io/v1
-#kind: ClusterRole
-#metadata:
-#  name: postgres-job-creator
-#rules:
-#  - apiGroups: [""]
-#    resources: ["jobs"]
-#    verbs: ["create", "list"]
-#
-#---
-## ClusterRoleBinding to link the ServiceAccount with the ClusterRole
-#apiVersion: rbac.authorization.k8s.io/v1
-#kind: ClusterRoleBinding
-#metadata:
-#  name: postgres-job-creator-binding
-#subjects:
-#  - kind: ServiceAccount
-#    name: postgres-service-account
-#    namespace: default
-#roleRef:
-#  kind: ClusterRole
-#  name: postgres-job-creator
-#  apiGroup: rbac.authorization.k8s.io
-
-#---
-# PostgreSQL Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -49,7 +14,6 @@ spec:
       labels:
         app: postgres
     spec:
-#      serviceAccountName: postgres-service-account
       tolerations:
         - key: "node-role.kubernetes.io/control-plane"
           operator: "Exists"
@@ -63,20 +27,26 @@ spec:
             - sh
             - -c
             - |
-              chown -R 999:999 /var/lib/postgresql/data && chmod 0700 /var/lib/postgresql/data
+              chown -R 999:999 /var/lib/postgresql/data && \
+              chmod 0700 /var/lib/postgresql/data
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
       containers:
         - name: postgres
-#          image: worldhistoricalgazetteer/postgis-pgbackrest:15-3.4
-          image: postgis/postgis:15-3.4
+          image: worldhistoricalgazetteer/postgis-pgbackrest:15-3.4
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
           securityContext:
             runAsUser: 999
             runAsGroup: 999
-          command: [ "postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
+          command:
+            - sh
+            - -c
+            - |
+              exec postgres -c hba_file=/etc/postgresql/pg_hba.conf \
+                            -c config_file=/etc/postgresql/postgresql.conf
           env:
             - name: POSTGRES_DB
               valueFrom:
@@ -93,36 +63,34 @@ spec:
                 secretKeyRef:
                   name: whg-secret
                   key: db-password
-#          lifecycle:
-#            postStart:
-#                exec:
-#                    command:
-#                      - "/bin/sh"
-#                      - "-c"
-#                      - |
-#                        # Initialize pgBackRest stanza only once
-#                        if ! kubectl get job pgbackrest-stanza-init; then
-#                          kubectl create -f /etc/pgbackrest/pgbackrest-stanza-init.yaml
-#                        else
-#                          echo "Stanza already initialized."
-#                        fi
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
             - name: pg-hba-config
               mountPath: /etc/postgresql/pg_hba.conf
               subPath: pg-hba
-#            - name: pgbackrest-config
-#              mountPath: /etc/pgbackrest/pgbackrest.conf
-#              subPath: pgbackrest.conf
             - name: postgresql-config
               mountPath: /etc/postgresql/postgresql.conf
               subPath: postgresql.conf
-#            - name: pgbackrest-yaml
-#              mountPath: /etc/pgbackrest/pgbackrest-stanza-init.yaml
-#              subPath: pgbackrest-stanza-init.yaml
-#            - name: pgbackrest-backups
-#              mountPath: /var/lib/pgbackrest/backups
+            - name: pgbackrest-repo
+              mountPath: /var/lib/pgbackrest/backups
+            - name: pgbackrest-config
+              mountPath: /etc/pgbackrest/pgbackrest.conf
+              subPath: pgbackrest.conf
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    # Wait until PostgreSQL is fully ready
+                    until pg_isready -h localhost -U postgres; do
+                      echo "Waiting for PostgreSQL to be ready..."
+                      sleep 2
+                    done
+                    # Initialize the pgBackRest stanza
+                    pgbackrest --stanza=whgdb stanza-create
           livenessProbe:
             exec:
               command:
@@ -147,18 +115,15 @@ spec:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-pvc
+        - name: pgbackrest-repo
+          persistentVolumeClaim:
+            claimName: pgbackrest-pvc
         - name: pg-hba-config
           configMap:
             name: whg-config
         - name: postgresql-config
           configMap:
             name: whg-config
-#        - name: pgbackrest-config
-#          configMap:
-#            name: whg-config
-#        - name: pgbackrest-yaml
-#          configMap:
-#            name: whg-config
-#        - name: pgbackrest-backups
-#          persistentVolumeClaim:
-#            claimName: pgbackrest-pvc
+        - name: pgbackrest-config
+          configMap:
+            name: whg-config

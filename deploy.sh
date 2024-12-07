@@ -67,7 +67,7 @@ for PKG in "${REQUIRED_PKGS[@]}"; do
     # Check if the package is installed using dpkg-query
     if ! dpkg-query -W -f='${Status}' $PKG 2>/dev/null | grep -q "install ok installed"; then
         echo "Installing $PKG..."
-        if ! apt-get install -qy $PKG; then
+        if ! apt-get install -qy $PKG --allow-downgrades; then
             echo "Error: Failed to install $PKG. Exiting."
             exit 1
         fi
@@ -264,7 +264,7 @@ kubectl rollout status daemonset/kube-flannel-ds -n kube-system
 
 # Allow local node to run pods
 if [ "$ROLE" == "local" ]; then
-  if kubectl describe node $(hostname) | grep -q "Taints:.*node-role.kubernetes.io/control-plane"; then
+  if kubectl get nodes -o jsonpath='{.items[*].spec.taints[?(@.key=="node-role.kubernetes.io/control-plane")].key}' | grep -q "control-plane"; then
     kubectl taint nodes --all node-role.kubernetes.io/control-plane-
   else
     echo "No taint found for node-role.kubernetes.io/control-plane, skipping removal."
@@ -314,17 +314,53 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Install Cert-Manager: used for managing TLS certificates for external services and pgbackrest; also required for MetalLB and Contour
+echo "Installing Cert-Manager..."
+helm install cert-manager ./cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
+kubectl wait --for=condition=Available deployment --all -n cert-manager --timeout=120s
+if [ $? -ne 0 ]; then
+    echo "Error: Cert-Manager installation failed."
+    exit 1
+fi
+kubectl apply -f "$SCRIPT_DIR/system/certificate-selfsigned.yaml"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to create Selfsigned ClusterIssuer."
+    exit 1
+fi
+
 # Install MetalLB
-kubectl get namespace metallb-system || kubectl create namespace metallb-system
+echo "Checking if MetalLB namespace exists..."
+if ! kubectl get namespace metallb-system > /dev/null 2>&1; then
+  echo "Creating MetalLB namespace..."
+  kubectl create namespace metallb-system
+fi
+echo "Labeling MetalLB namespace for privileged security context..."
 kubectl label namespace metallb-system \
   pod-security.kubernetes.io/enforce=privileged \
   pod-security.kubernetes.io/audit=privileged \
-  pod-security.kubernetes.io/warn=privileged
-helm install metallb ./metallb -n metallb-system
+  pod-security.kubernetes.io/warn=privileged || {
+    echo "Failed to label MetalLB namespace. Exiting." >&2
+    exit 1
+  }
+echo "Installing MetalLB with Helm..."
+helm install metallb ./metallb -n metallb-system || {
+  echo "Failed to install MetalLB using Helm. Exiting." >&2
+  exit 1
+}
 echo "Waiting for MetalLB pods to be ready..."
-kubectl rollout status deployment/metallb-controller -n metallb-system
-kubectl wait --for=condition=Available deployment --all -n metallb-system --timeout=300s
-kubectl apply -f "$SCRIPT_DIR/system/metallb-config.yaml"
+kubectl rollout status deployment/metallb-controller -n metallb-system || {
+  echo "MetalLB controller rollout failed. Exiting." >&2
+  exit 1
+}
+kubectl wait --for=condition=Available deployment --all -n metallb-system --timeout=300s || {
+  echo "MetalLB pods did not become available within the timeout period. Exiting." >&2
+  exit 1
+}
+echo "Applying MetalLB configuration..."
+if ! kubectl apply -f "$SCRIPT_DIR/system/metallb-config.yaml"; then
+  echo "Failed to apply MetalLB configuration. Exiting." >&2
+  exit 1
+fi
 echo "MetalLB installation and configuration complete."
 
 # Install Contour Ingress controller (used for routing external traffic to services)
@@ -348,22 +384,6 @@ if [ $? -ne 0 ]; then
     echo "Error occurred while creating the RoleBinding."
     exit 1
 fi
-
-#if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
-#  # Install Cert-Manager: used for managing TLS certificates for external services
-#  echo "Installing Cert-Manager..."
-#  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-#  kubectl wait --for=condition=Available deployment --all -n cert-manager --timeout=120s
-#  if [ $? -ne 0 ]; then
-#      echo "Error: Cert-Manager installation failed."
-#      exit 1
-#  fi
-#  kubectl apply -f "$SCRIPT_DIR/system/certificate-config.yaml"
-#  if [ $? -ne 0 ]; then
-#      echo "Error: Failed to create ClusterIssuer."
-#      exit 1
-#  fi
-#fi
 
 # Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
 if [ "$ROLE" == "local" ]; then

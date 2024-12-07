@@ -41,12 +41,10 @@ echo "Deploying PostgreSQL..."
 kubectl apply -f "$SCRIPT_DIR/django/postgres-storage-class.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-pv.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-pvc.yaml"
-#kubectl apply -f "$SCRIPT_DIR/django/pgbackrest-storage-class.yaml"
-#kubectl apply -f "$SCRIPT_DIR/django/pgbackrest-pv.yaml"
-#kubectl apply -f "$SCRIPT_DIR/django/pgbackrest-pvc.yaml"
+kubectl apply -f "$SCRIPT_DIR/pgbackrest/pgbackrest-pv-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/postgres-deployment.yaml"
-#yq e "$YQ_TOLERATIONS" "$SCRIPT_DIR/django/postgres-deployment.yaml" | kubectl apply -f -
 kubectl apply -f "$SCRIPT_DIR/django/postgres-service.yaml"
+kubectl apply -f "$SCRIPT_DIR/pgbackrest/pgbackrest-cron.yaml"
 
 ## Deploy Redis
 echo "Deploying Redis..."
