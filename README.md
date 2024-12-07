@@ -54,7 +54,7 @@ This repository includes configuration files for deploying the following compone
   > An open-source relational database system, storing the historical geographic data and other application-related
   information.
 
-- [ ] **pgBackRest**
+- [x] **pgBackRest**
 
   > A backup and restore tool for PostgreSQL, providing efficient and reliable backups of the WHG database.
 
