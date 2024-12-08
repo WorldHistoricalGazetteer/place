@@ -26,7 +26,6 @@ echo "Deploying Tile services..."
 
 # Deploy TileServer-GL
 kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-pv-pvc.yaml"
-kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-config.yaml"
 yq e '.spec.template.spec.volumes += [{"name": "assets", "hostPath": {"path": "'$SCRIPT_DIR'/tileserver/assets/", "type": "Directory"}}]' "$SCRIPT_DIR/tileserver/tileserver-gl-deployment.yaml" | kubectl apply -f -
 if [ "$ROLE" == "local" ]; then
   kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-service-local.yaml" # Serve on http://localhost:30080
