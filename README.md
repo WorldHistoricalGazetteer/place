@@ -270,6 +270,7 @@ sudo chmod +x ./*.sh && sudo ./deploy.sh local
 ```
 
 Local deployments can be accessed in a browser at <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>.
+Local map tileserver can be accessed in a browser at <a href="http://localhost:30080/" target="_blank">http://localhost:30080/</a>.
 
 ### Re-deploy Services
 
