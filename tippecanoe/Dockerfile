@@ -1,25 +1,39 @@
-FROM node:16
+FROM ubuntu:22.04
 
-# Install Tippecanoe
+LABEL description="Tippecanoe and Tyler Too: incorporates additional dependencies for GIS data processing."
+
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    git \
     cmake \
-    wget \
-    libboost-all-dev \
+    libprotobuf-dev \
+    protobuf-compiler \
     libsqlite3-dev \
-    && wget https://github.com/mapbox/tippecanoe/releases/download/v2.16.0/tippecanoe-v2.16.0-x86_64-linux.tar.gz \
-    && tar -xvzf tippecanoe-v2.16.0-x86_64-linux.tar.gz \
-    && mv tippecanoe /usr/local/bin/ \
-    && rm -rf tippecanoe-v2.16.0-x86_64-linux.tar.gz
+    zlib1g-dev \
+    libcurl4-openssl-dev \
+    git \
+    wget \
+    curl \
+    make \
+    postgresql-client # Facilitates communication with the Django Postgres database \
+    gdal-bin # Facilitates GIS data processing \
+    python3 \
+    python3-pip \
+    jq \
+    netcat \
+    tee \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set up the Node application
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
-COPY . .
+# Clone Tippecanoe and build
+RUN git clone https://github.com/felt/tippecanoe.git /tippecanoe && \
+    cd /tippecanoe && \
+    make
 
-# Expose the application port
-EXPOSE 8080
+# Set working directory
+WORKDIR /tippecanoe
 
-CMD ["node", "index.js"]
+## In this directory, build the Docker image:
+#sudo systemctl restart docker
+#docker login
+#docker build -t worldhistoricalgazetteer/tippecanoe .
+#docker push worldhistoricalgazetteer/tippecanoe

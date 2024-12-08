@@ -8,6 +8,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 ## In this directory, build the Docker image:
+#sudo systemctl restart docker
 #docker login
 #docker build -t worldhistoricalgazetteer/postgis-pgbackrest:15-3.4 .
 #docker push worldhistoricalgazetteer/postgis-pgbackrest:15-3.4
