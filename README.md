@@ -77,9 +77,9 @@ This repository includes configuration files for deploying the following compone
 
   > A monitoring tool for Celery, providing insights into the status and performance of Celery workers and tasks.
 
-- [ ] **Tileserver-GL**
+- [X] **Tileserver-GL**
 
-  > A server used for serving vector map tiles, providing geographical visualisations for the WHG.
+  > A server used for serving vector and raster map tiles, providing geographical visualisations for the WHG.
 
 - [ ] **Tippecanoe**
 

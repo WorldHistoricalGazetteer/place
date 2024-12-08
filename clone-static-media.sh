@@ -8,6 +8,7 @@ REMOTE_HOST_TILER="134.209.177.234"
 REMOTE_MEDIA_DIR="/home/whgadmin/sites/whgazetteer-org/media"
 REMOTE_STATIC_DIR="/home/whgadmin/sites/whgazetteer-org/static"
 REMOTE_TILES_DIR="/srv/tileserver/tiles"
+REMOTE_TILES_CONFIG_DIR="/srv/tileserver/configs"
 SSH_KEY="$SCRIPT_DIR/whg-private/id_rsa_whg"
 SSH_KEY_TILER="$SCRIPT_DIR/whg-private/id_rsa"
 LOCAL_REDIS_DIR="/data/k8s/redis"
@@ -40,3 +41,19 @@ sudo -E rsync -avz -e "ssh -i $SSH_KEY" --rsync-path="sudo rsync" "$REMOTE_USER@
 sudo -E rsync -avz -e "ssh -i $SSH_KEY" --rsync-path="sudo rsync" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_STATIC_DIR/" "$LOCAL_STATIC_DIR"
 
 sudo rsync -avz -e "ssh -i $SSH_KEY_TILER" "$REMOTE_USER@$REMOTE_HOST_TILER:$REMOTE_TILES_DIR/" "$LOCAL_TILES_DIR"
+
+# If you use the following rsync, you will need to upgrade the config.json format from Tileserver GL Light to Tileserver GL
+# This means adding "serve_rendered": false to all of the vector style definitions, and changing the paths as follows:
+
+#        "paths": {
+#          "root": "../../",
+#          "fonts": "./assets/fonts",
+#          "sprites": "./assets/sprites",
+#          "icons": "./assets/icons",
+#          "styles": "./assets/styles",
+#          "mbtiles": "./tiles",
+#          "files": "./assets/files",
+#          "images": "./public/resources/images"
+#        }
+
+#sudo rsync -avz -e "ssh -i $SSH_KEY_TILER" "$REMOTE_USER@$REMOTE_HOST_TILER:$REMOTE_TILES_CONFIG_DIR/" "$LOCAL_TILES_DIR/configs"

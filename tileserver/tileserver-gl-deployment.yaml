@@ -22,16 +22,13 @@ spec:
           - "node"
           - "/usr/src/app/src/main.js"
           - "--config"
-          - "/usr/src/app/config/config.json"
+          - "/usr/src/app/tiles/configs/config.json"
         workingDir: /usr/src/app
         ports:
           - containerPort: 8080
         volumeMounts:
           - name: tiles
             mountPath: /usr/src/app/tiles
-          - name: config
-            mountPath: /usr/src/app/config
-            readOnly: true
           - name: assets
             mountPath: /usr/src/app/assets
             readOnly: true
@@ -58,9 +55,6 @@ spec:
         - name: tiles
           persistentVolumeClaim:
             claimName: tiles-pvc
-        - name: config
-          configMap:
-            name: tileserver-gl-config
         # Add the following dynamically to correctly identify the path to the assets directory
         # - name: assets
         #   hostPath:
