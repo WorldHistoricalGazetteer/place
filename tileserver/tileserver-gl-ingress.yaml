@@ -1,24 +1,24 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tileserver-gl-ingress
+  name: tileserver-ingress
   annotations:
-    networking.k8s.io/ingress.class: contour
     ingress.kubernetes.io/force-ssl-redirect: "true" # Redirect HTTP to HTTPS
-    cert-manager.io/cluster-issuer: letsencrypt-prod  # For automated TLS certificates using Cert-Manager
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # For automated TLS certificates using Cert-Manager
 spec:
   tls:
   - hosts:
-    - tileserver.whgazetteer.org
-    secretName: tileserver-tls-secret
+    - maptiles.whgazetteer.org # TEMPORARY PENDING SWITCH
+    secretName: tiles-tls-secret
+  ingressClassName: contour
   rules:
-    - host: tileserver.whgazetteer.org
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: tileserver-gl
-                port:
-                  number: 80
+  - host: maptiles.whgazetteer.org # TEMPORARY PENDING SWITCH
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tileserver-service
+            port:
+              number: 80 # Must match Tileserver service port

@@ -32,7 +32,7 @@ SCRIPT_DIR=$(dirname "$0")
 # Deploy Django and Tile services
 if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   bash "$SCRIPT_DIR/deploy-service-django.sh" "$ROLE"
-#  bash "$SCRIPT_DIR/deploy-service-tileserver.sh"
+  bash "$SCRIPT_DIR/deploy-service-tileserver.sh" "$ROLE"
 fi
 
 # Deploy Vespa manifests

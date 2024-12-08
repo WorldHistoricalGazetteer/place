@@ -1,0 +1,659 @@
+{
+  "version": 8,
+  "name": "WHG Basic Light",
+  "metadata": {
+  	"whg:backgroundcolour": "#c3ddec",
+    "mapbox:autocomposite": false,
+    "mapbox:type": "template",
+    "mapbox:groups": {
+      "783e123af81d2ad277f88278ff1f7c2f": {
+        "name": "State labels"
+      },
+      "1444849258897.3083": {
+        "name": "Marine labels",
+        "collapsed": true
+      },
+      "1444849242106.713": {
+        "name": "Country labels",
+        "collapsed": false
+      },
+      "1444849382550.77": {
+        "name": "Water",
+        "collapsed": false
+      },
+      "1444849345966.4436": {
+        "name": "Roads",
+        "collapsed": false
+      },
+      "1444849307123.581": {
+        "name": "Admin  lines",
+        "collapsed": false
+      },
+      "1444849272561.29": {
+        "name": "Place labels",
+        "collapsed": false
+      },
+      "491c3d88fb897a38b501854b4b3a734b": {
+        "name": "Landuse"
+      },
+      "1444849297111.495": {
+        "name": "POI labels",
+        "collapsed": false
+      }
+    }
+  },
+  "center": [
+    20.72770651703172,
+    51.91110028037039
+  ],
+  "zoom": 2.305730813458177,
+  "bearing": 0,
+  "pitch": 0,
+  "sources": {
+    "basemap": {
+      "type": "raster",
+      "maxzoom": 6,
+      "url": "mbtiles://{natural-earth-2-landcover}"
+    },
+    "terrarium-local": {
+      "type": "raster-dem",
+      "url": "mbtiles://{terrarium}",
+      "minzoom": 0,
+      "maxzoom": 8,
+      "tileSize": 256,
+      "encoding": "terrarium"
+    },
+    "terrarium-aws": {
+      "type": "raster-dem",
+      "tiles": [
+        "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+      ],
+      "minzoom": 9,
+      "maxzoom": 15,
+      "tileSize": 256,
+      "encoding": "terrarium"
+    },
+    "natural_earth": {
+      "type": "vector",
+      "maxzoom": 7,
+      "url": "mbtiles://{whg-ne-basic}"
+    },
+    "ecoregions": {
+      "type": "vector",
+      "maxzoom": 10,
+      "url": "mbtiles://{ecoregions}"
+    }
+  },
+  "glyphs": "{fontstack}/{range}.pbf",
+  "sprite": "{styleJsonFolder}/sprite",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "interactive": false,
+      "paint": {
+        "background-color": "#b0c9a3"
+      }
+    },
+    {
+      "id": "basemap",
+      "type": "raster",
+      "source": "basemap",
+      "interactive": false,
+      "paint": {
+        "raster-opacity": 1,
+        "raster-contrast": 0
+      }
+    },
+    {
+      "id": "ice",
+      "type": "fill",
+      "metadata": {
+        "mapbox:group": "491c3d88fb897a38b501854b4b3a734b",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "Ice Shelves"
+      },
+      "source": "natural_earth",
+      "source-layer": "ice",
+      "interactive": true,
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "fill-color": "hsla(215, 92%, 88%, 0.32)"
+      }
+    },
+    {
+      "id": "water_shadow",
+      "type": "fill",
+      "metadata": {
+        "mapbox:group": "1444849382550.77"
+      },
+      "source": "natural_earth",
+      "source-layer": "ocean",
+      "interactive": true,
+      "paint": {
+        "fill-color": "#a0c8f0",
+        "fill-opacity": 1,
+        "fill-translate": {
+          "base": 1.2,
+          "stops": [
+            [
+              7,
+              [
+                0,
+                0
+              ]
+            ],
+            [
+              16,
+              [
+                -1,
+                -1
+              ]
+            ]
+          ]
+        },
+        "fill-translate-anchor": "viewport"
+      }
+    },
+    {
+      "id": "terrain-rgb-local",
+      "source": "terrarium-local",
+      "type": "hillshade",
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "hillshade-shadow-color": "hsl(39, 21%, 33%)",
+        "hillshade-illumination-direction": 315,
+        "hillshade-exaggeration": 0.4
+      }
+    },
+    {
+      "id": "terrain-rgb-aws",
+      "source": "terrarium-aws",
+      "type": "hillshade",
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "hillshade-shadow-color": "hsl(39, 21%, 33%)",
+        "hillshade-illumination-direction": 315,
+        "hillshade-exaggeration": 0.4
+      }
+    },
+    {
+      "id": "river",
+      "type": "line",
+      "metadata": {
+        "mapbox:group": "1444849382550.77",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "Rivers"
+      },
+      "source": "natural_earth",
+      "source-layer": "rivers",
+      "interactive": true,
+      "layout": {
+        "line-cap": "round",
+        "visibility": "visible"
+      },
+      "paint": {
+        "line-color": "#a0c8f0",
+        "line-width": {
+          "base": 1.2,
+          "stops": [
+            [
+              11,
+              1
+            ],
+            [
+              20,
+              6
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "id": "ocean",
+      "type": "fill",
+      "metadata": {
+        "mapbox:group": "1444849382550.77"
+      },
+      "source": "natural_earth",
+      "source-layer": "ocean",
+      "interactive": true,
+      "filter": [
+        "in",
+        "$type",
+        "LineString",
+        "Point",
+        "Polygon"
+      ],
+      "paint": {
+        "fill-color": "hsl(188, 36%, 87%)",
+    	"fill-opacity": 0.7
+      }
+    },
+    {
+      "id": "lakes",
+      "type": "fill",
+      "metadata": {
+        "mapbox:group": "1444849382550.77",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "Lakes"
+      },
+      "source": "natural_earth",
+      "source-layer": "lakes",
+      "interactive": true,
+      "layout": {
+        "visibility": "visible"
+      },
+      "filter": [
+        "in",
+        "$type",
+        "LineString",
+        "Point",
+        "Polygon"
+      ],
+      "paint": {
+        "fill-color": "hsl(188, 36%, 87%)",
+    	"fill-opacity": 0.7
+      }
+    },
+    {
+      "id": "realms",
+      "type": "fill",
+      "metadata": {
+        "mapbox:group": "1444849307123.581",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "Bio-Realms"
+      },
+      "source": "ecoregions",
+      "source-layer": "realms",
+      "interactive": true,
+      "minzoom": 0,
+      "maxzoom": 4,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-color": ["get", "color"],
+    	"fill-opacity": 0.7
+      }
+    },
+    {
+      "id": "biomes",
+      "type": "fill",
+      "metadata": {
+        "mapbox:group": "1444849307123.581",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "Biomes"
+      },
+      "source": "ecoregions",
+      "source-layer": "biomes",
+      "interactive": true,
+      "minzoom": 2,
+      "maxzoom": 6,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-color": ["get", "color"],
+    	"fill-opacity": 0.7
+      }
+    },
+    {
+      "id": "ecoregions",
+      "type": "fill",
+      "metadata": {
+        "mapbox:group": "1444849307123.581",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "Ecoregions"
+      },
+      "source": "ecoregions",
+      "source-layer": "ecoregions",
+      "interactive": true,
+      "minzoom": 4,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-color": ["get", "color"],
+    	"fill-opacity": 0.7
+      }
+    },
+    {
+      "id": "states",
+      "type": "line",
+      "metadata": {
+        "mapbox:group": "1444849307123.581",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "States/Counties"
+      },
+      "source": "natural_earth",
+      "source-layer": "states",
+      "interactive": true,
+      "layout": {
+        "line-join": "round",
+        "visibility": "none"
+      },
+      "paint": {
+        "line-color": "#9e9cab",
+        "line-dasharray": [
+          3,
+          1,
+          1,
+          1
+        ],
+        "line-width": {
+          "base": 1,
+          "stops": [
+            [
+              2,
+              0.4
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              12,
+              3
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "id": "countries",
+      "type": "line",
+      "metadata": {
+        "mapbox:group": "1444849307123.581",
+      	"whg:switchgroup": "Features",
+      	"whg:switchlabel": "Countries"
+      },
+      "source": "natural_earth",
+      "source-layer": "countries",
+      "interactive": true,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round",
+        "visibility": "none"
+      },
+      "paint": {
+        "line-color": "#9e9cab",
+        "line-width": {
+          "base": 1,
+          "stops": [
+            [
+              0,
+              0.4
+            ],
+            [
+              4,
+              1.4
+            ],
+            [
+              5,
+              2
+            ],
+            [
+              12,
+              8
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "id": "city_labels",
+      "type": "symbol",
+      "metadata": {
+        "mapbox:group": "1444849272561.29",
+      	"whg:switchgroup": "Labels",
+      	"whg:switchlabel": "Settlements"
+      },
+      "source": "natural_earth",
+      "source-layer": "settlements",
+      "interactive": true,
+	  "filter": [
+	    ">=", ["zoom"],
+	    ["get", "MIN_ZOOM"]
+	  ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": "circle-stroked-15",
+        "text-font": [
+          "Raleway Semibold"
+        ],
+        "text-field": "{NAME}",
+        "text-max-width": 8,
+        "text-padding": 2,
+        "text-offset": [
+          0,
+          0.6
+        ],
+        "text-anchor": "top",
+        "text-size": {
+          "base": 1.2,
+          "stops": [
+            [
+              7,
+              12
+            ],
+            [
+              11,
+              24
+            ]
+          ]
+        }
+      },
+      "paint": {
+        "text-color": "#333",
+        "text-halo-color": "rgba(255,255,255,0.8)",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "state_labels",
+      "type": "symbol",
+      "metadata": {
+        "mapbox:group": "783e123af81d2ad277f88278ff1f7c2f",
+      	"whg:switchgroup": "Labels",
+      	"whg:switchlabel": "States/Counties"
+      },
+      "source": "natural_earth",
+      "source-layer": "states_labels",
+      "interactive": true,
+	  "minzoom": 7,
+      "layout": {
+        "visibility": "none",
+        "text-field": "{name}",
+        "text-font": [
+          "Raleway Bold"
+        ],
+        "text-size": {
+          "base": 1.2,
+          "stops": [
+            [
+              4,
+              10
+            ],
+            [
+              11,
+              24
+            ]
+          ]
+        },
+        "text-max-width": 2,
+        "text-letter-spacing": 0.15
+      },
+      "paint": {
+        "text-color": "#334",
+        "text-halo-color": "rgba(255,255,255,0.8)",
+        "text-halo-blur": 1,
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "country_labels",
+      "type": "symbol",
+      "metadata": {
+        "mapbox:group": "1444849242106.713",
+      	"whg:switchgroup": "Labels",
+      	"whg:switchlabel": "Countries"
+      },
+      "source": "natural_earth",
+      "source-layer": "countries_labels",
+      "interactive": true,
+      "filter": [
+	    "all",
+	    [">=", ["zoom"], ["get", "MIN_LABEL"]],
+	    ["<=", ["zoom"], ["get", "MAX_LABEL"]]
+	  ],
+      "layout": {
+        "visibility": "none",
+        "text-font": [
+          "Raleway Bold"
+        ],
+        "text-field": "{NAME}",
+        "text-max-width": 6.25,
+        "text-transform": "uppercase",
+        "text-size": {
+          "stops": [
+            [
+              1,
+              10
+            ],
+            [
+              7,
+              24
+            ]
+          ]
+        }
+      },
+      "paint": {
+        "text-color": "#334",
+        "text-halo-color": "rgba(255,255,255,0.8)",
+        "text-halo-width": 2,
+        "text-halo-blur": 1
+      }
+    },
+    {
+      "id": "ecoregions_labels",
+      "type": "symbol",
+      "metadata": {
+      	"whg:switchgroup": "Labels",
+      	"whg:switchlabel": "Ecoregions"
+      },
+      "source": "ecoregions",
+      "source-layer": "ecoregions_labels",
+      "interactive": true,
+      "minzoom": 4,
+      "layout": {
+        "visibility": "none",
+        "text-font": [
+          "Raleway Regular"
+        ],
+        "text-field": "{label}",
+        "text-max-width": 10,
+        "text-size": 16
+      },
+      "paint": {
+        "text-color": "#333",
+        "text-halo-color": "rgba(255,255,255,0.8)",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "biomes_labels",
+      "type": "symbol",
+      "metadata": {
+      	"whg:switchgroup": "Labels",
+      	"whg:switchlabel": "Biomes"
+      },
+      "source": "ecoregions",
+      "source-layer": "biomes_labels",
+      "interactive": true,
+      "minzoom": 2,
+      "maxzoom": 6,
+      "layout": {
+        "visibility": "none",
+        "text-font": [
+          "Raleway Italic"
+        ],
+        "text-field": "{label}",
+        "text-max-width": 10,
+        "text-size": 18
+      },
+      "paint": {
+        "text-color": "#333",
+        "text-halo-color": "rgba(255,255,255,0.8)",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "realms_labels",
+      "type": "symbol",
+      "metadata": {
+      	"whg:switchgroup": "Labels",
+      	"whg:switchlabel": "Bio-Realms"
+      },
+      "source": "ecoregions",
+      "source-layer": "realms_labels",
+      "interactive": true,
+      "minzoom": 0,
+      "maxzoom": 4,
+      "layout": {
+        "visibility": "none",
+        "text-font": [
+          "Raleway Semibold"
+        ],
+        "text-field": "{label}",
+        "text-max-width": 10,
+        "text-transform": "uppercase",
+        "text-size": 20
+      },
+      "paint": {
+        "text-color": "#333",
+        "text-halo-color": "rgba(255,255,255,0.8)",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "geographic_region_labels",
+      "type": "symbol",
+      "metadata": {
+      	"whg:switchgroup": "Labels",
+      	"whg:switchlabel": "Regions"
+      },
+      "source": "natural_earth",
+      "source-layer": "regions_labels",
+      "interactive": true,
+      "filter": [
+	    "all",
+	    [">=", ["zoom"], ["get", "MIN_LABEL"]],
+	    ["<=", ["zoom"], ["get", "MAX_LABEL"]]
+	  ],
+      "layout": {
+        "visibility": "none",
+        "text-font": [
+          "Raleway Semibold"
+        ],
+        "text-field": "{NAME}",
+        "text-max-width": 8,
+        "text-transform": "uppercase",
+        "text-size": 20
+      },
+      "paint": {
+        "text-color": "#333",
+        "text-halo-color": "rgba(255,255,255,0.8)",
+        "text-halo-width": 1.2
+      }
+    }
+  ],
+  "created": "2016-07-15T19:13:06.417Z",
+  "modified": "2024-01-09T17:40:34.474Z"
+}
