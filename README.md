@@ -77,11 +77,11 @@ This repository includes configuration files for deploying the following compone
 
   > A monitoring tool for Celery, providing insights into the status and performance of Celery workers and tasks.
 
-- [X] **Tileserver-GL**
+- [x] **Tileserver-GL**
 
   > A server used for serving vector and raster map tiles, providing geographical visualisations for the WHG.
 
-- [ ] **Tippecanoe**
+- [x] **Tippecanoe**
 
   > A tool that generates vector tiles from large collections of GeoJSON data, enabling efficient rendering of map
   layers.
@@ -242,6 +242,16 @@ other services, and populate the static and media files by cloning them from the
 sudo chmod +x ./*.sh && sudo ./clone-static-media.sh
 ```
 
+### Set the K8S_ID environment variable
+
+The server will be configured in a role dependent on the value of the `K8S_ID` environment variable, a unique identifier
+for the server, which should be set before running the deployment script. Valid values can be seen in the `functions.sh`
+script. For example:
+
+```bash
+export K8S_ID=LOCAL
+```
+
 ### Deploy the Application
 
 Run the `deploy.sh` script to deploy the application, specifying the role as `master`, `worker`, or `local`. The master
@@ -250,32 +260,27 @@ should be set up on separate machines, and replicate only Vespa components for h
 for workers, provide the Kubernetes join command. The master option is dependent on DNS having been set up to point
 various subdomains to the server's IP address.
 
-#### Master Node
+#### Control & Development Nodes
 
 ```bash
-sudo chmod +x ./*.sh && sudo ./deploy.sh master
+sudo chmod +x ./*.sh && sudo ./deploy.sh
 ```
 
-#### Worker Node
+#### Worker Nodes
 
 ```bash
 # You MUST replace <kubeadm-join-command> with the actual join command from the master node.
-sudo chmod +x ./*.sh && sudo ./deploy.sh worker "<kubeadm-join-command>"
+sudo chmod +x ./*.sh && sudo ./deploy.sh "<kubeadm-join-command>"
 ```
 
-#### Local Node (for development)
-
-```bash
-sudo chmod +x ./*.sh && sudo ./deploy.sh local
-```
-
+#### Access the Application (Development)
 Local deployments can be accessed in a browser at <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>.
 Local map tileserver can be accessed in a browser at <a href="http://localhost:30080/" target="_blank">http://localhost:30080/</a>.
 
 ### Re-deploy Services
 
-To re-deploy services after making changes to their configuration files, run the `deploy-services.sh` script:
+To re-deploy services on a Control or Development node after making changes to their configuration files, run the `deploy-services.sh` script:
 
 ```bash
-sudo chmod +x ./*.sh && sudo ./deploy-services.sh local # or master or worker
+sudo chmod +x ./*.sh && sudo ./deploy-services.sh
 ```

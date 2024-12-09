@@ -14,6 +14,15 @@ spec:
       labels:
         app: webpack
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: environment
+                    operator: In
+                    values:
+                      - development
       initContainers:
         - name: webpack-build
           image: node:18-alpine

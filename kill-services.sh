@@ -129,6 +129,8 @@ kill_port_forward_processes() {
 }
 
 # Execute the cleanup functions
+helm uninstall wordpress
+
 clean_pvcs
 clean_pvs
 clean_pods

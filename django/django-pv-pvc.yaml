@@ -9,9 +9,18 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
+  storageClassName: "django-app-storage"
   hostPath:
     path: /data/k8s/django-app  # Path on the host system
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: role
+          operator: In
+          values:
+          - all
+          - general
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -24,7 +33,7 @@ spec:
     requests:
       storage: 10Gi
   volumeName: django-app-pv  # Reference the PV
-  storageClassName: ""
+  storageClassName: "django-app-storage"
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -37,9 +46,18 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
+  storageClassName: "django-static-storage"
   hostPath:
     path: /data/k8s/django-static  # Path on the host system
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: role
+          operator: In
+          values:
+          - all
+          - general
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -52,7 +70,7 @@ spec:
     requests:
       storage: 2Gi
   volumeName: django-static-pv  # Reference the PV
-  storageClassName: ""
+  storageClassName: "django-static-storage"
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -65,9 +83,18 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
+  storageClassName: "django-media-storage"
   hostPath:
     path: /data/k8s/django-media  # Path on the host system
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: role
+          operator: In
+          values:
+          - all
+          - general
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -80,4 +107,4 @@ spec:
     requests:
       storage: 5Gi
   volumeName: django-media-pv  # Reference the PV
-  storageClassName: ""
+  storageClassName: "django-media-storage"
