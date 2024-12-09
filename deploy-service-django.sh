@@ -1,26 +1,5 @@
 #!/bin/bash
 
-# Get role (master, worker, or local)
-ROLE=$1
-if [ -z "$ROLE" ]; then
-    echo "Error: Role (master, worker, or local) must be specified."
-    exit 1
-fi
-
-if [ "$ROLE" == "master" ]; then
-  YQ_TLS='.'  # No changes to the file (pass it as is)
-  YQ_TOLERATIONS='.'  # No changes to the file (pass it as is)
-elif [ "$ROLE" == "worker" ]; then
-  YQ_TLS='del(.metadata.annotations["cert-manager.io/cluster-issuer"], .spec.tls)'  # Remove cert-manager and tls section
-  YQ_TOLERATIONS='.'  # No changes to the file (pass it as is)
-else # local
-  YQ_TLS='del(.metadata.annotations["cert-manager.io/cluster-issuer"], .spec.tls)'  # Remove cert-manager and tls section
-  YQ_TOLERATIONS='.spec.template.spec.tolerations += [{"key": "node-role.kubernetes.io/control-plane", "operator": "Exists", "effect": "NoSchedule"}]' # Add tolerations for local node
-fi
-
-# Define script directory
-SCRIPT_DIR=$(dirname "$0")
-
 # Get variables from ConfigMap and Secret to construct and append DATABASE_URL
 IMAGE_VERSION=$(yq eval '.data["image-version"]' "$SCRIPT_DIR/configmap.yaml")
 DB_NAME=$(yq eval '.data["db-name"]' "$SCRIPT_DIR/configmap.yaml")
@@ -51,8 +30,6 @@ echo "Deploying Redis..."
 kubectl apply -f "$SCRIPT_DIR/django/redis-pv-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/redis-deployment.yaml"
 kubectl apply -f "$SCRIPT_DIR/django/redis-service.yaml"
-
-SCRIPT_DIR=$(realpath "$SCRIPT_DIR")
 
 # Deploy Django app
 echo "Deploying Django app..."
@@ -90,7 +67,7 @@ yq e ".spec.template.spec.volumes += [{
 .spec.template.spec.initContainers[1].image |= sub(\"web:latest\", \"web:$IMAGE_VERSION\")" \
   "$SCRIPT_DIR/django/django-deployment.yaml" | kubectl apply -f -
 kubectl apply -f "$SCRIPT_DIR/django/django-service.yaml"
-if [ "$ROLE" == "local" ]; then
+if [ "$K8S_ENVIRONMENT" == "development" ]; then
   kubectl apply -f "$SCRIPT_DIR/django/django-ingress-local.yaml" # Serve on localhost
   kubectl port-forward svc/django-service 8000:8000 & # Run in background
 else
@@ -122,7 +99,7 @@ yq e "$YQ_CONFIGURATION" "$SCRIPT_DIR/django/celery-beat-deployment.yaml" | kube
 yq e "$YQ_CONFIGURATION" "$SCRIPT_DIR/django/celery-flower-deployment.yaml" | kubectl apply -f -
 
 ## Deploy Webpack
-if [ "$ROLE" == "local" ]; then
+if [ "$K8S_ENVIRONMENT" == "development" ]; then
   echo "Deploying Webpack..."
   kubectl apply -f "$SCRIPT_DIR/django/webpack-pv-pvc.yaml"
   kubectl apply -f "$SCRIPT_DIR/django/webpack-config.yaml"

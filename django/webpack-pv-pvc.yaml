@@ -8,18 +8,17 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
+  storageClassName: "webpack-build-storage"
   hostPath:
     path: /data/k8s/webpack
   nodeAffinity:
     required:
       nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - localhost
-                - desktop
+      - matchExpressions:
+        - key: environment
+          operator: In
+          values:
+          - development
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -31,4 +30,4 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: ""
+  storageClassName: "webpack-build-storage"

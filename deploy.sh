@@ -3,7 +3,7 @@
 #### Prepare the environment ####
 
 # Set logging
-LOG_FILE="/var/log/kubernetes-setup.log"
+export LOG_FILE="/var/log/kubernetes-setup.log"
 exec > >(tee -i $LOG_FILE) 2>&1
 
 # Check if running as root
@@ -12,21 +12,22 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Set defaults
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROLE=${ROLE:-"local"}
-REQUIRED_PKGS=("apt-transport-https" "ca-certificates" "curl" "software-properties-common" "jq" "docker-ce" "docker-ce-cli" "containerd.io=1.7.23-1" "kubelet" "kubeadm" "kubectl" "conntrack" "cri-tools" "kubernetes-cni")
-PAUSE_IMAGE="registry.k8s.io/pause:3.10" # Default pause image, to be used by both kubelet and containerd
+# Identify the absolute path of this script's directory; load helper functions
+export SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
+source "$SCRIPT_DIR/functions.sh"
+
+# Identify the Kubernetes environment, set variables
+identify_environment
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
-# Validate input
-if [[ "$ROLE" != "master" && "$ROLE" != "worker" && "$ROLE" != "local" ]]; then
-    echo "Invalid ROLE specified. Use 'master', 'worker', or 'local'."
-    exit 1
-fi
-
 # Remove any previous Kubernetes installation
-bash "$SCRIPT_DIR/remove-kubernetes.sh"
+remove_kubernetes
+
+#### Install required packages and configure the system ####
+
+# Define required packages
+REQUIRED_PKGS=("apt-transport-https" "ca-certificates" "curl" "software-properties-common" "jq" "docker-ce" "docker-ce-cli" "containerd.io=1.7.23-1" "kubelet" "kubeadm" "kubectl" "conntrack" "cri-tools" "kubernetes-cni")
+PAUSE_IMAGE="registry.k8s.io/pause:3.10" # Default pause image, to be used by both kubelet and containerd
 
 # Add Docker GPG key
 echo "Adding Docker GPG key..."
@@ -117,17 +118,6 @@ if [ $? -ne 0 ]; then
 fi
 chmod +x /usr/local/bin/yq
 
-if [ "$ROLE" == "master" ]; then
-  YQ_TLS='.'  # No changes to the file (pass it as is)
-  YQ_TOLERATIONS='.'  # No changes to the file (pass it as is)
-elif [ "$ROLE" == "worker" ]; then
-  YQ_TLS='del(.metadata.annotations["cert-manager.io/cluster-issuer"], .spec.tls)'  # Remove cert-manager and tls section
-  YQ_TOLERATIONS='.'  # No changes to the file (pass it as is)
-else # local
-  YQ_TLS='del(.metadata.annotations["cert-manager.io/cluster-issuer"], .spec.tls)'  # Remove cert-manager and tls section
-  YQ_TOLERATIONS='.spec.template.spec.tolerations += [{"key": "node-role.kubernetes.io/control-plane", "operator": "Exists", "effect": "NoSchedule"}]' # Add tolerations for local node
-fi
-
 # Load configuration from YAML files
 HELM_VERSION=$(yq eval '.helm.version' "$SCRIPT_DIR/system/helm-config.yaml")
 HELM_REPO_URL=$(yq eval '.helm.repo_url' "$SCRIPT_DIR/system/helm-config.yaml")
@@ -169,13 +159,14 @@ iptables -A INPUT -p tcp --dport 80 -j ACCEPT # Allow HTTP
 iptables -A INPUT -p tcp --dport 443 -j ACCEPT # Allow HTTPS
 iptables -A INPUT -p icmp -j ACCEPT # Allow ICMP
 iptables -A INPUT -p tcp --dport 10250 -j ACCEPT # Allow Kubelet API
-if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
+if [ "$K8S_CONTROLLER" == 1 ]; then
   # Control Plane Node
   iptables -A INPUT -p tcp --dport 6443 -j ACCEPT # Allow Kubernetes API server
   iptables -A INPUT -p tcp --dport 2379:2380 -j ACCEPT # Allow etcd server client API
   iptables -A INPUT -p tcp --dport 10251 -j ACCEPT # Allow kube-scheduler
   iptables -A INPUT -p tcp --dport 10252 -j ACCEPT # Allow kube-controller-manager
-elif [ "$ROLE" == "worker" ]; then
+fi
+if [[ "$K8S_ENVIRONMENT" == "development" || "$K8S_ENVIRONMENT" == "staging" ]]; then
   # Worker Node
   iptables -A INPUT -p tcp --dport 30000:32767 -j ACCEPT # Allow NodePort Services
 fi
@@ -192,44 +183,6 @@ mv vespa-cli_${VESPA_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
 rm -rf vespa-cli_${VESPA_VERSION}_linux_amd64 vespa-cli_${VESPA_VERSION}_linux_amd64.tar.gz
 vespa version || { echo "Vespa CLI installation failed"; exit 1; }
 
-#### Helper functions ####
-
-# Wait for the Kubernetes control-plane to be ready
-wait_for_k8s() {
-    echo "Waiting for Kubernetes control-plane to become ready..."
-#    until kubectl version --short &>/dev/null; do sleep 5; done
-    until kubectl get nodes | grep -q "Ready"; do sleep 5; done
-    echo "Control-plane is ready!"
-}
-
-# Function to check if the kubelet is running
-check_kubelet_status() {
-    echo "Checking kubelet status..."
-    systemctl is-active --quiet kubelet
-    local status=$?
-
-    if [ $status -ne 0 ]; then
-        echo "Error: Kubelet service is not running."
-    else
-        echo "Kubelet service is running."
-    fi
-    return $status
-}
-
-# Wait for the kubelet to be active
-wait_for_kubelet() {
-    echo "Waiting for kubelet to be active..."
-    while true; do
-        if check_kubelet_status; then
-            echo "Kubelet is active."
-            break
-        else
-            echo "Kubelet is not active, retrying..."
-            sleep 5
-        fi
-    done
-}
-
 #### Install Kubernetes components ####
 
 # Override kubelet configuration
@@ -242,7 +195,7 @@ Environment="KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --pod-infra-container-im
 EOF
 systemctl daemon-reload
 
-if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
+if [ "$K8S_CONTROLLER" == 1 ]; then
 
   # Initialize Kubernetes cluster
   echo "Initializing Kubernetes cluster with pod network CIDR 10.244.0.0/16..."
@@ -254,25 +207,8 @@ if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
   fi
   wait_for_k8s # Wait for the Kubernetes control-plane to be ready
 
-fi
+else
 
-# Install Flannel (CNI = Container Network Interface) for Kubernetes
-echo "Installing Flannel for Kubernetes..."
-helm install flannel ./flannel -n kube-system
-echo "Waiting for Flannel network pods to be ready..."
-kubectl rollout status daemonset/kube-flannel-ds -n kube-system
-
-# Allow local node to run pods
-if [ "$ROLE" == "local" ]; then
-  if kubectl get nodes -o jsonpath='{.items[*].spec.taints[?(@.key=="node-role.kubernetes.io/control-plane")].key}' | grep -q "control-plane"; then
-    kubectl taint nodes --all node-role.kubernetes.io/control-plane-
-  else
-    echo "No taint found for node-role.kubernetes.io/control-plane, skipping removal."
-  fi
-fi
-
-# Join worker node if applicable
-if [ "$ROLE" == "worker" ]; then
   # Ensure JOIN_COMMAND is passed as an argument
   if [ -z "$JOIN_COMMAND" ]; then
       echo "Error: JOIN_COMMAND must be provided to join the worker node."
@@ -286,7 +222,18 @@ if [ "$ROLE" == "worker" ]; then
       echo "Error occurred while joining the worker node to the Kubernetes cluster."
       exit 1
   fi
+
 fi
+
+# Label nodes based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
+kubectl label nodes --all controller=$K8S_CONTROLLER role=$K8S_ROLE environment=$K8S_ENVIRONMENT
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+
+# Install Flannel (CNI = Container Network Interface) for Kubernetes
+echo "Installing Flannel for Kubernetes..."
+helm install flannel ./flannel -n kube-system
+echo "Waiting for Flannel network pods to be ready..."
+kubectl rollout status daemonset/kube-flannel-ds -n kube-system
 
 # Copy the kubeconfig file to the user's home directory and to the root user
 echo "Copying kubeconfig file to the user's home directory..."
@@ -306,7 +253,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Verify kubectl can access the cluster
+# Verify that kubectl can access the cluster
 kubectl get nodes
 kubectl get pods -n kube-system
 if [ $? -ne 0 ]; then
@@ -364,7 +311,7 @@ fi
 echo "MetalLB installation and configuration complete."
 
 # Install Contour Ingress controller (used for routing external traffic to services)
-if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
+if [ "$K8S_CONTROLLER" == 1 ]; then
   echo "Installing Contour Ingress controller..."
   helm install contour ./contour -n projectcontour --create-namespace --set ingressController.service.type=LoadBalancer
   if [ $? -ne 0 ]; then
@@ -386,7 +333,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
-if [ "$ROLE" == "local" ]; then
+if [ "$K8S_CONTROLLER" == 1 ]; then
   echo "Deploying Kubernetes Dashboard via LoadBalancer..."
 
   # Install Kubernetes Dashboard
@@ -427,8 +374,9 @@ if [ "$ROLE" == "local" ]; then
   echo "Kubernetes Dashboard is available at: https://$LB_IP"
   echo "Log in using either the config file at $USER_KUBE_CONFIG or the following token:"
   echo "$TOKEN"
+
+  # Deploy services (only on control-plane nodes)
+  bash "$SCRIPT_DIR/deploy-services.sh"
 fi
 
 echo "Completed server configuration and deployment of Kubernetes components."
-
-bash "$SCRIPT_DIR/deploy-services.sh" "$ROLE"

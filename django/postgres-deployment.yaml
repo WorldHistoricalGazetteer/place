@@ -20,6 +20,16 @@ spec:
           effect: "NoSchedule"
       securityContext:
         fsGroup: 999
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - all
+                - general
       initContainers:
         - name: fix-permissions
           image: busybox

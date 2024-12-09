@@ -20,6 +20,16 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - all
+                - general
       containers:
         - name: celery-flower
           image: worldhistoricalgazetteer/web:latest

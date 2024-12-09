@@ -14,12 +14,12 @@ spec:
   nodeAffinity:
     required:
       nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - localhost
-                - desktop
+      - matchExpressions:
+        - key: role
+          operator: In
+          values:
+          - all
+          - general
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

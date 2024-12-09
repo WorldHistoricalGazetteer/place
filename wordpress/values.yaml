@@ -358,17 +358,19 @@ podAntiAffinityPreset: soft
 nodeAffinityPreset:
   ## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
   ##
-  type: ""
+  type: "hard"
   ## @param nodeAffinityPreset.key Node label key to match. Ignored if `affinity` is set
   ##
-  key: ""
+  key: "role"
   ## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set
   ## E.g.
   ## values:
   ##   - e2e-az1
   ##   - e2e-az2
   ##
-  values: []
+  values:
+    - all
+    - general
 ## @param affinity Affinity for pod assignment
 ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
 ## NOTE: podAffinityPreset, podAntiAffinityPreset, and nodeAffinityPreset will be ignored when it's set
@@ -860,7 +862,7 @@ persistence:
   dataSource: {}
   ## @param persistence.existingClaim The name of an existing PVC to use for persistence
   ##
-  existingClaim: ""
+  existingClaim: "wordpress-pvc"
   ## @param persistence.selector Selector to match an existing Persistent Volume for WordPress data PVC
   ## If set, the PVC can't have a PV dynamically provisioned for it
   ## E.g.
@@ -1252,6 +1254,7 @@ mariadb:
     ##
     persistence:
       enabled: true
+      existingClaim: mariadb-pvc
       storageClass: ""
       accessModes:
         - ReadWriteOnce
