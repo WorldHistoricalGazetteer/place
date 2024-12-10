@@ -1,16 +1,14 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: pgbackrest-pv
+  name: vespa-pv
 spec:
   capacity:
     storage: 10Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: django-pgbackrest
-  local:
-    path: /data/k8s/pgbackrest
+  storageClassName: vespa-storage
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -18,24 +16,19 @@ spec:
         - key: role
           operator: In
           values:
-          - all
-          - general
+            - all
+            - general
+  hostPath:
+    path: "/data/k8s/vespa"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pgbackrest-pvc
+  name: vespa-pvc
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
-  storageClassName: django-pgbackrest
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: django-pgbackrest
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
+  storageClassName: vespa-storage

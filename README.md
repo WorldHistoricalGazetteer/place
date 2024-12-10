@@ -127,11 +127,11 @@ To deploy the application with these configurations to a remote server, you will
 - A user with sudo privileges
 - A set of private files containing the necessary credentials for the application. These should be placed in a directory
   named `whg-private` in the project root directory. The files include:
-  - ca-cert.pem (for Kubernetes)
-  - env_template.py (for Django settings)
-  - id_rsa_whg (for SSH access to original WHG server)
-  - local_settings.py (for Django settings)
-  - secret.yaml (for Kubernetes secrets)
+    - ca-cert.pem (for Kubernetes)
+    - env_template.py (for Django settings)
+    - id_rsa_whg (for SSH access to original WHG server)
+    - local_settings.py (for Django settings)
+    - secret.yaml (for Kubernetes secrets)
 
 Once you have these, follow these steps:
 
@@ -220,28 +220,6 @@ sudo ufw disable
 sudo systemctl disable ufw
 ```
 
-### Clone WHG Database
-
-Before deploying the application, you will need to clone the WHG database to the server. This is dependent on a having
-first set up SSH keys to connect to the original WHG server. Cloning can be achieved using the
-`server-admin/replicate_live_db.sh` script as
-described [here](https://github.com/WorldHistoricalGazetteer/whg3/blob/staging/developer/database-management.md).
-
-#### Clone most-recent backup of the WHG Database into a local Persistent Volume
-
-```bash
-sudo chmod +x ./*.sh && sudo ./clone-database.sh
-```
-
-#### Create storage directories
-
-The script above will create the necessary directory for the database. You will also need to create directories for
-other services, and populate the static and media files by cloning them from the original WHG server:
-
-```bash
-sudo chmod +x ./*.sh && sudo ./clone-static-media.sh
-```
-
 ### Set the K8S_ID environment variable
 
 The server will be configured in a role dependent on the value of the `K8S_ID` environment variable, a unique identifier
@@ -250,6 +228,16 @@ script. For example:
 
 ```bash
 export K8S_ID=LOCAL
+```
+
+### Create and Populate Persistent Volumes
+
+Before deploying the application, you will need to create and populate the necessary persistent volumes, which are
+determined by the `K8S_ID` environment variable. The most recent backup of the WHG database will be cloned if necessary,
+and the Django app's `media` and `static` directories synchronised with the original WHG server.
+
+```bash
+sudo chmod +x ./*.sh && sudo -E ./create-persistent-volumes.sh
 ```
 
 ### Deploy the Application
@@ -274,12 +262,16 @@ sudo chmod +x ./*.sh && sudo ./deploy.sh "<kubeadm-join-command>"
 ```
 
 #### Access the Application (Development)
-Local deployments can be accessed in a browser at <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>.
-Local map tileserver can be accessed in a browser at <a href="http://localhost:30080/" target="_blank">http://localhost:30080/</a>.
+
+Local deployments can be accessed in a browser
+at <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>.
+Local map tileserver can be accessed in a browser
+at <a href="http://localhost:30080/" target="_blank">http://localhost:30080/</a>.
 
 ### Re-deploy Services
 
-To re-deploy services on a Control or Development node after making changes to their configuration files, run the `deploy-services.sh` script:
+To re-deploy services on a Control or Development node after making changes to their configuration files, run the
+`deploy-services.sh` script:
 
 ```bash
 sudo chmod +x ./*.sh && sudo ./deploy-services.sh

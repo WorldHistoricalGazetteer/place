@@ -70,16 +70,20 @@ if [ "$K8S_CONTROLLER" == 1 ]; then
 #  # TODO: Configure all values.yaml files for monitoring components
 
 #  Deploy Prometheus
+  kubectl apply -f "$SCRIPT_DIR/prometheus/prometheus-pv-pvc.yaml"
   helm install prometheus ./prometheus
 
 #  Deploy Grafana
+  kubectl apply -f "$SCRIPT_DIR/grafana/grafana-pv-pvc.yaml"
   helm install grafana ./grafana
 
 #  Deploy Plausible
 #  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
+  kubectl apply -f "$SCRIPT_DIR/plausible/plausible-pv-pvc.yaml"
   helm install plausible-analytics ./plausible-analytics
 
 #  Deploy Glitchtip
+  kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
   helm install glitchtip ./glitchtip
 
 fi
