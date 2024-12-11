@@ -126,6 +126,10 @@ done
 # Fetch and extract the database backup if required
 if [ -d "${DIRECTORIES[postgres_data]%%:*}" ]; then
   fetch_and_extract_backup "$REMOTE_BACKUP_DIR" "${DIRECTORIES[postgres_data]%%:*}" "$SSH_KEY"
+  # Reset ownership and permissions for the extracted backup
+  IFS=":" read -r path user_group perms relevant_ids <<< "${DIRECTORIES[postgres_data]}"
+  sudo chown -R "$user_group" "$path"
+  sudo chmod -R "$perms" "$path"
 else
   echo "Database backup not required for node <$K8S_ID>."
 fi

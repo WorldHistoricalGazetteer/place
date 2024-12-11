@@ -125,8 +125,11 @@ To deploy the application with these configurations to a remote server, you will
 - A server running Ubuntu 20.04 LTS
 - The server's IP address
 - A user with sudo privileges
-- A set of private files containing the necessary credentials for the application. These should be placed in a directory
-  named `whg-private` in the project root directory. The files include:
+- A set of private files containing the necessary credentials for the application, which can be retrieved
+  from <a href="https://portal.cloud.hashicorp.com/services/secrets/apps/WHG-PLACE/secrets?project_id=be40e446-773e-4069-9913-803be758e6e8" target="_blank">
+  HashiCorp Secrets</a> (_WHG administration login required_). These should be placed in a directory named `whg-private` in the project root
+  directory. The files include:
+
     - ca-cert.pem (for Kubernetes)
     - env_template.py (for Django settings)
     - id_rsa_whg (for SSH access to original WHG server)
@@ -242,11 +245,8 @@ sudo chmod +x ./*.sh && sudo -E ./create-persistent-volumes.sh
 
 ### Deploy the Application
 
-Run the `deploy.sh` script to deploy the application, specifying the role as `master`, `worker`, or `local`. The master
-and local options set up the entire application stack, including Vespa, Django, and related services. The worker nodes
-should be set up on separate machines, and replicate only Vespa components for horizontal scaling. Pass the role and,
-for workers, provide the Kubernetes join command. The master option is dependent on DNS having been set up to point
-various subdomains to the server's IP address.
+Run the `deploy.sh` script to deploy the application, including the join command for worker nodes. **Correct functioning
+of control nodes is dependent on DNS having been set up to point various subdomains to the server's IP address.**
 
 #### Control & Development Nodes
 
