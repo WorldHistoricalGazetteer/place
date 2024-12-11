@@ -225,6 +225,9 @@ else
 
 fi
 
+# Install HashiCorp utilities; fetch remote secrets and create Kubernetes secrets
+source "$SCRIPT_DIR/load_secrets.sh"
+
 # Label nodes based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
 kubectl label nodes --all controller=$K8S_CONTROLLER role=$K8S_ROLE environment=$K8S_ENVIRONMENT
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
