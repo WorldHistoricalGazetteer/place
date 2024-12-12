@@ -4,14 +4,13 @@
 IMAGE_VERSION=$(yq eval '.data["image-version"]' "$SCRIPT_DIR/configmap.yaml")
 DB_NAME=$(yq eval '.data["db-name"]' "$SCRIPT_DIR/configmap.yaml")
 DB_USER=$(yq eval '.data["db-user"]' "$SCRIPT_DIR/configmap.yaml")
-DB_PASSWORD_BASE64=$(yq eval '.data["db-password"]' "$SCRIPT_DIR/whg-private/secret.yaml")
-DB_PASSWORD=$(echo "$DB_PASSWORD_BASE64" | base64 --decode)
+DB_PASSWORD=$(kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" -o jsonpath='{.data.db-password}' | base64 --decode)
 DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@postgres:5432/$DB_NAME"
 DATABASE_URL_BASE64=$(echo -n "$DATABASE_URL" | base64)
-
-# Deploy Secrets and ConfigMap
-echo "Deploying Secrets..."
-yq eval ".data.\"db-url\" = \"$DATABASE_URL_BASE64\"" "$SCRIPT_DIR/whg-private/secret.yaml" | kubectl apply -f -
+echo "Appending DATABASE_URL to Secret..."
+kubectl patch secret whg-secret -n default \
+  --type=json \
+  -p="[{\"op\": \"add\", \"path\": \"/data/db-url\", \"value\": \"$DATABASE_URL_BASE64\"}]"
 echo "Deploying ConfigMap..."
 kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 

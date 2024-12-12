@@ -62,6 +62,12 @@ sync_directory() {
 
   echo "Syncing $remote_source to $local_dest"
   sudo -E rsync -avz -e "ssh -i $ssh_key" --rsync-path="sudo rsync" "$remote_source/" "$local_dest"
+
+  # Check if rsync command was successful
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to sync $remote_source to $local_dest."
+    return  # Return to allow the script to continue execution
+  fi
 }
 
 fetch_and_extract_backup() {
@@ -71,10 +77,15 @@ fetch_and_extract_backup() {
 
   echo "Finding the latest backup file on the remote server..."
   local latest_backup_file
-  latest_backup_file=$(ssh -i "$ssh_key" "$REMOTE_USER@$REMOTE_HOST" "ls -t $remote_backup_dir/*.tar.gz | head -n 1")
-  if [ -z "$latest_backup_file" ]; then
+  latest_backup_file=$(ssh -i "$ssh_key" "$REMOTE_USER@$REMOTE_HOST" "ls -t $remote_backup_dir/*.tar.gz | head -n 1" 2>/dev/null)
+
+  # Check if SSH command was successful and the backup file exists
+  if [ $? -ne 0 ]; then
+    echo "Error: Unable to connect to $REMOTE_HOST. Please check your connection."
+    return  # Return from function if connection fails
+  elif [ -z "$latest_backup_file" ]; then
     echo "Error: No backup files found in $remote_backup_dir on $REMOTE_HOST."
-    exit 1
+    return  # Return from function if no backup files are found
   fi
 
   echo "Fetching the backup file: $latest_backup_file..."
@@ -92,6 +103,11 @@ fetch_and_extract_backup() {
     echo "Error: Failed to extract the backup file."
     exit 1
   fi
+
+  # Reset ownership and permissions for the extracted backup
+  IFS=":" read -r path user_group perms relevant_ids <<< "${DIRECTORIES[postgres_data]}"
+  sudo chown -R "$user_group" "$path"
+  sudo chmod -R "$perms" "$path"
 
   echo "Cleaning up the temporary backup file..."
   sudo rm -f "$local_database_dir/$backup_filename"
@@ -123,13 +139,9 @@ for key in "${!REMOTE_PATHS[@]}"; do
   fi
 done
 
-# Fetch and extract the database backup if required
-if [ -d "${DIRECTORIES[postgres_data]%%:*}" ]; then
+# Fetch and extract the database backup if SKIP_DB_CLONE is not true
+if [[ (-z "$SKIP_DB_CLONE" || "$SKIP_DB_CLONE" != "true") && -d "${DIRECTORIES[postgres_data]%%:*}" ]]; then
   fetch_and_extract_backup "$REMOTE_BACKUP_DIR" "${DIRECTORIES[postgres_data]%%:*}" "$SSH_KEY"
-  # Reset ownership and permissions for the extracted backup
-  IFS=":" read -r path user_group perms relevant_ids <<< "${DIRECTORIES[postgres_data]}"
-  sudo chown -R "$user_group" "$path"
-  sudo chmod -R "$perms" "$path"
 else
   echo "Database backup not required for node <$K8S_ID>."
 fi

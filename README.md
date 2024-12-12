@@ -120,23 +120,38 @@ This repository includes configuration files for deploying the following compone
 
 ### Prepare the Server Environment
 
+#### Pre-requisites
+
 To deploy the application with these configurations to a remote server, you will need:
 
 - A server running Ubuntu 20.04 LTS
 - The server's IP address
 - A user with sudo privileges
-- A set of private files containing the necessary credentials for the application, which can be retrieved
+- Credentials for fetching Secrets
   from <a href="https://portal.cloud.hashicorp.com/services/secrets/apps/WHG-PLACE/secrets?project_id=be40e446-773e-4069-9913-803be758e6e8" target="_blank">
-  HashiCorp Secrets</a> (_WHG administration login required_). These should be placed in a directory named `whg-private` in the project root
-  directory. The files include:
+  HashiCorp Vault</a>, which should be applied like this:
 
-    - ca-cert.pem (for Kubernetes)
-    - env_template.py (for Django settings)
-    - id_rsa_whg (for SSH access to original WHG server)
-    - local_settings.py (for Django settings)
-    - secret.yaml (for Kubernetes secrets)
+```bash
+export HCP_CLIENT_ID=<HashiCorp Client ID>
+export HCP_CLIENT_SECRET=<HashiCorp Client Secret>
+```
 
-Once you have these, follow these steps:
+#### Set the K8S_ID environment variable
+
+The server will be configured in a role dependent on the value of the `K8S_ID` environment variable, a unique identifier
+for the server, which should be set before running the deployment script. Valid values can be seen in the `functions.sh`
+script. For example:
+
+```bash
+export K8S_ID=LOCAL
+```
+
+#### Set the KUBECONFIG environment variable permanently
+
+```bash
+grep -qxF 'export KUBECONFIG=/etc/kubernetes/admin.conf' ~/.bashrc || echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> ~/.bashrc
+source ~/.bashrc
+```
 
 #### Update repositories and install essential packages:
 
@@ -223,42 +238,34 @@ sudo ufw disable
 sudo systemctl disable ufw
 ```
 
-### Set the K8S_ID environment variable
-
-The server will be configured in a role dependent on the value of the `K8S_ID` environment variable, a unique identifier
-for the server, which should be set before running the deployment script. Valid values can be seen in the `functions.sh`
-script. For example:
-
-```bash
-export K8S_ID=LOCAL
-```
-
-### Create and Populate Persistent Volumes
-
-Before deploying the application, you will need to create and populate the necessary persistent volumes, which are
-determined by the `K8S_ID` environment variable. The most recent backup of the WHG database will be cloned if necessary,
-and the Django app's `media` and `static` directories synchronised with the original WHG server.
-
-```bash
-sudo chmod +x ./*.sh && sudo -E ./create-persistent-volumes.sh
-```
-
 ### Deploy the Application
 
 Run the `deploy.sh` script to deploy the application, including the join command for worker nodes. **Correct functioning
 of control nodes is dependent on DNS having been set up to point various subdomains to the server's IP address.**
 
+The script will create and populate the necessary persistent volumes, which are determined by the `K8S_ID` environment
+variable. The most recent backup of the WHG database will be cloned if necessary, and the Django app's `media` and
+`static` directories synchronised with the original WHG server.
+
+#### Prevent Database Cloning (optional)
+
+Set this environment variable only if the database has already been cloned by a previous deployment:
+
+```bash
+export SKIP_DB_CLONE=true
+```
+
 #### Control & Development Nodes
 
 ```bash
-sudo chmod +x ./*.sh && sudo ./deploy.sh
+sudo chmod +x ./*.sh && sudo -E ./deploy.sh
 ```
 
 #### Worker Nodes
 
 ```bash
 # You MUST replace <kubeadm-join-command> with the actual join command from the master node.
-sudo chmod +x ./*.sh && sudo ./deploy.sh "<kubeadm-join-command>"
+sudo chmod +x ./*.sh && sudo -E ./deploy.sh "<kubeadm-join-command>"
 ```
 
 #### Access the Application (Development)
@@ -274,5 +281,5 @@ To re-deploy services on a Control or Development node after making changes to t
 `deploy-services.sh` script:
 
 ```bash
-sudo chmod +x ./*.sh && sudo ./deploy-services.sh
+sudo chmod +x ./*.sh && sudo -E ./deploy-services.sh
 ```

@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Function to delete resources that do not have the critical=true label
+delete_non_critical_resources() {
+  RESOURCES=( "cronjobs" "jobs" "statefulsets" "deployments" "replicasets" "daemonsets" "pods" "services" "configmaps" "secrets")
+
+  for RESOURCE in "${RESOURCES[@]}"; do
+    echo "Deleting $RESOURCE that are not labeled critical=true..."
+    if ! sudo kubectl delete "$RESOURCE" --selector 'critical!=true' --all-namespaces; then
+      echo "Failed to delete $RESOURCE"
+    fi
+  done
+}
+
 # Function to dissociate PVs from PVCs and delete PVs
 clean_pvs() {
   echo "Cleaning up orphaned PVs..."
@@ -39,70 +51,6 @@ clean_pvcs() {
   done
 }
 
-# Function to delete all Pods
-clean_pods() {
-  echo "Deleting all Pods..."
-  if ! sudo kubectl delete pod --all; then
-    echo "Failed to delete Pods"
-  fi
-}
-
-# Function to delete all Deployments
-clean_deployments() {
-  echo "Deleting all Deployments..."
-  if ! sudo kubectl delete deployment --all; then
-    echo "Failed to delete Deployments"
-  fi
-}
-
-# Function to delete all ReplicaSets
-clean_replicasets() {
-  echo "Deleting all ReplicaSets..."
-  if ! sudo kubectl delete replicaset --all; then
-    echo "Failed to delete ReplicaSets"
-  fi
-}
-
-# Function to delete all Services
-clean_services() {
-  echo "Deleting all Services..."
-  if ! sudo kubectl delete service --all; then
-    echo "Failed to delete Services"
-  fi
-}
-
-# Function to delete all StatefulSets
-clean_statefulsets() {
-  echo "Deleting all StatefulSets..."
-  if ! sudo kubectl delete statefulset --all; then
-    echo "Failed to delete StatefulSets"
-  fi
-}
-
-# Function to delete all Jobs
-clean_jobs() {
-  echo "Deleting all Jobs..."
-  if ! sudo kubectl delete job --all; then
-    echo "Failed to delete Jobs"
-  fi
-}
-
-# Function to delete all CronJobs
-clean_cronjobs() {
-  echo "Deleting all CronJobs..."
-  if ! sudo kubectl delete cronjob --all; then
-    echo "Failed to delete CronJobs"
-  fi
-}
-
-# Optionally, delete namespaces if needed
-clean_namespaces() {
-  echo "Deleting all namespaces..."
-  if ! sudo kubectl delete ns --all; then
-    echo "Failed to delete namespaces"
-  fi
-}
-
 # Function to kill kubectl port-forward processes with retry
 kill_port_forward_processes() {
   echo "Killing any running kubectl port-forward processes..."
@@ -131,17 +79,9 @@ kill_port_forward_processes() {
 # Execute the cleanup functions
 helm uninstall wordpress
 
+delete_non_critical_resources
 clean_pvcs
 clean_pvs
-clean_pods
-clean_deployments
-clean_replicasets
-clean_services
-clean_statefulsets
-clean_jobs
-clean_cronjobs
-# Uncomment if you want to delete namespaces too
-# clean_namespaces
 kill_port_forward_processes
 
 echo "Cleanup completed."

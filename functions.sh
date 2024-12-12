@@ -1,6 +1,11 @@
 # functions.sh
 
 identify_environment() {
+    if [ -z "$HCP_CLIENT_SECRET" ]; then
+        echo "HCP_CLIENT_SECRET is not set. Cannot proceed without it."
+        exit 1
+    fi
+
     if [ -z "$K8S_ID" ]; then
         echo "K8S_ID is not set. Assuming local development environment."
         K8S_ID="LOCAL"

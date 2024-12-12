@@ -17,12 +17,8 @@ source "$SCRIPT_DIR/functions.sh"
 # Identify the Kubernetes environment, set variables
 identify_environment
 
-## Remove any previous service installations
-#for dir in "$SCRIPT_DIR/django" "$SCRIPT_DIR/tileserver" "$SCRIPT_DIR/vespa"; do
-##  find "$dir" -type f -name "*.yaml" ! -name "*-pvc.yaml" -exec kubectl delete -f {} \; || true # Do not delete PVCs
-#  find "$dir" -type f -name "*.yaml" ! -name "*-pv.yaml" -exec kubectl delete -f {} \; || true # Do not delete PVs
-##  find "$dir" -type f -name "*.yaml" -exec kubectl delete -f {} \; || true
-#done
+# Remove any previous service installations
+source "$SCRIPT_DIR/kill-services.sh"
 
 # Deploy Django and Tile services
 if [[ "$K8S_ROLE" == "all" || "$K8S_ROLE" == "general" ]]; then
@@ -69,22 +65,22 @@ if [ "$K8S_CONTROLLER" == 1 ]; then
 #  echo "Deploying monitoring components..."
 #  # TODO: Configure all values.yaml files for monitoring components
 
-#  Deploy Prometheus
-  kubectl apply -f "$SCRIPT_DIR/prometheus/prometheus-pv-pvc.yaml"
-  helm install prometheus ./prometheus
-
-#  Deploy Grafana
-  kubectl apply -f "$SCRIPT_DIR/grafana/grafana-pv-pvc.yaml"
-  helm install grafana ./grafana
-
-#  Deploy Plausible
-#  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
-  kubectl apply -f "$SCRIPT_DIR/plausible/plausible-pv-pvc.yaml"
-  helm install plausible-analytics ./plausible-analytics
-
-#  Deploy Glitchtip
-  kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
-  helm install glitchtip ./glitchtip
+##  Deploy Prometheus
+#  kubectl apply -f "$SCRIPT_DIR/prometheus/prometheus-pv-pvc.yaml"
+#  helm install prometheus ./prometheus
+#
+##  Deploy Grafana
+#  kubectl apply -f "$SCRIPT_DIR/grafana/grafana-pv-pvc.yaml"
+#  helm install grafana ./grafana
+#
+##  Deploy Plausible
+##  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
+#  kubectl apply -f "$SCRIPT_DIR/plausible/plausible-pv-pvc.yaml"
+#  helm install plausible-analytics ./plausible-analytics
+#
+##  Deploy Glitchtip
+#  kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
+#  helm install glitchtip ./glitchtip
 
 fi
 

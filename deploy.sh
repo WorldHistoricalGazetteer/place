@@ -13,7 +13,8 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Identify the absolute path of this script's directory; load helper functions
-export SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
+SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
+export SCRIPT_DIR
 source "$SCRIPT_DIR/functions.sh"
 
 # Identify the Kubernetes environment, set variables
@@ -68,7 +69,7 @@ for PKG in "${REQUIRED_PKGS[@]}"; do
     # Check if the package is installed using dpkg-query
     if ! dpkg-query -W -f='${Status}' $PKG 2>/dev/null | grep -q "install ok installed"; then
         echo "Installing $PKG..."
-        if ! apt-get install -qy $PKG --allow-downgrades; then
+        if ! apt-get install -qy $PKG --allow-downgrades --allow-change-held-packages; then
             echo "Error: Failed to install $PKG. Exiting."
             exit 1
         fi
@@ -225,9 +226,6 @@ else
 
 fi
 
-# Install HashiCorp utilities; fetch remote secrets and create Kubernetes secrets
-source "$SCRIPT_DIR/load_secrets.sh"
-
 # Label nodes based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
 kubectl label nodes --all controller=$K8S_CONTROLLER role=$K8S_ROLE environment=$K8S_ENVIRONMENT
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
@@ -335,6 +333,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Install HashiCorp utilities; fetch remote secrets and create Kubernetes secrets
+source "$SCRIPT_DIR/load-secrets.sh"
+
+# Create required directories for persistent storage; clone WHG database
+source "$SCRIPT_DIR/create-persistent-volumes.sh"
+
 # Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
 if [ "$K8S_CONTROLLER" == 1 ]; then
   echo "Deploying Kubernetes Dashboard via LoadBalancer..."
@@ -377,6 +381,13 @@ if [ "$K8S_CONTROLLER" == 1 ]; then
   echo "Kubernetes Dashboard is available at: https://$LB_IP"
   echo "Log in using either the config file at $USER_KUBE_CONFIG or the following token:"
   echo "$TOKEN"
+
+  # Apply global label critical=true to all resources
+  echo "Labeling all resources as critical..."
+  RESOURCES=("pods" "deployments" "services" "configmaps" "secrets" "statefulsets" "daemonsets" "replicasets" "jobs" "cronjobs")
+  for RESOURCE in "${RESOURCES[@]}"; do
+      kubectl label "$RESOURCE" --all --all-namespaces critical=true
+  done
 
   # Deploy services (only on control-plane nodes)
   bash "$SCRIPT_DIR/deploy-services.sh"
