@@ -27,11 +27,11 @@ declare -A DIRECTORIES=(
   [wordpress_data]="/data/k8s/wordpress-data:1001:755:LOCAL,PITT1"
   [postgres_data]="/data/k8s/postgres:999:700:LOCAL,PITT1"
   [pgbackrest]="/data/k8s/pgbackrest:999:700:LOCAL,PITT1"
-  [prometheus]="/data/k8s/prometheus:1000:755:LOCAL,PITT1"
-  [grafana]="/data/k8s/grafana:1000:755:LOCAL,PITT1"
-  [plausible]="/data/k8s/plausible:1000:755:LOCAL,PITT1"
-  [glitchtip]="/data/k8s/glitchtip:1000:755:LOCAL,PITT1"
-  [vespa]="/data/k8s/vespa:1000:755:LOCAL,PITT2"
+  [prometheus]="/data/k8s/prometheus:1000-65534:775:LOCAL,PITT1"
+  [grafana]="/data/k8s/grafana:65534:755:LOCAL,PITT1"
+  [plausible]="/data/k8s/plausible:1000:775:LOCAL,PITT1"
+  [glitchtip]="/data/k8s/glitchtip:1000:775:LOCAL,PITT1"
+  [vespa]="/data/k8s/vespa:1000:775:LOCAL,PITT2"
 )
 
 # Remote directories for syncing
@@ -50,8 +50,18 @@ prepare_directory() {
   local perms="$3"
 
   echo "Preparing directory: $dir"
+
+  # If the user_group has a dash (user-group), split it
+  if [[ "$user_group" == *"-"* ]]; then
+    local user=$(echo "$user_group" | cut -d '-' -f 1)
+    local group=$(echo "$user_group" | cut -d '-' -f 2)
+  else
+    local user="$user_group"
+    local group="$user_group"
+  fi
+
   sudo mkdir -p "$dir"
-  sudo chown -R "$user_group" "$dir"
+  sudo chown -R "$user:$group" "$dir"
   sudo chmod -R "$perms" "$dir"
 }
 

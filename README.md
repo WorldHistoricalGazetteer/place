@@ -129,12 +129,8 @@ To deploy the application with these configurations to a remote server, you will
 - A user with sudo privileges
 - Credentials for fetching Secrets
   from <a href="https://portal.cloud.hashicorp.com/services/secrets/apps/WHG-PLACE/secrets?project_id=be40e446-773e-4069-9913-803be758e6e8" target="_blank">
-  HashiCorp Vault</a>, which should be applied like this:
-
-```bash
-export HCP_CLIENT_ID=<HashiCorp Client ID>
-export HCP_CLIENT_SECRET=<HashiCorp Client Secret>
-```
+  HashiCorp Vault</a>. These may be permanently added to the server's environment variables (
+  `sudo nano /etc/environment`, followed by a reboot).
 
 #### Set the K8S_ID environment variable
 
@@ -247,6 +243,16 @@ The script will create and populate the necessary persistent volumes, which are 
 variable. The most recent backup of the WHG database will be cloned if necessary, and the Django app's `media` and
 `static` directories synchronised with the original WHG server.
 
+#### Set HashiCorp Credentials
+
+_Ideally, these should have been added already to the server's environment variables (`sudo nano /etc/environment`,
+followed by a reboot)._
+
+```bash
+export HCP_CLIENT_ID=<HashiCorp Client ID>
+export HCP_CLIENT_SECRET=<HashiCorp Client Secret>
+```
+
 #### Prevent Database Cloning (optional)
 
 Set this environment variable only if the database has already been cloned by a previous deployment:
@@ -261,31 +267,33 @@ export SKIP_DB_CLONE=true
 sudo chmod +x ./*.sh && sudo -E ./deploy.sh
 ```
 
-#### Worker Nodes
-
-```bash
-# You MUST replace <kubeadm-join-command> with the actual join command from the master node.
-sudo chmod +x ./*.sh && sudo -E ./deploy.sh "<kubeadm-join-command>"
-```
-
-#### Access the Application (Development)
-
-Local deployments can be accessed in a browser
-at <a href="http://localhost:30070" target="_blank">http://localhost:30070</a>.
-Local map tileserver can be accessed in a browser
-at <a href="http://localhost:8000/" target="_blank">http://localhost:8000/</a>.
-
-_It may be necessary to reapply the `kubectl` port-forwarding command:_
+##### Expose services (local development only)
 
 ```bash
 sudo kubectl port-forward svc/django-service 8000:8000 &
+sudo kubectl --namespace monitoring port-forward svc/prometheus-k8s 9090 &
+sudo kubectl --namespace monitoring port-forward svc/grafana 3000:3000 &
+sudo kubectl --namespace monitoring port-forward svc/alertmanager-main 9093 &
 ```
 
-### Re-deploy Services
+- WHG: <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>
+- Tileserver: <a href="http://localhost:30080" target="_blank">http://localhost:30080</a>
+- Prometheus: <a href="http://localhost:9090" target="_blank">http://localhost:9090</a>
+- Grafana: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> (initial credentials: admin|admin)
+- Alertmanager: <a href="http://localhost:9093" target="_blank">http://localhost:9093</a>
+
+##### Re-deploy Services
 
 To re-deploy services on a Control or Development node after making changes to their configuration files, run the
 `deploy-services.sh` script:
 
 ```bash
 sudo chmod +x ./*.sh && sudo -E ./deploy-services.sh
+```
+
+#### Worker Nodes
+
+```bash
+# You MUST replace <kubeadm-join-command> with the actual join command from the master node.
+sudo chmod +x ./*.sh && sudo -E ./deploy.sh "<kubeadm-join-command>"
 ```

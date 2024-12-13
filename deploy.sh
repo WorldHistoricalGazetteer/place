@@ -27,7 +27,7 @@ remove_kubernetes
 #### Install required packages and configure the system ####
 
 # Define required packages
-REQUIRED_PKGS=("apt-transport-https" "ca-certificates" "curl" "software-properties-common" "jq" "docker-ce" "docker-ce-cli" "containerd.io=1.7.23-1" "kubelet" "kubeadm" "kubectl" "conntrack" "cri-tools" "kubernetes-cni")
+REQUIRED_PKGS=("apt-transport-https" "ca-certificates" "curl" "software-properties-common" "jq" "jsonnet" "docker-ce" "docker-ce-cli" "containerd.io=1.7.23-1" "kubelet" "kubeadm" "kubectl" "conntrack" "cri-tools" "kubernetes-cni")
 PAUSE_IMAGE="registry.k8s.io/pause:3.10" # Default pause image, to be used by both kubelet and containerd
 
 # Add Docker GPG key
@@ -350,12 +350,29 @@ fi
 
 echo "Deploying monitoring components..."
 
-#  Deploy Prometheus and Grafana via `kube-prometheus`
+# Deploy Prometheus and Grafana via `kube-prometheus`
+# If necessary, reset repository with cd ./prometheus-grafana/kube-prometheus && git fetch origin && git reset --hard origin/main
 
-# TODO: Install jsonnet and use it to customise the kube-prometheus manifests to add references to the following persistent volumes
-# kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/prometheus-pv-pvc.yaml"
-# kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/grafana-pv-pvc.yaml"
-# jsonnet "$SCRIPT_DIR/prometheus-grafana/prometheus-grafana-pvc.jsonnet" -o manifests.yaml
+# Create PersistentVolume and PersistentVolumeClaim for Prometheus and Grafana, and update kube-prometheus manifests
+kubectl get namespace monitoring || kubectl create namespace monitoring
+kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/prometheus-pv-pvc.yaml"
+kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/grafana-pv-pvc.yaml"
+yq e '
+.spec.storage = {
+  "volumeClaimTemplate": {
+    "spec": {
+      "accessModes": ["ReadWriteOnce"],
+      "resources": {
+        "requests": {
+          "storage": "10Gi"
+        }
+      },
+      "storageClassName": "prometheus-storage"
+    }
+  }
+}' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/prometheus-prometheus.yaml"
+yq e 'del(.spec.template.spec.volumes[] | select(.name == "grafana-storage").emptyDir)' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/grafana-deployment.yaml"
+yq e '.spec.template.spec.volumes[] |= select(.name == "grafana-storage").persistentVolumeClaim.claimName = "grafana-pvc"' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/grafana-deployment.yaml"
 
 # Apply kube-prometheus manifests
 kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/setup"
