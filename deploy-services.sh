@@ -55,33 +55,6 @@ if [ "$K8S_CONTROLLER" == 1 ]; then
 #  kubectl port-forward svc/wordpress 8081:80 &
   echo "Wordpress requires manual configuration."
 
-#  NAME                    URL
-#  bitnami                 https://charts.bitnami.com/bitnami
-#  zekker6                 https://zekker6.github.io/helm-charts/
-#  glitchtip               https://gitlab.com/api/v4/projects/16325141/packages/helm/stable
-#  grafana                 https://grafana.github.io/helm-charts
-#  prometheus-community    https://prometheus-community.github.io/helm-charts
-
-#  echo "Deploying monitoring components..."
-#  # TODO: Configure all values.yaml files for monitoring components
-
-##  Deploy Prometheus
-#  kubectl apply -f "$SCRIPT_DIR/prometheus/prometheus-pv-pvc.yaml"
-#  helm install prometheus ./prometheus
-#
-##  Deploy Grafana
-#  kubectl apply -f "$SCRIPT_DIR/grafana/grafana-pv-pvc.yaml"
-#  helm install grafana ./grafana
-#
-##  Deploy Plausible
-##  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
-#  kubectl apply -f "$SCRIPT_DIR/plausible/plausible-pv-pvc.yaml"
-#  helm install plausible-analytics ./plausible-analytics
-#
-##  Deploy Glitchtip
-#  kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
-#  helm install glitchtip ./glitchtip
-
 fi
 
 # Print summary of all resources

@@ -187,12 +187,13 @@ vespa version || { echo "Vespa CLI installation failed"; exit 1; }
 #### Install Kubernetes components ####
 
 # Override kubelet configuration
+# The webhook flags are specified in documentation for `kube-prometheus`
 echo "Overriding kubelet configuration..."
 OVERRIDE_FILE="/etc/systemd/system/kubelet.service.d/override.conf"
 mkdir -p $(dirname $OVERRIDE_FILE)
 tee $OVERRIDE_FILE > /dev/null <<EOF
 [Service]
-Environment="KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --pod-infra-container-image=$PAUSE_IMAGE"
+Environment="KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --pod-infra-container-image=$PAUSE_IMAGE --authentication-token-webhook=true --authorization-mode=Webhook"
 EOF
 systemctl daemon-reload
 
@@ -339,58 +340,114 @@ source "$SCRIPT_DIR/load-secrets.sh"
 # Create required directories for persistent storage; clone WHG database
 source "$SCRIPT_DIR/create-persistent-volumes.sh"
 
-# Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
-if [ "$K8S_CONTROLLER" == 1 ]; then
-  echo "Deploying Kubernetes Dashboard via LoadBalancer..."
-
-  # Install Kubernetes Dashboard
-  echo "Installing Kubernetes Dashboard..."
-#  kubectl create namespace kubernetes-dashboard  # Ensure the kubernetes-dashboard namespace exists
-  kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-  kubectl rollout status deployment/kubernetes-dashboard -n kubernetes-dashboard
-  kubectl apply -f "$SCRIPT_DIR/system/dashboard-service.yaml" # Apply Dashboard Service configuration
-
-  # Wait for LoadBalancer IP assignment
-  echo "Waiting for LoadBalancer IP for Kubernetes Dashboard..."
-  while true; do
-    LB_IP=$(kubectl get svc kubernetes-dashboard-lb -n kubernetes-dashboard -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    if [[ -n "$LB_IP" ]]; then
-      echo "Kubernetes Dashboard is accessible at https://$LB_IP"
-      break
-    fi
-    echo "Still waiting for LoadBalancer IP..."
-    sleep 5
-  done
-
-  # Create ServiceAccount and ClusterRoleBinding in the kubernetes-dashboard namespace
-  echo "Creating ServiceAccount for Dashboard access..."
-  kubectl create serviceaccount dashboard-admin -n kubernetes-dashboard
-  kubectl create clusterrolebinding dashboard-admin-binding --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin
-
-  # Get the Dashboard token
-  TOKEN=$(kubectl -n kubernetes-dashboard create token dashboard-admin --duration=876600h) # Create a token with 100-year validity
-
-  # Add the credentials to the user kubeconfig files
-  USER_HOME="/home/$SUDO_USER"
-  USER_KUBE_CONFIG="$USER_HOME/.kube/config"
-  kubectl --kubeconfig="$USER_KUBE_CONFIG" config set-credentials "dashboard-admin" --token="$TOKEN"
-  kubectl --kubeconfig="$USER_KUBE_CONFIG" config set-context "dashboard-context" --cluster=$(kubectl --kubeconfig="$USER_KUBE_CONFIG" config view -o=jsonpath='{.current-context}') --user="dashboard-admin"
-  kubectl --kubeconfig="$USER_KUBE_CONFIG" config use-context "dashboard-context"
-
-  # Echo the URL and token
-  echo "Kubernetes Dashboard is available at: https://$LB_IP"
-  echo "Log in using either the config file at $USER_KUBE_CONFIG or the following token:"
-  echo "$TOKEN"
-
-  # Apply global label critical=true to all resources
-  echo "Labeling all resources as critical..."
-  RESOURCES=("pods" "deployments" "services" "configmaps" "secrets" "statefulsets" "daemonsets" "replicasets" "jobs" "cronjobs")
-  for RESOURCE in "${RESOURCES[@]}"; do
-      kubectl label "$RESOURCE" --all --all-namespaces critical=true
-  done
-
-  # Deploy services (only on control-plane nodes)
-  bash "$SCRIPT_DIR/deploy-services.sh"
+# Exit if this is a worker node
+if [ "$K8S_CONTROLLER" != 1 ]; then
+  echo "Worker node setup complete."
+  exit 0
 fi
+
+#### Deploy Control Plane Components ####
+
+echo "Deploying monitoring components..."
+
+#  Deploy Prometheus and Grafana via `kube-prometheus`
+
+# TODO: Install jsonnet and use it to customise the kube-prometheus manifests to add references to the following persistent volumes
+# kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/prometheus-pv-pvc.yaml"
+# kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/grafana-pv-pvc.yaml"
+# jsonnet "$SCRIPT_DIR/prometheus-grafana/prometheus-grafana-pvc.jsonnet" -o manifests.yaml
+
+# Apply kube-prometheus manifests
+kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/setup"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to apply kube-prometheus setup manifests."
+    exit 1
+fi
+
+# Wait for CRDs to be established
+echo "Waiting for CustomResourceDefinitions to be established..."
+kubectl wait --for=condition=Established --all CustomResourceDefinition --timeout=300s
+if [ $? -ne 0 ]; then
+    echo "Error: CRDs were not established within the timeout period."
+    exit 1
+fi
+
+# Deploy the remaining manifests
+kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to apply kube-prometheus manifests."
+    exit 1
+fi
+
+# Verify kube-prometheus components are running
+echo "Verifying kube-prometheus deployment..."
+kubectl rollout status deployment/prometheus-operator -n monitoring --timeout=300s
+kubectl get pods -n monitoring
+if [ $? -ne 0 ]; then
+    echo "Error: kube-prometheus components did not deploy successfully."
+    exit 1
+fi
+echo "kube-prometheus stack deployed successfully."
+
+##  Deploy Plausible
+##  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
+#kubectl apply -f "$SCRIPT_DIR/plausible/plausible-pv-pvc.yaml"
+#helm install plausible-analytics ./plausible-analytics
+#
+##  Deploy Glitchtip
+#kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
+#helm install glitchtip ./glitchtip
+
+# Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
+echo "Deploying Kubernetes Dashboard via LoadBalancer..."
+
+# Install Kubernetes Dashboard
+echo "Installing Kubernetes Dashboard..."
+#  kubectl create namespace kubernetes-dashboard  # Ensure the kubernetes-dashboard namespace exists
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+kubectl rollout status deployment/kubernetes-dashboard -n kubernetes-dashboard
+kubectl apply -f "$SCRIPT_DIR/system/dashboard-service.yaml" # Apply Dashboard Service configuration
+
+# Wait for LoadBalancer IP assignment
+echo "Waiting for LoadBalancer IP for Kubernetes Dashboard..."
+while true; do
+  LB_IP=$(kubectl get svc kubernetes-dashboard-lb -n kubernetes-dashboard -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  if [[ -n "$LB_IP" ]]; then
+    echo "Kubernetes Dashboard is accessible at https://$LB_IP"
+    break
+  fi
+  echo "Still waiting for LoadBalancer IP..."
+  sleep 5
+done
+
+# Create ServiceAccount and ClusterRoleBinding in the kubernetes-dashboard namespace
+echo "Creating ServiceAccount for Dashboard access..."
+kubectl create serviceaccount dashboard-admin -n kubernetes-dashboard
+kubectl create clusterrolebinding dashboard-admin-binding --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin
+
+# Get the Dashboard token
+TOKEN=$(kubectl -n kubernetes-dashboard create token dashboard-admin --duration=876600h) # Create a token with 100-year validity
+
+# Add the credentials to the user kubeconfig files
+USER_HOME="/home/$SUDO_USER"
+USER_KUBE_CONFIG="$USER_HOME/.kube/config"
+kubectl --kubeconfig="$USER_KUBE_CONFIG" config set-credentials "dashboard-admin" --token="$TOKEN"
+kubectl --kubeconfig="$USER_KUBE_CONFIG" config set-context "dashboard-context" --cluster=$(kubectl --kubeconfig="$USER_KUBE_CONFIG" config view -o=jsonpath='{.current-context}') --user="dashboard-admin"
+kubectl --kubeconfig="$USER_KUBE_CONFIG" config use-context "dashboard-context"
+
+# Echo the URL and token
+echo "Kubernetes Dashboard is available at: https://$LB_IP"
+echo "Log in using either the config file at $USER_KUBE_CONFIG or the following token:"
+echo "$TOKEN"
+
+# Apply global label critical=true to all resources
+echo "Labeling all resources as critical..."
+RESOURCES=("pods" "deployments" "services" "configmaps" "secrets" "statefulsets" "daemonsets" "replicasets" "jobs" "cronjobs")
+for RESOURCE in "${RESOURCES[@]}"; do
+    kubectl label "$RESOURCE" --all --all-namespaces critical=true
+done
+
+# Deploy services (only on control-plane nodes)
+bash "$SCRIPT_DIR/deploy-services.sh"
 
 echo "Completed server configuration and deployment of Kubernetes components."

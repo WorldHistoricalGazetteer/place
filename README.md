@@ -271,9 +271,15 @@ sudo chmod +x ./*.sh && sudo -E ./deploy.sh "<kubeadm-join-command>"
 #### Access the Application (Development)
 
 Local deployments can be accessed in a browser
-at <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>.
+at <a href="http://localhost:30070" target="_blank">http://localhost:30070</a>.
 Local map tileserver can be accessed in a browser
-at <a href="http://localhost:30080/" target="_blank">http://localhost:30080/</a>.
+at <a href="http://localhost:8000/" target="_blank">http://localhost:8000/</a>.
+
+_It may be necessary to reapply the `kubectl` port-forwarding command:_
+
+```bash
+sudo kubectl port-forward svc/django-service 8000:8000 &
+```
 
 ### Re-deploy Services
 

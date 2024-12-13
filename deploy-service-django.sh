@@ -67,7 +67,7 @@ yq e ".spec.template.spec.volumes += [{
   "$SCRIPT_DIR/django/django-deployment.yaml" | kubectl apply -f -
 kubectl apply -f "$SCRIPT_DIR/django/django-service.yaml"
 if [ "$K8S_ENVIRONMENT" == "development" ]; then
-  kubectl apply -f "$SCRIPT_DIR/django/django-ingress-local.yaml" # Serve on localhost
+#  kubectl apply -f "$SCRIPT_DIR/django/django-ingress-local.yaml" # Serve on localhost
   kubectl port-forward svc/django-service 8000:8000 & # Run in background
 else
   yq e "$YQ_TLS" "$SCRIPT_DIR/django/django-ingress.yaml" | kubectl apply -f - # Remove cert-manager and tls section for worker nodes
