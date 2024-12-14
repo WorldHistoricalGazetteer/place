@@ -108,6 +108,8 @@ wait_for_kubelet() {
 remove_kubernetes() {
     echo "Removing pre-existing Kubernetes components..."
 
+    helm uninstall plausible-analytics
+
     # Reset Kubernetes settings, only if kubeadm is available
     if command -v kubeadm &> /dev/null; then
         echo "Running kubeadm reset..."

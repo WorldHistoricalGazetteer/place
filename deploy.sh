@@ -408,9 +408,10 @@ echo "kube-prometheus stack deployed successfully."
 
 ##  Deploy Plausible
 ##  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
-#kubectl apply -f "$SCRIPT_DIR/plausible/plausible-pv-pvc.yaml"
-#helm install plausible-analytics ./plausible-analytics
-#
+kubectl apply -f "$SCRIPT_DIR/plausible-analytics/plausible-postgres-pv-pvc.yaml"
+kubectl apply -f "$SCRIPT_DIR/plausible-analytics/plausible-clickhouse-pv-pvc.yaml"
+helm install plausible-analytics ./plausible-analytics
+
 ##  Deploy Glitchtip
 #kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
 #helm install glitchtip ./glitchtip
@@ -459,7 +460,7 @@ echo "$TOKEN"
 
 # Apply global label critical=true to all resources
 echo "Labeling all resources as critical..."
-RESOURCES=("pods" "deployments" "services" "configmaps" "secrets" "statefulsets" "daemonsets" "replicasets" "jobs" "cronjobs")
+RESOURCES=("pods" "deployments" "services" "configmaps" "secrets" "statefulsets" "daemonsets" "replicasets" "jobs" "cronjobs" "persistentvolumes" "persistentvolumeclaims")
 for RESOURCE in "${RESOURCES[@]}"; do
     kubectl label "$RESOURCE" --all --all-namespaces critical=true
 done

@@ -22,31 +22,46 @@ clean_pvs() {
     if ! sudo kubectl patch pv "$pv" --type=json -p='[{"op": "remove", "path": "/spec/claimRef"}]'; then
       echo "Failed to remove claimRef for $pv"
     fi
-    echo "Deleting PV: $pv"
-    if ! sudo kubectl delete pv "$pv"; then
-      echo "Failed to delete PV: $pv"
+    # Skip deleting critical PVs
+    if ! sudo kubectl get pv "$pv" -o=jsonpath='{.metadata.labels.critical}' | grep -q 'true'; then
+      echo "Deleting PV: $pv"
+      if ! sudo kubectl delete pv "$pv"; then
+        echo "Failed to delete PV: $pv"
+      fi
+    else
+      echo "Skipping critical PV: $pv"
     fi
   done
 
-  # Force delete Terminating PVs
+  # Force delete Terminating PVs, skip critical ones
   for pv in $(sudo kubectl get pv --no-headers | awk '{if ($5 == "Terminating") print $1}'); do
     echo "Force-deleting Terminating PV: $pv"
     if ! sudo kubectl patch pv "$pv" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'; then
       echo "Failed to remove finalizers for $pv"
     fi
-    if ! sudo kubectl delete pv "$pv" --force --grace-period=0; then
-      echo "Failed to force-delete PV: $pv"
+    # Skip force-deleting critical PVs
+    if ! sudo kubectl get pv "$pv" -o=jsonpath='{.metadata.labels.critical}' | grep -q 'true'; then
+      if ! sudo kubectl delete pv "$pv" --force --grace-period=0; then
+        echo "Failed to force-delete PV: $pv"
+      fi
+    else
+      echo "Skipping force-delete for critical PV: $pv"
     fi
   done
 }
 
-# Function to delete PVCs
+# Function to delete PVCs that are not labeled critical=true
 clean_pvcs() {
   echo "Cleaning up PVCs..."
   for pvc in $(sudo kubectl get pvc --no-headers | awk '{print $1}'); do
-    echo "Deleting PVC: $pvc"
-    if ! sudo kubectl delete pvc "$pvc"; then
-      echo "Failed to delete PVC: $pvc"
+    # Skip deleting critical PVCs
+    if ! sudo kubectl get pvc "$pvc" -o=jsonpath='{.metadata.labels.critical}' | grep -q 'true'; then
+      echo "Deleting PVC: $pvc"
+      if ! sudo kubectl delete pvc "$pvc"; then
+        echo "Failed to delete PVC: $pvc"
+      fi
+    else
+      echo "Skipping critical PVC: $pvc"
     fi
   done
 }

@@ -274,6 +274,7 @@ sudo kubectl port-forward svc/django-service 8000:8000 &
 sudo kubectl --namespace monitoring port-forward svc/prometheus-k8s 9090 &
 sudo kubectl --namespace monitoring port-forward svc/grafana 3000:3000 &
 sudo kubectl --namespace monitoring port-forward svc/alertmanager-main 9093 &
+sudo kubectl port-forward svc/plausible-analytics 8020:80 &
 ```
 
 - WHG: <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>
@@ -281,6 +282,7 @@ sudo kubectl --namespace monitoring port-forward svc/alertmanager-main 9093 &
 - Prometheus: <a href="http://localhost:9090" target="_blank">http://localhost:9090</a>
 - Grafana: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> (initial credentials: admin|admin)
 - Alertmanager: <a href="http://localhost:9093" target="_blank">http://localhost:9093</a>
+- Plausible: <a href="http://localhost:8020" target="_blank">http://localhost:8020</a>
 
 ##### Re-deploy Services
 
