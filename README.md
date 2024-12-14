@@ -90,23 +90,23 @@ This repository includes configuration files for deploying the following compone
 
   > A platform for serving scalable data and content, commonly used in search and recommendation systems.
 
-- [ ] **Wordpress**
+- [x] **Wordpress**
 
   > A content management system used for the WHG blog, providing a platform for creating and managing blog posts.
 
 ### Monitoring and Analytics Components
 
-- [ ] **Prometheus**
+- [x] **Prometheus**
 
   > A monitoring and alerting toolkit that collects metrics from the WHG application and its components, helping to
   ensure the system is running smoothly.
 
-- [ ] **Grafana**
+- [x] **Grafana**
 
   > A visualization tool that displays metrics collected by Prometheus, providing insights into the performance and
   health of the WHG application.
 
-- [ ] **Plausible**
+- [x] **Plausible**
 
   > An open-source analytics platform that tracks user interactions with the WHG website, providing insights into user
   behavior and engagement.
