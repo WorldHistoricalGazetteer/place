@@ -111,7 +111,7 @@ This repository includes configuration files for deploying the following compone
   > An open-source analytics platform that tracks user interactions with the WHG website, providing insights into user
   behavior and engagement.
 
-- [ ] **Glitchtip**
+- [x] **Glitchtip**
 
   > An error monitoring tool that collects and aggregates error reports from the WHG application, helping to identify
   and resolve issues quickly.
