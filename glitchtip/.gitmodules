@@ -1,3 +1,0 @@
-[submodule "django-helm-chart"]
-	path = django-helm-chart
-	url = https://gitlab.com/burke-software/django-helm-chart.git

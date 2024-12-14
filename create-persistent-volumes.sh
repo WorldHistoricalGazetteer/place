@@ -31,7 +31,7 @@ declare -A DIRECTORIES=(
   [grafana]="/data/k8s/grafana:65534:755:LOCAL,PITT1"
   [plausible]="/data/k8s/plausible:1001:777:LOCAL,PITT1"
   [clickhouse]="/data/k8s/clickhouse:999:777:LOCAL,PITT1"
-  [glitchtip]="/data/k8s/glitchtip:1000:775:LOCAL,PITT1"
+  [glitchtip]="/data/k8s/glitchtip:1001:777:LOCAL,PITT1"
   [vespa]="/data/k8s/vespa:1000:775:LOCAL,PITT2"
 )
 

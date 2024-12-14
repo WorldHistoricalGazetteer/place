@@ -371,6 +371,7 @@ yq e '
     }
   }
 }' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/prometheus-prometheus.yaml"
+yq e '.spec.replicas = 1' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/prometheus-prometheus.yaml"
 yq e 'del(.spec.template.spec.volumes[] | select(.name == "grafana-storage").emptyDir)' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/grafana-deployment.yaml"
 yq e '.spec.template.spec.volumes[] |= select(.name == "grafana-storage").persistentVolumeClaim.claimName = "grafana-pvc"' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/grafana-deployment.yaml"
 
@@ -413,8 +414,8 @@ kubectl apply -f "$SCRIPT_DIR/plausible-analytics/plausible-clickhouse-pv-pvc.ya
 helm install plausible-analytics ./plausible-analytics
 
 ##  Deploy Glitchtip
-#kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
-#helm install glitchtip ./glitchtip
+kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
+helm install glitchtip ./glitchtip
 
 # Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
 echo "Deploying Kubernetes Dashboard via LoadBalancer..."

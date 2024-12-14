@@ -33,3 +33,11 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: glitchtip-storage
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: glitchtip-storage
+provisioner: kubernetes.io/no-provisioner  # using hostPath
+reclaimPolicy: Retain  # Ensures data is kept when PVC is deleted
+volumeBindingMode: WaitForFirstConsumer  # Prevents PV binding until PVC is created
