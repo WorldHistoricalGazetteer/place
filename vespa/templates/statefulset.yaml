@@ -1,0 +1,42 @@
+# templates/statefulset.yaml
+{{- $releaseName := .Release.Name }}
+{{- $defaultValues := .Values }}
+{{- range $role, $config := .Values.statefulset.roles }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $releaseName }}-{{ $role }}
+spec:
+  serviceName: {{ $releaseName }}-{{ $role }}
+  replicas: {{ $config.replicas | default $defaultValues.statefulset.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $releaseName }}
+      role: {{ $role }}
+  template:
+    metadata:
+      labels:
+        app: {{ $releaseName }}
+        role: {{ $role }}
+    spec:
+      containers:
+        - name: vespa
+          image: "{{ $defaultValues.image.repository }}:{{ $defaultValues.image.tag }}"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: {{ $config.resources.requests.cpu | default $defaultValues.resources.requests.cpu }}
+              memory: {{ $config.resources.requests.memory | default $defaultValues.resources.requests.memory }}
+            limits:
+              cpu: {{ $config.resources.limits.cpu | default $defaultValues.resources.limits.cpu }}
+              memory: {{ $config.resources.limits.memory | default $defaultValues.resources.limits.memory }}
+          volumeMounts:
+            - name: {{ $role }}-storage
+              mountPath: /data/vespa
+      volumes:
+        - name: {{ $role }}-storage
+          persistentVolumeClaim:
+            claimName: {{ $releaseName }}-{{ $role }}-pvc
+---
+{{- end }}

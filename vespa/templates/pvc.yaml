@@ -1,0 +1,16 @@
+# templates/pvc.yaml
+{{- $releaseName := .Release.Name }}
+{{- range $key, $value := .Values.pvc }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $releaseName }}-{{ $value.name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $value.storageSize }}
+  storageClassName: {{ $releaseName }}-{{ $value.storageClassName }}
+---
+{{- end }}

@@ -229,6 +229,12 @@ fi
 
 # Label nodes based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
 kubectl label nodes --all controller=$K8S_CONTROLLER role=$K8S_ROLE environment=$K8S_ENVIRONMENT
+if [[ "$K8S_ROLE" != "backup" && "$K8S_CONTROLLER" == "1" ]]; then
+  kubectl label nodes --all vespa-role=admin
+fi
+if [[ "$K8S_ROLE" != "backup" ]]; then
+  kubectl label nodes --all vespa-role=container vespa-role=content
+fi
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 
 # Install Flannel (CNI = Container Network Interface) for Kubernetes
@@ -408,7 +414,6 @@ fi
 echo "kube-prometheus stack deployed successfully."
 
 ##  Deploy Plausible
-##  See https://zekker6.github.io/helm-charts/docs/charts/plausible-analytics/#configuration
 kubectl apply -f "$SCRIPT_DIR/plausible-analytics/plausible-postgres-pv-pvc.yaml"
 kubectl apply -f "$SCRIPT_DIR/plausible-analytics/plausible-clickhouse-pv-pvc.yaml"
 helm install plausible-analytics ./plausible-analytics

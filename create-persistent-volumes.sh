@@ -32,7 +32,9 @@ declare -A DIRECTORIES=(
   [plausible]="/data/k8s/plausible:1001:777:LOCAL,PITT1"
   [clickhouse]="/data/k8s/clickhouse:999:777:LOCAL,PITT1"
   [glitchtip]="/data/k8s/glitchtip:1001:777:LOCAL,PITT1"
-  [vespa]="/data/k8s/vespa:1000:775:LOCAL,PITT2"
+  [vespa_admin]="/data/k8s/vespa-admin:65534:755:LOCAL,PITT2"
+  [vespa_container]="/data/k8s/vespa-container:65534:755:LOCAL,PITT2"
+  [vespa_content]="/data/k8s/vespa-content:65534:755:LOCAL,PITT2"
 )
 
 # Remote directories for syncing

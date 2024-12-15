@@ -1,0 +1,181 @@
+replicaCount: 1
+
+image:
+  repository: vespaengine/vespa
+  pullPolicy: IfNotPresent
+  tag: "8"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: contour
+  annotations:
+    kubernetes.io/ingress.class: contour
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: index.whgazetteer.org
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: vespa-tls
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1000m"
+    memory: "4Gi"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# MetalLB LoadBalancer configuration (useful if you are exposing services via LoadBalancer)
+loadBalancerIP: "auto"  # or specify an IP if you are using MetalLB
+
+flannel:
+  enabled: true  # Enable Flannel for networking in your cluster
+  cniVersion: "v0.26.1"
+
+certManager:
+  enabled: true
+  issuerRef:
+    name: "letsencrypt-prod"
+    kind: ClusterIssuer
+
+pv:
+  admin:
+    name: admin-pv
+    storageSize: 10Gi
+    storageClassName: admin-storage
+    nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: vespa-role
+                operator: In
+                values:
+                  - admin
+    hostPath: "/data/k8s/vespa-admin"
+
+  container:
+    name: container-pv
+    storageSize: 10Gi
+    storageClassName: container-storage
+    nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: vespa-role
+                operator: In
+                values:
+                  - container
+    hostPath: "/data/k8s/vespa-container"
+
+  content:
+    name: content-pv
+    storageSize: 10Gi
+    storageClassName: content-storage
+    nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: vespa-role
+                operator: In
+                values:
+                  - content
+    hostPath: "/data/k8s/vespa-content"
+
+pvc:
+  adminClaim:
+    name: admin-pvc
+    storageSize: 10Gi
+    storageClassName: admin-storage
+
+  containerClaim:
+    name: container-pvc
+    storageSize: 10Gi
+    storageClassName: container-storage
+
+  contentClaim:
+    name: content-pvc
+    storageSize: 10Gi
+    storageClassName: content-storage
+
+statefulset:
+  replicas: 3  # Default replicas, can be overridden by specific role if needed
+  podSecurityContext:
+    fsGroup: 65534
+    runAsUser: 65534
+    runAsGroup: 65534
+  container:
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+  roles:
+    admin:
+      replicas: 2
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "2Gi"
+        limits:
+          cpu: "1000m"
+          memory: "4Gi"
+    container:
+      replicas: 3
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "2Gi"
+        limits:
+          cpu: "1000m"
+          memory: "4Gi"
+    content:
+      replicas: 5
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "2Gi"
+        limits:
+          cpu: "1000m"
+          memory: "4Gi"

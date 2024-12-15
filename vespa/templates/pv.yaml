@@ -1,0 +1,30 @@
+# templates/pv.yaml
+{{- $releaseName := .Release.Name }}
+{{- range $role, $pv := .Values.pv }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $releaseName }}-{{ $pv.name }}
+spec:
+  capacity:
+    storage: {{ $pv.storageSize }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ $releaseName }}-{{ $pv.storageClassName }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: vespa-role
+              operator: In
+              values:
+                {{- range $pv.nodeAffinity.required.nodeSelectorTerms }}
+                  {{- range .matchExpressions }}
+                    - {{ .values | join ", " }}
+                  {{- end }}
+                {{- end }}
+  hostPath:
+    path: {{ $pv.hostPath }}
+---
+{{- end }}

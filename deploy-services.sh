@@ -38,13 +38,8 @@ if [[ "$K8S_ROLE" == "all" || "$K8S_ROLE" == "general" ]]; then
 fi
 
 # Deploy Vespa manifests
-#echo "Deploying Vespa components..."
-#kubectl apply -f "$SCRIPT_DIR/vespa/content-node-deployment.yaml"
-#kubectl apply -f "$SCRIPT_DIR/vespa/search-node-deployment.yaml"
-#if [[ "$ROLE" == "master" || "$ROLE" == "local" ]]; then
-#  kubectl apply -f "$SCRIPT_DIR/vespa/config-server-deployment.yaml"
-#  yq e "$YQ_TLS" "$SCRIPT_DIR/vespa/vespa-ingress.yaml" | kubectl apply -f -
-#fi
+echo "Deploying Vespa components..."
+helm install vespa ./vespa
 
 if [ "$K8S_CONTROLLER" == 1 ]; then
 
