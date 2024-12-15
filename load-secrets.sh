@@ -76,15 +76,18 @@ spec:
         db-password:
           text: >
             {{ get ((get .Secrets "Server_Settings") | fromJson) "django-postgres-password" }}
-        plausible-admin-password:
+        postgres-password:
           text: >
-            {{ get ((get .Secrets "Server_Settings") | fromJson) "plausible-admin-password" }}
-        plausible-user-password:
+            {{ get ((get .Secrets "Server_Settings") | fromJson) "postgresql-admin-password" }}
+        postgresql-admin-password:
           text: >
-            {{ get ((get .Secrets "Server_Settings") | fromJson) "plausible-user-password" }}
-        plausible-replication-password:
+            {{ get ((get .Secrets "Server_Settings") | fromJson) "postgresql-admin-password" }}
+        postgresql-user-password:
           text: >
-            {{ get ((get .Secrets "Server_Settings") | fromJson) "plausible-replication-password" }}
+            {{ get ((get .Secrets "Server_Settings") | fromJson) "postgresql-user-password" }}
+        postgresql-replication-password:
+          text: >
+            {{ get ((get .Secrets "Server_Settings") | fromJson) "postgresql-replication-password" }}
 EOF
 
 # Wait for creation of the Secret

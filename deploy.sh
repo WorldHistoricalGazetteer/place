@@ -415,7 +415,7 @@ helm install plausible-analytics ./plausible-analytics
 
 ##  Deploy Glitchtip
 kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
-helm install glitchtip ./glitchtip
+helm install glitchtip ./glitchtip --debug
 
 # Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
 echo "Deploying Kubernetes Dashboard via LoadBalancer..."
