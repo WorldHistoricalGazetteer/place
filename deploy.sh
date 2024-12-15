@@ -230,10 +230,11 @@ fi
 # Label nodes based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
 kubectl label nodes --all controller=$K8S_CONTROLLER role=$K8S_ROLE environment=$K8S_ENVIRONMENT
 if [[ "$K8S_ROLE" != "backup" && "$K8S_CONTROLLER" == "1" ]]; then
-  kubectl label nodes --all vespa-role=admin
+  kubectl label nodes --all vespa-role-admin=true
 fi
 if [[ "$K8S_ROLE" != "backup" ]]; then
-  kubectl label nodes --all vespa-role=container vespa-role=content
+  kubectl label nodes --all vespa-role-container=true
+  kubectl label nodes --all vespa-role-content=true
 fi
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 

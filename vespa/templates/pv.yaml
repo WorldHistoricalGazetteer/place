@@ -16,14 +16,10 @@ spec:
     required:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: vespa-role
+            - key: vespa-role-{{ $role }}
               operator: In
               values:
-                {{- range $pv.nodeAffinity.required.nodeSelectorTerms }}
-                  {{- range .matchExpressions }}
-                    - {{ .values | join ", " }}
-                  {{- end }}
-                {{- end }}
+                - "true"
   hostPath:
     path: {{ $pv.hostPath }}
 ---
