@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vespa-configserver
+spec:
+  # Use three servers for proper ZooKeeper quorum:
+  replicas: {{ .Values.replicaCounts.configserver }}
+  selector:
+    matchLabels:
+      app: vespa-configserver
+      name: vespa-internal
+  serviceName: vespa-internal
+  template:
+    metadata:
+      labels:
+        app: vespa-configserver
+        name: vespa-internal
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: vespa-role-admin
+                    operator: In
+                    values:
+                      - "true"
+      containers:
+      - name: vespa-configserver
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        args: ["configserver,services"]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext.pod | nindent 10 }}
+        volumeMounts:
+          {{- range .Values.pv }}
+          - name: vespa-{{ .name }}
+            mountPath: {{ .mountPath }}
+          {{- end }}
+        env:
+          - name: VESPA_CONFIGSERVERS
+            value: "{{ .Values.configserverConfig.servers }}"
+          {{- if .Values.configserverConfig.configserverJvmArgs }}
+          - name: VESPA_CONFIGSERVER_JVMARGS
+            value: "{{ .Values.configserverConfig.configserverJvmArgs }}"
+          {{- end }}
+          {{- if .Values.configserverConfig.configproxyJvmArgs }}
+          - name: VESPA_CONFIGPROXY_JVMARGS
+            value: "{{ .Values.configserverConfig.configproxyJvmArgs }}"
+          {{- end }}
+        resources:
+          requests:
+            memory: "4G"
+          limits:
+            memory: "4G"
+      volumes:
+        {{- range .Values.pv }}
+        - name: vespa-{{ .name }}
+          persistentVolumeClaim:
+            claimName: vespa-{{ .name }}-pvc
+        {{- end }}

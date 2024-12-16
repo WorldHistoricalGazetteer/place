@@ -1,4 +1,7 @@
-replicaCount: 1
+replicaCounts:
+  configserver: 3  # Ensure quorum for ZooKeeper
+#  container: 2     # Adjust based on expected traffic
+#  content: 3       # For high availability and redundancy
 
 image:
   repository: vespaengine/vespa
@@ -19,13 +22,13 @@ podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  container:
+    runAsUser: 1000
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
 
 service:
   type: ClusterIP
@@ -79,103 +82,31 @@ certManager:
     name: "letsencrypt-prod"
     kind: ClusterIssuer
 
-pv:
+configserverConfig:
+  servers: >
+    vespa-configserver-0.vespa-internal.default.svc.cluster.local,
+    vespa-configserver-1.vespa-internal.default.svc.cluster.local,
+    vespa-configserver-2.vespa-internal.default.svc.cluster.local
+  configserverJvmArgs: "-Xms32M -Xmx128M" # TODO: Comment out for production
+  configproxyJvmArgs: "-Xms32M -Xmx32M" # TODO: Comment out for production
+
+nodeAffinities:
   admin:
-    name: admin-pv
-    storageSize: 10Gi
-    storageClassName: admin-storage
-    nodeAffinity:
-      required:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: vespa-role
-                operator: In
-                values:
-                  - admin
-    hostPath: "/data/k8s/vespa-admin"
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: vespa-role-admin
+              operator: In
+              values:
+                - "true"
 
-  container:
-    name: container-pv
-    storageSize: 10Gi
-    storageClassName: container-storage
-    nodeAffinity:
-      required:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: vespa-role
-                operator: In
-                values:
-                  - container
-    hostPath: "/data/k8s/vespa-container"
-
-  content:
-    name: content-pv
-    storageSize: 10Gi
-    storageClassName: content-storage
-    nodeAffinity:
-      required:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: vespa-role
-                operator: In
-                values:
-                  - content
-    hostPath: "/data/k8s/vespa-content"
-
-pvc:
-  adminClaim:
-    name: admin-pvc
-    storageSize: 10Gi
-    storageClassName: admin-storage
-
-  containerClaim:
-    name: container-pvc
-    storageSize: 10Gi
-    storageClassName: container-storage
-
-  contentClaim:
-    name: content-pvc
-    storageSize: 10Gi
-    storageClassName: content-storage
-
-statefulset:
-  replicas: 3  # Default replicas, can be overridden by specific role if needed
-  podSecurityContext:
-    fsGroup: 65534
-    runAsUser: 65534
-    runAsGroup: 65534
-  container:
-    securityContext:
-      runAsUser: 65534
-      runAsGroup: 65534
-      fsGroup: 65534
-      readOnlyRootFilesystem: false
-      runAsNonRoot: true
-  roles:
-    admin:
-      replicas: 2
-      resources:
-        requests:
-          cpu: "500m"
-          memory: "2Gi"
-        limits:
-          cpu: "1000m"
-          memory: "4Gi"
-    container:
-      replicas: 3
-      resources:
-        requests:
-          cpu: "500m"
-          memory: "2Gi"
-        limits:
-          cpu: "1000m"
-          memory: "4Gi"
-    content:
-      replicas: 5
-      resources:
-        requests:
-          cpu: "500m"
-          memory: "2Gi"
-        limits:
-          cpu: "1000m"
-          memory: "4Gi"
+pv:
+  - name: var
+    storageSize: 5Gi
+    mountPath: /opt/vespa/var
+  - name: logs
+    storageSize: 5Gi
+    mountPath: /opt/vespa/logs
+  - name: workspace
+    storageSize: 1Gi
+    mountPath: /workspace

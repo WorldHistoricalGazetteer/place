@@ -283,6 +283,10 @@ sudo kubectl port-forward svc/plausible-analytics 8020:80 &
 - Grafana: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> (initial credentials: admin|admin)
 - Alertmanager: <a href="http://localhost:9093" target="_blank">http://localhost:9093</a>
 - Plausible: <a href="http://localhost:8020" target="_blank">http://localhost:8020</a>
+- Glitchtip:
+- Wordpress:
+- Kubernetes Dashboard: 
+- Vespa Dashboard:
 
 ##### Re-deploy Services
 
