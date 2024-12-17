@@ -97,28 +97,32 @@ until kubectl get secret whg-secret -n default; do
 done
 echo "...whg-secret has been created."
 
-# Ensure existence of `/whg-private` directory; create files from secrets
-sudo mkdir -p "$SCRIPT_DIR/whg-private"
-chmod 775 "$SCRIPT_DIR/whg-private"
-kubectl get secret whg-secret -o jsonpath='{.data.ca_cert}' | base64 --decode > "$SCRIPT_DIR/whg-private/ca-cert.pem"
-kubectl patch secret whg-secret -p '{"data": {"ca_cert": null}}'
-kubectl get secret whg-secret -o jsonpath='{.data.django_files}' | base64 --decode > "$SCRIPT_DIR/whg-private/django-files.zip.base64"
+# Ensure existence of `/whg/files/private` directory; create files from secrets
+PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
+sudo mkdir -p "$PRIVATE_DIR"
+chmod 775 "$PRIVATE_DIR"
+kubectl get secret whg-secret -o jsonpath='{.data.ca_cert}' | base64 --decode > "$PRIVATE_DIR/ca-cert.pem"
+kubectl get secret whg-secret -o jsonpath='{.data.django_files}' | base64 --decode > "$PRIVATE_DIR/django-files.zip.base64"
 kubectl patch secret whg-secret -p '{"data": {"django_files": null}}'
-chmod 600 "$SCRIPT_DIR/whg-private/django-files.zip.base64"
-base64 --decode "$SCRIPT_DIR/whg-private/django-files.zip.base64" > "$SCRIPT_DIR/whg-private/django-files.zip"
-unzip -o "$SCRIPT_DIR/whg-private/django-files.zip" -d "$SCRIPT_DIR/whg-private"
-sudo rm -f "$SCRIPT_DIR/whg-private/django-files.zip"
-sudo rm -f "$SCRIPT_DIR/whg-private/django-files.zip.base64"
-kubectl get secret whg-secret -o jsonpath='{.data.id_rsa}' | base64 --decode > "$SCRIPT_DIR/whg-private/id_rsa"
+chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
+base64 --decode "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
+unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
+sudo rm -f "$PRIVATE_DIR/django-files.zip"
+sudo rm -f "$PRIVATE_DIR/django-files.zip.base64"
+kubectl get secret whg-secret -o jsonpath='{.data.id_rsa}' | base64 --decode > "$PRIVATE_DIR/id_rsa"
 kubectl patch secret whg-secret -p '{"data": {"id_rsa": null}}'
-kubectl get secret whg-secret -o jsonpath='{.data.id_rsa_whg}' | base64 --decode > "$SCRIPT_DIR/whg-private/id_rsa_whg"
+kubectl get secret whg-secret -o jsonpath='{.data.id_rsa_whg}' | base64 --decode > "$PRIVATE_DIR/id_rsa_whg"
 kubectl patch secret whg-secret -p '{"data": {"id_rsa_whg": null}}'
 
-chmod 644 "$SCRIPT_DIR/whg-private/ca-cert.pem"
-chmod 600 "$SCRIPT_DIR/whg-private/id_rsa"
-chmod 600 "$SCRIPT_DIR/whg-private/id_rsa_whg"
-chmod 644 "$SCRIPT_DIR/whg-private/env_template.py"
-chmod 644 "$SCRIPT_DIR/whg-private/local_settings.py"
+chmod 600 "$PRIVATE_DIR/id_rsa"
+chmod 600 "$PRIVATE_DIR/id_rsa_whg"
+chmod 644 "$PRIVATE_DIR/ca-cert.pem"
+chmod 644 "$PRIVATE_DIR/env_template.py"
+chmod 644 "$PRIVATE_DIR/local_settings.py"
 
-echo "Secrets have been fetched and files stored in $SCRIPT_DIR/whg-private."
-ls -l "$SCRIPT_DIR/whg-private"
+# Add these unzipped files back into the Secret
+kubectl patch secret whg-secret -p '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
+kubectl patch secret whg-secret -p '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
+
+echo "Secrets have been fetched and files stored in $PRIVATE_DIR."
+ls -l "$PRIVATE_DIR"

@@ -132,15 +132,16 @@ To deploy the application with these configurations to a remote server, you will
   HashiCorp Vault</a>. These may be permanently added to the server's environment variables (
   `sudo nano /etc/environment`, followed by a reboot).
 
-#### Set the K8S_ID environment variable
+#### Set the server hostname
 
-The server will be configured in a role dependent on the value of the `K8S_ID` environment variable, a unique identifier
-for the server, which should be set before running the deployment script. Valid values can be seen in the `functions.sh`
-script. For example:
+The server will be configured in a role dependent on its `hostname`, which should be set before running the deployment
+script. Recognised values can be seen in the `functions.sh` script. For example:
 
 ```bash
-export K8S_ID=LOCAL
+sudo hostnamectl set-hostname PITT1
 ```
+
+If you omit this step, the server will be configured as a local development node by default.
 
 #### Set the KUBECONFIG environment variable permanently
 
@@ -285,7 +286,7 @@ sudo kubectl port-forward svc/plausible-analytics 8020:80 &
 - Plausible: <a href="http://localhost:8020" target="_blank">http://localhost:8020</a>
 - Glitchtip:
 - Wordpress:
-- Kubernetes Dashboard: 
+- Kubernetes Dashboard:
 - Vespa Dashboard:
 
 ##### Re-deploy Services

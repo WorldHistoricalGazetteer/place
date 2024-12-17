@@ -1,0 +1,226 @@
+subdomain: "place.whgazetteer.org"
+namespace: "whg"
+
+whgNodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: whg-site
+            operator: In
+            values:
+              - "true"
+
+whgAffinity: {{ toYaml .Values.whgNodeAffinity | indent 2 }}
+
+whgDevAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+        - key: environment
+          operator: In
+          values:
+            - development
+        - key: whg-site
+          operator: In
+          values:
+            - "true"
+
+# Django configuration
+django:
+  replicaCount: 1
+  image: "worldhistoricalgazetteer/web"
+  imageTag: "0.1.7"
+  imagePullPolicy: "IfNotPresent"
+  githubRepository: "WorldHistoricalGazetteer/whg3"
+  user: 1000
+  group: 1000
+  port: 8000
+  servicePort: 443
+  env:
+    - name: DJANGO_SETTINGS_MODULE
+      value: "whg.settings"
+    - name: IMAGE_VERSION
+      valueFrom:
+        configMapKeyRef:
+          name: whg-config
+          key: image-version
+    - name: DB_USER
+      valueFrom:
+        configMapKeyRef:
+          name: whg-config
+          key: db-user
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: whg-secret
+          key: db-password
+    - name: DB_NAME
+      valueFrom:
+        configMapKeyRef:
+          name: whg-config
+          key: db-name
+    - name: DATABASE_URL
+      # TODO: It may be necessary to inject the password in the start command
+      value: "postgres://{{ .Values.postgres.dbUser }}:$(DB_PASSWORD)@postgres:{{ .Values.postgres.port }}/{{ .Values.postgres.dbName }}"
+    - name: REDIS_URL
+      value: "redis://redis:6379"
+    - name: SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: whg-secret
+          key: secret-key
+  probes:
+    startup:
+      initialDelaySeconds: 45
+      timeoutSeconds: 10
+  volumeMounts:
+    - name: app
+      mountPath: /app
+    - name: static-files
+      mountPath: /app/static
+    - name: media-files
+      mountPath: /app/media
+    - name: config-volume
+      mountPath: /app
+      readOnly: true
+    - name: secret-volume
+      mountPath: /app
+      readOnly: true
+  volumes:
+    - name: app
+      persistentVolumeClaim:
+        claimName: django-app-pvc
+    - name: static-files
+      persistentVolumeClaim:
+        claimName: django-static-pvc
+    - name: media-files
+      persistentVolumeClaim:
+        claimName: django-media-pvc
+    - name: config-volume
+      configMap:
+        name: whg-config
+        items:
+          - key: entrypoint
+            path: entrypoint-django-init.sh
+    - name: secret-volume
+      secret:
+        secretName: whg-secret
+        items:
+          - key: local_settings
+            path: whg/local_settings.py
+          - key: env_template
+            path: env_template.py
+          - key: ca_cert
+            path: whg/authorisation/ca-cert.pem
+  pv:
+    app:
+      storage: 10Gi
+      path: /data/k8s/django-app
+    static:
+      storage: 2Gi
+      path: /data/k8s/django-static
+    media:
+      storage: 10Gi
+      path: /data/k8s/django-media
+
+# Webpack configuration
+webpack:
+  replicaCount: 1
+  port: 4000
+  pv:
+    storage: 1Gi
+    path: /data/k8s/webpack
+
+# Redis configuration
+redis:
+  replicaCount: 1
+  image: "redis:bullseye"
+  imageTag: "7.4.1"
+  imagePullPolicy: "IfNotPresent"
+  port: 6379
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  pv:
+    storage: 1Gi
+    path: /data/k8s/redis
+
+# Celery configuration
+celery:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+  worker:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "500m"
+      limits:
+        memory: "128Mi"
+        cpu: "250m"
+  beat:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "250m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+  flower:
+    replicaCount: 1
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "250m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+# Postgres & pgBackRest configuration
+postgres:
+  replicaCount: 1
+  image: "worldhistoricalgazetteer/postgis-pgbackrest"
+  imageTag: "15-3.4"
+  imagePullPolicy: "IfNotPresent"
+  user: 999
+  group: 999
+  port: 5432
+  dbUser: "whgadmin"
+  dbName: "whgv3beta"
+  fullBackupSchedule: "0 5 * * *"  # Every day at 5:00 AM
+  pv:
+    postgres:
+      storage: 10Gi
+      path: /data/k8s/postgres
+    pgbackrest:
+      storage: 10Gi
+      path: /data/k8s/pgbackrest
+  pgHba: |
+    # Local connections
+    local   all             all                                    trust
+    host    all             all             127.0.0.1/32           trust
+    host    all             all             ::1/128                trust
+    host    all             all             10.244.0.0/16          trust
+    host    replication     all             10.244.0.0/16          trust
+    host    all             all             0.0.0.0/0              reject
+  postgresqlConf: |
+    listen_addresses = '*'
+    archive_command = 'pgbackrest --stanza=whgdb archive-push %p'
+    archive_mode = on
+    max_wal_senders = 3
+    wal_level = replica
+  pgbackrestConf: |
+    [whgdb]
+    pg1-path=/var/lib/postgresql/data
+    [global]
+    repo1-path=/var/lib/pgbackrest/backups
+    repo1-retention-full=2
+    repo1-retention-diff=5
+    [global:archive-push]
+    compress-level=3

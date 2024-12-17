@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webpack
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: webpack
+spec:
+  replicas: {{ .Values.webpack.replicaCount }}
+  selector:
+    matchLabels:
+      app: webpack
+  template:
+    metadata:
+      labels:
+        app: webpack
+    spec:
+      affinity:
+        nodeAffinity: {{- toYaml .Values.whgDevAffinity | nindent 8 }}
+      initContainers:
+        - name: webpack-build
+          image: node:18-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              echo "Starting Webpack installation in initContainer..."
+              cp -L -R /temp/* /config/ # Copy files from the webpack-source into a writable directory
+              cd /config
+              npm install
+              echo "Webpack installation completed."
+          volumeMounts:
+          - name: webpack-source
+            mountPath: /temp
+          - name: django-app-volume
+            mountPath: /app
+          - name: webpack-build-volume
+            mountPath: /config # This is where the build artifacts will be stored
+      containers:
+        - name: webpack
+          image: node:18-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              echo "Starting Webpack watch in main container..."
+              cd /config
+              npx webpack --watch --config /config/webpack.config.js
+          ports:
+          - containerPort: {{ .Values.webpack.port }}
+          workingDir: /app
+          volumeMounts:
+          - name: django-app-volume
+            mountPath: /app
+          - name: webpack-build-volume
+            mountPath: /config
+      volumes:
+      - name: webpack-source
+        configMap:
+          name: webpack-config
+      - name: webpack-build-volume
+        persistentVolumeClaim:
+          claimName: webpack-build-pvc
+      - name: django-app-volume
+        persistentVolumeClaim:
+          claimName: django-app-pvc

@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: django-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    ingress.kubernetes.io/force-ssl-redirect: "true" # Redirect HTTP to HTTPS
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # For automated TLS certificates using Cert-Manager
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.subdomain }}
+    secretName: django-tls-secret
+  ingressClassName: contour
+  rules:
+  - host: {{ .Values.subdomain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: django-service
+            port:
+              number: {{ .Values.django.servicePort }}

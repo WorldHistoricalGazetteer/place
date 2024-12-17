@@ -227,14 +227,23 @@ else
 
 fi
 
-# Label nodes based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
-kubectl label nodes --all controller=$K8S_CONTROLLER role=$K8S_ROLE environment=$K8S_ENVIRONMENT
+# Get the current node name (safer than simply using `hostname`)
+NODE_NAME=$(kubectl get node --selector='kubernetes.io/hostname=$(hostname)' -o jsonpath='{.items[0].metadata.name}')
+export NODE_NAME
+
+# Label the node based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
+kubectl label node "$NODE_NAME" controller=$K8S_CONTROLLER role=$K8S_ROLE environment=$K8S_ENVIRONMENT
+
+# If the node is a controller and not a backup, add the vespa-role-admin label
 if [[ "$K8S_ROLE" != "backup" && "$K8S_CONTROLLER" == "1" ]]; then
-  kubectl label nodes --all vespa-role-admin=true
+  kubectl label node "$NODE_NAME" vespa-role-admin=true
+  kubectl label node "$NODE_NAME" whg-site=true
 fi
+
+# If the node is not a backup, add the vespa-role-container and vespa-role-content labels
 if [[ "$K8S_ROLE" != "backup" ]]; then
-  kubectl label nodes --all vespa-role-container=true
-  kubectl label nodes --all vespa-role-content=true
+  kubectl label node "$NODE_NAME" vespa-role-container=true
+  kubectl label node "$NODE_NAME" vespa-role-content=true
 fi
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 

@@ -22,7 +22,6 @@ source "$SCRIPT_DIR/kill-services.sh"
 
 # Deploy Django and Tile services
 if [[ "$K8S_ROLE" == "all" || "$K8S_ROLE" == "general" ]]; then
-  bash "$SCRIPT_DIR/deploy-service-django.sh"
 
   # Deploy TileServer-GL
   echo "Deploying Tile services..."
@@ -36,6 +35,10 @@ if [[ "$K8S_ROLE" == "all" || "$K8S_ROLE" == "general" ]]; then
   fi
 
 fi
+
+# Deploy WHG services
+echo "Deploying WHG services..."
+helm install whg ./whg
 
 # Deploy Vespa manifests
 echo "Deploying Vespa components..."

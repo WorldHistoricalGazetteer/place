@@ -6,17 +6,9 @@ identify_environment() {
         exit 1
     fi
 
-    if [ -z "$K8S_ID" ]; then
-        echo "K8S_ID is not set. Assuming local development environment."
-        K8S_ID="LOCAL"
-    fi
+    K8S_ID=$(hostname)
 
     case "$K8S_ID" in
-        LOCAL)
-            K8S_CONTROLLER=1
-            K8S_ROLE="all"
-            K8S_ENVIRONMENT="development"
-            ;;
         PITT1)
             K8S_CONTROLLER=1
             K8S_ROLE="general"
@@ -48,8 +40,10 @@ identify_environment() {
             K8S_ENVIRONMENT="production"
             ;;
         *)
-            echo "Unrecognized K8S_ID value: $K8S_ID. Exiting."
-            exit 1
+            K8S_CONTROLLER=1
+            K8S_ROLE="all"
+            K8S_ENVIRONMENT="development"
+            K8S_ID="LOCAL"
             ;;
     esac
     echo "$K8S_ID: CONTROLLER=$K8S_CONTROLLER, ROLE=$K8S_ROLE, ENVIRONMENT=$K8S_ENVIRONMENT"

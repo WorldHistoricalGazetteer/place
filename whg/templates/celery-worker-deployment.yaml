@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: django
+    component: celery-worker
+spec:
+  replicas: {{ .Values.celery.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app: django
+      component: celery-worker
+  template:
+    metadata:
+      labels:
+        app: django
+        component: celery-worker
+    spec:
+      securityContext: {{ toYaml .Values.celery.securityContext | indent 8 }}
+      affinity: {{ toYaml .Values.whgAffinity | indent 8 }}
+      containers:
+        - name: celery-worker
+          image: "{{ .Values.django.image }}:{{ .Values.django.imageTag }}"
+          imagePullPolicy: {{ .Values.django.imagePullPolicy }}
+          command: ["celery", "-A", "whg", "worker", "--loglevel=debug"]
+          env: {{ toYaml .Values.django.env | nindent 12 }}
+          resources: {{ toYaml .Values.celery.worker.resources | indent 12 }}
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /shared-data
+            {{- toYaml .Values.django.volumeMounts | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pgrep -f "celery worker"
+            initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 60 }}
+            timeoutSeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pgrep -f "celery worker"
+            initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 30 }}
+            timeoutSeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - |
+                  # Wait for redis...
+                  echo PING | nc redis 6379 | grep -q PONG && \
+                  # ... and for Django
+                  python manage.py check --deploy || exit 1
+            initialDelaySeconds: {{ add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int) }}
+            timeoutSeconds: 10
+            periodSeconds: 15
+            failureThreshold: 5
+      volumes:
+        - name: shared-volume
+          emptyDir: {}
+        {{ toYaml .Values.django.volumes | nindent 8 }}

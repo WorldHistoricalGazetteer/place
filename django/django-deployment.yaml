@@ -174,14 +174,14 @@ spec:
           livenessProbe:
             tcpSocket:
               port: 8000
-            initialDelaySeconds: 15
+            initialDelaySeconds: 90
             periodSeconds: 20
           readinessProbe:
             tcpSocket:
               port: 8000
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            timeoutSeconds: 5
+            initialDelaySeconds: 60
+            timeoutSeconds: 10
+            periodSeconds: 15
             successThreshold: 1
             failureThreshold: 3
           startupProbe:
@@ -192,9 +192,10 @@ spec:
                 - 'python manage.py check --deploy || true; python manage.py showmigrations | grep "[X]" || true'
                 # TODO: Replace the above with the following to prevent deployment if migrations are not up-to-date or if DEBUG is True
                 # - 'python manage.py check --deploy && python manage.py showmigrations | grep "[X]"'
-            initialDelaySeconds: 20
-            periodSeconds: 10
-            timeoutSeconds: 5
+            initialDelaySeconds: 45
+            timeoutSeconds: 10
+            periodSeconds: 15
+            failureThreshold: 5
       volumes:
         - name: app
           persistentVolumeClaim:

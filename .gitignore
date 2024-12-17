@@ -3,6 +3,4 @@
 
 # Ignore Django secret configuration files
 .whg-private/
-
-# Ignore Kubernetes Prometheus Grafana
-prometheus-grafana/kube-prometheus/*
+.whg/files/private/

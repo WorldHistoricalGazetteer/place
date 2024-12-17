@@ -96,29 +96,33 @@ spec:
                 - sh
                 - -c
                 - pgrep -f "celery worker"
-            initialDelaySeconds: 60
-            periodSeconds: 20
-            timeoutSeconds: 5
+            initialDelaySeconds: 90
+            timeoutSeconds: 10
+            periodSeconds: 30
           readinessProbe:
             exec:
               command:
                 - sh
                 - -c
                 - pgrep -f "celery worker"
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
+            initialDelaySeconds: 60
+            timeoutSeconds: 10
+            periodSeconds: 15
             successThreshold: 1
             failureThreshold: 3
-          startupProbe: # Wait until redis is available
+          startupProbe:
             exec:
               command:
                 - "sh"
                 - "-c"
-                - "echo PING | nc redis 6379 | grep -q PONG"
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 5
+                - |
+                  # Wait for redis...
+                  echo PING | nc redis 6379 | grep -q PONG && \
+                  # ... and for Django
+                  python manage.py check --deploy || exit 1
+            initialDelaySeconds: 70
+            timeoutSeconds: 10
+            periodSeconds: 15
             failureThreshold: 5
       volumes:
         - name: shared-volume

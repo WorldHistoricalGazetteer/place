@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-flower
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: django
+    component: celery-flower
+spec:
+  replicas: {{ .Values.celery.flower.replicaCount }}
+  selector:
+    matchLabels:
+      app: django
+      component: celery-flower
+  template:
+    metadata:
+      labels:
+        app: django
+        component: celery-flower
+    spec:
+      securityContext: {{ toYaml .Values.celery.securityContext | indent 8 }}
+      affinity: {{ toYaml .Values.whgAffinity | indent 8 }}
+      containers:
+        - name: celery-flower
+          image: "{{ .Values.django.image }}:{{ .Values.django.imageTag }}"
+          imagePullPolicy: {{ .Values.django.imagePullPolicy }}
+          command: ["celery", "-A", "whg", "flower", "--broker=redis://redis:6379/0"]
+          env: {{ toYaml .Values.django.env | nindent 12 }}
+          resources: {{ toYaml .Values.celery.flower.resources | indent 12 }}
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /shared-data
+            {{- toYaml .Values.django.volumeMounts | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pgrep -f "celery flower"
+            initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 60 }}
+            periodSeconds: 20
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pgrep -f "celery flower"
+            initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 30 }}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe: # Wait until celery worker is available
+            exec:
+              command:
+                - sh
+                - -c
+                - pgrep -f "celery worker"
+            initialDelaySeconds: {{ add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int) }}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 5
+      volumes:
+        - name: shared-volume
+          emptyDir: {}
+        {{- toYaml .Values.django.volumes | nindent 8 }}
