@@ -1,3 +1,0 @@
-[submodule "prometheus-grafana/kube-prometheus"]
-	path = prometheus-grafana/kube-prometheus
-	url = https://github.com/prometheus-operator/kube-prometheus.git
