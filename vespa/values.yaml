@@ -1,4 +1,4 @@
-namespace: vespa
+namespace: default
 
 replicaCounts:
   # Ensure quorum for ZooKeeper: if you increase this value, you must create additional directories for PVs
@@ -104,10 +104,6 @@ resources:
       memory: "1.5G"
 
 configserver:
-  servers: >
-    vespa-configserver-0.vespa-internal.vespa.svc.cluster.local,
-    vespa-configserver-1.vespa-internal.vespa.svc.cluster.local,
-    vespa-configserver-2.vespa-internal.vespa.svc.cluster.local
   configserverJvmArgs: "-Xms32M -Xmx128M" # TODO: Comment out for production
   configproxyJvmArgs: "-Xms32M -Xmx32M" # TODO: Comment out for production
   pvRootPath: "/data/k8s/vespa-config"

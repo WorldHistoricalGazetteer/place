@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: vespa-admin
-  namespace: vespa
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.replicaCounts.admin }}
   selector:

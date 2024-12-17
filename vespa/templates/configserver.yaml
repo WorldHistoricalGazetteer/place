@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: vespa-configserver
-  namespace: vespa
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.replicaCounts.configserver }}
   selector:
@@ -27,35 +27,22 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
         volumeMounts:
-          {{- $replicas := ($.Values.replicaCounts.configserver | int)}}
-          {{- range $index := until $replicas }}
           {{- range $.Values.configserver.pvs }}
-          - name: vespa-{{ .name }}-{{ $index }}
-            mountPath: /mounted-volume/{{ $index }}/{{ .name }}
+          - name: vespa-{{ .name }}
+            mountPath: {{ .mountPath }}
           {{- end }}
-          {{- end }}
-          - name: dummy
-            mountPath: /workspace
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            ordinal=$(hostname | grep -o '[0-9]*$')
-            {{- range $.Values.configserver.pvs }}
-            mkdir -p {{ .mountPath }}
-            ln -sf /mounted-volume/$ordinal/{{ .name }} {{ .mountPath }}
-            {{- end }}
-            exec vespa-start-configserver
         envFrom:
           - configMapRef:
               name: vespa-config
         resources: {{- toYaml .Values.resources.configserver | nindent 10 }}
-      volumes:
-        {{- range $index := until $replicas }}
-        {{- range $.Values.configserver.pvs }}
-        - name: vespa-{{ .name }}-{{ $index }}
-          persistentVolumeClaim:
-            claimName: vespa-{{ .name }}-pvc-{{ $index }}
-        {{- end }}
-        {{- end }}
-        - name: dummy # Dummy volume required to mount /workspace
-          emptyDir: {}
+  volumeClaimTemplates:
+    {{- range $.Values.configserver.pvs }}
+    - metadata:
+        name: vespa-{{ .name }}
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "vespa-config-{{ .name }}-storage"
+        resources:
+          requests:
+            storage: {{ .storageSize}}
+    {{- end }}

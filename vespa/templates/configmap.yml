@@ -2,9 +2,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: vespa-config
-  namespace: vespa
+  namespace: {{ .Values.namespace }}
 data:
-  VESPA_CONFIGSERVERS: "{{ .Values.configserver.servers }}"
+  VESPA_CONFIGSERVERS: >
+    {{- $servers := (.Values.replicaCounts.configserver | int) }}
+    {{- range $i := until $servers }}
+    vespa-configserver-{{ $i }}.vespa-internal.{{ $.Values.namespace }}.svc.cluster.local{{- if ne (add $i 1) $servers }}, {{- end }}
+    {{- end }}
   {{- if .Values.configserver.configserverJvmArgs }}
   VESPA_CONFIGSERVER_JVMARGS: "{{ .Values.configserver.configserverJvmArgs }}"
   {{- end }}
