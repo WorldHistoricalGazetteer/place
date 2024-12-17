@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vespa-content
+  namespace: vespa
+spec:
+  replicas: {{ .Values.replicaCounts.content }}
+  selector:
+    matchLabels:
+      app: vespa-content
+      name: vespa-internal
+  serviceName: vespa-internal
+  template:
+    metadata:
+      labels:
+        app: vespa-content
+        name: vespa-internal
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            {{ toYaml .Values.nodeAffinities.content.required | nindent 12 }}
+        podAntiAffinity: # Ensure that multiple vespa-content pods are not scheduled on the same node
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: vespa-content
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: vespa-content
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        args: ["services"]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: vespa-config
+        resources: {{- toYaml .Values.resources.content | nindent 10 }}
+        volumeMounts:
+            - name: vespa-var
+              mountPath: {{ .Values.content.pv.mountPath }}
+      volumes:
+        - name: vespa-var
+          persistentVolumeClaim:
+            claimName: vespa-content-pvc

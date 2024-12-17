@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vespa-query-container
+  namespace: vespa
+spec:
+  replicas: {{ .Values.replicaCounts.query }}
+  selector:
+    matchLabels:
+      app: vespa-query-container
+      name: vespa-internal
+  serviceName: vespa-internal
+  template:
+    metadata:
+      labels:
+        app: vespa-query-container
+        name: vespa-internal
+    spec:
+      containers:
+      - name: vespa-query-container
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        args: ["services"]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: vespa-config
+        resources: {{- toYaml .Values.resources.query | nindent 10 }}

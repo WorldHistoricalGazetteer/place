@@ -1,7 +1,12 @@
+namespace: vespa
+
 replicaCounts:
-  configserver: 3  # Ensure quorum for ZooKeeper
-#  container: 2     # Adjust based on expected traffic
-#  content: 3       # For high availability and redundancy
+  # Ensure quorum for ZooKeeper: if you increase this value, you must create additional directories for PVs
+  configserver: 3
+  admin: 1         # Only one admin node is needed
+  content: 1       # TODO: Increase this value for production
+  feed: 2
+  query: 2
 
 image:
   repository: vespaengine/vespa
@@ -19,16 +24,13 @@ serviceAccount:
 
 podAnnotations: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  fsGroup: 1000
 
 securityContext:
   container:
     runAsUser: 1000
-    readOnlyRootFilesystem: true
-    capabilities:
-      drop:
-        - ALL
+#    fsGroup: 1000
 
 service:
   type: ClusterIP
@@ -47,14 +49,6 @@ ingress:
           pathType: ImplementationSpecific
   tls:
     - secretName: vespa-tls
-
-resources:
-  requests:
-    cpu: "500m"
-    memory: "2Gi"
-  limits:
-    cpu: "1000m"
-    memory: "4Gi"
 
 autoscaling:
   enabled: false
@@ -82,13 +76,58 @@ certManager:
     name: "letsencrypt-prod"
     kind: ClusterIssuer
 
-configserverConfig:
+resources:
+  configserver:
+    requests:
+      memory: "4G"
+    limits:
+      memory: "4G"
+  admin:
+    requests:
+      memory: "1G"
+    limits:
+      memory: "1G"
+  content:
+    requests:
+      memory: "1G"
+    limits:
+      memory: "1G"
+  feed:
+    requests:
+      memory: "1.5G"
+    limits:
+      memory: "1.5G"
+  query:
+    requests:
+      memory: "1.5G"
+    limits:
+      memory: "1.5G"
+
+configserver:
   servers: >
-    vespa-configserver-0.vespa-internal.default.svc.cluster.local,
-    vespa-configserver-1.vespa-internal.default.svc.cluster.local,
-    vespa-configserver-2.vespa-internal.default.svc.cluster.local
+    vespa-configserver-0.vespa-internal.vespa.svc.cluster.local,
+    vespa-configserver-1.vespa-internal.vespa.svc.cluster.local,
+    vespa-configserver-2.vespa-internal.vespa.svc.cluster.local
   configserverJvmArgs: "-Xms32M -Xmx128M" # TODO: Comment out for production
   configproxyJvmArgs: "-Xms32M -Xmx32M" # TODO: Comment out for production
+  pvRootPath: "/data/k8s/vespa-config"
+  pvs:
+    - name: var
+      storageSize: 5Gi
+      mountPath: /opt/vespa/var
+    - name: logs
+      storageSize: 5Gi
+      mountPath: /opt/vespa/logs
+    - name: workspace
+      storageSize: 1Gi
+      mountPath: /workspace
+
+content:
+  pv:
+    name: var
+    storageSize: 5Gi
+    rootPath: "/data/k8s/vespa-content-var"
+    mountPath: /opt/vespa/var
 
 nodeAffinities:
   admin:
@@ -99,14 +138,11 @@ nodeAffinities:
               operator: In
               values:
                 - "true"
-
-pv:
-  - name: var
-    storageSize: 5Gi
-    mountPath: /opt/vespa/var
-  - name: logs
-    storageSize: 5Gi
-    mountPath: /opt/vespa/logs
-  - name: workspace
-    storageSize: 1Gi
-    mountPath: /workspace
+  content:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: vespa-role-content
+              operator: In
+              values:
+                - "true"

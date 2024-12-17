@@ -1,0 +1,40 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: vespa-content-storage
+  namespace: vespa
+provisioner: kubernetes.io/no-provisioner  # using hostPath
+reclaimPolicy: Retain  # Ensures data is kept when PVC is deleted
+volumeBindingMode: WaitForFirstConsumer  # Prevents PV binding until PVC is created
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vespa-content-pv
+  namespace: vespa
+spec:
+  capacity:
+    storage: {{ .Values.content.pv.storageSize }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: vespa-content-storage
+  local:
+    path: "{{ .Values.content.pv.rootPath }}"
+  nodeAffinity: {{ toYaml .Values.nodeAffinities.content | nindent 4 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vespa-content-pvc
+  namespace: vespa
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.content.pv.storageSize }}
+  storageClassName: vespa-content-storage
+  volumeMode: Filesystem
+  volumeName: vespa-content-pv

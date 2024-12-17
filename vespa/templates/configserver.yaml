@@ -2,8 +2,8 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: vespa-configserver
+  namespace: vespa
 spec:
-  # Use three servers for proper ZooKeeper quorum:
   replicas: {{ .Values.replicaCounts.configserver }}
   selector:
     matchLabels:
@@ -19,43 +19,43 @@ spec:
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: vespa-role-admin
-                    operator: In
-                    values:
-                      - "true"
+            {{ toYaml .Values.nodeAffinities.admin.required | nindent 12 }}
       containers:
       - name: vespa-configserver
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         args: ["configserver,services"]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        securityContext:
-          {{- toYaml .Values.securityContext.pod | nindent 10 }}
+        securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
         volumeMounts:
-          {{- range .Values.pv }}
-          - name: vespa-{{ .name }}
-            mountPath: {{ .mountPath }}
+          {{- $replicas := ($.Values.replicaCounts.configserver | int)}}
+          {{- range $index := until $replicas }}
+          {{- range $.Values.configserver.pvs }}
+          - name: vespa-{{ .name }}-{{ $index }}
+            mountPath: /mounted-volume/{{ $index }}/{{ .name }}
           {{- end }}
-        env:
-          - name: VESPA_CONFIGSERVERS
-            value: "{{ .Values.configserverConfig.servers }}"
-          {{- if .Values.configserverConfig.configserverJvmArgs }}
-          - name: VESPA_CONFIGSERVER_JVMARGS
-            value: "{{ .Values.configserverConfig.configserverJvmArgs }}"
           {{- end }}
-          {{- if .Values.configserverConfig.configproxyJvmArgs }}
-          - name: VESPA_CONFIGPROXY_JVMARGS
-            value: "{{ .Values.configserverConfig.configproxyJvmArgs }}"
-          {{- end }}
-        resources:
-          requests:
-            memory: "4G"
-          limits:
-            memory: "4G"
+          - name: dummy
+            mountPath: /workspace
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            ordinal=$(hostname | grep -o '[0-9]*$')
+            {{- range $.Values.configserver.pvs }}
+            mkdir -p {{ .mountPath }}
+            ln -sf /mounted-volume/$ordinal/{{ .name }} {{ .mountPath }}
+            {{- end }}
+            exec vespa-start-configserver
+        envFrom:
+          - configMapRef:
+              name: vespa-config
+        resources: {{- toYaml .Values.resources.configserver | nindent 10 }}
       volumes:
-        {{- range .Values.pv }}
-        - name: vespa-{{ .name }}
+        {{- range $index := until $replicas }}
+        {{- range $.Values.configserver.pvs }}
+        - name: vespa-{{ .name }}-{{ $index }}
           persistentVolumeClaim:
-            claimName: vespa-{{ .name }}-pvc
+            claimName: vespa-{{ .name }}-pvc-{{ $index }}
         {{- end }}
+        {{- end }}
+        - name: dummy # Dummy volume required to mount /workspace
+          emptyDir: {}

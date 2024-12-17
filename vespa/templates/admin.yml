@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vespa-admin
+  namespace: vespa
+spec:
+  replicas: {{ .Values.replicaCounts.admin }}
+  selector:
+    matchLabels:
+      app: vespa-admin
+      name: vespa-internal
+  serviceName: vespa-internal
+  template:
+    metadata:
+      labels:
+        app: vespa-admin
+        name: vespa-internal
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            {{ toYaml .Values.nodeAffinities.admin.required | nindent 12 }}
+      containers:
+      - name: vespa-admin
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        args: ["services"]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: vespa-config
+        resources: {{- toYaml .Values.resources.admin | nindent 10 }}

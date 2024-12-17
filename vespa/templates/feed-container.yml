@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vespa-feed-container
+  namespace: vespa
+spec:
+  replicas: {{ .Values.replicaCounts.feed }}
+  selector:
+    matchLabels:
+      app: vespa-feed-container
+      name: vespa-internal
+  serviceName: vespa-internal
+  template:
+    metadata:
+      labels:
+        app: vespa-feed-container
+        name: vespa-internal
+    spec:
+      containers:
+      - name: vespa-feed-container
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        args: ["services"]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: vespa-config
+        resources: {{- toYaml .Values.resources.feed | nindent 10 }}

@@ -32,9 +32,16 @@ declare -A DIRECTORIES=(
   [plausible]="/data/k8s/plausible:1001:777:LOCAL,PITT1"
   [clickhouse]="/data/k8s/clickhouse:999:777:LOCAL,PITT1"
   [glitchtip]="/data/k8s/glitchtip:1001:777:LOCAL,PITT1"
-  [vespa_var]="/data/k8s/vespa-var:1000:755:LOCAL,PITT2"
-  [vespa_logs]="/data/k8s/vespa-logs:1000:755:LOCAL,PITT2"
-  [vespa_workspace]="/data/k8s/vespa-workspace:1000:755:LOCAL,PITT2"
+  [vespa_content_var]="/data/k8s/vespa-content-var:1000:755:LOCAL,PITT2"
+  [vespa_config_var_0]="/data/k8s/vespa-config/0/var:1000:755:LOCAL,PITT2"
+  [vespa_config_logs_0]="/data/k8s/vespa-config/0/logs:1000:755:LOCAL,PITT2"
+  [vespa_config_workspace_0]="/data/k8s/vespa-config/0/workspace:1000:755:LOCAL,PITT2"
+  [vespa_config_var_1]="/data/k8s/vespa-config/1/var:1000:755:LOCAL,PITT2"
+  [vespa_config_logs_1]="/data/k8s/vespa-config/1/logs:1000:755:LOCAL,PITT2"
+  [vespa_config_workspace_1]="/data/k8s/vespa-config/1/workspace:1000:755:LOCAL,PITT2"
+  [vespa_config_var_2]="/data/k8s/vespa-config/2/var:1000:755:LOCAL,PITT2"
+  [vespa_config_logs_2]="/data/k8s/vespa-config/2/logs:1000:755:LOCAL,PITT2"
+  [vespa_config_workspace_2]="/data/k8s/vespa-config/2/workspace:1000:755:LOCAL,PITT2"
 )
 
 # Remote directories for syncing

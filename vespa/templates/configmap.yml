@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vespa-config
+  namespace: vespa
+data:
+  VESPA_CONFIGSERVERS: "{{ .Values.configserver.servers }}"
+  {{- if .Values.configserver.configserverJvmArgs }}
+  VESPA_CONFIGSERVER_JVMARGS: "{{ .Values.configserver.configserverJvmArgs }}"
+  {{- end }}
+  {{- if .Values.configserver.configproxyJvmArgs }}
+  VESPA_CONFIGPROXY_JVMARGS: "{{ .Values.configserver.configproxyJvmArgs }}"
+  {{- end }}
