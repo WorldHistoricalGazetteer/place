@@ -1,0 +1,14 @@
+# Ignore the chart folder
+chart/
+*tgz
+
+# Ignore lock files
+Chart.lock
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+
+.direnv/*
+*.tgz
+.pre-commit-config.yaml
