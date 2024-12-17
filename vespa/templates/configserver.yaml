@@ -39,6 +39,7 @@ spec:
     {{- range $.Values.configserver.pvs }}
     - metadata:
         name: vespa-{{ .name }}
+        namespace: {{ $.Values.namespace }}
       spec:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: "vespa-config-{{ .name }}-storage"

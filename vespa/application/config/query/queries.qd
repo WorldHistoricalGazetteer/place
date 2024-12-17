@@ -1,0 +1,13 @@
+<queries>
+    <query>
+        <name>find_books_by_author</name>
+        <input>
+            <field name="author" />
+        </input>
+        <output>
+            <field name="title" />
+            <field name="author" />
+            <field name="year" />
+        </output>
+    </query>
+</queries>
