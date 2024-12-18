@@ -12,8 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REMOTE_USER="whgadmin"
 REMOTE_HOST="144.126.204.70"
 REMOTE_HOST_TILER="134.209.177.234"
-SSH_KEY="$SCRIPT_DIR/whg-private/id_rsa_whg"
-SSH_KEY_TILER="$SCRIPT_DIR/whg-private/id_rsa"
+SSH_KEY="$SCRIPT_DIR/whg/files/private/id_rsa_whg"
+SSH_KEY_TILER="$SCRIPT_DIR/whg/files/private/id_rsa"
 
 # Directories to sync or prepare
 declare -A DIRECTORIES=(

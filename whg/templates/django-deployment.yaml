@@ -15,71 +15,76 @@ spec:
       labels:
         app: django
     spec:
-      securityContext:
-        runAsUser: {{ .Values.django.user }}
-        runAsGroup: {{ .Values.django.group }}
-      affinity: {{ toYaml .Values.whgAffinity | indent 8 }}
+      securityContext: {{ toYaml .Values.django.securityContext | nindent 8 }}
+      affinity: {{ toYaml .Values.whgAffinity | nindent 8 }}
       initContainers:
-        - name: django-clone-repository
-          image: {{ .Values.django.image }}:{{ .Values.django.imageTag }}
-          imagePullPolicy: {{ .Values.django.imagePullPolicy }}
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              if [ ! -d "/app/.git" ]; then
-                echo "Repository not found, cloning...";
-                git clone -b main https://github.com/{{ .Values.django.githubRepository }}.git /app || { echo 'Cloning failed'; exit 1; }
-              else
-                echo "Repository already cloned.";
-              fi
-          volumeMounts:
-            - name: app
-              mountPath: /app
-        - name: django-init
-          image: {{ .Values.django.image }}:{{ .Values.django.imageTag }}
-          imagePullPolicy: {{ .Values.django.imagePullPolicy }}
-          command:
+      - name: django-init
+        image: {{ .Values.django.image }}:{{ .Values.django.imageTag }}
+        imagePullPolicy: {{ .Values.django.imagePullPolicy }}
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          if [ ! -d "/app/.git" ]; then
+            echo "Repository not found, cloning...";
+            git clone -b main https://github.com/{{ .Values.django.githubRepository }}.git /app || { echo 'Cloning failed'; exit 1; }
+          else
+            echo "Repository already cloned.";
+          fi
+          cp --remove-destination /app/whg/secret/local_settings.py /app/whg/
+          cp --remove-destination /app/whg/secret/env_template.py /app/server-admin/
+          cp --remove-destination /app/whg/secret/ca-cert.pem /app/whg/authorisation/
+          python ./server-admin/load_env.py
+          python manage.py collectstatic --no-input
+        envFrom:
+        - configMapRef:
+            name: django-config
+        env: {{ toYaml .Values.django.env | nindent 10 }}
+        volumeMounts:
+        {{- with .Values.django.volumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: secret-volume
+          mountPath: /app/whg/secret
+          readOnly: true
+      containers:
+      - name: django-container
+        image: {{ .Values.django.image }}:{{ .Values.django.imageTag }}
+        imagePullPolicy: {{ .Values.django.imagePullPolicy }}
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "until nc -z postgres {{ .Values.postgres.port }}; do echo waiting for postgres...; sleep 2; done"]
+        command: ["gunicorn", "whg.wsgi:application", "--bind", "0.0.0.0:{{ .Values.django.port }}", "--timeout", "1200", "-w", "4"]
+        ports:
+        - containerPort: {{ .Values.django.servicePort }}
+        envFrom:
+        - configMapRef:
+            name: django-config
+        env: {{ toYaml .Values.django.env | nindent 10 }}
+        volumeMounts: {{ toYaml .Values.django.volumeMounts | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.django.port }}
+          initialDelaySeconds: {{ mul (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 2 }}
+          periodSeconds: 20
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.django.port }}
+          initialDelaySeconds: {{ add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int) }}
+          timeoutSeconds: 10
+          periodSeconds: 15
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          exec:
+            command:
             - "/bin/sh"
             - "-c"
-            - "/app/entrypoint-django-init.sh"
-          env: {{ toYaml .Values.django.env | indent 12 }}
-          volumeMounts: {{ toYaml .Values.django.volumeMounts | indent 12 }}
-      containers:
-        - name: django-container
-          image: {{ .Values.django.image }}:{{ .Values.django.imageTag }}
-          imagePullPolicy: {{ .Values.django.imagePullPolicy }}
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sh", "-c", "until nc -z postgres {{ .Values.postgres.port }}; do echo waiting for postgres...; sleep 2; done"]
-          command: ["gunicorn", "whg.wsgi:application", "--bind", "0.0.0.0:{{ .Values.django.port }}", "--timeout", "1200", "-w", "4"]
-          ports:
-            - containerPort: {{ .Values.django.servicePort }}
-          env: {{ toYaml .Values.django.env | indent 12 }}
-          volumeMounts: {{ toYaml .Values.django.volumeMounts | indent 12 }}
-          livenessProbe:
-            tcpSocket:
-              port: {{ .Values.django.port }}
-            initialDelaySeconds: {{ mul (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 2 }}
-            periodSeconds: 20
-          readinessProbe:
-            tcpSocket:
-              port: {{ .Values.django.port }}
-            initialDelaySeconds: {{ add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int) }}
-            timeoutSeconds: 10
-            periodSeconds: 15
-            successThreshold: 1
-            failureThreshold: 3
-          startupProbe:
-            exec:
-              command:
-                - "/bin/sh"
-                - "-c"
-                - 'python manage.py check --deploy || true; python manage.py showmigrations | grep "[X]" || true'
-                # TODO: Replace the above with the following to prevent deployment if migrations are not up-to-date or if DEBUG is True
-                # - 'python manage.py check --deploy && python manage.py showmigrations | grep "[X]"'
-            initialDelaySeconds: {{ .Values.django.probes.startup.initialDelaySeconds | int }}
-            timeoutSeconds: {{ .Values.django.probes.startup.timeoutSeconds }}
-            periodSeconds: 15
-            failureThreshold: 5
-      volumes: {{ toYaml .Values.django.volumes | indent 8 }}
+            - 'python manage.py check --deploy || true; python manage.py showmigrations | grep "[X]" || true'
+            # TODO: Replace the above with the following to prevent deployment if migrations are not up-to-date or if DEBUG is True
+            # - 'python manage.py check --deploy && python manage.py showmigrations | grep "[X]"'
+          initialDelaySeconds: {{ .Values.django.probes.startup.initialDelaySeconds | int }}
+          timeoutSeconds: {{ .Values.django.probes.startup.timeoutSeconds }}
+          periodSeconds: 15
+          failureThreshold: 5
+      volumes: {{ toYaml .Values.django.volumes | nindent 8 }}

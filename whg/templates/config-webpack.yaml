@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webpack-config
+  namespace: {{ .Values.namespace }}
+data:
+  package.json: |-
+{{ .Files.Get "files/package.json" | indent 4 }}
+  webpack.config.js: |-
+{{ .Files.Get "files/webpack.config.js" | indent 4 }}

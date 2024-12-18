@@ -124,5 +124,15 @@ chmod 644 "$PRIVATE_DIR/local_settings.py"
 kubectl patch secret whg-secret -p '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
 kubectl patch secret whg-secret -p '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
 
+# Construct and add DATABASE_URL
+VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
+DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
+DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
+POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
+DB_PASSWORD=$(kubectl get secret whg-secret -o jsonpath='{.data.db-password}' | base64 --decode)
+POSTGRES_HOST="postgres"
+DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
+kubectl patch secret whg-secret -p '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
+
 echo "Secrets have been fetched and files stored in $PRIVATE_DIR."
 ls -l "$PRIVATE_DIR"

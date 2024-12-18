@@ -20,7 +20,7 @@ identify_environment
 # Remove any previous service installations
 source "$SCRIPT_DIR/kill-services.sh"
 
-# Deploy Django and Tile services
+# Deploy Tile services
 if [[ "$K8S_ROLE" == "all" || "$K8S_ROLE" == "general" ]]; then
 
   # Deploy TileServer-GL
@@ -38,6 +38,10 @@ fi
 
 # Deploy WHG services
 echo "Deploying WHG services..."
+kubectl create namespace whg
+kubectl get secret whg-secret -o json \
+  | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "whg"' \
+  | kubectl apply -f -
 helm install whg ./whg
 
 # Deploy Vespa manifests

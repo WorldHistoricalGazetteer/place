@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-config
+  namespace: {{ .Values.namespace }}
+data:
+  DJANGO_SETTINGS_MODULE: "whg.settings"
+  DB_USER: "{{ .Values.postgres.dbUser }}"
+  DB_NAME: "{{ .Values.postgres.dbName }}"
+  REDIS_URL: "redis://redis:{{ .Values.redis.port }}"

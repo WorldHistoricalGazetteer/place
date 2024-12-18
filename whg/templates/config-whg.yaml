@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: whg-config
+  namespace: {{ .Values.namespace }}
+data:
+  pg-hba: |-
+{{ .Files.Get "files/pg_hba.conf" | indent 4 }}
+  postgresql-conf: |-
+{{ .Files.Get "files/postgresql.conf" | indent 4 }}
+  pgbackrest-conf: |-
+{{ .Files.Get "files/pgbackrest.conf" | indent 4 }}

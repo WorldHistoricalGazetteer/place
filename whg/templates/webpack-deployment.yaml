@@ -16,7 +16,7 @@ spec:
         app: webpack
     spec:
       affinity:
-        nodeAffinity: {{- toYaml .Values.whgDevAffinity | nindent 8 }}
+        nodeAffinity: {{ toYaml .Values.whgDevAffinity | nindent 10 }}
       initContainers:
         - name: webpack-build
           image: node:18-alpine
@@ -26,13 +26,13 @@ spec:
             - "-c"
             - |
               echo "Starting Webpack installation in initContainer..."
-              cp -L -R /temp/* /config/ # Copy files from the webpack-source into a writable directory
+              cp -v -L /config-temp/* /config/ # Copy files from the config-volume into the PersistentVolume
               cd /config
               npm install
               echo "Webpack installation completed."
           volumeMounts:
-          - name: webpack-source
-            mountPath: /temp
+          - name: config-volume
+            mountPath: /config-temp
           - name: django-app-volume
             mountPath: /app
           - name: webpack-build-volume
@@ -57,9 +57,14 @@ spec:
           - name: webpack-build-volume
             mountPath: /config
       volumes:
-      - name: webpack-source
+      - name: config-volume
         configMap:
           name: webpack-config
+          items:
+            - key: package.json
+              path: package.json
+            - key: webpack.config.js
+              path: webpack.config.js
       - name: webpack-build-volume
         persistentVolumeClaim:
           claimName: webpack-build-pvc

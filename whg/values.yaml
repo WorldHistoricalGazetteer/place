@@ -1,16 +1,15 @@
 subdomain: "place.whgazetteer.org"
 namespace: "whg"
 
-whgNodeAffinity:
-  requiredDuringSchedulingIgnoredDuringExecution:
-    nodeSelectorTerms:
-      - matchExpressions:
-          - key: whg-site
-            operator: In
-            values:
-              - "true"
-
-whgAffinity: {{ toYaml .Values.whgNodeAffinity | indent 2 }}
+whgAffinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: whg-site
+              operator: In
+              values:
+                - "true"
 
 whgDevAffinity:
   requiredDuringSchedulingIgnoredDuringExecution:
@@ -32,38 +31,22 @@ django:
   imageTag: "0.1.7"
   imagePullPolicy: "IfNotPresent"
   githubRepository: "WorldHistoricalGazetteer/whg3"
-  user: 1000
-  group: 1000
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
   port: 8000
   servicePort: 443
   env:
-    - name: DJANGO_SETTINGS_MODULE
-      value: "whg.settings"
-    - name: IMAGE_VERSION
-      valueFrom:
-        configMapKeyRef:
-          name: whg-config
-          key: image-version
-    - name: DB_USER
-      valueFrom:
-        configMapKeyRef:
-          name: whg-config
-          key: db-user
     - name: DB_PASSWORD
       valueFrom:
         secretKeyRef:
           name: whg-secret
           key: db-password
-    - name: DB_NAME
-      valueFrom:
-        configMapKeyRef:
-          name: whg-config
-          key: db-name
     - name: DATABASE_URL
-      # TODO: It may be necessary to inject the password in the start command
-      value: "postgres://{{ .Values.postgres.dbUser }}:$(DB_PASSWORD)@postgres:{{ .Values.postgres.port }}/{{ .Values.postgres.dbName }}"
-    - name: REDIS_URL
-      value: "redis://redis:6379"
+      valueFrom:
+        secretKeyRef:
+          name: whg-secret
+          key: database-url
     - name: SECRET_KEY
       valueFrom:
         secretKeyRef:
@@ -80,12 +63,6 @@ django:
       mountPath: /app/static
     - name: media-files
       mountPath: /app/media
-    - name: config-volume
-      mountPath: /app
-      readOnly: true
-    - name: secret-volume
-      mountPath: /app
-      readOnly: true
   volumes:
     - name: app
       persistentVolumeClaim:
@@ -96,22 +73,16 @@ django:
     - name: media-files
       persistentVolumeClaim:
         claimName: django-media-pvc
-    - name: config-volume
-      configMap:
-        name: whg-config
-        items:
-          - key: entrypoint
-            path: entrypoint-django-init.sh
     - name: secret-volume
       secret:
         secretName: whg-secret
         items:
           - key: local_settings
-            path: whg/local_settings.py
+            path: local_settings.py
           - key: env_template
             path: env_template.py
           - key: ca_cert
-            path: whg/authorisation/ca-cert.pem
+            path: ca-cert.pem
   pv:
     app:
       storage: 10Gi
@@ -134,8 +105,8 @@ webpack:
 # Redis configuration
 redis:
   replicaCount: 1
-  image: "redis:bullseye"
-  imageTag: "7.4.1"
+  image: "redis"
+  imageTag: "bookworm"
   imagePullPolicy: "IfNotPresent"
   port: 6379
   resources:
@@ -158,11 +129,11 @@ celery:
     replicaCount: 1
     resources:
       requests:
-        memory: "2Gi"
-        cpu: "500m"
-      limits:
         memory: "128Mi"
         cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "500m"
   beat:
     replicaCount: 1
     resources:
@@ -182,7 +153,7 @@ celery:
         memory: "256Mi"
         cpu: "500m"
 
-# Postgres & pgBackRest configuration
+# Postgres & pgBackRest configuration (see also various `.conf` files)
 postgres:
   replicaCount: 1
   image: "worldhistoricalgazetteer/postgis-pgbackrest"
@@ -201,26 +172,3 @@ postgres:
     pgbackrest:
       storage: 10Gi
       path: /data/k8s/pgbackrest
-  pgHba: |
-    # Local connections
-    local   all             all                                    trust
-    host    all             all             127.0.0.1/32           trust
-    host    all             all             ::1/128                trust
-    host    all             all             10.244.0.0/16          trust
-    host    replication     all             10.244.0.0/16          trust
-    host    all             all             0.0.0.0/0              reject
-  postgresqlConf: |
-    listen_addresses = '*'
-    archive_command = 'pgbackrest --stanza=whgdb archive-push %p'
-    archive_mode = on
-    max_wal_senders = 3
-    wal_level = replica
-  pgbackrestConf: |
-    [whgdb]
-    pg1-path=/var/lib/postgresql/data
-    [global]
-    repo1-path=/var/lib/pgbackrest/backups
-    repo1-retention-full=2
-    repo1-retention-diff=5
-    [global:archive-push]
-    compress-level=3

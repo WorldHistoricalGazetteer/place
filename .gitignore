@@ -2,5 +2,4 @@
 .idea/
 
 # Ignore Django secret configuration files
-.whg-private/
 .whg/files/private/

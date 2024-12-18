@@ -18,50 +18,53 @@ spec:
         app: django
         component: celery-beat
     spec:
-      securityContext: {{ toYaml .Values.celery.securityContext | indent 8 }}
-      affinity: {{ toYaml .Values.whgAffinity | indent 8 }}
+      securityContext: {{ toYaml .Values.celery.securityContext | nindent 8 }}
+      affinity: {{ toYaml .Values.whgAffinity | nindent 8 }}
       containers:
-        - name: celery-beat
-          image: "{{ .Values.django.image }}:{{ .Values.django.imageTag }}"
-          imagePullPolicy: {{ .Values.django.imagePullPolicy }}
-          command: ["/bin/bash", "-c", "rm -f /app/celerybeat.pid && celery -A whg beat --loglevel=debug --scheduler django_celery_beat.schedulers:DatabaseScheduler"]
-          env: {{ toYaml .Values.django.env | nindent 12 }}
-          resources: {{ toYaml .Values.celery.beat.resources | indent 12 }}
-          volumeMounts:
-            - name: shared-volume
-              mountPath: /shared-data
-            {{- toYaml .Values.django.volumeMounts | nindent 12 }}
-          livenessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - pgrep -f "celery beat"
-            initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 60 }}
-            periodSeconds: 20
-            timeoutSeconds: 5
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - pgrep -f "celery beat"
-            initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 30 }}
-            periodSeconds: 10
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 3
-          startupProbe: # Wait until celery worker is available
-            exec:
-              command:
-                - sh
-                - -c
-                - pgrep -f "celery worker"
-            initialDelaySeconds: {{ add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int) }}
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 5
-      volumes:
+      - name: celery-beat
+        image: "{{ .Values.django.image }}:{{ .Values.django.imageTag }}"
+        imagePullPolicy: {{ .Values.django.imagePullPolicy }}
+        command: ["/bin/bash", "-c", "rm -f /app/celerybeat.pid && celery -A whg beat --loglevel=debug --scheduler django_celery_beat.schedulers:DatabaseScheduler"]
+        envFrom:
+          - configMapRef:
+              name: django-config
+        env: {{ toYaml .Values.django.env | nindent 10 }}
+        resources: {{ toYaml .Values.celery.beat.resources | nindent 10 }}
+        volumeMounts:
         - name: shared-volume
-          emptyDir: {}
-        {{- toYaml .Values.django.volumes | nindent 8 }}
+          mountPath: /shared-data
+        {{- toYaml .Values.django.volumeMounts | nindent 8 }}
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - pgrep -f "celery beat"
+          initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 60 }}
+          periodSeconds: 20
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - pgrep -f "celery beat"
+          initialDelaySeconds: {{ add (add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int)) 30 }}
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe: # Wait until celery worker is available
+          exec:
+            command:
+              - sh
+              - -c
+              - pgrep -f "celery worker"
+          initialDelaySeconds: {{ add (.Values.django.probes.startup.initialDelaySeconds | int) (.Values.django.probes.startup.timeoutSeconds | int) }}
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 5
+      volumes:
+      - name: shared-volume
+        emptyDir: {}
+      {{- toYaml .Values.django.volumes | nindent 6 }}

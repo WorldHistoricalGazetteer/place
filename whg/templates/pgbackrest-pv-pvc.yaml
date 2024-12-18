@@ -20,7 +20,8 @@ spec:
   storageClassName: django-pgbackrest
   local:
     path: {{ .Values.postgres.pv.pgbackrest.path }}
-  nodeAffinity: {{- toYaml .Values.whgNodeAffinity | nindent 4 }}
+  nodeAffinity:
+    required: {{ toYaml .Values.whgAffinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution | nindent 6 }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

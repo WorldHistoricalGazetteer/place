@@ -16,124 +16,115 @@ spec:
         app: postgres
     spec:
       tolerations:
-        - key: "node-role.kubernetes.io/control-plane"
-          operator: "Exists"
-          effect: "NoSchedule"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
       securityContext:
         fsGroup: {{ .Values.postgres.group }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-              - matchExpressions:
-                  - key: whg-site
-                    operator: In
-                    values:
-                      - "true"
+            - matchExpressions:
+              - key: whg-site
+                operator: In
+                values:
+                - "true"
       initContainers:
-        - name: fix-permissions
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              chown -R {{ .Values.postgres.user }}:{{ .Values.postgres.group }} /var/lib/postgresql/data && \
-              chmod 0700 /var/lib/postgresql/data
-          volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql/data
-      containers:
-        - name: postgres
-          image: "{{ .Values.postgres.image }}:{{ .Values.postgres.imageTag }}"
-          imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
-          ports:
-            - containerPort: {{ .Values.postgres.port }}
-          securityContext:
-            runAsUser: {{ .Values.postgres.user }}
-            runAsGroup: {{ .Values.postgres.group }}
-          command:
-            - sh
-            - -c
-            - |
-              exec postgres -c hba_file=/etc/postgresql/pg_hba.conf \
-                            -c config_file=/etc/postgresql/postgresql.conf
-          env:
-            - name: POSTGRES_DB
-              valueFrom:
-                configMapKeyRef:
-                  name: whg-config
-                  key: db-name
-            - name: POSTGRES_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: whg-config
-                  key: db-user
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: whg-secret
-                  key: db-password
-          volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql/data
-            - name: pg-hba-config
-              mountPath: /etc/postgresql/pg_hba.conf
-              subPath: pg-hba
-            - name: postgresql-config
-              mountPath: /etc/postgresql/postgresql.conf
-              subPath: postgresql.conf
-            - name: pgbackrest-repo
-              mountPath: /var/lib/pgbackrest/backups
-            - name: pgbackrest-config
-              mountPath: /etc/pgbackrest/pgbackrest.conf
-              subPath: pgbackrest.conf
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - sh
-                  - -c
-                  - |
-                    # Wait until PostgreSQL is fully ready
-                    until pg_isready -h localhost -U postgres; do
-                      echo "Waiting for PostgreSQL to be ready..."
-                      sleep 2
-                    done
-                    # Initialize the pgBackRest stanza
-                    pgbackrest --stanza=whgdb stanza-create
-          livenessProbe:
-            exec:
-              command:
-                - pg_isready
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            exec:
-              command:
-                - pg_isready
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          startupProbe:
-            exec:
-              command:
-                - pg_isready
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 15
-      volumes:
+      - name: configure-pv
+        image: busybox
+        command:
+        - sh
+        - -c
+        - |
+          chown -R {{ .Values.postgres.user }}:{{ .Values.postgres.group }} /var/lib/postgresql/data
+          chmod 0700 /var/lib/postgresql/data
+        volumeMounts:
         - name: postgres-data
-          persistentVolumeClaim:
-            claimName: postgres-pvc
+          mountPath: /var/lib/postgresql/data
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.image }}:{{ .Values.postgres.imageTag }}"
+        imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.postgres.port }}
+        securityContext:
+          runAsUser: {{ .Values.postgres.user }}
+          runAsGroup: {{ .Values.postgres.group }}
+        command:
+        - sh
+        - -c
+        - |
+          cp -v -L /config-temp/pg_hba.conf /etc/postgresql/pg_hba.conf
+          cp -v -L /config-temp/postgresql.conf /etc/postgresql/postgresql.conf
+          cp -v -L /config-temp/pgbackrest.conf /etc/pgbackrest.conf
+          exec postgres -c hba_file=/etc/postgresql/pg_hba.conf \
+                        -c config_file=/etc/postgresql/postgresql.conf
+        env:
+        - name: POSTGRES_DB
+          value: {{ .Values.postgres.dbName }}
+        - name: POSTGRES_USER
+          value: {{ .Values.postgres.dbUser }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: whg-secret
+              key: db-password
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
         - name: pgbackrest-repo
-          persistentVolumeClaim:
-            claimName: pgbackrest-pvc
-        - name: pg-hba-config
-          configMap:
-            name: whg-config
-        - name: postgresql-config
-          configMap:
-            name: whg-config
-        - name: pgbackrest-config
-          configMap:
-            name: whg-config
+          mountPath: /var/lib/pgbackrest/backups
+        - name: config-volume
+          mountPath: /config-temp
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                # Wait until PostgreSQL is fully ready
+                until pg_isready -h localhost -U postgres; do
+                  echo "Waiting for PostgreSQL to be ready..."
+                  sleep 2
+                done
+                # Initialize the pgBackRest stanza
+                pgbackrest --stanza=whgdb stanza-create
+        livenessProbe:
+          exec:
+            command:
+              - pg_isready
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+              - pg_isready
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        startupProbe:
+          exec:
+            command:
+              - pg_isready
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 15
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: pgbackrest-repo
+        persistentVolumeClaim:
+          claimName: pgbackrest-pvc
+      - name: config-volume
+        configMap:
+          name: whg-config
+          items:
+          - key: pg-hba
+            path: pg_hba.conf
+          - key: postgresql-conf
+            path: postgresql.conf
+          - key: pgbackrest-conf
+            path: pgbackrest.conf

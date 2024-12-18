@@ -228,7 +228,7 @@ else
 fi
 
 # Get the current node name (safer than simply using `hostname`)
-NODE_NAME=$(kubectl get node --selector='kubernetes.io/hostname=$(hostname)' -o jsonpath='{.items[0].metadata.name}')
+NODE_NAME=$(kubectl get node --selector="kubernetes.io/hostname=$(hostname)" -o jsonpath='{.items[0].metadata.name}')
 export NODE_NAME
 
 # Label the node based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
