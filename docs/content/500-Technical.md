@@ -1,5 +1,3 @@
-![WHG Logo](https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/refs/heads/main/whg_logo.png)
-
 # Technical
 
 This is the repository for the **WHG PLACE** (Place Linkage, Alignment, and Concordance Engine). It contains the
