@@ -6,5 +6,5 @@ World Historical Gazetteer: Documentation
    :caption: Contents:
 
    content/001-Introduction.md
-   content/002-Technical.md
-   content/003-License.md
+   content/500-Technical.md
+   content/950-License.md
