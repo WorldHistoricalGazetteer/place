@@ -1,14 +1,14 @@
 # System Architecture
 
-This is the repository for the **WHG PLACE** (Place Linkage, Alignment, and Concordance Engine). It contains the
-Kubernetes server configuration files for deploying and managing the World Historical Gazetteer (WHG)
+The **[WHG PLACE](400-Technical.md#code-repositories)** (Place Linkage, Alignment, and Concordance Engine) repository
+contains the Kubernetes server configuration files for deploying and managing the World Historical Gazetteer (WHG)
 application. This repository is separate from the main Django application
 code ([here](https://github.com/WorldHistoricalGazetteer/whg3)), and provides a dedicated space for configuring and
 orchestrating the server environment.
 
 ## Overview
 
-This repository includes configuration files for deploying the following components:
+The repository includes configuration files for deploying the following components:
 
 ### System Components
 
@@ -41,74 +41,74 @@ This repository includes configuration files for deploying the following compone
 
 ### Application Components
 
-- [x] **Django**
+- **Django**
 
   > A high-level Python web framework used to build the WHG application, providing a structure for building web
   applications quickly.
 
-- [x] **PostgreSQL (with PostGIS)**
+- **PostgreSQL (with PostGIS)**
 
   > An open-source relational database system, storing the historical geographic data and other application-related
   information.
 
-- [x] **pgBackRest**
+- **pgBackRest**
 
   > A backup and restore tool for PostgreSQL, providing efficient and reliable backups of the WHG database.
 
-- [x] **Redis**
+- **Redis**
 
   > An in-memory key-value store used for caching and as a message broker, supporting the speed and scalability of the
   application.
 
-- [x] **Celery**
+- **Celery**
 
   > A distributed task queue that allows the WHG application to handle asynchronous tasks efficiently, improving
   performance by offloading long-running tasks.
 
-- [x] **Celery Beat**
+- **Celery Beat**
 
   > A scheduler that manages periodic tasks, automating the execution of routine operations like database cleanups or
   batch jobs.
 
-- [x] **Celery Flower**
+- **Celery Flower**
 
   > A monitoring tool for Celery, providing insights into the status and performance of Celery workers and tasks.
 
-- [x] **Tileserver-GL**
+- **Tileserver-GL**
 
   > A server used for serving vector and raster map tiles, providing geographical visualisations for the WHG.
 
-- [x] **Tippecanoe**
+- **Tippecanoe**
 
   > A tool that generates vector tiles from large collections of GeoJSON data, enabling efficient rendering of map
   layers.
 
-- [x] **Vespa**
+- **Vespa**
 
   > A platform for serving scalable data and content, commonly used in search and recommendation systems.
 
-- [x] **Wordpress**
+- **Wordpress**
 
   > A content management system used for the WHG blog, providing a platform for creating and managing blog posts.
 
 ### Monitoring and Analytics Components
 
-- [x] **Prometheus**
+- **Prometheus**
 
   > A monitoring and alerting toolkit that collects metrics from the WHG application and its components, helping to
   ensure the system is running smoothly.
 
-- [x] **Grafana**
+- **Grafana**
 
   > A visualization tool that displays metrics collected by Prometheus, providing insights into the performance and
   health of the WHG application.
 
-- [x] **Plausible**
+- **Plausible**
 
   > An open-source analytics platform that tracks user interactions with the WHG website, providing insights into user
   behavior and engagement.
 
-- [x] **Glitchtip**
+- **Glitchtip**
 
   > An error monitoring tool that collects and aggregates error reports from the WHG application, helping to identify
   and resolve issues quickly.
