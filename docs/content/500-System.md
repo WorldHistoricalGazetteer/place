@@ -1,4 +1,4 @@
-# Technical
+# System Architecture
 
 This is the repository for the **WHG PLACE** (Place Linkage, Alignment, and Concordance Engine). It contains the
 Kubernetes server configuration files for deploying and managing the World Historical Gazetteer (WHG)

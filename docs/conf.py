@@ -43,3 +43,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'alabaster'
 html_static_path = ['_static']
 html_logo = "_static/whg_logo.png"
+html_css_files = [
+    'css/custom.css',
+]
