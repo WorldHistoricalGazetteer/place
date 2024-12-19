@@ -1,4 +1,5 @@
-# Default values for glitchtip.
+namespaceOverride: monitoring
+
 image:
   repository: glitchtip/glitchtip
   tag: v4.2.2

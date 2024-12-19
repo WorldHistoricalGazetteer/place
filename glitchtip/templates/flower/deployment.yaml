@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "django.fullname" . }}-flower
+  namespace: {{ default .Release.Namespace .Values.namespaceOverride }}
   labels:
     {{- include "django.labels" . | nindent 4 }}
     app.kubernetes.io/component: flower 

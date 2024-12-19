@@ -6,3 +6,4 @@
 ## @skip exampleValue
 ##
 exampleValue: common-chart
+namespaceOverride: monitoring
