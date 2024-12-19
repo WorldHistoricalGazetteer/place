@@ -391,7 +391,7 @@ echo "Deploying monitoring components..."
 
 # Deploy Prometheus and Grafana (based on `kube-prometheus`)
 echo "Waiting for prometheus-grafana CustomResourceDefinitions to be applied and established..."
-kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/prometheus/crds"
+kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/charts/prometheus/crds"
 if [ $? -ne 0 ]; then
     echo "Error: Failed to apply prometheus-grafana CustomResourceDefinitions."
     exit 1
