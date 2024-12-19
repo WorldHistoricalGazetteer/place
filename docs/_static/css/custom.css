@@ -17,3 +17,7 @@ h1.logo {
     text-align: center !important;
     font-size: 1.4rem;
 }
+
+#readthedocs-ea {
+    display: none;
+}
