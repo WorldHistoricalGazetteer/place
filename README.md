@@ -1,4 +1,4 @@
-![WHG Logo](https://github.com/WorldHistoricalGazetteer/place/blob/main/whg_logo.png)
+![WHG Logo](https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/refs/heads/main/whg_logo.png)
 
 # World Historical Gazetteer: PLACE
 

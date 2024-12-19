@@ -7,5 +7,5 @@ This is the documentation for the World Historical Gazetteer: PLACE project.
    :maxdepth: 2
    :caption: Contents:
 
-   ../README.md
-   ../LICENSE.md
+   README.md
+   LICENSE.md
