@@ -387,30 +387,6 @@ fi
 
 #### Deploy Control Plane Components ####
 
-echo "Deploying monitoring components..."
-
-# Deploy Prometheus and Grafana (based on `kube-prometheus`)
-echo "Waiting for prometheus-grafana CustomResourceDefinitions to be applied and established..."
-kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/charts/prometheus/crds"
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to apply prometheus-grafana CustomResourceDefinitions."
-    exit 1
-fi
-kubectl wait --for=condition=Established --all CustomResourceDefinition --timeout=300s
-if [ $? -ne 0 ]; then
-    echo "Error: CRDs were not established within the timeout period."
-    exit 1
-else
-    echo "CRDs established successfully."
-fi
-helm install prometheus-grafana ./prometheus-grafana
-
-##  Deploy Plausible Analytics
-helm install plausible-analytics ./plausible-analytics
-
-##  Deploy Glitchtip
-helm install glitchtip ./glitchtip --debug
-
 # Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain
 echo "Deploying Kubernetes Dashboard via LoadBalancer..."
 
@@ -452,6 +428,30 @@ kubectl --kubeconfig="$USER_KUBE_CONFIG" config use-context "dashboard-context"
 echo "Kubernetes Dashboard is available at: https://$LB_IP"
 echo "Log in using either the config file at $USER_KUBE_CONFIG or the following token:"
 echo "$TOKEN"
+
+echo "Deploying monitoring components..."
+
+# Deploy Prometheus and Grafana (based on `kube-prometheus`)
+echo "Waiting for prometheus-grafana CustomResourceDefinitions to be applied and established..."
+kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/charts/prometheus/crds"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to apply prometheus-grafana CustomResourceDefinitions."
+    exit 1
+fi
+kubectl wait --for=condition=Established --all CustomResourceDefinition --timeout=300s
+if [ $? -ne 0 ]; then
+    echo "Error: CRDs were not established within the timeout period."
+    exit 1
+else
+    echo "CRDs established successfully."
+fi
+helm install prometheus-grafana ./prometheus-grafana
+
+##  Deploy Plausible Analytics
+helm install plausible-analytics ./plausible-analytics
+
+##  Deploy Glitchtip
+helm install glitchtip ./glitchtip --debug
 
 # Apply global label critical=true to all resources
 echo "Labeling all resources as critical..."

@@ -1,4 +1,4 @@
-![img.png](img.png)
+![WHG Logo](https://github.com/WorldHistoricalGazetteer/place/blob/main/whg_logo.png)
 
 # World Historical Gazetteer: PLACE
 

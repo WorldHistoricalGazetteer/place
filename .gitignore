@@ -3,3 +3,19 @@
 
 # Ignore Django secret configuration files
 .whg/files/private/
+
+# Ignore Sphinx build outputs
+/docs/_build/
+
+# Ignore temporary files
+*.pyc
+*.pyo
+*.~*
+__pycache__/
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
