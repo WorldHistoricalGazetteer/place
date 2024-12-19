@@ -10,7 +10,7 @@ code ([here](https://github.com/WorldHistoricalGazetteer/whg3)), and provides a 
 configuring and orchestrating the server environment.
 
 **The following documentation will in future be replaced with an upgraded and more user-friendly version on
-readthedocs.io [here](https://world-historical-gazetteer-place.readthedocs.io/en/latest/).**
+readthedocs.io [here](https://world-historical-gazetteer-place.readthedocs.io/en/latest/index.html).**
 
 ## Overview
 

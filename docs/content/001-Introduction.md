@@ -18,7 +18,9 @@ information about places in teaching and communication.
 
 The first step for working with your own data in WHG is to prepare an upload file in one of two formats: Linked Places
 format (LPF) if your data is relatively complex, or LP-TSV, a simpler delimited file format (e.g. a spreadsheet, CSV, or
-TSV). See Choosing an upload data format: LPF or LP-TSV? for more information.
+TSV).
+See [Choosing an upload data format: LPF or LP-TSV?](100-Tutorials.md#choosing-an-upload-data-format-lpf-or-lp-tsv) for
+more information.
 
 After making that choice, the steps are as follows:
 
@@ -88,25 +90,27 @@ stages of development, include:
 
 Published Dataset Collections can be browsed in a rich publication page including an explanatory essay, and in the near
 future will be independently searchable via the WHG API — for example as a resource in annotation software. See this
-step-by-step guide, Create and publish a Dataset Collection.
+step-by-step guide, [Create and publish a Dataset Collection](100-Tutorials.md#create-and-publish-a-dataset-collection).
 
 Note that in order for a dataset to be added to a Dataset Collection, it must have been fully accessioned in the WHG
-union index. See the "WHG Union Index" section in Explaining the WHG indexes guide.
+union index. See the "[WHG Union Index](100-Tutorials.md#whg-union-index)" section
+in [Explaining the WHG indexes](100-Tutorials.md#explaining-the-whg-indexes) guide.
 
 ## Thematic place collections
 
-The **Place Collection** feature in WHG is designed for two use scenarios: as a teaching or workshop exercise, or as a form
-of authored publication. The steps for creating a Place Collection are the same in all cases, as detailed in the Create
-and publish a Place Collection guide.
+The **Place Collection** feature in WHG is designed for two use scenarios: as a teaching or workshop exercise, or as a
+form of authored publication. The steps for creating a Place Collection are the same in all cases, as detailed in the [Create
+and publish a Place Collection](100-Tutorials.md#create-and-publish-a-place-collection) guide.
 
-Instructional exercise in a class setting, or workshop
+### Instructional exercise in a class setting, or workshop
+
 Registered WHG users can request "group leader" permissions, which allows them to create and manage a WHG **Collection
 Group**. This is a private space where students or workshop participants can create and share collections of places,
 annotated with custom keywords, notes, dates, and images. The group leader can review and comment on the collections,
 and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants
 join the group by entering an access key created and distributed by the instructor or workshop leader.
 
-See "Create and manage a class or workshop Collection Group".
+See "[Create and manage a class or workshop Collection Group](100-Tutorials.md#create-and-manage-a-collection-group-for-a-class-or-workshop)".
 
 As a member of a Collection Group, an option appears on all of their collection builder pages to submit the collection
 when complete—for review by the instructor or workshop leader.
@@ -115,5 +119,5 @@ when complete—for review by the instructor or workshop leader.
 
 ### Authored publication
 
-Any registered WHG user can create a thematic annotated Place Collection (guide), and request its publication on the WHG
+Any registered WHG user can create a thematic annotated [Place Collection](100-Tutorials.md#create-and-publish-a-place-collection), and request its publication on the WHG
 platform, subject to review and approval by WHG editorial staff.

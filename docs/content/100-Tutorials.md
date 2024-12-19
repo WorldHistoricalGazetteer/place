@@ -64,7 +64,8 @@ several kinds of decisions only the data creator can make, e.g.:
 
 Apart from conflating multiple place references to a single place record, converting data from a delimited format like a
 spreadsheet or shapefile attribute table to the JSON-base LPF will almost certainly require a script—using e.g. Python
-or SQL if a database is involved. A how-to for this is beyond the scope of this document, but this CSV > JSON tool
+or SQL if a database is involved. A how-to for this is beyond the scope of this document, but
+this [CSV > JSON](https://csvjson.com/csv2json) tool
 demonstrates how this will look, and a web search will locate other tools that may help.
 
 ## Explaining the WHG Indexes
@@ -91,7 +92,7 @@ like [this one](https://whgazetteer.org/places/12346428/portal/) for Glasgow.
 
 Records from published datasets make their way into the union index by means of a second reconciliation step, following
 that for the Wikidata+Geonames index. This step is initiated by WHG editorial staff, and when complete the dataset is
-considered fully accessioned. See "Accessioning to the WHG Index" in Individual datasets for details.
+considered fully accessioned. See "Accessioning to the WHG Index" in [Individual datasets](001-Introduction.md#individual-datasets) for details.
 
 ### WHG "Pub" index
 
@@ -151,7 +152,7 @@ Remember, the purpose of the assertion is to ensure records that should intuitiv
 
 ## Reviewing accessioning results
 
-Review of results for accessioning to the WHG index is similar to review for reconciliation but differs in the following
+Review of results for accessioning to the WHG index is similar to [review for reconciliation](#reviewing-reconciliation-results) but differs in the following
 ways:
 
 1. Instead of matching to individual records from Wikidata or GeoNames, you are deciding on matches to sets of records
@@ -215,12 +216,12 @@ gallery](https://whgazetteer.org/datasets/gallery/) using the site contact form.
 ## Create and publish a Dataset Collection
 
 A WHG Dataset Collection is a set of published, indexed datasets in WHG, whose place records have been linked with
-others for the same place where they occur. Its potential purposes and possibilities are outlined in the Multiple
-datasets pathway section of this documentation.
+others for the same place where they occur. Its potential purposes and possibilities are outlined in the [Multiple
+datasets](001-Introduction.md#multiple-datasets) pathway section of this documentation.
 
 All datasets in a Dataset Collection must be published and fully accessioned — that is, indexed in the WHG union index.
 This is because the linking of records for the same place from multiple datasets occurs during the final indexing step.
-See "Accessioning to the WHG union index" in the Individual datasets section.
+See "Accessioning to the WHG union index" in the [Individual datasets](001-Introduction.md#individual-datasets) section.
 
 The steps in creating a Dataset Collection are as follows:
 
@@ -235,6 +236,9 @@ The steps in creating a Dataset Collection are as follows:
    appear in the dropdown list of eligible datasets.
 4. You can preview the still private presentation of the collection at any time by clicking the "view" icon in the upper
    right.
+
+![img_21.png](img_21.png)
+
 5. Each Dataset Collection should have an accompanying essay and image prior to publication. You can also add up to
    three links to related external web resources.
 6. If a significant proportion of the collection's records have meaningful date information, turn on the "Display
@@ -281,7 +285,7 @@ The workflow in both cases is very similar:
 
 * When a student/participant enters the group code in their _My Data_ dashboard, they get access to the PDF guide you
   have created, with guidelines for this particular exercise—the theme, or goals. **NOTE: Technical instructions for
-  creating a Place Collection are covered in site documentation and need not be included in this group guide.**
+  creating a [Place Collection](001-Introduction.md#thematic-place-collections) are covered in site documentation and need not be included in this group guide.**
 * As collections are submitted to the group, they are listed (9) and you can review them and nominate them for inclusion
   in the WHG Student Gallery (in development).
 * Communication between instructor/leader and students/participants is left to normal email and/or course management
