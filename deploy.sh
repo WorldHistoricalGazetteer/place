@@ -429,8 +429,6 @@ echo "Kubernetes Dashboard is available at: https://$LB_IP"
 echo "Log in using either the config file at $USER_KUBE_CONFIG or the following token:"
 echo "$TOKEN"
 
-echo "Deploying monitoring components..."
-
 # Deploy Prometheus and Grafana (based on `kube-prometheus`)
 echo "Waiting for prometheus-grafana CustomResourceDefinitions to be applied and established..."
 kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/charts/prometheus/crds"
@@ -451,6 +449,9 @@ helm install prometheus-grafana ./prometheus-grafana
 helm install plausible-analytics ./plausible-analytics
 
 ##  Deploy Glitchtip
+kubectl get secret whg-secret -o json \
+  | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "monitoring"' \
+  | kubectl apply -f -
 helm install glitchtip ./glitchtip --debug
 
 # Apply global label critical=true to all resources

@@ -134,5 +134,13 @@ POSTGRES_HOST="postgres"
 DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
 kubectl patch secret whg-secret -p '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
 
+# Copy secret to other namespaces
+for namespace in whg monitoring tileserver vespa wordpress; do
+  kubectl create namespace $namespace
+  kubectl get secret whg-secret -o json \
+    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
+    | kubectl apply -f -
+done
+
 echo "Secrets have been fetched and files stored in $PRIVATE_DIR."
 ls -l "$PRIVATE_DIR"

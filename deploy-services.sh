@@ -42,10 +42,6 @@ helm install tileserver ./tileserver --set service.type=$SERVICE_TYPE
 
 # Deploy WHG services
 echo "Deploying WHG services..."
-kubectl create namespace whg
-kubectl get secret whg-secret -o json \
-  | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "whg"' \
-  | kubectl apply -f -
 helm install whg ./whg
 
 # Deploy Vespa manifests
