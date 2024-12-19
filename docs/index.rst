@@ -1,6 +1,3 @@
-World Historical Gazetteer: Documentation
-===============================================
-
 .. toctree::
    :maxdepth: 3
 
