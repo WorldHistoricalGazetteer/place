@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'World Historical Gazetteer: PLACE'
+project = 'World Historical Gazetteer'
 copyright = '2024, World Historical Gazetteer'
 author = 'Stephen Gadd'
 release = '0.0.1'

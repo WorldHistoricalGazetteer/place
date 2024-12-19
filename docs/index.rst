@@ -1,11 +1,9 @@
-World Historical Gazetteer: PLACE documentation
+World Historical Gazetteer: Documentation
 ===============================================
 
-This is the documentation for the World Historical Gazetteer: PLACE project.
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
-
-   README.md
-   LICENSE.md
+    content/001-Introduction.md
+    content/002-Technical.md
+    content/003-License.md

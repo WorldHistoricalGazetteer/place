@@ -9,6 +9,9 @@ application. This repository is separate from the main Django application
 code ([here](https://github.com/WorldHistoricalGazetteer/whg3)), and provides a dedicated space for
 configuring and orchestrating the server environment.
 
+**The following documentation will in future be replaced with an upgraded and more user-friendly version on
+readthedocs.io [here](https://world-historical-gazetteer-place.readthedocs.io/en/latest/).**
+
 ## Overview
 
 This repository includes configuration files for deploying the following components:
