@@ -26,9 +26,10 @@ remove_kubernetes
 
 #### Install required packages and configure the system ####
 
-# Define required packages
-REQUIRED_PKGS=("apt-transport-https" "ca-certificates" "curl" "software-properties-common" "jq" "jsonnet" "docker-ce" "docker-ce-cli" "containerd.io=1.7.23-1" "kubelet" "kubeadm" "kubectl" "conntrack" "cri-tools" "kubernetes-cni")
-PAUSE_IMAGE="registry.k8s.io/pause:3.10" # Default pause image, to be used by both kubelet and containerd
+# Load environment variables from .env file
+set -a
+source ./.env
+set +a
 
 # Add Docker GPG key
 echo "Adding Docker GPG key..."
@@ -63,20 +64,40 @@ if ! apt-get update -qy; then
     exit 1
 fi
 
-# Install required packages
-echo "Checking required packages..."
-for PKG in "${REQUIRED_PKGS[@]}"; do
-    # Check if the package is installed using dpkg-query
-    if ! dpkg-query -W -f='${Status}' $PKG 2>/dev/null | grep -q "install ok installed"; then
-        echo "Installing $PKG..."
-        if ! apt-get install -qy $PKG --allow-downgrades --allow-change-held-packages; then
-            echo "Error: Failed to install $PKG. Exiting."
-            exit 1
+# Install/update packages listed in requirements.txt
+while IFS= read -r line; do
+    # Skip empty lines or comment lines (those starting with #)
+    [[ "$line" =~ ^\s*$ || "$line" =~ ^\s*# ]] && continue
+
+    # Use awk to split package and version based on '==' delimiter
+    PACKAGE=$(echo "$line" | awk -F '==' '{print $1}')
+    VERSION=$(echo "$line" | awk -F '==' '{print $2}')
+
+    if [[ -n "$PACKAGE" && "$PACKAGE" != \#* ]]; then
+        # Check if the package is installed and matches the required version
+        INSTALLED_VERSION=$(dpkg-query -W -f='${Version}' "$PACKAGE" 2>/dev/null)
+        if [[ "$INSTALLED_VERSION" != "$VERSION" ]]; then
+            echo "Attempting to install or update $PACKAGE to version $VERSION..."
+
+            # Try installing the specified version first
+            if ! apt-get install -qy "$PACKAGE=$VERSION" --allow-downgrades --allow-change-held-packages; then
+                echo "Version $VERSION not available, trying the closest compatible version..."
+
+                # Install the latest available version if the specified version isn't found
+                if ! apt-get install -qy "$PACKAGE" --allow-downgrades --allow-change-held-packages; then
+                    echo "Error: Failed to install $PACKAGE. Exiting."
+                    exit 1
+                fi
+
+                # If we installed a different version, issue a warning
+                NEW_INSTALLED_VERSION=$(dpkg-query -W -f='${Version}' "$PACKAGE" 2>/dev/null)
+                echo "WARNING: Installed a compatible version of $PACKAGE: $NEW_INSTALLED_VERSION instead of $VERSION."
+            fi
+        else
+            echo "$PACKAGE is already at the required version ($INSTALLED_VERSION)."
         fi
-    else
-        echo "$PKG is already installed."
     fi
-done
+done < requirements.txt
 
 # Hold the Kubernetes packages to prevent automatic upgrades
 apt-mark hold kubelet kubeadm kubectl
@@ -200,9 +221,9 @@ systemctl daemon-reload
 if [ "$K8S_CONTROLLER" == 1 ]; then
 
   # Initialize Kubernetes cluster
-  echo "Initializing Kubernetes cluster with pod network CIDR 10.244.0.0/16..."
+  echo "Initializing Kubernetes cluster with pod network CIDR $POD_NETWORK_CIDR..."
   kubeadm config images pull
-  kubeadm init -v=9 --pod-network-cidr=10.244.0.0/16
+  kubeadm init -v=9 --pod-network-cidr="$POD_NETWORK_CIDR"
   if [ $? -ne 0 ]; then
       echo "Error occurred during Kubernetes cluster initialization."
       exit 1
@@ -238,6 +259,8 @@ kubectl label node "$NODE_NAME" controller=$K8S_CONTROLLER role=$K8S_ROLE enviro
 if [[ "$K8S_ROLE" != "backup" && "$K8S_CONTROLLER" == "1" ]]; then
   kubectl label node "$NODE_NAME" vespa-role-admin=true
   kubectl label node "$NODE_NAME" whg-site=true
+  kubectl label node "$NODE_NAME" tileserver=true
+  kubectl label node "$NODE_NAME" monitoring=true
 fi
 
 # If the node is not a backup, add the vespa-role-container and vespa-role-content labels
@@ -366,70 +389,26 @@ fi
 
 echo "Deploying monitoring components..."
 
-# Deploy Prometheus and Grafana via `kube-prometheus`
-# If necessary, reset repository with cd ./prometheus-grafana/kube-prometheus && git fetch origin && git reset --hard origin/main
-
-# Create PersistentVolume and PersistentVolumeClaim for Prometheus and Grafana, and update kube-prometheus manifests
-kubectl get namespace monitoring || kubectl create namespace monitoring
-kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/prometheus-pv-pvc.yaml"
-kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/grafana-pv-pvc.yaml"
-yq e '
-.spec.storage = {
-  "volumeClaimTemplate": {
-    "spec": {
-      "accessModes": ["ReadWriteOnce"],
-      "resources": {
-        "requests": {
-          "storage": "10Gi"
-        }
-      },
-      "storageClassName": "prometheus-storage"
-    }
-  }
-}' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/prometheus-prometheus.yaml"
-yq e '.spec.replicas = 1' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/prometheus-prometheus.yaml"
-yq e 'del(.spec.template.spec.volumes[] | select(.name == "grafana-storage").emptyDir)' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/grafana-deployment.yaml"
-yq e '.spec.template.spec.volumes[] |= select(.name == "grafana-storage").persistentVolumeClaim.claimName = "grafana-pvc"' -i "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/grafana-deployment.yaml"
-
-# Apply kube-prometheus manifests
-kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/setup"
+# Deploy Prometheus and Grafana (based on `kube-prometheus`)
+echo "Waiting for prometheus-grafana CustomResourceDefinitions to be applied and established..."
+kubectl apply --server-side -f "$SCRIPT_DIR/prometheus-grafana/prometheus/crds"
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to apply kube-prometheus setup manifests."
+    echo "Error: Failed to apply prometheus-grafana CustomResourceDefinitions."
     exit 1
 fi
-
-# Wait for CRDs to be established
-echo "Waiting for CustomResourceDefinitions to be established..."
 kubectl wait --for=condition=Established --all CustomResourceDefinition --timeout=300s
 if [ $? -ne 0 ]; then
     echo "Error: CRDs were not established within the timeout period."
     exit 1
+else
+    echo "CRDs established successfully."
 fi
+helm install prometheus-grafana ./prometheus-grafana
 
-# Deploy the remaining manifests
-kubectl apply -f "$SCRIPT_DIR/prometheus-grafana/kube-prometheus/manifests/"
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to apply kube-prometheus manifests."
-    exit 1
-fi
-
-# Verify kube-prometheus components are running
-echo "Verifying kube-prometheus deployment..."
-kubectl rollout status deployment/prometheus-operator -n monitoring --timeout=300s
-kubectl get pods -n monitoring
-if [ $? -ne 0 ]; then
-    echo "Error: kube-prometheus components did not deploy successfully."
-    exit 1
-fi
-echo "kube-prometheus stack deployed successfully."
-
-##  Deploy Plausible
-kubectl apply -f "$SCRIPT_DIR/plausible-analytics/plausible-postgres-pv-pvc.yaml"
-kubectl apply -f "$SCRIPT_DIR/plausible-analytics/plausible-clickhouse-pv-pvc.yaml"
+##  Deploy Plausible Analytics
 helm install plausible-analytics ./plausible-analytics
 
 ##  Deploy Glitchtip
-kubectl apply -f "$SCRIPT_DIR/glitchtip/glitchtip-pv-pvc.yaml"
 helm install glitchtip ./glitchtip --debug
 
 # Install Kubernetes Dashboard together with an Ingress Resource, Authentication, and a dedicated subdomain

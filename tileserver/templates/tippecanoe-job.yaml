@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tippecanoe-job
+  namespace: {{ .Values.namespace }}
+spec:
+  template:
+    spec:
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
+      containers:
+      - name: tippecanoe
+        image: {{ .Values.tippecanoe.image }}:{{ .Values.tippecanoe.imageTag }}
+        imagePullPolicy: {{ .Values.tippecanoe.imagePullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - /tippecanoe/tippecanoe --help
+        volumeMounts:
+        - name: tiles
+          mountPath: /srv/tiles
+      restartPolicy: Never
+      volumes:
+      - name: tiles
+        persistentVolumeClaim:
+          claimName: tiles-pvc
+  backoffLimit: 4
+
+# Once loaded, this Job will serve as a template for future Jobs generated within Django. For example:
+#
+#from kubernetes import client, config
+#from kubernetes.client import V1Job, V1ObjectMeta
+#from kubernetes.client import V1PodTemplateSpec, V1Container, V1Volume, V1PersistentVolumeClaimVolumeSource
+#
+## Load kube config (use in local environments or where kubeconfig is available)
+#config.load_kube_config()
+## Initialize the Kubernetes API client
+#batch_v1 = client.BatchV1Api()
+## Fetch the existing Job from the cluster
+#job = batch_v1.read_namespaced_job(name=tippecanoe-job, namespace=tileserver)
+## Modify the Job's args dynamically
+#new_args = "/tippecanoe/tippecanoe -o /srv/tiles/output.mbtiles /srv/tiles/input.geojson"
+## Update the args in the Job's container spec
+#job.spec.template.spec.containers[0].args = [new_args]
+## Apply the modified Job back to the cluster
+#batch_v1.replace_namespaced_job(name=job_name, namespace=namespace, body=job)
+## Optionally, watch the Job until it finishes or manage it as required

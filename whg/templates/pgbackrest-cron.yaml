@@ -11,19 +11,20 @@ spec:
         spec:
           containers:
           - name: kubectl
-            image: bitnami/kubectl:latest
+            image: {{ .Values.postgres.cronImage }}:{{ .Values.postgres.cronImageTag }}
+            imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
             command:
               - /bin/sh
               - -c
               - |
-                POD_NAME=$(kubectl get pods -l app=postgres -o jsonpath='{.items[0].metadata.name}')
-                kubectl exec -it $POD_NAME -- pgbackrest --stanza=whgdb --log-level-console=info backup
+                POD_NAME=$(kubectl get pods -n {{ .Values.namespace }} -l app=postgres -o jsonpath='{.items[0].metadata.name}')
+                kubectl exec -it $POD_NAME -n {{ .Values.namespace }} -- pgbackrest --stanza=whgdb --log-level-console=info backup
           restartPolicy: OnFailure
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: default
+  namespace: {{ .Values.namespace }}
   name: kubectl-role
 rules:
   - apiGroups: [""]
@@ -37,11 +38,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: kubectl-role-binding
-  namespace: default
+  namespace: {{ .Values.namespace }}
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: default
+    namespace: {{ .Values.namespace }}
 roleRef:
   kind: Role
   name: kubectl-role

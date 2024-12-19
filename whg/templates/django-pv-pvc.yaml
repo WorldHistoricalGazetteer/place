@@ -1,3 +1,11 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: django-app-storage
+  namespace: {{ .Values.namespace }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -30,6 +38,14 @@ spec:
   volumeName: django-app-pv  # Reference the PV
   storageClassName: django-app-storage
 ---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: django-static-storage
+  namespace: {{ .Values.namespace }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -61,6 +77,14 @@ spec:
       storage: {{ .Values.django.pv.static.storage }}
   volumeName: django-static-pv  # Reference the PV
   storageClassName: django-static-storage
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: django-media-storage
+  namespace: {{ .Values.namespace }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
 ---
 apiVersion: v1
 kind: PersistentVolume

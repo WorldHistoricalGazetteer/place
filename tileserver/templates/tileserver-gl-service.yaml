@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tileserver-gl
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.serviceType }}
+  selector:
+    app: tileserver-gl
+  ports:
+    - protocol: TCP
+      port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}
+      {{- if eq .Values.serviceType "NodePort" }}
+      nodePort: {{ .Values.servicePort }}
+      {{- end }}

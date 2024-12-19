@@ -1,0 +1,39 @@
+subdomain: "map.whgazetteer.org"
+namespace: "tileserver"
+
+port: 8080
+servicePort: 80
+serviceType: "LoadBalancer" # May be overridden by Helm argument
+
+replicaCount: 1
+
+tileserver:
+  image: "maptiler/tileserver-gl"
+  imageTag: "v5.0.0"
+  imagePullPolicy: "IfNotPresent"
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1"
+
+tippecanoe:
+  image: "worldhistoricalgazetteer/tippecanoe"
+  imageTag: "latest"
+  imagePullPolicy: "IfNotPresent"
+
+pv:
+  storage: 50Gi
+  path: /data/k8s/tiles
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: tileserver
+              operator: In
+              values:
+                - "true"

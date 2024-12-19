@@ -102,7 +102,35 @@ wait_for_kubelet() {
 remove_kubernetes() {
     echo "Removing pre-existing Kubernetes components..."
 
-    helm uninstall plausible-analytics
+    # Check if Kubernetes cluster is accessible
+    if kubectl cluster-info &>/dev/null; then
+        # Uninstall all Helm releases
+        echo "Uninstalling all Helm releases..."
+        if command -v helm &> /dev/null; then
+            # List Helm releases across all namespaces and extract the release name and namespace
+            RELEASES=$(helm list --all-namespaces --output json)
+
+            # Check if any releases are found
+            if [[ -n "$RELEASES" && $(echo "$RELEASES" | jq -r 'length') -gt 0 ]]; then
+                # Iterate through the releases in the JSON output
+                for RELEASE in $(echo "$RELEASES" | jq -r '.[].name'); do
+                    # Extract the namespace for the current release
+                    NAMESPACE=$(echo "$RELEASES" | jq -r --arg RELEASE "$RELEASE" '.[] | select(.name == $RELEASE) | .namespace')
+
+                    echo "Uninstalling Helm release: $RELEASE in namespace $NAMESPACE..."
+                    if ! helm uninstall "$RELEASE" --namespace "$NAMESPACE"; then
+                        echo "Failed to uninstall $RELEASE from namespace $NAMESPACE, skipping."
+                    fi
+                done
+            else
+                echo "No Helm releases found."
+            fi
+        else
+          echo "Helm not found, skipping Helm release removal."
+        fi
+    else
+        echo "Kubernetes cluster is not accessible. Skipping Helm release removal."
+    fi
 
     # Reset Kubernetes settings, only if kubeadm is available
     if command -v kubeadm &> /dev/null; then
@@ -118,14 +146,6 @@ remove_kubernetes() {
 
     # Remove the CNI configuration
     sudo rm -rf /etc/cni/net.d
-
-    # Remove the kubelet and kubeadm packages
-    sudo apt-get purge -y kubeadm kubelet kubectl
-    sudo apt-get autoremove -y
-
-    # Wait to ensure that package removal is complete
-    echo "Waiting for package removal to complete..."
-    sleep 5  # Adjust the sleep time if needed
 
     # Clean up iptables or nftables
     sudo iptables -F

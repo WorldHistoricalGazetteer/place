@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tileserver-gl
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: tileserver-gl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tileserver-gl
+  template:
+    metadata:
+      labels:
+        app: tileserver-gl
+    spec:
+      affinity: {{ .Values.affinity | toYaml | nindent 8 }}
+      containers:
+      - name: tileserver-gl
+        image: {{ .Values.tileserver.image }}:{{ .Values.tileserver.imageTag }}
+        imagePullPolicy: {{ .Values.tileserver.imagePullPolicy }}
+        command:
+        - "node"
+        - "/usr/src/app/src/main.js"
+        - "--config"
+        - "/usr/src/app/tiles/configs/config.json"
+        workingDir: /usr/src/app
+        ports:
+        - containerPort: {{ .Values.port }}
+        volumeMounts:
+        - name: tiles
+          mountPath: /usr/src/app/tiles
+        - name: assets
+          mountPath: /usr/src/app/assets
+          readOnly: true
+        resources: {{ .Values.tileserver.resources | toYaml | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: tiles
+        persistentVolumeClaim:
+          claimName: tiles-pvc
