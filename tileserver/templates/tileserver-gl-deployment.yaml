@@ -37,28 +37,18 @@ spec:
       - name: tileserver-gl
         image: {{ .Values.tileserver.image }}:{{ .Values.tileserver.imageTag }}
         imagePullPolicy: {{ .Values.tileserver.imagePullPolicy }}
-        command:
-        - "bash"
-        - "-c"
-        - >
+        command: ["bash", "-c"]
+        args:
+        - |
           # List mounted directories for debugging
-          ls -la {{ .Values.pv.tileserver.assets.mountPath }} {{ .Values.pv.tileserver.api.mountPath }} {{ .Values.pv.tileserver.configs.mountPath }} {{ .Values.pv.tiles.mountPath }} &&
+          ls -la {{ .Values.pv.tileserver.assets.mountPath }}
+          ls -la {{ .Values.pv.tileserver.api.mountPath }}
+          ls -la {{ .Values.pv.tileserver.configs.mountPath }}
+          ls -la {{ .Values.pv.tileserver.reconfiguration.mountPath }}
+          ls -la {{ .Values.pv.tiles.mountPath }}
+          find / -name images # IDENTIFY FOLDER FOR CONFIGURATION
           # Merge base-config.json and config.json
-          node -e "
-            const fs = require('fs');
-            const baseConfigPath = '{{ .Values.pv.tileserver.assets.mountPath }}/base-config.json';
-            const configPath = '{{ .Values.pv.tileserver.configs.mountPath }}/config.json';
-            try {
-              const baseConfig = JSON.parse(fs.readFileSync(baseConfigPath, 'utf8'));
-              const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-              baseConfig.data = config.data;
-              fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2));
-              console.log('Config merged successfully');
-            } catch (error) {
-              console.error('Error merging configs:', error);
-              process.exit(1);
-            }
-          " &&
+          node {{ .Values.pv.tileserver.reconfiguration.mountPath }}/merge-config.js {{ .Values.pv.tileserver.reconfiguration.mountPath }}/base-config.json {{ .Values.pv.tileserver.configs.mountPath }}/config.json
           # Run Tileserver-GL
           node /usr/src/app/src/main.js --config {{ .Values.pv.tileserver.configs.mountPath }}/config.json
         workingDir: /usr/src/app

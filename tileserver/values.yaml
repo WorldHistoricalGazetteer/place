@@ -43,7 +43,7 @@ pv:
   tiles:
     storage: 50Gi
     path: /data/k8s/tiles
-    mountPath: /usr/src/app/tiles
+    mountPath: /mnt/data/tiles
   tileserver:
     storage: 1Gi
     path: /data/k8s/tileserver
@@ -54,7 +54,7 @@ pv:
       mountPath: /mnt/data/configs
       subPath: configs
     reconfiguration:
-      mountPath: opt/reconfiguration
+      mountPath: /opt/reconfiguration
       subPath: src/tileserver/repository/reconfiguration
     assets:
       mountPath: /mnt/data/assets

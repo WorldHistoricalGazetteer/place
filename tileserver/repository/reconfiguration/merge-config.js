@@ -1,8 +1,6 @@
-```
-This script is used to merge any changes to the base configuration into the server's configuration file, avoiding the 
-loss of mbtiles' metadata when the server is reconfigured. If the server is already running, it will require a restart
-to apply the changes.
-```
+// This script is used to merge any changes to the base configuration into the server's configuration file, avoiding the
+// loss of mbtiles' metadata when the server is reconfigured. If the server is already running, it will require a restart
+// to apply the changes.
 
 const fs = require('fs');
 

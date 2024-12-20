@@ -2,13 +2,13 @@
   "options": {
     "paths": {
       "root": "../",
-      "fonts": "./api/assets/fonts",
-      "sprites": "./api/assets/sprites",
-      "icons": "./api/assets/icons",
-      "styles": "./api/assets/styles",
-      "mbtiles": ".",
-      "files": "./api/assets/files",
-      "images": "./api/assets/public/resources/images"
+      "fonts": "./assets/fonts",
+      "sprites": "./assets/sprites",
+      "icons": "./assets/icons",
+      "styles": "./assets/styles",
+      "mbtiles": "./tiles",
+      "files": "./assets/files",
+      "images": "./public/resources/images"
     }
   },
   "serveAllFonts": true,
