@@ -7,6 +7,21 @@ serviceType: "LoadBalancer" # May be overridden by Helm argument
 
 replicaCount: 1
 
+fastapi:
+  image: "tiangolo/uvicorn-gunicorn-fastapi"
+  imageTag: "python3.9"
+  imagePullPolicy: "IfNotPresent"
+  gitRepo: "https://github.com/WorldHistoricalGazetteer/place.git"
+  sourceFolder: "tileserver/api"
+  targetFolder: "api"
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
 tileserver:
   image: "maptiler/tileserver-gl"
   imageTag: "v5.0.0"
@@ -27,6 +42,7 @@ tippecanoe:
 pv:
   storage: 50Gi
   path: /data/k8s/tiles
+  mountPath: /usr/src/app/tiles
 
 affinity:
   nodeAffinity:

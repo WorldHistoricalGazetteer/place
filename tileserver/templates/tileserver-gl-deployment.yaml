@@ -6,7 +6,7 @@ metadata:
   labels:
     app: tileserver-gl
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: tileserver-gl
@@ -16,24 +16,48 @@ spec:
         app: tileserver-gl
     spec:
       affinity: {{ .Values.affinity | toYaml | nindent 8 }}
+      initContainers:
+        - name: git-sparse-clone
+          image: alpine/git
+          imagePullPolicy: IfNotPresent
+          command:
+          - sh
+          - -c
+          - |
+            git init /mnt/shared/{{ .Values.fastapi.targetFolder }} && \
+            cd /mnt/shared/{{ .Values.fastapi.targetFolder }} && \
+            git remote add origin {{ .Values.fastapi.gitRepo }} && \
+            git config core.sparseCheckout true && \
+            echo "{{ .Values.fastapi.sourceFolder }}/" >> .git/info/sparse-checkout && \
+            git pull origin main
+          volumeMounts:
+            - name: tiles
+              mountPath: /mnt/shared
       containers:
       - name: tileserver-gl
         image: {{ .Values.tileserver.image }}:{{ .Values.tileserver.imageTag }}
         imagePullPolicy: {{ .Values.tileserver.imagePullPolicy }}
         command:
-        - "node"
-        - "/usr/src/app/src/main.js"
-        - "--config"
-        - "/usr/src/app/tiles/configs/config.json"
+        - "sh"
+        - "-c"
+        # Merge base-config.json and config.json
+        - >
+          node -e "
+            const fs = require('fs');
+            const baseConfigPath = '{{ .Values.pv.mountPath }}/{{ .Values.fastapi.targetFolder }}/assets/base-config.json';
+            const configPath = '{{ .Values.pv.mountPath }}/configs/config.json';
+            const baseConfig = JSON.parse(fs.readFileSync(baseConfigPath, 'utf8'));
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            baseConfig.data = config.data;
+            fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2));
+          " &&
+          node /usr/src/app/src/main.js --config {{ .Values.pv.mountPath }}/configs/config.json
         workingDir: /usr/src/app
         ports:
         - containerPort: {{ .Values.port }}
         volumeMounts:
         - name: tiles
-          mountPath: /usr/src/app/tiles
-        - name: assets
-          mountPath: /usr/src/app/assets
-          readOnly: true
+          mountPath: {{ .Values.pv.mountPath }}
         resources: {{ .Values.tileserver.resources | toYaml | nindent 10 }}
         livenessProbe:
           httpGet:

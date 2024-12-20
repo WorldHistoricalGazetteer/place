@@ -1,0 +1,60 @@
+{
+  "options": {
+    "paths": {
+      "root": "../",
+      "fonts": "./api/assets/fonts",
+      "sprites": "./api/assets/sprites",
+      "icons": "./api/assets/icons",
+      "styles": "./api/assets/styles",
+      "mbtiles": ".",
+      "files": "./api/assets/files",
+      "images": "./api/assets/public/resources/images"
+    }
+  },
+  "serveAllFonts": true,
+  "serveAllStyles": true,
+  "serveStaticMaps": true,
+  "styles": {
+    "WHG": {
+      "style": "WHG/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "OSM": {
+      "style": "OSM/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "Satellite": {
+      "style": "satellite/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-portal": {
+      "style": "whg-portal/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-prototype": {
+      "style": "whg-prototype/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-basic-light": {
+      "style": "whg-basic-light/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-basic-dark": {
+      "style": "whg-basic-dark/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-enhanced": {
+      "style": "whg-enhanced/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    }
+  },
+  "data": {}
+}

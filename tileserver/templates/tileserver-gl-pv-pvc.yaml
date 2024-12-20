@@ -20,7 +20,8 @@ spec:
   storageClassName: tiles-storage
   hostPath:
     path: {{ .Values.pv.path }}
-  nodeAffinity: {{ toYaml .Values.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution | nindent 4 }}
+  nodeAffinity:
+    required: {{ toYaml .Values.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution | nindent 6 }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
