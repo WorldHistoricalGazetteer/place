@@ -7,13 +7,13 @@ serviceType: "LoadBalancer" # May be overridden by Helm argument
 
 replicaCount: 1
 
-fastapi:
-  image: "tiangolo/uvicorn-gunicorn-fastapi"
-  imageTag: "python3.9"
+tileapi:
+  image: "worldhistoricalgazetteer/tileapi"
+  imageTag: "latest"
   imagePullPolicy: "IfNotPresent"
-  gitRepo: "https://github.com/WorldHistoricalGazetteer/place.git"
-  sourceFolder: "tileserver/repository"
-  targetFolder: "src"
+  securityContext:
+    runAsUser: 999
+    runAsGroup: 999
   resources:
     requests:
       memory: "128Mi"
@@ -26,6 +26,10 @@ tileserver:
   image: "maptiler/tileserver-gl"
   imageTag: "v5.0.0"
   imagePullPolicy: "IfNotPresent"
+  git:
+    url: "https://github.com/WorldHistoricalGazetteer/place.git"
+    sourceFolder: "tileserver/repository"
+    targetFolder: "src"
   resources:
     requests:
       memory: "512Mi"

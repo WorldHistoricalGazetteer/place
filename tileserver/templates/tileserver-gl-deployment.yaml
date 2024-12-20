@@ -24,11 +24,12 @@ spec:
           - sh
           - -c
           - |
-            git init /mnt/shared/{{ .Values.fastapi.targetFolder }} && \
-            cd /mnt/shared/{{ .Values.fastapi.targetFolder }} && \
-            git remote get-url origin || git remote add origin {{ .Values.fastapi.gitRepo }} && \
+            git init /mnt/shared/{{ .Values.tileserver.git.targetFolder }} && \
+            git config --global --add safe.directory /mnt/shared/src && \
+            cd /mnt/shared/{{ .Values.tileserver.git.targetFolder }} && \
+            git remote get-url origin || git remote add origin {{ .Values.tileserver.git.url }} && \
             git config core.sparseCheckout true && \
-            echo "{{ .Values.fastapi.sourceFolder }}/" >> .git/info/sparse-checkout && \
+            echo "{{ .Values.tileserver.git.sourceFolder }}/" >> .git/info/sparse-checkout && \
             git pull origin main
             # Change ownership of mounted directories to the `node` user and group
             chown -R 999:999 /mnt/shared
@@ -71,19 +72,31 @@ spec:
         - name: tileserver
           mountPath: {{ .Values.pv.tileserver.assets.mountPath }}
           subPath: {{ .Values.pv.tileserver.assets.subPath }}
-        resources: {{ .Values.tileserver.resources | toYaml | nindent 10 }}
+        resources: {{ toYaml .Values.tileserver.resources | nindent 10 }}
         livenessProbe:
           httpGet:
-            path: /
+            path: /health
             port: {{ .Values.port }}
           initialDelaySeconds: 10
           periodSeconds: 30
         readinessProbe:
           httpGet:
-            path: /
+            path: /health
             port: {{ .Values.port }}
           initialDelaySeconds: 5
           periodSeconds: 10
+      - name: tile-api
+        image: {{ .Values.tileapi.image }}:{{ .Values.tileapi.imageTag }}
+        imagePullPolicy: {{ .Values.tileapi.imagePullPolicy }}
+        securityContext: {{ toYaml .Values.tileapi.securityContext | nindent 10 }}
+        resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
+        volumeMounts:
+        - name: tileserver
+          mountPath: /code
+          subPath: {{ .Values.pv.tileserver.api.subPath }}
+        - name: tileserver
+          mountPath: {{ .Values.pv.tileserver.configs.mountPath }}
+          subPath: {{ .Values.pv.tileserver.configs.subPath }}
       volumes:
       - name: tiles
         persistentVolumeClaim:
