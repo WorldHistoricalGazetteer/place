@@ -26,38 +26,59 @@ spec:
           - |
             git init /mnt/shared/{{ .Values.fastapi.targetFolder }} && \
             cd /mnt/shared/{{ .Values.fastapi.targetFolder }} && \
-            git remote add origin {{ .Values.fastapi.gitRepo }} && \
+            git remote get-url origin || git remote add origin {{ .Values.fastapi.gitRepo }} && \
             git config core.sparseCheckout true && \
             echo "{{ .Values.fastapi.sourceFolder }}/" >> .git/info/sparse-checkout && \
             git pull origin main
           volumeMounts:
-            - name: tiles
+            - name: tileserver
               mountPath: /mnt/shared
       containers:
       - name: tileserver-gl
         image: {{ .Values.tileserver.image }}:{{ .Values.tileserver.imageTag }}
         imagePullPolicy: {{ .Values.tileserver.imagePullPolicy }}
         command:
-        - "sh"
+        - "bash"
         - "-c"
-        # Merge base-config.json and config.json
         - >
+          # List mounted directories for debugging
+          ls -la {{ .Values.pv.tileserver.assets.mountPath }} {{ .Values.pv.tileserver.api.mountPath }} {{ .Values.pv.tileserver.configs.mountPath }} {{ .Values.pv.tiles.mountPath }} &&
+          # Merge base-config.json and config.json
           node -e "
             const fs = require('fs');
-            const baseConfigPath = '{{ .Values.pv.mountPath }}/{{ .Values.fastapi.targetFolder }}/assets/base-config.json';
-            const configPath = '{{ .Values.pv.mountPath }}/configs/config.json';
-            const baseConfig = JSON.parse(fs.readFileSync(baseConfigPath, 'utf8'));
-            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            baseConfig.data = config.data;
-            fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2));
+            const baseConfigPath = '{{ .Values.pv.tileserver.assets.mountPath }}/base-config.json';
+            const configPath = '{{ .Values.pv.tileserver.configs.mountPath }}/config.json';
+            try {
+              const baseConfig = JSON.parse(fs.readFileSync(baseConfigPath, 'utf8'));
+              const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+              baseConfig.data = config.data;
+              fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2));
+              console.log('Config merged successfully');
+            } catch (error) {
+              console.error('Error merging configs:', error);
+              process.exit(1);
+            }
           " &&
-          node /usr/src/app/src/main.js --config {{ .Values.pv.mountPath }}/configs/config.json
+          # Run Tileserver-GL
+          node /usr/src/app/src/main.js --config {{ .Values.pv.tileserver.configs.mountPath }}/config.json
         workingDir: /usr/src/app
         ports:
         - containerPort: {{ .Values.port }}
         volumeMounts:
         - name: tiles
-          mountPath: {{ .Values.pv.mountPath }}
+          mountPath: {{ .Values.pv.tiles.mountPath }}
+        - name: tileserver
+          mountPath: {{ .Values.pv.tileserver.api.mountPath }}
+          subPath: {{ .Values.pv.tileserver.api.subPath }}
+        - name: tileserver
+          mountPath: {{ .Values.pv.tileserver.configs.mountPath }}
+          subPath: {{ .Values.pv.tileserver.configs.subPath }}
+        - name: tileserver
+          mountPath: {{ .Values.pv.tileserver.reconfiguration.mountPath }}
+          subPath: {{ .Values.pv.tileserver.reconfiguration.subPath }}
+        - name: tileserver
+          mountPath: {{ .Values.pv.tileserver.assets.mountPath }}
+          subPath: {{ .Values.pv.tileserver.assets.subPath }}
         resources: {{ .Values.tileserver.resources | toYaml | nindent 10 }}
         livenessProbe:
           httpGet:
@@ -75,3 +96,6 @@ spec:
       - name: tiles
         persistentVolumeClaim:
           claimName: tiles-pvc
+      - name: tileserver
+        persistentVolumeClaim:
+          claimName: tileserver-pvc

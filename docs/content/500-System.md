@@ -251,12 +251,17 @@ export HCP_CLIENT_ID=<HashiCorp Client ID>
 export HCP_CLIENT_SECRET=<HashiCorp Client Secret>
 ```
 
-#### Prevent Database Cloning (optional)
+#### Enable Cloning (optional)
 
-Set this environment variable only if the database has already been cloned by a previous deployment:
+Set these environment variables only if the server requires a fresh clone of the WHG database or of the map tiles. _NOTE:
+the script will reset them to `false` after cloning._
 
 ```bash
-export SKIP_DB_CLONE=true
+export CLONE_DB=true
+```
+
+```bash
+export CLONE_TILES=true
 ```
 
 #### Control & Development Nodes

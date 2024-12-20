@@ -23,6 +23,7 @@ declare -A DIRECTORIES=(
   [static]="/data/k8s/django-static:1000:755:LOCAL,PITT1,AAU1"
   [webpack]="/data/k8s/webpack:1000:755:LOCAL,PITT1,AAU1"
   [tiles]="/data/k8s/tiles:1000:755:LOCAL,PITT1"
+  [tileserver]="/data/k8s/tileserver:1000:755:LOCAL,PITT1"
   [wordpress]="/data/k8s/wordpress:1001:755:LOCAL,PITT1"
   [wordpress_data]="/data/k8s/wordpress-data:1001:755:LOCAL,PITT1"
   [postgres_data]="/data/k8s/postgres:999:700:LOCAL,PITT1"
@@ -159,29 +160,25 @@ for key in "${!REMOTE_PATHS[@]}"; do
   fi
 done
 
-# Fetch and extract the database backup if SKIP_DB_CLONE is not true
-if [[ (-z "$SKIP_DB_CLONE" || "$SKIP_DB_CLONE" != "true") && -d "${DIRECTORIES[postgres_data]%%:*}" ]]; then
+# Fetch and extract the database backup if CLONE_DB is true
+if [[ -n "$CLONE_DB" && "$CLONE_DB" == "true" && -d "${DIRECTORIES[postgres_data]%%:*}" ]]; then
   fetch_and_extract_backup "$REMOTE_BACKUP_DIR" "${DIRECTORIES[postgres_data]%%:*}" "$SSH_KEY"
+  export CLONE_DB=false
 else
   echo "Database backup not required for node <$K8S_ID>."
 fi
 
+# Fetch and extract the map tiles if CLONE_TILES is true
+if [[ -n "$CLONE_TILES" && "$CLONE_TILES" == "true" && -d "${DIRECTORIES[tiles]%%:*}" ]]; then
+  sync_directory "$REMOTE_USER@$REMOTE_HOST_TILER:/srv/tileserver/tiles" "${DIRECTORIES[tiles]%%:*}" "$SSH_KEY_TILER"
+  # config.json is required for mbtiles metadata; its base configuration is overwritten from the GitHub repository
+  sync_directory "$REMOTE_USER@$REMOTE_HOST_TILER:/srv/tileserver/configs" "${DIRECTORIES[tileserver]%%:*}/configs" "$SSH_KEY_TILER"
+  export CLONE_TILES=false
+else
+  echo "Map tiles backup not required for node <$K8S_ID>."
+fi
+
 # Notes for manual steps
 echo "NOTE: Wordpress database migration must be done manually."
-echo "NOTE: If syncing Tileserver configs, modify paths as described below."
-
-# If you use the following rsync, you will need to upgrade the config.json format from Tileserver GL Light to Tileserver GL
-# This means adding "serve_rendered": false to all of the vector style definitions, and changing the paths as follows:
-#        "paths": {
-#          "root": "../../",
-#          "fonts": "./assets/fonts",
-#          "sprites": "./assets/sprites",
-#          "icons": "./assets/icons",
-#          "styles": "./assets/styles",
-#          "mbtiles": "./tiles",
-#          "files": "./assets/files",
-#          "images": "./public/resources/images"
-#        }
-# sync_directory "$REMOTE_USER@$REMOTE_HOST_TILER:/srv/tileserver/configs" "/data/k8s/tiles/configs" "$SSH_KEY_TILER"
 
 echo "Script completed successfully."

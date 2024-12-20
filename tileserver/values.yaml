@@ -12,8 +12,8 @@ fastapi:
   imageTag: "python3.9"
   imagePullPolicy: "IfNotPresent"
   gitRepo: "https://github.com/WorldHistoricalGazetteer/place.git"
-  sourceFolder: "tileserver/api"
-  targetFolder: "api"
+  sourceFolder: "tileserver/repository"
+  targetFolder: "src"
   resources:
     requests:
       memory: "128Mi"
@@ -40,9 +40,25 @@ tippecanoe:
   imagePullPolicy: "IfNotPresent"
 
 pv:
-  storage: 50Gi
-  path: /data/k8s/tiles
-  mountPath: /usr/src/app/tiles
+  tiles:
+    storage: 50Gi
+    path: /data/k8s/tiles
+    mountPath: /usr/src/app/tiles
+  tileserver:
+    storage: 1Gi
+    path: /data/k8s/tileserver
+    api:
+      mountPath: /opt/api
+      subPath: src/tileserver/repository/api
+    configs:
+      mountPath: /mnt/data/configs
+      subPath: configs
+    reconfiguration:
+      mountPath: opt/reconfiguration
+      subPath: src/tileserver/repository/reconfiguration
+    assets:
+      mountPath: /mnt/data/assets
+      subPath: src/tileserver/repository/assets
 
 affinity:
   nodeAffinity:

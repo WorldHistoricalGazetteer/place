@@ -13,13 +13,13 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   capacity:
-    storage: {{ .Values.pv.storage }}
+    storage: {{ .Values.pv.tiles.storage }}
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: tiles-storage
   hostPath:
-    path: {{ .Values.pv.path }}
+    path: {{ .Values.pv.tiles.path }}
   nodeAffinity:
     required: {{ toYaml .Values.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution | nindent 6 }}
 ---
@@ -33,5 +33,5 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.pv.storage }}
+      storage: {{ .Values.pv.tiles.storage }}
   storageClassName: tiles-storage
