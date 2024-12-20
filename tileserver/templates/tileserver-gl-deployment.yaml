@@ -30,6 +30,8 @@ spec:
             git config core.sparseCheckout true && \
             echo "{{ .Values.fastapi.sourceFolder }}/" >> .git/info/sparse-checkout && \
             git pull origin main
+            # Change ownership of mounted directories to the `node` user and group
+            chown -R 999:999 /mnt/shared
           volumeMounts:
             - name: tileserver
               mountPath: /mnt/shared
@@ -40,13 +42,13 @@ spec:
         command: ["bash", "-c"]
         args:
         - |
-          # List mounted directories for debugging
-          ls -la {{ .Values.pv.tileserver.assets.mountPath }}
-          ls -la {{ .Values.pv.tileserver.api.mountPath }}
-          ls -la {{ .Values.pv.tileserver.configs.mountPath }}
-          ls -la {{ .Values.pv.tileserver.reconfiguration.mountPath }}
-          ls -la {{ .Values.pv.tiles.mountPath }}
-          find / -name images # IDENTIFY FOLDER FOR CONFIGURATION
+          # List mounted directories (for debugging)
+          ls -la \
+            {{ .Values.pv.tileserver.assets.mountPath }} \
+            {{ .Values.pv.tileserver.api.mountPath }} \
+            {{ .Values.pv.tileserver.configs.mountPath }} \
+            {{ .Values.pv.tileserver.reconfiguration.mountPath }} \
+            {{ .Values.pv.tiles.mountPath }}
           # Merge base-config.json and config.json
           node {{ .Values.pv.tileserver.reconfiguration.mountPath }}/merge-config.js {{ .Values.pv.tileserver.reconfiguration.mountPath }}/base-config.json {{ .Values.pv.tileserver.configs.mountPath }}/config.json
           # Run Tileserver-GL

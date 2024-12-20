@@ -8,7 +8,7 @@
       "styles": "./assets/styles",
       "mbtiles": "./tiles",
       "files": "./assets/files",
-      "images": "./public/resources/images"
+      "images": "/usr/src/app/public/resources/images"
     }
   },
   "serveAllFonts": true,
