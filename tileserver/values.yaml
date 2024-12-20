@@ -9,8 +9,10 @@ replicaCount: 1
 
 tileapi:
   image: "worldhistoricalgazetteer/tileapi"
-  imageTag: "latest"
+  imageTag: "0.0.3"
   imagePullPolicy: "IfNotPresent"
+  port: 8081
+  servicePort: 81
   securityContext:
     runAsUser: 999
     runAsGroup: 999

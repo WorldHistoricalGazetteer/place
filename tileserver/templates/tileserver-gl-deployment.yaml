@@ -89,10 +89,15 @@ spec:
         image: {{ .Values.tileapi.image }}:{{ .Values.tileapi.imageTag }}
         imagePullPolicy: {{ .Values.tileapi.imagePullPolicy }}
         securityContext: {{ toYaml .Values.tileapi.securityContext | nindent 10 }}
+        ports:
+        - containerPort: {{ .Values.tileapi.port }}
+        env:
+        - name: PORT
+          value: "{{ .Values.tileapi.port }}"
         resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
         volumeMounts:
         - name: tileserver
-          mountPath: /code
+          mountPath: /code/api
           subPath: {{ .Values.pv.tileserver.api.subPath }}
         - name: tileserver
           mountPath: {{ .Values.pv.tileserver.configs.mountPath }}
