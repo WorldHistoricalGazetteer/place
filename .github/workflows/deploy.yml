@@ -25,6 +25,8 @@ jobs:
       # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for reliable change detection
 
       # Step 2: Check for changes in the docs-source directory
       - name: Check for changes in docs-source
