@@ -25,36 +25,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Python (for Sphinx build)
+      # Step 2: Check for changes in the docs-source directory
+      - name: Check for changes in docs-source
+        id: changes-check
+        run: |
+          if git diff --quiet HEAD^ HEAD -- docs-source; then
+            echo "No changes in docs-source. Skipping build and deployment."
+            exit 0
+          fi
+
+      # Step 3: Set up Python (for Sphinx build)
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: 3.9
 
-      # Step 3: Install dependencies
+      # Step 4: Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r docs-source/requirements.txt
 
-      # Step 4: Build the documentation
+      # Step 5: Build the documentation
       - name: Build documentation
         run: |
           cd docs-source  # Navigate to the docs-source directory
           make clean      # Clean any previous build files
           make html       # Generate the HTML documentation
 
-      # Step 5: Prepare the docs for deployment
+      # Step 6: Prepare the docs for deployment
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # Step 6: Upload the built HTML files as an artifact
+      # Step 7: Upload the built HTML files as an artifact
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs-source/_build/html  # Upload the built HTML files
 
-      # Step 7: Deploy the built docs to GitHub Pages
+      # Step 8: Deploy the built docs to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

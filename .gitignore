@@ -7,7 +7,6 @@
 # Ignore Sphinx build outputs
 /docs
 /docs-source/_build/
-/docs-source-BACKUP
 
 # Ignore temporary files
 *.pyc
