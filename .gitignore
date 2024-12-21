@@ -5,7 +5,9 @@
 .whg/files/private/
 
 # Ignore Sphinx build outputs
-/docs/_build/
+/docs
+/docs-source/_build/
+/docs-source-BACKUP
 
 # Ignore temporary files
 *.pyc
