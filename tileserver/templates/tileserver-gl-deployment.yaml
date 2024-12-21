@@ -31,7 +31,8 @@ spec:
             git remote get-url origin || git remote add origin {{ .Values.tileserver.git.url }} && \
             git config core.sparseCheckout true && \
             echo "{{ .Values.tileserver.git.sourceFolder }}/" >> .git/info/sparse-checkout && \
-            git pull origin main
+            git fetch origin main && \
+            git reset --hard origin/main && \
             # Change ownership of mounted directories to the `node` user and group
             chown -R 999:999 /mnt/shared
           volumeMounts:
