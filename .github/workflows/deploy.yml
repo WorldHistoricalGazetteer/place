@@ -34,6 +34,7 @@ jobs:
             echo "changes-detected=false" >> $GITHUB_ENV
           else
             echo "changes-detected=true" >> $GITHUB_ENV
+          fi
         shell: bash
 
       # Step 3: Set up Python (only if changes are detected)
