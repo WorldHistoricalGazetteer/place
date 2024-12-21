@@ -1,0 +1,44 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main  # Trigger the build on pushes to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+
+      # Build the documentation
+      - name: Build documentation
+        run: |
+          cd docs  # Change to the /docs directory
+          make clean
+          make html
+
+      # Commit the built files to the main branch
+      - name: Commit and push documentation to main
+        run: |
+          cd docs  # Stay in the /docs directory
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add -f _build/html/*  # Add the built HTML files
+          git commit -m "Deploy documentation"
+          git push origin main  # Push the built files to the main branch
