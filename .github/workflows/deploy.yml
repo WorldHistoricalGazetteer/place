@@ -34,8 +34,10 @@ jobs:
         run: |
           if git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- docs-source; then
             echo "changes-detected=false" >> $GITHUB_ENV
+            echo "No changes detected in docs-source"
           else
             echo "changes-detected=true" >> $GITHUB_ENV
+            echo "Changes detected in docs-source"
           fi
         shell: bash
 
