@@ -22,4 +22,4 @@ spec:
           service:
             name: tileserver-service
             port:
-              number: {{ .Values.servicePort }}
+              number: {{ .Values.service.tileserver.servicePort }}

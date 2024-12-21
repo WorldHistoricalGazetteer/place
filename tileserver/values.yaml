@@ -1,9 +1,20 @@
 subdomain: "map.whgazetteer.org"
 namespace: "tileserver"
 
-port: 8080
-servicePort: 80
-serviceType: "LoadBalancer" # May be overridden by Helm argument
+#port: 8080
+#servicePort: 80
+#serviceType: "LoadBalancer" # May be overridden by Helm argument
+
+service:
+  type: "LoadBalancer" # May be overridden by Helm argument
+  tileapi:
+    port: 8081
+    targetPort: 8081
+    servicePort: 30081
+  tileserver:
+    port: 8080
+    targetPort: 8080
+    servicePort: 30080
 
 replicaCount: 1
 
@@ -11,8 +22,8 @@ tileapi:
   image: "worldhistoricalgazetteer/tileapi"
   imageTag: "0.0.3"
   imagePullPolicy: "IfNotPresent"
-  port: 8081
-  servicePort: 81
+#  port: 8081
+#  servicePort: 81
   securityContext:
     runAsUser: 999
     runAsGroup: 999

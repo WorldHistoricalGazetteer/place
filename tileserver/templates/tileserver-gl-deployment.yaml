@@ -4,16 +4,17 @@ metadata:
   name: tileserver-gl
   namespace: {{ .Values.namespace }}
   labels:
-    app: tileserver-gl
+    tileserver-gl: "true"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: tileserver-gl
+      tileserver-gl: "true"
   template:
     metadata:
       labels:
-        app: tileserver-gl
+        tileserver-gl: "true"
+        tileapi: "true"
     spec:
       affinity: {{ .Values.affinity | toYaml | nindent 8 }}
       initContainers:
@@ -56,7 +57,7 @@ spec:
           node /usr/src/app/src/main.js --config {{ .Values.pv.tileserver.configs.mountPath }}/config.json
         workingDir: /usr/src/app
         ports:
-        - containerPort: {{ .Values.port }}
+        - containerPort: {{ .Values.service.tileserver.port }}
         volumeMounts:
         - name: tiles
           mountPath: {{ .Values.pv.tiles.mountPath }}
@@ -76,13 +77,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: {{ .Values.port }}
+            port: {{ .Values.service.tileserver.port }}
           initialDelaySeconds: 10
           periodSeconds: 30
         readinessProbe:
           httpGet:
             path: /health
-            port: {{ .Values.port }}
+            port: {{ .Values.service.tileserver.port }}
           initialDelaySeconds: 5
           periodSeconds: 10
       - name: tile-api
@@ -90,10 +91,10 @@ spec:
         imagePullPolicy: {{ .Values.tileapi.imagePullPolicy }}
         securityContext: {{ toYaml .Values.tileapi.securityContext | nindent 10 }}
         ports:
-        - containerPort: {{ .Values.tileapi.port }}
+        - containerPort: {{ .Values.service.tileapi.port }}
         env:
         - name: PORT
-          value: "{{ .Values.tileapi.port }}"
+          value: "{{ .Values.service.tileapi.port }}"
         resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
         volumeMounts:
         - name: tileserver

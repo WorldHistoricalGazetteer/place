@@ -4,13 +4,13 @@ metadata:
   name: tileapi
   namespace: {{ .Values.namespace }}
 spec:
-  type: {{ .Values.serviceType }}
+  type: {{ .Values.service.type }}
   selector:
-    app: tileapi
+    tileapi: "true"
   ports:
     - protocol: TCP
-      port: {{ .Values.tileapi.port }}
-      targetPort: {{ .Values.tileapi.port }}
-      {{- if eq .Values.serviceType "NodePort" }}
-      nodePort: {{ .Values.tileapi.servicePort }}
+      port: {{ .Values.service.tileapi.port }}
+      targetPort: {{ .Values.service.tileapi.port }}
+      {{- if eq .Values.service.type "NodePort" }}
+      nodePort: {{ .Values.service.tileapi.servicePort }}
       {{- end }}

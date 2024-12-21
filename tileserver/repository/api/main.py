@@ -15,10 +15,8 @@ class TilesMetadata(BaseModel):
 # Endpoint to fetch data from Tileserver-GL
 @app.get("/tileserver-status", response_model=TilesMetadata)
 async def get_tileserver_status():
-    url = "http://tileserver:8080/tiles"
+    url = "http://tileserver-gl:8080/tiles"
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         response.raise_for_status()  # Raises an exception for 4xx/5xx responses
         return TilesMetadata(tiles=response.json())
-
-print("API configured successfully")

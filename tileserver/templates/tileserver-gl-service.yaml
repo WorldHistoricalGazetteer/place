@@ -4,13 +4,13 @@ metadata:
   name: tileserver-gl
   namespace: {{ .Values.namespace }}
 spec:
-  type: {{ .Values.serviceType }}
+  type: {{ .Values.service.type }}
   selector:
-    app: tileserver-gl
+    tileserver-gl: "true"
   ports:
     - protocol: TCP
-      port: {{ .Values.port }}
-      targetPort: {{ .Values.port }}
-      {{- if eq .Values.serviceType "NodePort" }}
-      nodePort: {{ .Values.servicePort }}
+      port: {{ .Values.service.tileserver.port }}
+      targetPort: {{ .Values.service.tileserver.targetPort }}
+      {{- if eq .Values.service.type "NodePort" }}
+      nodePort: {{ .Values.service.tileserver.servicePort }}
       {{- end }}
