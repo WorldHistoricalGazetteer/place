@@ -93,7 +93,7 @@ The repository includes configuration files for deploying the following componen
 
 - **GitHub Pages**
 
-  > A static site hosting service used for this WHG documentation. The documentation is written in Markdown, script, and
+  > A static site hosting service used for this WHG documentation. The documentation is written in Markdown script, and
   built into HTML by GitHub Actions, using Sphinx.
 
 ### Monitoring and Analytics Components
