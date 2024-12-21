@@ -91,6 +91,11 @@ The repository includes configuration files for deploying the following componen
 
   > A content management system used for the WHG blog, providing a platform for creating and managing blog posts.
 
+- **GitHub Pages**
+
+  > A static site hosting service used for this WHG documentation. The documentation is written in Markdown, script, and
+  built into HTML by GitHub Actions, using Sphinx.
+
 ### Monitoring and Analytics Components
 
 - **Prometheus**
@@ -253,7 +258,8 @@ export HCP_CLIENT_SECRET=<HashiCorp Client Secret>
 
 #### Enable Cloning (optional)
 
-Set these environment variables only if the server requires a fresh clone of the WHG database or of the map tiles. _NOTE:
+Set these environment variables only if the server requires a fresh clone of the WHG database or of the map tiles.
+_NOTE:
 the script will reset them to `false` after cloning._
 
 ```bash
