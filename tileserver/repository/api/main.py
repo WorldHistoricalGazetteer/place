@@ -10,7 +10,7 @@ class TilesMetadata(BaseModel):
     tiles: dict
 
 # Endpoint to fetch data from Tileserver-GL
-@app.get("/whg", response_model=TilesMetadata)
+@app.get("/whg-enhanced", response_model=TilesMetadata)
 async def get_tileserver_status():
     url = "http://tileserver-gl:8080/styles/whg-enhanced/style.json"
     async with httpx.AsyncClient() as client:
