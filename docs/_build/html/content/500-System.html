@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>System Architecture &#8212; World Historical Gazetteer 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=88135fc7" />
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Licence" href="950-License.html" />
+    <link rel="prev" title="Technical" href="400-Technical.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="system-architecture">
+<h1>System Architecture<a class="headerlink" href="#system-architecture" title="Link to this heading">¶</a></h1>
+<p>The <strong><a class="reference internal" href="400-Technical.html#code-repositories"><span class="std std-ref">WHG PLACE</span></a></strong> (Place Linkage, Alignment, and Concordance Engine) repository
+contains the Kubernetes server configuration files for deploying and managing the World Historical Gazetteer (WHG)
+application. This repository is separate from the main Django application
+code (<a class="reference external" href="https://github.com/WorldHistoricalGazetteer/whg3">here</a>), and provides a dedicated space for configuring and
+orchestrating the server environment.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The repository includes configuration files for deploying the following components:</p>
+<section id="system-components">
+<h3>System Components<a class="headerlink" href="#system-components" title="Link to this heading">¶</a></h3>
+<ul>
+<li><h5 class="rubric" id="kubeadm">kubeadm</h5>
+<blockquote>
+<div><p>A tool for bootstrapping Kubernetes clusters, providing easy and consistent cluster creation.</p>
+</div></blockquote>
+</li>
+<li><h5 class="rubric" id="kubelet">kubelet</h5>
+<blockquote>
+<div><p>The node agent running on each Kubernetes node, ensuring containers are running as expected.</p>
+</div></blockquote>
+</li>
+<li><h5 class="rubric" id="kubectl">kubectl</h5>
+<blockquote>
+<div><p>A command-line tool for interacting with Kubernetes clusters, allowing users to deploy and manage applications.</p>
+</div></blockquote>
+</li>
+<li><h5 class="rubric" id="helm">Helm</h5>
+<blockquote>
+<div><p>A Kubernetes package manager that simplifies the deployment and management of Kubernetes applications using Helm
+charts.</p>
+</div></blockquote>
+</li>
+<li><h5 class="rubric" id="flannel">Flannel</h5>
+<blockquote>
+<div><p>A networking solution for Kubernetes that provides a virtual network to manage IP address assignments for containers
+and nodes.</p>
+</div></blockquote>
+</li>
+<li><h5 class="rubric" id="contour">Contour</h5>
+<blockquote>
+<div><p>An ingress controller for Kubernetes that uses the Envoy Proxy to manage incoming HTTP and HTTPS requests, acting as
+a reverse proxy and load balancer.</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="application-components">
+<h3>Application Components<a class="headerlink" href="#application-components" title="Link to this heading">¶</a></h3>
+<ul>
+<li><p><strong>Django</strong></p>
+<blockquote>
+<div><p>A high-level Python web framework used to build the WHG application, providing a structure for building web
+applications quickly.</p>
+</div></blockquote>
+</li>
+<li><p><strong>PostgreSQL (with PostGIS)</strong></p>
+<blockquote>
+<div><p>An open-source relational database system, storing the historical geographic data and other application-related
+information.</p>
+</div></blockquote>
+</li>
+<li><p><strong>pgBackRest</strong></p>
+<blockquote>
+<div><p>A backup and restore tool for PostgreSQL, providing efficient and reliable backups of the WHG database.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Redis</strong></p>
+<blockquote>
+<div><p>An in-memory key-value store used for caching and as a message broker, supporting the speed and scalability of the
+application.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Celery</strong></p>
+<blockquote>
+<div><p>A distributed task queue that allows the WHG application to handle asynchronous tasks efficiently, improving
+performance by offloading long-running tasks.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Celery Beat</strong></p>
+<blockquote>
+<div><p>A scheduler that manages periodic tasks, automating the execution of routine operations like database cleanups or
+batch jobs.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Celery Flower</strong></p>
+<blockquote>
+<div><p>A monitoring tool for Celery, providing insights into the status and performance of Celery workers and tasks.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Tileserver-GL</strong></p>
+<blockquote>
+<div><p>A server used for serving vector and raster map tiles, providing geographical visualisations for the WHG.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Tippecanoe</strong></p>
+<blockquote>
+<div><p>A tool that generates vector tiles from large collections of GeoJSON data, enabling efficient rendering of map
+layers.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Vespa</strong></p>
+<blockquote>
+<div><p>A platform for serving scalable data and content, commonly used in search and recommendation systems.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Wordpress</strong></p>
+<blockquote>
+<div><p>A content management system used for the WHG blog, providing a platform for creating and managing blog posts.</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="monitoring-and-analytics-components">
+<h3>Monitoring and Analytics Components<a class="headerlink" href="#monitoring-and-analytics-components" title="Link to this heading">¶</a></h3>
+<ul>
+<li><p><strong>Prometheus</strong></p>
+<blockquote>
+<div><p>A monitoring and alerting toolkit that collects metrics from the WHG application and its components, helping to
+ensure the system is running smoothly.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Grafana</strong></p>
+<blockquote>
+<div><p>A visualization tool that displays metrics collected by Prometheus, providing insights into the performance and
+health of the WHG application.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Plausible</strong></p>
+<blockquote>
+<div><p>An open-source analytics platform that tracks user interactions with the WHG website, providing insights into user
+behavior and engagement.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Glitchtip</strong></p>
+<blockquote>
+<div><p>An error monitoring tool that collects and aggregates error reports from the WHG application, helping to identify
+and resolve issues quickly.</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+</section>
+<section id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Link to this heading">¶</a></h2>
+<section id="prepare-the-server-environment">
+<h3>Prepare the Server Environment<a class="headerlink" href="#prepare-the-server-environment" title="Link to this heading">¶</a></h3>
+<section id="pre-requisites">
+<h4>Pre-requisites<a class="headerlink" href="#pre-requisites" title="Link to this heading">¶</a></h4>
+<p>To deploy the application with these configurations to a remote server, you will need:</p>
+<ul class="simple">
+<li><p>A server running Ubuntu 20.04 LTS</p></li>
+<li><p>The server’s IP address</p></li>
+<li><p>A user with sudo privileges</p></li>
+<li><p>Credentials for fetching Secrets
+from <a href="https://portal.cloud.hashicorp.com/services/secrets/apps/WHG-PLACE/secrets?project_id=be40e446-773e-4069-9913-803be758e6e8" target="_blank">
+HashiCorp Vault</a>. These may be permanently added to the server’s environment variables (
+<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">nano</span> <span class="pre">/etc/environment</span></code>, followed by a reboot).</p></li>
+</ul>
+</section>
+<section id="set-the-server-hostname">
+<h4>Set the server hostname<a class="headerlink" href="#set-the-server-hostname" title="Link to this heading">¶</a></h4>
+<p>The server will be configured in a role dependent on its <code class="docutils literal notranslate"><span class="pre">hostname</span></code>, which should be set before running the deployment
+script. Recognised values can be seen in the <code class="docutils literal notranslate"><span class="pre">functions.sh</span></code> script. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>hostnamectl<span class="w"> </span>set-hostname<span class="w"> </span>PITT1
+</pre></div>
+</div>
+<p>If you omit this step, the server will be configured as a local development node by default.</p>
+</section>
+<section id="set-the-kubeconfig-environment-variable-permanently">
+<h4>Set the KUBECONFIG environment variable permanently<a class="headerlink" href="#set-the-kubeconfig-environment-variable-permanently" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>grep<span class="w"> </span>-qxF<span class="w"> </span><span class="s1">&#39;export KUBECONFIG=/etc/kubernetes/admin.conf&#39;</span><span class="w"> </span>~/.bashrc<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export KUBECONFIG=/etc/kubernetes/admin.conf&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
+<span class="nb">source</span><span class="w"> </span>~/.bashrc
+</pre></div>
+</div>
+</section>
+<section id="update-repositories-and-install-essential-packages">
+<h4>Update repositories and install essential packages:<a class="headerlink" href="#update-repositories-and-install-essential-packages" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~<span class="w"> </span><span class="c1"># Change to the home directory</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>upgrade<span class="w"> </span>-y
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>curl<span class="w"> </span>git<span class="w"> </span>unzip<span class="w"> </span>htop<span class="w"> </span>ufw
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/WorldHistoricalGazetteer/place.git
+</pre></div>
+</div>
+</section>
+<section id="configure-networking">
+<h4>Configure Networking<a class="headerlink" href="#configure-networking" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Flannel’s vxlan backend requires the br_netfilter kernel module for proper network filtering in bridged networks.</p></li>
+<li><p>The required networking parameters should persist across reboots to ensure consistent network behavior.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load br_netfilter module and ensure that it reloads on boot</span>
+sudo<span class="w"> </span>modprobe<span class="w"> </span>br_netfilter
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;br_netfilter&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/modules-load.d/br_netfilter.conf
+
+<span class="c1"># Enable IPv4 packet forwarding and bridge-nf-call-iptables</span>
+sudo<span class="w"> </span>tee<span class="w"> </span>/etc/sysctl.d/k8s.conf<span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">net.ipv4.ip_forward = 1</span>
+<span class="s">net.bridge.bridge-nf-call-iptables = 1</span>
+<span class="s">net.bridge.bridge-nf-call-ip6tables = 1</span>
+<span class="s">EOF</span>
+
+<span class="c1"># Apply sysctl params without reboot</span>
+sudo<span class="w"> </span>sysctl<span class="w"> </span>--system
+</pre></div>
+</div>
+</section>
+<section id="ssh-keys">
+<h4>SSH Keys<a class="headerlink" href="#ssh-keys" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>rsa<span class="w"> </span>-b<span class="w"> </span><span class="m">4096</span><span class="w"> </span>-C<span class="w"> </span><span class="s2">&quot;no.reply.whgazetteer@gmail.com&quot;</span>
+<span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">&quot;</span>
+ssh-add<span class="w"> </span>~/.ssh/id_rsa
+ssh-copy-id<span class="w"> </span>&lt;sudo-user@server-IP&gt;
+</pre></div>
+</div>
+<p>Edit the /etc/ssh/sshd_config file to enhance security:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>nano<span class="w"> </span>/etc/ssh/sshd_config
+</pre></div>
+</div>
+<p>Change the following settings:</p>
+<div class="highlight-plaintext notranslate"><div class="highlight"><pre><span></span># Disable root login
+PermitRootLogin no
+
+# Change default SSH port (optional - pick a port number in the range 1024-49151)
+Port &lt;nnnn&gt;
+
+# Restrict user access
+AllowUsers &lt;users&gt;
+AllowGroups &lt;groups&gt;
+
+# Enable public key authentication and disable password authentication
+PubkeyAuthentication yes
+PasswordAuthentication no
+
+# Configure idle timeout
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+# Limit authentication attempts
+MaxAuthTries 3
+</pre></div>
+</div>
+<p>Restart the SSH service:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>sshd
+</pre></div>
+</div>
+</section>
+<section id="firewall">
+<h4>Firewall<a class="headerlink" href="#firewall" title="Link to this heading">¶</a></h4>
+<p>Ensure that <code class="docutils literal notranslate"><span class="pre">ufw</span></code> is disabled (firewall rules are managed by the Kubernetes cluster using IPTables directly):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>ufw<span class="w"> </span>disable
+sudo<span class="w"> </span>systemctl<span class="w"> </span>disable<span class="w"> </span>ufw
+</pre></div>
+</div>
+</section>
+</section>
+<section id="deploy-the-application">
+<h3>Deploy the Application<a class="headerlink" href="#deploy-the-application" title="Link to this heading">¶</a></h3>
+<p>Run the <code class="docutils literal notranslate"><span class="pre">deploy.sh</span></code> script to deploy the application, including the join command for worker nodes. <strong>Correct functioning
+of control nodes is dependent on DNS having been set up to point various subdomains to the server’s IP address.</strong></p>
+<p>The script will create and populate the necessary persistent volumes, which are determined by the <code class="docutils literal notranslate"><span class="pre">K8S_ID</span></code> environment
+variable. The most recent backup of the WHG database will be cloned if necessary, and the Django app’s <code class="docutils literal notranslate"><span class="pre">media</span></code> and
+<code class="docutils literal notranslate"><span class="pre">static</span></code> directories synchronised with the original WHG server.</p>
+<section id="set-hashicorp-credentials">
+<h4>Set HashiCorp Credentials<a class="headerlink" href="#set-hashicorp-credentials" title="Link to this heading">¶</a></h4>
+<p><em>Ideally, these should have been added already to the server’s environment variables (<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">nano</span> <span class="pre">/etc/environment</span></code>,
+followed by a reboot).</em></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">HCP_CLIENT_ID</span><span class="o">=</span>&lt;HashiCorp<span class="w"> </span>Client<span class="w"> </span>ID&gt;
+<span class="nb">export</span><span class="w"> </span><span class="nv">HCP_CLIENT_SECRET</span><span class="o">=</span>&lt;HashiCorp<span class="w"> </span>Client<span class="w"> </span>Secret&gt;
+</pre></div>
+</div>
+</section>
+<section id="enable-cloning-optional">
+<h4>Enable Cloning (optional)<a class="headerlink" href="#enable-cloning-optional" title="Link to this heading">¶</a></h4>
+<p>Set these environment variables only if the server requires a fresh clone of the WHG database or of the map tiles. <em>NOTE:
+the script will reset them to <code class="docutils literal notranslate"><span class="pre">false</span></code> after cloning.</em></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">CLONE_DB</span><span class="o">=</span><span class="nb">true</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">CLONE_TILES</span><span class="o">=</span><span class="nb">true</span>
+</pre></div>
+</div>
+</section>
+<section id="control-development-nodes">
+<h4>Control &amp; Development Nodes<a class="headerlink" href="#control-development-nodes" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>./*.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>-E<span class="w"> </span>./deploy.sh
+</pre></div>
+</div>
+<section id="expose-services-local-development-only">
+<h5>Expose services (local development only)<a class="headerlink" href="#expose-services-local-development-only" title="Link to this heading">¶</a></h5>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>kubectl<span class="w"> </span>port-forward<span class="w"> </span>svc/django-service<span class="w"> </span><span class="m">8000</span>:8000<span class="w"> </span><span class="p">&amp;</span>
+sudo<span class="w"> </span>kubectl<span class="w"> </span>--namespace<span class="w"> </span>monitoring<span class="w"> </span>port-forward<span class="w"> </span>svc/prometheus-k8s<span class="w"> </span><span class="m">9090</span><span class="w"> </span><span class="p">&amp;</span>
+sudo<span class="w"> </span>kubectl<span class="w"> </span>--namespace<span class="w"> </span>monitoring<span class="w"> </span>port-forward<span class="w"> </span>svc/grafana<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span><span class="p">&amp;</span>
+sudo<span class="w"> </span>kubectl<span class="w"> </span>--namespace<span class="w"> </span>monitoring<span class="w"> </span>port-forward<span class="w"> </span>svc/alertmanager-main<span class="w"> </span><span class="m">9093</span><span class="w"> </span><span class="p">&amp;</span>
+sudo<span class="w"> </span>kubectl<span class="w"> </span>port-forward<span class="w"> </span>svc/plausible-analytics<span class="w"> </span><span class="m">8020</span>:80<span class="w"> </span><span class="p">&amp;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>WHG: <a href="http://localhost:8000" target="_blank">http://localhost:8000</a></p></li>
+<li><p>Tileserver: <a href="http://localhost:30080" target="_blank">http://localhost:30080</a></p></li>
+<li><p>Prometheus: <a href="http://localhost:9090" target="_blank">http://localhost:9090</a></p></li>
+<li><p>Grafana: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> (initial credentials: admin|admin)</p></li>
+<li><p>Alertmanager: <a href="http://localhost:9093" target="_blank">http://localhost:9093</a></p></li>
+<li><p>Plausible: <a href="http://localhost:8020" target="_blank">http://localhost:8020</a></p></li>
+<li><p>Glitchtip:</p></li>
+<li><p>Wordpress:</p></li>
+<li><p>Kubernetes Dashboard:</p></li>
+<li><p>Vespa Dashboard:</p></li>
+</ul>
+</section>
+<section id="re-deploy-services">
+<h5>Re-deploy Services<a class="headerlink" href="#re-deploy-services" title="Link to this heading">¶</a></h5>
+<p>To re-deploy services on a Control or Development node after making changes to their configuration files, run the
+<code class="docutils literal notranslate"><span class="pre">deploy-services.sh</span></code> script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>./*.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>-E<span class="w"> </span>./deploy-services.sh
+</pre></div>
+</div>
+</section>
+</section>
+<section id="worker-nodes">
+<h4>Worker Nodes<a class="headerlink" href="#worker-nodes" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You MUST replace &lt;kubeadm-join-command&gt; with the actual join command from the master node.</span>
+sudo<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>./*.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>-E<span class="w"> </span>./deploy.sh<span class="w"> </span><span class="s2">&quot;&lt;kubeadm-join-command&gt;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="check-loading-of-example-vespa-application">
+<h3>Check loading of example Vespa application<a class="headerlink" href="#check-loading-of-example-vespa-application" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Port-forward to Vespa Config Server</span>
+sudo<span class="w"> </span>kubectl<span class="w"> </span>port-forward<span class="w"> </span>pod/vespa-configserver-0<span class="w"> </span>-n<span class="w"> </span>vespa<span class="w"> </span><span class="m">19071</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PORT_FORWARD_PID</span><span class="o">=</span><span class="nv">$!</span>
+
+<span class="c1"># Wait for port-forwarding to establish</span>
+wait_for_port<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="nb">local</span><span class="w"> </span><span class="nv">port</span><span class="o">=</span><span class="nv">$1</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Waiting for port </span><span class="nv">$port</span><span class="s2"> to be ready...&quot;</span>
+<span class="w">  </span><span class="k">while</span><span class="w"> </span>!<span class="w"> </span>nc<span class="w"> </span>-z<span class="w"> </span>localhost<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$port</span><span class="s2">&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span>sleep<span class="w"> </span><span class="m">0</span>.5
+<span class="w">  </span><span class="k">done</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Port </span><span class="nv">$port</span><span class="s2"> is now ready.&quot;</span>
+<span class="o">}</span>
+wait_for_port<span class="w"> </span><span class="m">19071</span>
+
+<span class="c1"># Load application</span>
+<span class="nb">cd</span><span class="w"> </span>./vespa/application/config
+zip<span class="w"> </span>-r<span class="w"> </span>-<span class="w"> </span>.<span class="w"> </span><span class="p">|</span><span class="w">   </span>curl<span class="w"> </span>--header<span class="w"> </span>Content-Type:application/zip<span class="w">   </span>--data-binary<span class="w"> </span>@-<span class="w">   </span>http://localhost:19071/application/v2/tenant/default/prepareandactivate
+<span class="nb">cd</span><span class="w"> </span>../../../
+
+<span class="c1"># Terminate the port-forward process</span>
+sudo<span class="w"> </span><span class="nb">kill</span><span class="w"> </span><span class="nv">$PORT_FORWARD_PID</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/whg_logo.png" alt="Logo of World Historical Gazetteer"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">World Historical Gazetteer</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="001-Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="001-Introduction.html#workbench-pathways">Workbench Pathways</a></li>
+<li class="toctree-l1"><a class="reference internal" href="100-Tutorials.html">Tutorials &amp; Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="400-Technical.html">Technical</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">System Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#system-components">System Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#application-components">Application Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#monitoring-and-analytics-components">Monitoring and Analytics Components</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#setup">Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prepare-the-server-environment">Prepare the Server Environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deploy-the-application">Deploy the Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#check-loading-of-example-vespa-application">Check loading of example Vespa application</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="950-License.html">Licence</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="400-Technical.html" title="previous chapter">Technical</a></li>
+      <li>Next: <a href="950-License.html" title="next chapter">Licence</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, World Historical Gazetteer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/content/500-System.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

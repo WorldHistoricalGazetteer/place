@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+
+body {
+    font-family: 'Raleway', Georgia, serif;
+}
+
+div.body h1, div.body h2, div.body h3, div.body h4, div.body h5, div.body h6,
+div.sphinxsidebar h3, div.sphinxsidebar h4, div.sphinxsidebar input, form input {
+    font-family: 'Raleway', Georgia, serif !important;
+}
+
+div.body p {
+    hyphens: none;
+}
+
+h1.logo {
+    text-align: center !important;
+    font-size: 1.4rem;
+}
+
+#readthedocs-ea {
+    display: none;
+}
