@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     tileserver-gl: "true"
+    app: tileserver-gl # Required by tile-api service
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -14,9 +15,12 @@ spec:
     metadata:
       labels:
         tileserver-gl: "true"
+        app: tileserver-gl # Required by tile-api service
         tileapi: "true"
     spec:
       affinity: {{ .Values.affinity | toYaml | nindent 8 }}
+      securityContext:
+        fsGroup: {{ .Values.securityContext.runAsGroup }}
       initContainers:
         - name: git-sparse-clone
           image: alpine/git
@@ -35,13 +39,17 @@ spec:
             git reset --hard origin/main && \
             # Change ownership of mounted directories to the `node` user and group
             chown -R 999:999 /mnt/shared
+            chown -R 999:999 /mnt/data/tiles
           volumeMounts:
             - name: tileserver
               mountPath: /mnt/shared
+            - name: tiles
+              mountPath: /mnt/data/tiles
       containers:
       - name: tileserver-gl
         image: {{ .Values.tileserver.image }}:{{ .Values.tileserver.imageTag }}
         imagePullPolicy: {{ .Values.tileserver.imagePullPolicy }}
+        securityContext: {{ toYaml .Values.securityContext | nindent 10 }}
         command: ["bash", "-c"]
         args:
         - |
@@ -90,7 +98,7 @@ spec:
       - name: tile-api
         image: {{ .Values.tileapi.image }}:{{ .Values.tileapi.imageTag }}
         imagePullPolicy: {{ .Values.tileapi.imagePullPolicy }}
-        securityContext: {{ toYaml .Values.tileapi.securityContext | nindent 10 }}
+        securityContext: {{ toYaml .Values.securityContext | nindent 10 }}
         ports:
         - containerPort: {{ .Values.service.tileapi.port }}
         env:

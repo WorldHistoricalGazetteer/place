@@ -23,7 +23,7 @@ if not logger.hasHandlers():
     logger.addHandler(handler)
 
 
-def add_tileset(tileset_type: str, tileset_id: int) -> str:
+def add_tileset(tileset_type: str, tileset_id: int) -> dict:
     """
     Add a tileset by invoking Tippecanoe and updating the config.json.
 
@@ -32,7 +32,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         tileset_id (int): The identifier of the dataset or collection.
 
     Returns:
-        str: Job ID of the Tippecanoe operation.
+        dict: A dictionary containing 'success' and 'status' indicators.
     """
 
     # Construct the tileset key
@@ -46,7 +46,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         response.raise_for_status()
     except requests.RequestException as e:
         logger.error(f"Failed to fetch data from {mapdata_url}: {e}")
-        return ""
+        return {"success": False, "status": f"Failed to fetch data: {str(e)}"}
 
     # Use ijson to parse and extract specific fields (efficient memory-use for large datasets)
     logger.info("Parsing JSON response for relevant fields")
@@ -57,7 +57,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
                 citation_data[prefix] = value
     except Exception as e:
         logger.error(f"Error while parsing JSON: {e}")
-        return ""
+        return {"success": False, "status": f"Error parsing JSON: {str(e)}"}
     logger.info(f"Citation data: {citation_data}")
 
     # Extract name and attribution from the GeoJSON properties
@@ -74,7 +74,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
             elif citation_data.get('contributors'):
                 attribution = f"{citation_data['title']}: {citation_data['contributors']}"
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to set attribution string.")
+        return {"success": False, "status": f"Failed to set attribution string: {str(e)}"}
 
     # Start Tippecanoe job
     job_id = start_tippecanoe_job(tileset_type, tileset_id, mapdata_url, name, attribution)
@@ -82,14 +82,14 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
 
     # Load the configuration file
     if not CONFIG_FILE.exists():
-        raise FileNotFoundError(f"Configuration file not found: {CONFIG_FILE}")
+        return {"success": False, "status": f"Configuration file not found: {CONFIG_FILE}"}
 
     try:
         with CONFIG_FILE.open("r") as f:
             config = json.load(f)
         logger.debug("Loaded configuration file successfully.")
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in configuration file: {str(e)}")
+        return {"success": False, "status": f"Invalid JSON in configuration file: {str(e)}"}
 
     # Update the configuration with the new tileset
     config.setdefault("data", {})[tileset_key] = {"mbtiles": f"{tileset_id}.mbtiles", "tilejson": {"attribution": attribution}}
@@ -98,13 +98,13 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
             json.dump(config, f, indent=4)
         logger.info(f"Updated configuration file: {CONFIG_FILE}")
     except Exception as e:
-        raise IOError(f"Failed to update configuration file: {str(e)}")
+        return {"success": False, "status": f"Failed to update configuration file: {str(e)}"}
 
     # Restart the tileserver to pick up the new configuration
     try:
         restart_tileserver()
         logger.info("Tileserver restarted successfully.")
     except Exception as e:
-        raise RuntimeError(f"Failed to restart tileserver: {str(e)}")
+        return {"success": False, "status": f"Failed to restart tileserver: {str(e)}"}
 
-    return {"success": True, "job_id": job_id}
+    return {"success": True, "status": job_id}

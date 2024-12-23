@@ -31,7 +31,7 @@ class DeleteResponse(BaseModel):
 
 class AddResponse(BaseModel):
     success: bool
-    job_id: str
+    status: str
 
 
 @app.get("/", response_model=List[Dict[str, Any]])
@@ -85,10 +85,10 @@ def remove_tileset(tileset_type: str, tileset_id: str):
         raise HTTPException(status_code=500, detail=f"Error deleting tileset: {str(e)}")
 
 
-@app.post("/", response_model=AddResponse)
+@app.post("/create", response_model=AddResponse)
 async def insert_tileset(request: TilesetRequest):
     try:
         result = add_tileset(request.type, request.id)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error adding tileset: {str(e)}")
+        return {"success": False, "status": f"Error adding tileset: {str(e)}"}

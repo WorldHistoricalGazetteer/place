@@ -1,9 +1,9 @@
 subdomain: "map.whgazetteer.org"
 namespace: "tileserver"
 
-#port: 8080
-#servicePort: 80
-#serviceType: "LoadBalancer" # May be overridden by Helm argument
+securityContext:
+  runAsUser: 999
+  runAsGroup: 999
 
 service:
   type: "LoadBalancer" # May be overridden by Helm argument
@@ -24,9 +24,6 @@ tileapi:
   imagePullPolicy: "IfNotPresent"
 #  port: 8081
 #  servicePort: 81
-  securityContext:
-    runAsUser: 999
-    runAsGroup: 999
   resources:
     requests:
       memory: "128Mi"
