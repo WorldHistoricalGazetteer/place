@@ -8,53 +8,7 @@ CONFIG_DIR = "/mnt/data/configs"
 CONFIG_FILE = Path(CONFIG_DIR) / "config.json"
 
 
-class VectorLayer(BaseModel):
-    id: str
-    description: str
-    minzoom: int
-    maxzoom: int
-    fields: Dict[str, str]
-
-class TilestatsAttribute(BaseModel):
-    attribute: str
-    count: int
-    type: str
-    values: list
-    min: Union[int, float, None]
-    max: Union[int, float, None]
-
-class TilestatsLayer(BaseModel):
-    layer: str
-    count: int
-    geometry: str
-    attributeCount: int
-    attributes: list[TilestatsAttribute]
-
-class Tilestats(BaseModel):
-    layerCount: int
-    layers: list[TilestatsLayer]
-
-class TilesetData(BaseModel):
-    tiles: list[str]
-    name: str
-    format: str
-    basename: str
-    id: str
-    description: str
-    version: str
-    minzoom: int
-    maxzoom: int
-    center: list[float]
-    bounds: list[float]
-    type: str
-    attribution: str
-    generator: str
-    generator_options: str
-    vector_layers: list[VectorLayer]
-    tilestats: Tilestats
-    tilejson: str
-
-async def get_tileset_data(tileset_type: str, tileset_id: int) -> Union[TilesetData, Dict[str, str]]:
+async def get_tileset_data(tileset_type: str, tileset_id: int) -> Union[Dict[str, Any], Dict[str, str]]:
     """
     Fetch specific tileset data from the Tileserver-GL.
 
@@ -63,7 +17,7 @@ async def get_tileset_data(tileset_type: str, tileset_id: int) -> Union[TilesetD
         tileset_id (str): The ID of the tileset.
 
     Returns:
-        Union[TilesetData, Dict[str, str]]: A parsed tileset data object or an error message.
+        Union[Dict[str, Any], Dict[str, str]]: A parsed tileset data object or an error message.
     """
     url = f"http://tileserver-gl:8080/data/{tileset_type}-{tileset_id}.json"
 
@@ -74,7 +28,7 @@ async def get_tileset_data(tileset_type: str, tileset_id: int) -> Union[TilesetD
             response.raise_for_status()
 
         # Parse and validate the JSON response using the TilesetData model
-        return TilesetData(**response.json())
+        return response.json()
 
     except httpx.HTTPStatusError as e:
         # Handle HTTP errors and return a meaningful error message
@@ -87,14 +41,6 @@ async def get_tileset_data(tileset_type: str, tileset_id: int) -> Union[TilesetD
     except Exception as e:
         # Catch-all for unexpected errors
         return {"error": f"An unexpected error occurred: {str(e)}"}
-
-
-class TilesetEntry(BaseModel):
-    """
-    Represents a single entry in the tileset configuration.
-    """
-    mbtiles: str
-    tilejson: Dict[str, str]  # Must contain at least 'attribution', but could include more fields.
 
 
 async def get_all_tileset_data() -> Dict[str, Any]:
@@ -127,15 +73,7 @@ async def get_all_tileset_data() -> Dict[str, Any]:
 
         for key, value in config_data.items():
             if key.startswith("datasets-") or key.startswith("collections-"):
-                try:
-                    # Manually validate the required fields within the nested entry
-                    if "mbtiles" in value and "tilejson" in value:
-                        validated_entry = TilesetEntry(**value)
-                        filtered_data.append({"key": key, **validated_entry.model_dump()})
-                    else:
-                        print(f"Missing required fields for {key}: 'mbtiles' or 'tilejson'")
-                except ValidationError as e:
-                    print(f"Invalid tileset entry for {key}: {e}")
+                filtered_data.append({"key": key, **value})
 
         return {"tilesets": filtered_data}
 
