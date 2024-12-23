@@ -98,6 +98,8 @@ spec:
           value: "{{ .Values.service.tileapi.port }}"
         resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
         volumeMounts:
+        - name: tiles
+          mountPath: {{ .Values.pv.tiles.mountPath }}
         - name: tileserver
           mountPath: /code/api
           subPath: {{ .Values.pv.tileserver.api.subPath }}

@@ -20,7 +20,7 @@ replicaCount: 1
 
 tileapi:
   image: "worldhistoricalgazetteer/tileapi"
-  imageTag: "0.0.3"
+  imageTag: "0.0.4"
   imagePullPolicy: "IfNotPresent"
 #  port: 8081
 #  servicePort: 81

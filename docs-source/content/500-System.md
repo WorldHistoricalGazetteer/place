@@ -279,11 +279,11 @@ sudo chmod +x ./*.sh && sudo -E ./deploy.sh
 ##### Expose services (local development only)
 
 ```bash
-sudo kubectl port-forward svc/django-service 8000:8000 &
-sudo kubectl --namespace monitoring port-forward svc/prometheus-k8s 9090 &
-sudo kubectl --namespace monitoring port-forward svc/grafana 3000:3000 &
-sudo kubectl --namespace monitoring port-forward svc/alertmanager-main 9093 &
-sudo kubectl port-forward svc/plausible-analytics 8020:80 &
+sudo kubectl port-forward svc/django-service -n whg 8000:8000 &
+sudo kubectl --namespace monitoring port-forward svc/prometheus-k8s -n monitoring 9090 &
+sudo kubectl --namespace monitoring port-forward svc/grafana -n monitoring 3000:3000 &
+sudo kubectl --namespace monitoring port-forward svc/alertmanager-main -n monitoring 9093 &
+sudo kubectl port-forward svc/plausible-analytics -n monitoring 8020:80 &
 ```
 
 - WHG: <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>
