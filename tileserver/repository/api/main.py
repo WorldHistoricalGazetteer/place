@@ -56,37 +56,37 @@ async def fetch_all_tilesets():
 
 
 @app.get("/{type}/{id}", response_model=TilesetResponse)
-async def fetch_tileset(request: TilesetRequest):
+async def fetch_tileset(tileset_type: str, tileset_id: str):
     """
     Fetch tileset data for a specific dataset or collection.
 
     Args:
-        type (str): The type of tileset (e.g., "datasets" or "collections").
-        id (str): The identifier of the dataset or collection.
+        tileset_type (str): The type of tileset (e.g., "datasets" or "collections").
+        tileset_id (str): The identifier of the dataset or collection.
 
     Returns:
         TilesetResponse: Metadata and information about the tileset.
     """
     try:
-        return await get_tileset_data(request.type, request.id)
+        return await get_tileset_data(tileset_type, tileset_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.delete("/{type}/{id}", response_model=DeleteResponse)
-def remove_tileset(request: TilesetRequest):
+def remove_tileset(tileset_type: str, tileset_id: str):
     """
     Delete tileset data and associated MBTiles files for a specific dataset or collection.
 
     Args:
-        type (str): The type of tileset (e.g., "datasets" or "collections").
-        id (str): The identifier of the dataset or collection.
+        tileset_type (str): The type of tileset (e.g., "datasets" or "collections").
+        tileset_id (str): The identifier of the dataset or collection.
 
     Returns:
         DeleteResponse: Status of the delete operation.
     """
     try:
-        result = delete_tileset(request.type, request.id)
+        result = delete_tileset(tileset_type, tileset_id)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting tileset: {str(e)}")

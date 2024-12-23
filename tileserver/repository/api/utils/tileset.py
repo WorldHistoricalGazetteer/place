@@ -123,16 +123,15 @@ async def get_all_tileset_data() -> Dict[str, Any]:
 
         # Extract and filter relevant data
         config_data = config.get("data", {})
-        filtered_data = {}
+        filtered_data = []
 
         for key, value in config_data.items():
             if key.startswith("datasets-") or key.startswith("collections-"):
                 try:
                     # Validate entry against the TilesetEntry model
                     validated_entry = TilesetEntry(**value)
-                    filtered_data[key] = validated_entry.model_dump()
+                    filtered_data.append({"key": key, **validated_entry.model_dump()})
                 except ValidationError as e:
-                    # Skip invalid entries and log them
                     print(f"Invalid tileset entry for {key}: {e}")
 
         return {"tilesets": filtered_data}
