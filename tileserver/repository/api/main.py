@@ -48,7 +48,7 @@ async def fetch_all_tilesets():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/{type}/{id}", response_model=Dict[str, Any])
+@app.get("/{tileset_type}/{tileset_id}", response_model=Dict[str, Any])
 async def fetch_tileset(tileset_type: str, tileset_id: int):
     """
     Fetch tileset data for a specific dataset or collection.
@@ -66,7 +66,7 @@ async def fetch_tileset(tileset_type: str, tileset_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/{type}/{id}", response_model=DeleteResponse)
+@app.delete("/{tileset_type}/{tileset_id}", response_model=DeleteResponse)
 def remove_tileset(tileset_type: str, tileset_id: str):
     """
     Delete tileset data and associated MBTiles files for a specific dataset or collection.
