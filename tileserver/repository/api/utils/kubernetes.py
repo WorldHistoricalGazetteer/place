@@ -16,6 +16,8 @@ def restart_tileserver() -> Dict[str, Any]:
         Dict[str, Any]: A dictionary with 'success' and 'message' keys.
     """
     try:
+        kubernetes.config.load_incluster_config()
+
         api_instance = kubernetes.client.CoreV1Api()
         response = stream(
             api_instance.connect_get_namespaced_pod_exec,
@@ -59,6 +61,8 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str , 
     Returns:
         str: Job ID of the Tippecanoe operation.
     """
+
+    kubernetes.config.load_incluster_config()
 
     # Fetch data from the geojson_url and save it to a temporary file
     try:
