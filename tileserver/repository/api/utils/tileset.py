@@ -128,9 +128,12 @@ async def get_all_tileset_data() -> Dict[str, Any]:
         for key, value in config_data.items():
             if key.startswith("datasets-") or key.startswith("collections-"):
                 try:
-                    # Validate entry against the TilesetEntry model
-                    validated_entry = TilesetEntry(**value)
-                    filtered_data.append({"key": key, **validated_entry.model_dump()})
+                    # Manually validate the required fields within the nested entry
+                    if "mbtiles" in value and "tilejson" in value:
+                        validated_entry = TilesetEntry(**value)
+                        filtered_data.append({"key": key, **validated_entry.model_dump()})
+                    else:
+                        print(f"Missing required fields for {key}: 'mbtiles' or 'tilejson'")
                 except ValidationError as e:
                     print(f"Invalid tileset entry for {key}: {e}")
 
