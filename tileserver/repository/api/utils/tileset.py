@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 from typing import Dict, Any, Union, List
 
+from fastapi import HTTPException
+
 CONFIG_DIR = "/mnt/data/configs"
 CONFIG_FILE = Path(CONFIG_DIR) / "config.json"
 
@@ -52,9 +54,7 @@ async def get_all_tileset_data() -> List[Dict[str, Any]]:
     Additional properties in the configuration are preserved but optional.
 
     Returns:
-        Dict[str, Any]: A dictionary containing filtered and validated tileset data.
-                        Returns an empty list for tilesets if the configuration file
-                        does not exist or is invalid.
+        List[Dict[str, Any]]: A list of tileset data objects
     """
 
     # Return an empty tileset list if the config file does not exist
@@ -68,16 +68,14 @@ async def get_all_tileset_data() -> List[Dict[str, Any]]:
 
         # Extract and filter relevant data
         config_data = config.get("data", {})
-        filtered_data = []
-
-        for key, value in config_data.items():
-            if key.startswith("datasets-") or key.startswith("collections-"):
-                filtered_data.append({"key": key, **value})
+        filtered_data = [
+            {"key": key, **value} for key, value in config_data.items()
+            if key.startswith("datasets-") or key.startswith("collections-")
+        ]
 
         return filtered_data
 
     except (json.JSONDecodeError, KeyError) as e:
-        raise ValueError(f"Error reading configuration file: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"Error reading configuration file: {str(e)}")
     except Exception as e:
-        raise RuntimeError(f"Unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

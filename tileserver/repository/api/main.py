@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from .utils.tileset import get_tileset_data, get_all_tileset_data
 from .utils.deletion import delete_tileset
@@ -34,13 +34,13 @@ class AddResponse(BaseModel):
     job_id: str
 
 
-@app.get("/", response_model=List[Dict[str, str]])
+@app.get("/", response_model=List[Dict[str, Any]])
 async def fetch_all_tilesets():
     """
     Fetch tileset data for all datasets and collections.
 
     Returns:
-        AllTilesetsResponse: List of all available tilesets with metadata.
+        List[Dict[str, Any]]: Metadata and information about all tilesets.
     """
     try:
         return await get_all_tileset_data()
