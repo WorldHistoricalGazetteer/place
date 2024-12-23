@@ -1,8 +1,7 @@
 import httpx
 from pathlib import Path
 import json
-from typing import Dict, Any, Union
-from pydantic import BaseModel, ValidationError
+from typing import Dict, Any, Union, List
 
 CONFIG_DIR = "/mnt/data/configs"
 CONFIG_FILE = Path(CONFIG_DIR) / "config.json"
@@ -43,7 +42,7 @@ async def get_tileset_data(tileset_type: str, tileset_id: int) -> Union[Dict[str
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
 
-async def get_all_tileset_data() -> Dict[str, Any]:
+async def get_all_tileset_data() -> List[Dict[str, Any]]:
     """
     Fetch all tileset data from the configuration file.
 
@@ -60,7 +59,7 @@ async def get_all_tileset_data() -> Dict[str, Any]:
 
     # Return an empty tileset list if the config file does not exist
     if not CONFIG_FILE.exists():
-        return {"tilesets": []}
+        return []
 
     try:
         # Load configuration data
@@ -75,12 +74,10 @@ async def get_all_tileset_data() -> Dict[str, Any]:
             if key.startswith("datasets-") or key.startswith("collections-"):
                 filtered_data.append({"key": key, **value})
 
-        return {"tilesets": filtered_data}
+        return filtered_data
 
     except (json.JSONDecodeError, KeyError) as e:
-        # Handle JSON parsing errors or missing keys gracefully
-        return {"error": f"Failed to load tileset data: {str(e)}"}
+        raise ValueError(f"Error reading configuration file: {str(e)}")
 
     except Exception as e:
-        # Catch-all for unexpected errors
-        return {"error": f"An unexpected error occurred: {str(e)}"}
+        raise RuntimeError(f"Unexpected error occurred: {str(e)}")
