@@ -48,7 +48,7 @@ async def fetch_all_tilesets():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/{type}/{id}", response_model=Dict[str, str])
+@app.get("/{type}/{id}", response_model=Dict[str, Any])
 async def fetch_tileset(tileset_type: str, tileset_id: str):
     """
     Fetch tileset data for a specific dataset or collection.

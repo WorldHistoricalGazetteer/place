@@ -9,7 +9,7 @@ CONFIG_DIR = "/mnt/data/configs"
 CONFIG_FILE = Path(CONFIG_DIR) / "config.json"
 
 
-async def get_tileset_data(tileset_type: str, tileset_id: int) -> Union[Dict[str, Any], Dict[str, str]]:
+async def get_tileset_data(tileset_type: str, tileset_id: int) -> Dict[str, Any]:
     """
     Fetch specific tileset data from the Tileserver-GL.
 
