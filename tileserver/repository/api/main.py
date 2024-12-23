@@ -2,9 +2,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
 
-from utils.tileset import get_tileset_data, get_all_tileset_data
-from utils.deletion import delete_tileset
-from utils.addition import add_tileset
+from .utils.tileset import get_tileset_data, get_all_tileset_data
+from .utils.deletion import delete_tileset
+from .utils.addition import add_tileset
 
 '''
 Dynamically-generated API documentation can be accessed at http://localhost:30081/docs 
