@@ -49,7 +49,7 @@ async def fetch_all_tilesets():
 
 
 @app.get("/{type}/{id}", response_model=Dict[str, Any])
-async def fetch_tileset(tileset_type: str, tileset_id: str):
+async def fetch_tileset(tileset_type: str, tileset_id: int):
     """
     Fetch tileset data for a specific dataset or collection.
 

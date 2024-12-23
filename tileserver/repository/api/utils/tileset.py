@@ -18,7 +18,7 @@ async def get_tileset_data(tileset_type: str, tileset_id: int) -> Dict[str, Any]
         tileset_id (str): The ID of the tileset.
 
     Returns:
-        Union[Dict[str, Any], Dict[str, str]]: A parsed tileset data object or an error message.
+        Dict[str, Any]: Metadata and information about the tileset.
     """
     url = f"http://tileserver-gl:8080/data/{tileset_type}-{tileset_id}.json"
 
