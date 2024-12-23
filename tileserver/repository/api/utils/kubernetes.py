@@ -1,4 +1,5 @@
 import kubernetes
+from kubernetes import client
 from kubernetes.client import BatchV1Api, V1Job
 from kubernetes.stream import stream
 import time
@@ -15,13 +16,26 @@ def restart_tileserver() -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: A dictionary with 'success' and 'message' keys.
     """
+
     try:
         kubernetes.config.load_incluster_config()
+
+        v1 = client.CoreV1Api()
+
+        pods = v1.list_namespaced_pod(
+            namespace="tileserver",
+            label_selector="app=tileserver-gl"
+        )
+
+        if not pods.items:
+            raise ValueError("No tileserver-gl pod found")
+
+        pod_name = pods.items[0].metadata.name
 
         api_instance = kubernetes.client.CoreV1Api()
         response = stream(
             api_instance.connect_get_namespaced_pod_exec,
-            name="tileserver-gl",
+            name=pod_name,
             namespace="tileserver",
             container="tileserver-gl",
             command=["kill", "-HUP", "1"],
@@ -60,6 +74,7 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str , 
 
     Returns:
         str: Job ID of the Tippecanoe operation.
+
     """
 
     kubernetes.config.load_incluster_config()

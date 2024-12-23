@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tileserver-exec-role
+rules:
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["get", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tileserver-exec-binding
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: tileserver
+roleRef:
+  kind: ClusterRole
+  name: tileserver-exec-role
+  apiGroup: rbac.authorization.k8s.io
