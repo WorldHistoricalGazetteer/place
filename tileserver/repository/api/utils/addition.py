@@ -39,7 +39,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> dict:
     tileset_key = f"{tileset_type}-{tileset_id}"
     logger.info(f"Adding tileset: {tileset_key}")
 
-    mapdata_url = "http://django-service.whg.svc.cluster.local:8000/mapdata/{tileset_type}/{tileset_id}/tileset/"
+    mapdata_url = f"http://django-service.whg.svc.cluster.local:8000/mapdata/{tileset_type}/{tileset_id}/tileset/"
     try:
         logger.info(f"Fetching data from {mapdata_url}")
         response = requests.get(mapdata_url, stream=True)
