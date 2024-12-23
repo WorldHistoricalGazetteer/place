@@ -25,13 +25,6 @@ class TilesetRequest(BaseModel):
     type: str
     id: int
 
-class TilesetResponse(BaseModel):
-    name: str
-    metadata: Dict[str, str]
-
-class AllTilesetsResponse(BaseModel):
-    tilesets: List[TilesetResponse]
-
 class DeleteResponse(BaseModel):
     success: bool
     message: str
@@ -41,7 +34,7 @@ class AddResponse(BaseModel):
     job_id: str
 
 
-@app.get("/", response_model=AllTilesetsResponse)
+@app.get("/", response_model=List[Dict[str, str]])
 async def fetch_all_tilesets():
     """
     Fetch tileset data for all datasets and collections.
@@ -55,7 +48,7 @@ async def fetch_all_tilesets():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/{type}/{id}", response_model=TilesetResponse)
+@app.get("/{type}/{id}", response_model=Dict[str, str])
 async def fetch_tileset(tileset_type: str, tileset_id: str):
     """
     Fetch tileset data for a specific dataset or collection.
