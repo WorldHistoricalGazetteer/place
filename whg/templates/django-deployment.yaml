@@ -56,7 +56,7 @@ spec:
               command: ["sh", "-c", "until nc -z postgres {{ .Values.postgres.port }}; do echo waiting for postgres...; sleep 2; done"]
         command: ["gunicorn", "whg.wsgi:application", "--bind", "0.0.0.0:{{ .Values.django.port }}", "--timeout", "1200", "-w", "4"]
         ports:
-        - containerPort: {{ .Values.django.servicePort }}
+        - containerPort: {{ .Values.django.port }}
         envFrom:
         - configMapRef:
             name: django-config
