@@ -33,11 +33,12 @@ const scanDirectory = (dir, configData, isRoot = true) => {
                 scanDirectory(filePath, configData, false);
             } else if (file.endsWith('.mbtiles') && !isRoot) {
                 // If the file is a .mbtiles file, check if it exists in config
-                const key = path.basename(file, '.mbtiles'); // Use the file name as the key
+                const key = `${path.basename(dir)}-${path.basename(file, '.mbtiles')}`;
                 if (!configData[key]) { // If the tileset is not already in config.json
                     console.log(`Adding tileset missing from config.json: ${file} from ${dir}`);
                     configData[key] = {
-                        mbtiles: filePath,
+                        // Remove the base directory from the path
+                        mbtiles: filePath.replace(`${tilesDir}/`, ''),
                         tilejson: {
                             attribution: "-unknown-" // Default attribution for new files
                         }
