@@ -81,7 +81,7 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
     """
 
     kubernetes.config.load_incluster_config()
-    volume_mount_path = "/mnt/geojson"
+    volume_mount_path = "/mnt/data/assets/geojson"
     os.makedirs(volume_mount_path, exist_ok=True)
 
     # Fetch data from the geojson_url and save it to a temporary file
