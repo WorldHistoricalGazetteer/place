@@ -82,11 +82,15 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
 
     kubernetes.config.load_incluster_config()
 
+    # Create an emptyDir volume for sharing GeoJSON file
+    volume_name = "geojson-volume"
+    volume_mount_path = "/mnt/geojson"
+
     # Fetch data from the geojson_url and save it to a temporary file
     try:
         response = requests.get(geojson_url, stream=True)
         response.raise_for_status()
-        with open("/tmp/geojson.json", "wb") as f:
+        with open(f"{volume_mount_path}/geojson.json", "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
     except requests.RequestException as e:
@@ -110,7 +114,7 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
         "-z14",  # Set zoom level to 14
         "-ac",  # Allow the creation of tiles for areas with fewer than a certain number of features
         "--no-tile-size-limit",  # Disable tile size limit
-        "/tmp/geojson.json",  # Path to the GeoJSON input file
+        f"{volume_mount_path}/geojson.json",  # Path to the GeoJSON input file
     ]
 
     job_manifest = V1Job(
@@ -141,14 +145,21 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                             image_pull_policy=os.getenv("TIPPECANOE_IMAGE_PULL_POLICY"),
                             command=["/bin/bash", "-c"],
                             args=[" ".join(args)],
-                            volume_mounts=[V1VolumeMount(name="tiles", mount_path="/srv/tiles")],
+                            volume_mounts=[
+                                V1VolumeMount(name="tiles", mount_path="/srv/tiles"),
+                                V1VolumeMount(name=volume_name, mount_path=volume_mount_path),
+                            ],
                         )
                     ],
                     volumes=[
                         V1Volume(
                             name="tiles",
                             persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name="tiles-pvc"),
-                        )
+                        ),
+                        V1Volume(
+                            name=volume_name,
+                            empty_dir={},
+                        ),
                     ],
                     restart_policy="Never", # Do not restart the Job if it fails
                 ),
