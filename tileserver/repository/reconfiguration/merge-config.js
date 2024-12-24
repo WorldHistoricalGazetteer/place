@@ -69,7 +69,7 @@ try {
         if (config.data.hasOwnProperty(key)) {
             const tile = config.data[key];
             if (tile.mbtiles && !fileExists(tile.mbtiles)) {
-                console.log(`Removing missing tile file: ${tile.mbtiles} for key ${key}`);
+                console.log(`Removing config entry for missing tileset: ${tile.mbtiles} for key ${key}`);
                 delete config.data[key]; // Remove the entry for this tile
             }
         }
@@ -80,6 +80,21 @@ try {
 
     // Step 3: Merge the processed config data into the base config
     baseConfig.data = config.data;
+
+    // Step 4: Sort the keys of config.data numerically (natural sorting)
+    const sortKeysNaturally = (data) => {
+        const sortedKeys = Object.keys(data).sort((a, b) => {
+            return a.localeCompare(b, undefined, { numeric: true });
+        });
+
+        const sortedData = {};
+        sortedKeys.forEach((key) => {
+            sortedData[key] = data[key];
+        });
+
+        return sortedData;
+    };
+    baseConfig.data = sortKeysNaturally(config.data);
 
     // Write the updated configuration back to the config file
     fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2));
