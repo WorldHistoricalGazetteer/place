@@ -50,7 +50,7 @@ tileserver:
 
 tippecanoe:
   image: "worldhistoricalgazetteer/tippecanoe"
-  imageTag: "latest"
+  imageTag: "v0.0.2"
   imagePullPolicy: "IfNotPresent"
 
 pv:

@@ -6,7 +6,7 @@ from kubernetes.client import BatchV1Api, V1Job, V1PodSpec, V1PodTemplateSpec, V
 from kubernetes.stream import stream
 import time
 import requests
-import json
+import shlex
 from typing import Dict, Any
 
 TILESERVER_HEALTH_URL = "http://tileserver-gl:8080/health"
@@ -100,8 +100,8 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
         "/tippecanoe/tippecanoe",  # Path to the Tippecanoe binary
         "-o", f"{tileset_type}-{tileset_id}.mbtiles",  # Output file name
         "-f",  # Force overwrite output file if it exists
-        "-n", name,  # Name of the tileset
-        "-A", attribution,  # Attribution text
+        "-n", shlex.quote(name),  # Name of the tileset
+        "-A", shlex.quote(attribution),  # Attribution text
         "-l", "features",  # Layer name
         "-B", "4",  # Buffer size (larger values = more detail but larger tiles)
         "-rg", "10",  # Generalization factor (higher = more simplified geometry)

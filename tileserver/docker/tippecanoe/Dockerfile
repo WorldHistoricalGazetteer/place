@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-LABEL description="Tippecanoe and Tyler Too: incorporates additional dependencies for GIS data processing."
+LABEL description="Tippecanoe and Tyler Too: incorporates additional dependencies for debugging."
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -15,13 +15,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     make \
-    postgresql-client # Facilitates communication with the Django Postgres database \
-    gdal-bin # Facilitates GIS data processing \
-    python3 \
-    python3-pip \
-    jq \
     netcat \
-    tee \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone Tippecanoe and build
