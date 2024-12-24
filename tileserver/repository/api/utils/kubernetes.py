@@ -8,9 +8,15 @@ import time
 import requests
 import shlex
 from typing import Dict, Any
+import uuid
 
 TILESERVER_HEALTH_URL = "http://tileserver-gl:8080/health"
 RESTART_TIMEOUT = 30
+
+
+def generate_random_suffix() -> str:
+    """Generates a random suffix string using UUID."""
+    return str(uuid.uuid4().hex[:12])  # First 12 characters for brevity
 
 
 def restart_tileserver() -> Dict[str, Any]:
@@ -83,12 +89,13 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
     kubernetes.config.load_incluster_config()
 
     namespace = os.getenv("TIPPECANOE_NAMESPACE", "tileserver")
-    job_name = f"tippecanoe-{tileset_type}-{tileset_id}"
+    random_suffix = generate_random_suffix()
+    job_name = f"tippecanoe-{tileset_type}-{tileset_id}-{random_suffix}"
     image = f"{os.getenv('TIPPECANOE_IMAGE')}:{os.getenv('TIPPECANOE_IMAGE_TAG')}"
 
     command = " ".join([
         f"curl -sSL {shlex.quote(geojson_url)}",  # Fetch the GeoJSON data
-        "|",  # Pipe it to Tippecanoe
+        f"> /srv/tiles/temp/{job_name}.geojson &&",  # Save the GeoJSON data to a temporary file
         "/tippecanoe/tippecanoe",  # Path to the Tippecanoe binary
         f"-o /srv/tiles/{tileset_type}-{tileset_id}.mbtiles",  # Output file in mounted volume
         "-f",  # Force overwrite output file if it exists
@@ -102,6 +109,9 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
         "-z14",  # Set zoom level to 14
         "-ac",  # Allow the creation of tiles for areas with fewer than a certain number of features
         "--no-tile-size-limit",  # Disable tile size limit
+        "/srv/tiles/temp/{job_name}.geojson",  # Input GeoJSON file
+        # Finally, remove the temporary GeoJSON file
+        f"&& rm /srv/tiles/temp/{job_name}.geojson"
     ]) # Combine the command parts into a single string
 
     # command = f"curl -sSL {shlex.quote(geojson_url)} || echo 'Error fetching GeoJSON data'" # Debugging
@@ -127,6 +137,9 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                             )
                         )
                     ),
+                    security_context=client.V1PodSecurityContext(
+                        fs_group=999,  # Set the group ID for the mounted volume
+                    ),
                     containers=[
                         V1Container(
                             name="tippecanoe",
@@ -136,6 +149,10 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                             volume_mounts=[
                                 V1VolumeMount(name="tiles", mount_path="/srv/tiles"),
                             ],
+                            security_context=client.V1SecurityContext(
+                                run_as_user=999,  # Set the user ID to 999
+                                run_as_group=999,  # Set the group ID to 999
+                            ),
                         )
                     ],
                     volumes=[
