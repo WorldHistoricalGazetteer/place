@@ -4,18 +4,21 @@ metadata:
   name: celery-beat
   namespace: {{ .Values.namespace }}
   labels:
-    app: django
+    app: celery
+    role: beat
     component: celery-beat
 spec:
   replicas: {{ .Values.celery.beat.replicaCount }}
   selector:
     matchLabels:
-      app: django
+      app: celery
+      role: beat
       component: celery-beat
   template:
     metadata:
       labels:
-        app: django
+        app: celery
+        role: beat
         component: celery-beat
     spec:
       securityContext: {{ toYaml .Values.celery.securityContext | nindent 8 }}

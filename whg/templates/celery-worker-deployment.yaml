@@ -4,18 +4,21 @@ metadata:
   name: celery-worker
   namespace: {{ .Values.namespace }}
   labels:
-    app: django
+    app: celery
+    role: worker
     component: celery-worker
 spec:
   replicas: {{ .Values.celery.worker.replicaCount }}
   selector:
     matchLabels:
-      app: django
+      app: celery
+      role: worker
       component: celery-worker
   template:
     metadata:
       labels:
-        app: django
+        app: celery
+        role: worker
         component: celery-worker
     spec:
       securityContext: {{ toYaml .Values.celery.securityContext | nindent 8 }}

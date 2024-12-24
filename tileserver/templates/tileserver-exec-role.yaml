@@ -14,7 +14,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: tileserver
+  namespace: {{ .Values.namespace }}
 roleRef:
   kind: ClusterRole
   name: tileserver-exec-role

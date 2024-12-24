@@ -4,18 +4,21 @@ metadata:
   name: celery-flower
   namespace: {{ .Values.namespace }}
   labels:
-    app: django
+    app: celery
+    role: flower
     component: celery-flower
 spec:
   replicas: {{ .Values.celery.flower.replicaCount }}
   selector:
     matchLabels:
-      app: django
+      app: celery
+      role: flower
       component: celery-flower
   template:
     metadata:
       labels:
-        app: django
+        app: celery
+        role: flower
         component: celery-flower
     spec:
       securityContext: {{ toYaml .Values.celery.securityContext | nindent 8 }}

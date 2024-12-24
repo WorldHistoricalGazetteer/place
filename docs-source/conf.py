@@ -17,7 +17,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))  # Add the project root to the path (for access to README.md, etc.)
 
-extensions = ['myst_parser']
+extensions = ['myst_parser', 'sphinx_panels', 'sphinx_copybutton', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon']
 
 myst_enable_extensions = [
     "amsmath",         # for math support

@@ -54,9 +54,10 @@ spec:
           preStop:
             exec:
               command: ["sh", "-c", "until nc -z postgres {{ .Values.postgres.port }}; do echo waiting for postgres...; sleep 2; done"]
-        command: ["gunicorn", "whg.wsgi:application", "--bind", "0.0.0.0:{{ .Values.django.port }}", "--timeout", "1200", "-w", "4"]
+        command: ["gunicorn", "whg.wsgi:application", "--bind", "0.0.0.0:{{ .Values.django.port }}", "--timeout", "1200", "-w", "{{ .Values.django.workers }}"]
         ports:
         - containerPort: {{ .Values.django.port }}
+        resources: {{ toYaml .Values.django.resources | nindent 10 }}
         envFrom:
         - configMapRef:
             name: django-config

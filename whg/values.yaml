@@ -34,6 +34,14 @@ django:
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "1"
+    limits:
+      memory: "2Gi"
+      cpu: "2"
+  workers: 8
   port: 8000
   servicePort: 443
   env:

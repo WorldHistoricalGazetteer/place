@@ -104,6 +104,14 @@ spec:
         env:
         - name: PORT
           value: "{{ .Values.service.tileapi.port }}"
+        - name: TIPPECANOE_IMAGE
+          value: "{{ .Values.tippecanoe.image }}"
+        - name: TIPPECANOE_IMAGE_TAG
+          value: "{{ .Values.tippecanoe.imageTag }}"
+        - name: TIPPECANOE_IMAGE_PULL_POLICY
+          value: "{{ .Values.tippecanoe.imagePullPolicy }}"
+        - name: TIPPECANOE_NAMESPACE
+          value: "{{ .Values.namespace }}"
         resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
         volumeMounts:
         - name: tiles

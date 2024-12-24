@@ -1,13 +1,17 @@
+import os
 import kubernetes
 from kubernetes import client
-from kubernetes.client import BatchV1Api, V1Job
+from kubernetes.client import BatchV1Api, V1Job, V1PodSpec, V1PodTemplateSpec, V1ObjectMeta, V1Container, V1Volume, \
+    V1VolumeMount, V1PersistentVolumeClaimVolumeSource, V1Affinity
 from kubernetes.stream import stream
 import time
 import requests
+import json
 from typing import Dict, Any
 
 TILESERVER_HEALTH_URL = "http://tileserver-gl:8080/health"
 RESTART_TIMEOUT = 30
+
 
 def restart_tileserver() -> Dict[str, Any]:
     """
@@ -54,26 +58,25 @@ def restart_tileserver() -> Dict[str, Any]:
             except requests.RequestException:
                 pass  # Ignore errors and keep polling
             time.sleep(1)
+
         return {"success": True, "message": f"Restart command executed successfully: {response}"}
-    except kubernetes.client.exceptions.ApiException as e:
-        return {"success": False, "message": f"API Exception when restarting tileserver: {e}"}
     except Exception as e:
-        return {"success": False, "message": f"Unexpected error occurred: {e}"}
+        return {"success": False, "message": f"Error restarting tileserver: {e}"}
 
 
-def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str , name: str, attribution: str) -> str:
+def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, name: str, attribution: str) -> str:
     """
     Start a Tippecanoe job in Kubernetes to process the tileset using a preloaded job as a template.
 
     Args:
-        tileset_type (str): The type of tileset (e.g., "dataset" or "collection").
-        tileset_id (int): The identifier of the dataset or collection.
-        geojson (dict): The GeoJSON data to be processed.
-        name (str): The name of the tileset (used in metadata).
-        attribution (str): The attribution text (used in metadata).
+        tileset_type (str): The type of the tileset (e.g., "datasets" or "collections").
+        tileset_id (int): The ID of the tileset.
+        geojson_url (str): The URL of the GeoJSON data to process.
+        name (str): The name of the tileset.
+        attribution (str): The attribution text for the tileset.
 
     Returns:
-        str: Job ID of the Tippecanoe operation.
+        str: The name of the Job that was created (or an error message if the Job could not be created).
 
     """
 
@@ -89,25 +92,11 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str , 
     except requests.RequestException as e:
         raise RuntimeError(f"Failed to fetch GeoJSON data from {geojson_url}: {str(e)}")
 
-    api_instance = BatchV1Api()
-    template_job_name = "tippecanoe-job"
-    namespace = "tileserver"
-
-    # Fetch the preloaded Job template (this method allows for Helm-based job configuration from `values.yaml`)
-    try:
-        template_job: V1Job = api_instance.read_namespaced_job(name=template_job_name, namespace=namespace)
-    except Exception as e:
-        raise RuntimeError(f"Failed to fetch template Job '{template_job_name}': {str(e)}")
-
-    # Modify the fetched Job's metadata and args
+    namespace = os.getenv("TIPPECANOE_NAMESPACE", "tileserver")
     job_name = f"tippecanoe-{tileset_type}-{tileset_id}"
-    job_manifest = template_job.to_dict()
-    job_manifest["metadata"]["name"] = job_name
-    job_manifest["metadata"].pop("uid", None)
-    job_manifest["metadata"].pop("resourceVersion", None)
+    image = f"{os.getenv('TIPPECANOE_IMAGE')}:{os.getenv('TIPPECANOE_IMAGE_TAG')}"
 
-    # Modify the args for the container
-    job_manifest["spec"]["template"]["spec"]["containers"][0]["args"] = [
+    args = [
         "/tippecanoe/tippecanoe",  # Path to the Tippecanoe binary
         "-o", f"{tileset_type}-{tileset_id}.mbtiles",  # Output file name
         "-f",  # Force overwrite output file if it exists
@@ -124,7 +113,53 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str , 
         "/tmp/geojson.json",  # Path to the GeoJSON input file
     ]
 
-    # Submit the modified Job
+    job_manifest = V1Job(
+        api_version="batch/v1",
+        kind="Job",
+        metadata=V1ObjectMeta(name=job_name, namespace=namespace),
+        spec=dict(
+            template=V1PodTemplateSpec(
+                metadata=V1ObjectMeta(labels={"app": "tippecanoe-job"}),
+                spec=V1PodSpec(
+                    affinity=V1Affinity(
+                        node_affinity=dict(
+                            requiredDuringSchedulingIgnoredDuringExecution=dict(
+                                nodeSelectorTerms=[
+                                    dict(
+                                        matchExpressions=[
+                                            dict(key="tileserver", operator="In", values=["true"])
+                                        ]
+                                    )
+                                ]
+                            )
+                        )
+                    ),
+                    containers=[
+                        V1Container(
+                            name="tippecanoe",
+                            image=image,
+                            image_pull_policy=os.getenv("TIPPECANOE_IMAGE_PULL_POLICY"),
+                            command=["/bin/bash", "-c"],
+                            args=[" ".join(args)],
+                            volume_mounts=[V1VolumeMount(name="tiles", mount_path="/srv/tiles")],
+                        )
+                    ],
+                    volumes=[
+                        V1Volume(
+                            name="tiles",
+                            persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name="tiles-pvc"),
+                        )
+                    ],
+                    restart_policy="Never", # Do not restart the Job if it fails
+                ),
+            ),
+            backoffLimit=4, # Retry the Job up to 4 times
+            ttlSecondsAfterFinished=3600, # Automatically clean up the Job after 1 hour
+        ),
+    )
+
+    # Submit the Job to Kubernetes
+    api_instance = BatchV1Api()
     try:
         api_instance.create_namespaced_job(namespace=namespace, body=job_manifest)
         return job_name
