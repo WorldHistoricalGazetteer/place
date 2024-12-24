@@ -81,24 +81,13 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
     """
 
     kubernetes.config.load_incluster_config()
-    volume_mount_path = "/mnt/data/assets/geojson"
-    os.makedirs(volume_mount_path, exist_ok=True)
-
-    # Fetch data from the geojson_url and save it to a temporary file
-    try:
-        response = requests.get(geojson_url, stream=True)
-        response.raise_for_status()
-        with open(f"{volume_mount_path}/geojson.json", "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-    except requests.RequestException as e:
-        raise RuntimeError(f"Failed to fetch GeoJSON data from {geojson_url}: {str(e)}")
 
     namespace = os.getenv("TIPPECANOE_NAMESPACE", "tileserver")
     job_name = f"tippecanoe-{tileset_type}-{tileset_id}"
     image = f"{os.getenv('TIPPECANOE_IMAGE')}:{os.getenv('TIPPECANOE_IMAGE_TAG')}"
 
     args = [
+        "curl", "-sSL", shlex.quote(geojson_url), "|",
         "/tippecanoe/tippecanoe",  # Path to the Tippecanoe binary
         "-o", f"{tileset_type}-{tileset_id}.mbtiles",  # Output file name
         "-f",  # Force overwrite output file if it exists
@@ -112,7 +101,6 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
         "-z14",  # Set zoom level to 14
         "-ac",  # Allow the creation of tiles for areas with fewer than a certain number of features
         "--no-tile-size-limit",  # Disable tile size limit
-        f"{volume_mount_path}/geojson.json",  # Path to the GeoJSON input file
     ]
 
     job_manifest = V1Job(
@@ -145,7 +133,6 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                             args=[" ".join(args)],
                             volume_mounts=[
                                 V1VolumeMount(name="tiles", mount_path="/srv/tiles"),
-                                V1VolumeMount(name="tileserver", mount_path=volume_mount_path),
                             ],
                         )
                     ],
@@ -153,10 +140,6 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                         V1Volume(
                             name="tiles",
                             persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name="tiles-pvc"),
-                        ),
-                        V1Volume(
-                            name="tileserver",
-                            persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name="tileserver-pvc"),
                         ),
                     ],
                     restart_policy="Never", # Do not restart the Job if it fails
