@@ -86,22 +86,23 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
     job_name = f"tippecanoe-{tileset_type}-{tileset_id}"
     image = f"{os.getenv('TIPPECANOE_IMAGE')}:{os.getenv('TIPPECANOE_IMAGE_TAG')}"
 
-    args = [
-        "curl", "-sSL", shlex.quote(geojson_url), "|",
+    command = " ".join([
+        f"curl -sSL {shlex.quote(geojson_url)}",  # Fetch the GeoJSON data
+        "|",  # Pipe it to Tippecanoe
         "/tippecanoe/tippecanoe",  # Path to the Tippecanoe binary
-        "-o", f"{tileset_type}-{tileset_id}.mbtiles",  # Output file name
+        f"-o /srv/tiles/{tileset_type}-{tileset_id}.mbtiles",  # Output file in mounted volume
         "-f",  # Force overwrite output file if it exists
-        "-n", shlex.quote(name),  # Name of the tileset
-        "-A", shlex.quote(attribution),  # Attribution text
-        "-l", "features",  # Layer name
-        "-B", "4",  # Buffer size (larger values = more detail but larger tiles)
-        "-rg", "10",  # Generalization factor (higher = more simplified geometry)
+        f"-n {shlex.quote(name)}",  # Name of the tileset
+        f"-A {shlex.quote(attribution)}",  # Attribution text
+        "-l features",  # Layer name
+        "-B 4",  # Buffer size (larger values = more detail but larger tiles)
+        "-rg 10",  # Generalization factor (higher = more simplified geometry)
         "-al",  # Enable automatic layering
         "-ap",  # Enable automatic tiling of polygons
         "-z14",  # Set zoom level to 14
         "-ac",  # Allow the creation of tiles for areas with fewer than a certain number of features
         "--no-tile-size-limit",  # Disable tile size limit
-    ]
+    ]) # Combine the command parts into a single string
 
     job_manifest = V1Job(
         api_version="batch/v1",
@@ -128,9 +129,8 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                         V1Container(
                             name="tippecanoe",
                             image=image,
-                            image_pull_policy=os.getenv("TIPPECANOE_IMAGE_PULL_POLICY"),
-                            command=["/bin/bash", "-c"],
-                            args=[" ".join(args)],
+                            image_pull_policy=os.getenv("TIPPECANOE_IMAGE_PULL_POLICY", "IfNotPresent"),
+                            command=["/bin/bash", "-c" , command],
                             volume_mounts=[
                                 V1VolumeMount(name="tiles", mount_path="/srv/tiles"),
                             ],
