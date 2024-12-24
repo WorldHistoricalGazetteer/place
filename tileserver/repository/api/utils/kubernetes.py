@@ -109,7 +109,7 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
         "-z14",  # Set zoom level to 14
         "-ac",  # Allow the creation of tiles for areas with fewer than a certain number of features
         "--no-tile-size-limit",  # Disable tile size limit
-        "/srv/tiles/temp/{job_name}.geojson",  # Input GeoJSON file
+        f"/srv/tiles/temp/{job_name}.geojson",  # Input GeoJSON file
         # Finally, remove the temporary GeoJSON file
         f"&& rm /srv/tiles/temp/{job_name}.geojson"
     ]) # Combine the command parts into a single string
