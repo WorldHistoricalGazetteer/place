@@ -21,7 +21,7 @@ const fileExists = (filePath) => {
 };
 
 // Function to recursively scan a directory and process all its subdirectories
-const scanDirectory = (dir, configData) => {
+const scanDirectory = (dir, configData, isRoot = true) => {
     if (fileExists(dir)) {
         const files = fs.readdirSync(dir);
         files.forEach((file) => {
@@ -30,8 +30,8 @@ const scanDirectory = (dir, configData) => {
 
             if (stat.isDirectory()) {
                 // If the file is a directory, recurse into it
-                scanDirectory(filePath, configData);
-            } else if (file.endsWith('.mbtiles')) {
+                scanDirectory(filePath, configData, false);
+            } else if (file.endsWith('.mbtiles') && !isRoot) {
                 // If the file is a .mbtiles file, check if it exists in config
                 const key = path.basename(file, '.mbtiles'); // Use the file name as the key
                 if (!configData[key]) { // If the tileset is not already in config.json
