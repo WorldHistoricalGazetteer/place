@@ -66,7 +66,7 @@ try {
 
     // Step 1: Loop through the data object and remove entries for missing mbtiles files
     for (const key in config.data) {
-        if (config.data.hasOwnProperty(key)) {
+        if (config.data.hasOwnProperty(key) && (key.startsWith('datasets-') || key.startsWith('collections-'))) {
             const tile = config.data[key];
             if (tile.mbtiles && !fileExists(`${tilesDir}/${tile.mbtiles}`)) {
                 console.log(`Removing config entry for missing tileset: ${tile.mbtiles} for key ${key}`);
