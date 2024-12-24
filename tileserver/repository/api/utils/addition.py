@@ -61,7 +61,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> dict:
     logger.info(f"Citation data: {citation_data}")
 
     # Extract name and attribution from the GeoJSON properties
-    name = f"{tileset_id}{citation_data.get('title', '')}"
+    name = f"{tileset_id}-{citation_data.get('title', '')}"
     attribution = ''
     try:
         if citation_data.get('citation'):
@@ -96,6 +96,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> dict:
     try:
         with CONFIG_FILE.open("w") as f:
             json.dump(config, f, indent=4)
+            f.flush()  # Flush the content to disk immediately (to avoid data loss on impending restart)
         logger.info(f"Updated configuration file: {CONFIG_FILE}")
     except Exception as e:
         return {"success": False, "status": f"Failed to update configuration file: {str(e)}"}
