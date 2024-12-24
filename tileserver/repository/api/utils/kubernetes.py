@@ -104,6 +104,8 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
         "--no-tile-size-limit",  # Disable tile size limit
     ]) # Combine the command parts into a single string
 
+    command = f"curl -sSL {shlex.quote(geojson_url)} || echo 'Error fetching GeoJSON data'" # Debugging
+
     job_manifest = V1Job(
         api_version="batch/v1",
         kind="Job",
