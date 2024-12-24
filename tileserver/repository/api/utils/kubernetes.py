@@ -147,7 +147,7 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                             args=[" ".join(args)],
                             volume_mounts=[
                                 V1VolumeMount(name="tiles", mount_path="/srv/tiles"),
-                                V1VolumeMount(name=volume_name, mount_path=volume_mount_path),
+                                V1VolumeMount(name="tileserver", mount_path=volume_mount_path),
                             ],
                         )
                     ],
@@ -157,8 +157,8 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
                             persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name="tiles-pvc"),
                         ),
                         V1Volume(
-                            name=volume_name,
-                            empty_dir={},
+                            name="tileserver",
+                            persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name="tileserver-pvc"),
                         ),
                     ],
                     restart_policy="Never", # Do not restart the Job if it fails
