@@ -34,6 +34,10 @@ def add_tileset(tileset_type: str, tileset_id: int) -> dict:
     Returns:
         dict: A dictionary containing 'success' and 'status' indicators.
     """
+    # TODO: this function should be replaced; bypass straight to start_tippecanoe_job():
+    # Implement and use Django CSL-JSON API for both datasets and collections
+    # `merge-config.js` can do all of the config updates
+    # `restart_tileserver()` should be called at the end of the Job
 
     # Construct the tileset key
     tileset_key = f"{tileset_type}-{tileset_id}"

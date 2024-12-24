@@ -36,13 +36,27 @@ const scanDirectory = (dir, configData, isRoot = true) => {
                 const key = `${path.basename(dir)}-${path.basename(file, '.mbtiles')}`;
                 if (!configData[key]) { // If the tileset is not already in config.json
                     console.log(`Adding tileset missing from config.json: ${file} from ${dir}`);
-                    configData[key] = {
-                        // Remove the base directory from the path
-                        mbtiles: filePath.replace(`${tilesDir}/`, ''),
-                        tilejson: {
-                            attribution: "-unknown-" // Default attribution for new files
+                    // Open the file and read the -A attribute from the `generator_options` field
+                    const mbtiles = require('mbtiles').mbtiles;
+                    const mbt = new mbtiles(filePath, (err) => {
+                        if (err) {
+                            console.error(`Error opening mbtiles file: ${filePath}`);
+                            return;
                         }
-                    };
+                        mbt.getInfo((err, info) => {
+                            if (err) {
+                                console.error(`Error reading metadata from mbtiles file: ${filePath}`);
+                                return;
+                            }
+                            configData[key] = {
+                                // Remove the base directory from the path
+                                mbtiles: filePath.replace(`${tilesDir}/`, ''),
+                                tilejson: {
+                                    attribution: info.attribution || "-unknown-"
+                                }
+                            };
+                        });
+                    });
                 }
             }
         });
