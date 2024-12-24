@@ -40,6 +40,7 @@ spec:
             # Change ownership of mounted directories to the `node` user and group
             chown -R 999:999 /mnt/shared
             chown -R 999:999 /mnt/data/tiles
+            chmod -R 775 /mnt/shared
           volumeMounts:
             - name: tileserver
               mountPath: /mnt/shared
