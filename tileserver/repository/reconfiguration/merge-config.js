@@ -68,7 +68,7 @@ try {
     for (const key in config.data) {
         if (config.data.hasOwnProperty(key)) {
             const tile = config.data[key];
-            if (tile.mbtiles && !fileExists(tile.mbtiles)) {
+            if (tile.mbtiles && !fileExists(`${tilesDir}/${tile.mbtiles}`)) {
                 console.log(`Removing config entry for missing tileset: ${tile.mbtiles} for key ${key}`);
                 delete config.data[key]; // Remove the entry for this tile
             }
