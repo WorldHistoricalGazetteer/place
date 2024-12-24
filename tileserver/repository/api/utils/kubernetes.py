@@ -94,10 +94,11 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
     image = f"{os.getenv('TIPPECANOE_IMAGE')}:{os.getenv('TIPPECANOE_IMAGE_TAG')}"
 
     command = " ".join([
+        "mkdir -p /srv/tiles/temp &&",  # Create a temporary directory
         f"curl -sSL {shlex.quote(geojson_url)}",  # Fetch the GeoJSON data
         f"> /srv/tiles/temp/{job_name}.geojson &&",  # Save the GeoJSON data to a temporary file
         "/tippecanoe/tippecanoe",  # Path to the Tippecanoe binary
-        f"-o /srv/tiles/{tileset_type}-{tileset_id}.mbtiles",  # Output file in mounted volume
+        f"-o /srv/tiles/{tileset_type}/{tileset_id}.mbtiles",  # Output file in mounted volume
         "-f",  # Force overwrite output file if it exists
         f"-n {shlex.quote(name)}",  # Name of the tileset
         f"-A {shlex.quote(attribution)}",  # Attribution text
@@ -111,7 +112,7 @@ def start_tippecanoe_job(tileset_type: str, tileset_id: int, geojson_url: str, n
         "--no-tile-size-limit",  # Disable tile size limit
         f"/srv/tiles/temp/{job_name}.geojson",  # Input GeoJSON file
         # Finally, remove the temporary GeoJSON file
-        f"&& rm /srv/tiles/temp/{job_name}.geojson"
+        f"&& rm -f /srv/tiles/temp/{job_name}.geojson"
     ]) # Combine the command parts into a single string
 
     # command = f"curl -sSL {shlex.quote(geojson_url)} || echo 'Error fetching GeoJSON data'" # Debugging
