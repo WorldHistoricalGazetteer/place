@@ -26,9 +26,10 @@ try {
     if (config.data && Array.isArray(config.data)) {
         config.data = config.data.filter(tile => {
             if (tile.file && !fileExists(tile.file)) {
-                console.log(`Removing missing tile file: ${tile.file}`);
+                console.log(`Removing missing tile file from configuration: ${tile.file}`);
                 return false; // Exclude this tile entry
             }
+            console.log(`Found configured tile file: ${tile.file}`);
             return true;
         });
     }
