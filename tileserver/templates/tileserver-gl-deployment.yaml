@@ -123,6 +123,9 @@ spec:
         - name: tileserver
           mountPath: {{ .Values.pv.tileserver.configs.mountPath }}
           subPath: {{ .Values.pv.tileserver.configs.subPath }}
+        - name: tileserver
+          mountPath: {{ .Values.pv.tileserver.mapdata.mountPath }}
+          subPath: {{ .Values.pv.tileserver.mapdata.subPath }}
       volumes:
       - name: tiles
         persistentVolumeClaim:

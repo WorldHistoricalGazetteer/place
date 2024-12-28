@@ -2,19 +2,12 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
+from .utils.kubernetes import restart_tileserver, add_tileset
 from .utils.tileset import get_tileset_data, get_all_tileset_data
 from .utils.deletion import delete_tileset
-from .utils.addition import add_tileset
 
 '''
 Dynamically-generated API documentation can be accessed at http://localhost:30081/docs 
-'''
-
-# TODO:
-'''
-- pare down the current requirements.txt of the Tippecanoe image
-- augment the FastAPI image to include `kubernetes` and `pyyaml` packages
-- ? remove the `tippecanoe-job.yaml` template from the Helm chart
 '''
 
 # FastAPI app instance
@@ -32,6 +25,20 @@ class DeleteResponse(BaseModel):
 class AddResponse(BaseModel):
     success: bool
     status: str
+
+
+@app.get("/restart", response_model=Dict[str, Any])
+def restart():
+    """
+    Restart the tileserver by sending a SIGHUP signal.
+
+    Returns:
+        Dict[str, Any]: A dictionary with 'success' and 'message' keys.
+    """
+    try:
+        return restart_tileserver()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/", response_model=List[Dict[str, Any]])

@@ -23,7 +23,7 @@ if not logger.hasHandlers():
     logger.addHandler(handler)
 
 
-def add_tileset(tileset_type: str, tileset_id: int) -> dict:
+def add_tileset_DEPRECATED(tileset_type: str, tileset_id: int) -> dict:
     """
     Add a tileset by invoking Tippecanoe and updating the config.json.
 
@@ -80,36 +80,8 @@ def add_tileset(tileset_type: str, tileset_id: int) -> dict:
     except Exception as e:
         return {"success": False, "status": f"Failed to set attribution string: {str(e)}"}
 
-    # Start Tippecanoe job
-    job_id = start_tippecanoe_job(tileset_type, tileset_id, mapdata_url, name, attribution)
+    # Start Tippecanoe job (which finalises with a restart of the tileserver and rebuild of the config.json)
+    job_id = start_tippecanoe_job(tileset_type, tileset_id, name, attribution)
     logger.info(f"Tippecanoe job started with Job ID: {job_id}")
-
-    # Load the configuration file
-    if not CONFIG_FILE.exists():
-        return {"success": False, "status": f"Configuration file not found: {CONFIG_FILE}"}
-
-    try:
-        with CONFIG_FILE.open("r") as f:
-            config = json.load(f)
-        logger.debug("Loaded configuration file successfully.")
-    except json.JSONDecodeError as e:
-        return {"success": False, "status": f"Invalid JSON in configuration file: {str(e)}"}
-
-    # Update the configuration with the new tileset
-    config.setdefault("data", {})[tileset_key] = {"mbtiles": f"{tileset_id}.mbtiles", "tilejson": {"attribution": attribution}}
-    try:
-        with CONFIG_FILE.open("w") as f:
-            json.dump(config, f, indent=4)
-            f.flush()  # Flush the content to disk immediately (to avoid data loss on impending restart)
-        logger.info(f"Updated configuration file: {CONFIG_FILE}")
-    except Exception as e:
-        return {"success": False, "status": f"Failed to update configuration file: {str(e)}"}
-
-    # Restart the tileserver to pick up the new configuration
-    try:
-        restart_tileserver()
-        logger.info("Tileserver restarted successfully.")
-    except Exception as e:
-        return {"success": False, "status": f"Failed to restart tileserver: {str(e)}"}
 
     return {"success": True, "status": job_id}

@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-LABEL description="Tippecanoe and Tyler Too: incorporates additional dependencies for debugging."
+LABEL description="Wat Tyler: incorporates Tippecanoe and additional dependencies for debugging."
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \

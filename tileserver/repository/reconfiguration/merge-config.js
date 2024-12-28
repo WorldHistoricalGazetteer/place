@@ -22,6 +22,7 @@ const fileExists = (filePath) => {
 
 // Function to recursively scan a directory and process all its subdirectories
 const scanDirectory = (dir, configData, isRoot = true) => {
+    const mbtiles = require('mbtiles').mbtiles;
     if (fileExists(dir)) {
         const files = fs.readdirSync(dir);
         files.forEach((file) => {
@@ -37,7 +38,6 @@ const scanDirectory = (dir, configData, isRoot = true) => {
                 if (!configData[key]) { // If the tileset is not already in config.json
                     console.log(`Adding tileset missing from config.json: ${file} from ${dir}`);
                     // Open the file and read the -A attribute from the `generator_options` field
-                    const mbtiles = require('mbtiles').mbtiles;
                     const mbt = new mbtiles(filePath, (err) => {
                         if (err) {
                             console.error(`Error opening mbtiles file: ${filePath}`);

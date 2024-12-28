@@ -24,6 +24,7 @@ declare -A DIRECTORIES=(
   [webpack]="/data/k8s/webpack:1000:755:LOCAL,PITT1,AAU1"
   [tiles]="/data/k8s/tiles:1000:755:LOCAL,PITT1"
   [tileserver]="/data/k8s/tileserver:1000:755:LOCAL,PITT1"
+  [mapdata]="/data/k8s/tileserver/mapdata:1000:755:LOCAL,PITT1"
   [wordpress]="/data/k8s/wordpress:1001:755:LOCAL,PITT1"
   [wordpress_data]="/data/k8s/wordpress-data:1001:755:LOCAL,PITT1"
   [postgres_data]="/data/k8s/postgres:999:700:LOCAL,PITT1"

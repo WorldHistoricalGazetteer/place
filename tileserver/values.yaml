@@ -59,7 +59,7 @@ pv:
     path: /data/k8s/tiles
     mountPath: /mnt/data/tiles
   tileserver:
-    storage: 1Gi
+    storage: 10Gi
     path: /data/k8s/tileserver
     api:
       mountPath: /opt/api
@@ -73,6 +73,9 @@ pv:
     assets:
       mountPath: /mnt/data/assets
       subPath: src/tileserver/repository/assets
+    mapdata:
+      mountPath: /mnt/data/mapdata
+      subPath: src/tileserver/mapdata
 
 affinity:
   nodeAffinity:
