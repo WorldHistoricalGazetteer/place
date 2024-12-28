@@ -221,9 +221,12 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         citation_data = citation_response.json()
         name = citation_data.get("title", "-Unknown-")
         attribution = build_attribution(citation_data)
-
     except requests.RequestException as e:
         msg = f"Failed to fetch citation data: {str(e)}"
+        logger.error(msg)
+        raise RuntimeError(msg)
+    except Exception as e:
+        msg = f"Failed to build attribution string: {str(e)}"
         logger.error(msg)
         raise RuntimeError(msg)
 
@@ -232,9 +235,15 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         logger.info(f"Fetching data from {geojson_url}")
         response = requests.get(geojson_url, stream=True)
         response.raise_for_status()
+        split_geojson(response, geojson_path, table_path)
     except requests.RequestException as e:
-        raise RuntimeError(f"Failed to fetch GeoJSON data: {str(e)}")
-    split_geojson(response, geojson_path, table_path)
+        msg = f"Failed to fetch GeoJSON data: {str(e)}"
+        logger.error(msg)
+        raise RuntimeError(msg)
+    except Exception as e:
+        msg = f"Failed to process GeoJSON data: {str(e)}"
+        logger.error(msg)
+        raise RuntimeError(msg)
 
     # Construct the Tippecanoe command
     command = " ".join([
