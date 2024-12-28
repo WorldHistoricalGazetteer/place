@@ -18,12 +18,13 @@ import uuid
 
 # Configure logging
 logger = logging.getLogger("tileserver.addition")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 if not logger.hasHandlers():
     logger.addHandler(handler)
+logger.propagate = True
 
 TILESERVER_HEALTH_URL = "http://tileserver-gl:8080/health"
 RESTART_TIMEOUT = 30
@@ -58,7 +59,6 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
         pod_name = pods.items[0].metadata.name
 
         command = ["kill", "-HUP", "1"]  # Default command
-        command = ["ls", "-la", "/mnt/data/configs/"]  # Default command
         if refresh:
             command = [
                 "ls -la /opt/reconfiguration/ /mnt/data/configs/ &&",
@@ -66,9 +66,13 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
                 "/opt/reconfiguration/merge-config.js",
                 "/opt/reconfiguration/base-config.json",
                 "/mnt/data/configs/config.json",
-                "/mnt/data/tiles",
+                "/mnt/data/tiles > /proc/1/fd/1 2>/proc/1/fd/2",
                 "&&",
             ] + command
+
+        command = ["ls", "-la", "/mnt/data/configs/"]  # DEBUG command
+
+        logger.debug(f"Command to execute: {' '.join(command)}")
 
         api_instance = kubernetes.client.CoreV1Api()
         response = stream(
@@ -82,6 +86,7 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
             stdout=True,
             tty=False,
         )
+        logger.debug(f"Command executed, response: {response}")
         # Poll the health endpoint
         start_time = time.time()
         while time.time() - start_time < RESTART_TIMEOUT:
