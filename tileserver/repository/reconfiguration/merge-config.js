@@ -24,6 +24,7 @@ const fileExists = (filePath) => {
 // Function to recursively scan a directory and process all its subdirectories
 const scanDirectory = (dir, configData, isRoot = true) => {
     if (fileExists(dir)) {
+        console.log(`Scanning directory: ${dir}`);
         const files = fs.readdirSync(dir);
         files.forEach((file) => {
             const filePath = path.join(dir, file);
@@ -64,6 +65,7 @@ const scanDirectory = (dir, configData, isRoot = true) => {
 };
 
 try {
+    console.log('Updating config file...');
 
     if (!fileExists(baseConfigPath)) {
         console.error(`Base config file not found: ${baseConfigPath}`);
@@ -79,6 +81,7 @@ try {
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
     // Step 1: Loop through the data object and remove entries for missing mbtiles files
+    console.log('Removing entries for any missing tilesets...');
     for (const key in config.data) {
         if (config.data.hasOwnProperty(key) && (key.startsWith('datasets-') || key.startsWith('collections-'))) {
             const tile = config.data[key];
@@ -93,9 +96,11 @@ try {
     scanDirectory(tilesDir, config.data);
 
     // Step 3: Merge the processed config data into the base config
+    console.log('Merging with base configuration...');
     baseConfig.data = config.data;
 
     // Step 4: Sort the keys of config.data numerically (natural sorting)
+    console.log('Sorting keys naturally...');
     const sortKeysNaturally = (data) => {
         const sortedKeys = Object.keys(data).sort((a, b) => {
             return a.localeCompare(b, undefined, { numeric: true });
