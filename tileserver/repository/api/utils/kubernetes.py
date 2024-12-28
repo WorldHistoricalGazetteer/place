@@ -194,7 +194,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
     kubernetes.config.load_incluster_config()
 
     tiles_mountpath = "/srv/tiles"
-    tileserver_mountpath = "/srv/tileserver"
+    tileserver_mountpath = "/mnt/data"
 
     namespace = os.getenv("TIPPECANOE_NAMESPACE", "tileserver")
     random_suffix = generate_random_suffix()
