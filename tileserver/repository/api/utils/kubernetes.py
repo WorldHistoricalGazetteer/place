@@ -299,7 +299,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         raise RuntimeError(msg)
 
     # Remove any pre-existing entry from the config.json file
-    wipe_config(f"{tileset_type}/{tileset_id}")
+    wipe_config(f"{tileset_type}-{tileset_id}")
 
     # Construct the Tippecanoe command
     command = " ".join([
