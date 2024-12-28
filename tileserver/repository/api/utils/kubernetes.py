@@ -4,7 +4,6 @@ import os
 
 import ijson
 import kubernetes
-from google.auth import message
 from kubernetes import client
 from kubernetes.client import BatchV1Api, V1Job, V1PodSpec, V1PodTemplateSpec, V1ObjectMeta, V1Container, V1Volume, \
     V1VolumeMount, V1PersistentVolumeClaimVolumeSource, V1Affinity
