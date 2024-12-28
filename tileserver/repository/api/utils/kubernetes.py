@@ -159,6 +159,7 @@ def split_geojson(response, geojson_path, table_path):
                         table_file.write(json.dumps(current_feature))
                         first_table_feature = False
                     else:
+                        logger.info(f"Processing key: {current_key}, value: {value}")
                         # Process current feature data
                         if current_key == "geometry" and event == "start_map":
                             current_feature["geometry"] = {}

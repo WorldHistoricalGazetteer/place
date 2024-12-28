@@ -95,6 +95,6 @@ def remove_tileset(tileset_type: str, tileset_id: str):
 async def insert_tileset(request: TilesetRequest):
     try:
         result = add_tileset(request.type, request.id)
-        return result
+        return {"status": result}
     except Exception as e:
-        return {"success": False, "status": f"Error adding tileset: {str(e)}"}
+        return {"status": f"Error adding tileset: {str(e)}"}
