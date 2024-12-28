@@ -26,10 +26,15 @@ spec:
         - |
           if [ ! -d "/app/.git" ]; then
             echo "Repository not found, cloning...";
-            git clone -b main https://github.com/{{ .Values.django.githubRepository }}.git /app || { echo 'Cloning failed'; exit 1; }
+            git clone -b {{ .Values.django.githubBranch }} https://github.com/{{ .Values.django.githubRepository }}.git /app || { echo 'Cloning failed'; exit 1; }
           else
-            echo "Repository already cloned.";
+            echo "Repository already cloned. Pulling latest changes...";
+            cd /app
+            git fetch origin {{ .Values.django.githubBranch }}
+            git checkout {{ .Values.django.githubBranch }} || { echo 'Failed to checkout branch'; exit 1; }
+            git reset --hard origin/{{ .Values.django.githubBranch }} && git pull --rebase || { echo 'Pulling failed'; exit 1; }
           fi
+          mkdir -p /app/whg/authorisation
           cp --remove-destination /app/whg/secret/local_settings.py /app/whg/
           cp --remove-destination /app/whg/secret/env_template.py /app/server-admin/
           cp --remove-destination /app/whg/secret/ca-cert.pem /app/whg/authorisation/
@@ -45,7 +50,7 @@ spec:
         {{- end }}
         - name: secret-volume
           mountPath: /app/whg/secret
-          readOnly: true
+          readOnly: false
       containers:
       - name: django-container
         image: {{ .Values.django.image }}:{{ .Values.django.imageTag }}

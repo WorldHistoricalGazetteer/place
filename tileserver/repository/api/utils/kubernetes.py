@@ -127,11 +127,11 @@ def split_geojson(response, geojson_path, table_path):
         table_path: Path to save geometry-less features.
     """
     with open(geojson_path, "w") as geojson_file, open(table_path, "w") as table_file:
-        # Write headers for both files
-        geojson_file.write('{"type": "FeatureCollection", "features": [\n')
-        table_file.write('{"features": [\n')
-
         try:
+            # Write headers for both files
+            geojson_file.write('{"type": "FeatureCollection", "features": [\n')
+            table_file.write('{"features": [\n')
+
             logger.info("Streaming GeoJSON data.")
             first_geojson_feature = True
             first_table_feature = True
@@ -200,7 +200,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
     random_suffix = generate_random_suffix()
     job_name = f"tippecanoe-{tileset_type}-{tileset_id}-{random_suffix}"
     image = f"{os.getenv('TIPPECANOE_IMAGE')}:{os.getenv('TIPPECANOE_IMAGE_TAG')}"
-    geojson_url = f"http://django-service.whg.svc.cluster.local:8000/mapdata/{tileset_type}/{tileset_id}/standard/refresh/"
+    geojson_url = f"http://django-service.whg.svc.cluster.local:8000/mapdata/{tileset_type}/{tileset_id}/refresh/full/"
     citation_url = f"http://django-service.whg.svc.cluster.local:8000/{tileset_type}/{tileset_id}/citation"
     restart_url = f"http://tileapi.{namespace}.svc.cluster.local:{os.getenv('PORT')}/restart"
 

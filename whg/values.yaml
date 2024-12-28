@@ -31,6 +31,7 @@ django:
   imageTag: "0.1.7"
   imagePullPolicy: "IfNotPresent"
   githubRepository: "WorldHistoricalGazetteer/whg3"
+  githubBranch: "staging"
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
