@@ -58,6 +58,7 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
         pod_name = pods.items[0].metadata.name
 
         command = ["kill", "-HUP", "1"]  # Default command
+        command = ["ls", "-la", "/mnt/data/configs/"]  # Default command
         if refresh:
             command = [
                 "ls -la /opt/reconfiguration/ /mnt/data/configs/ &&",
