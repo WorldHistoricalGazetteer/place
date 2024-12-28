@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from decimal import Decimal
+from pathlib import Path
 from urllib.request import urlopen
 
 import ijson
@@ -28,6 +29,8 @@ logger.propagate = True
 
 TILESERVER_HEALTH_URL = "http://tileserver-gl:8080/health"
 RESTART_TIMEOUT = 30
+CONFIG_DIR = "/mnt/data/configs"
+CONFIG_FILE = Path(CONFIG_DIR) / "config.json"
 
 
 def generate_random_suffix() -> str:
@@ -123,10 +126,10 @@ def build_attribution(citation_data: Dict[str, Any]) -> str:
         attribution_parts.append(f"{author_names},")
     attribution_parts.append(f"<strong><em>{citation_data.get('title', 'Unknown')}</em></strong>,")
     attribution_parts.append(f"({citation_data.get('publisher', 'Unknown Publisher')}")
-    if citation_data.get("publisher-place"):
-        attribution_parts[-1] += f", {citation_data.get('publisher-place')}"
+    # if citation_data.get("publisher-place"):
+    #     attribution_parts[-1] += f", {citation_data.get('publisher-place')}"
     publication_year = citation_data.get('issued', {}).get('date-parts', [[None]])[0][0]
-    attribution_parts.append(f" {publication_year}" if publication_year else "")
+    attribution_parts.append(f" {publication_year})" if publication_year else ")")
     if citation_data.get("DOI"):
         attribution_parts.append(f'<a href="https://doi.org/{citation_data["DOI"]}" target="_blank">doi:{citation_data["DOI"]}</a>')
     elif citation_data.get("URL"):
@@ -194,6 +197,44 @@ def split_geojson(f, geojson_path, table_path):
             table_file.write("\n]}")
 
 
+def wipe_config(tileset_key):
+    """
+    Wipe any pre-existing entry from the configuration file.
+    """
+    try:
+        with CONFIG_FILE.open("r") as f:
+            config = json.load(f)
+
+        # Remove the tileset entry from the config if it exists
+        tilesets = config.get("data", {})
+        if tileset_key in tilesets:
+            try:
+                del tilesets[tileset_key]
+                logger.info(f"Removed tileset '{tileset_key}' from configuration.")
+            except Exception as e:
+                message = f"Failed to remove tileset '{tileset_key}' from configuration: {str(e)}"
+                logger.error(message)
+                raise RuntimeError(message)
+        else:
+            message = f"Tileset key '{tileset_key}' not found in configuration."
+            logger.info(message)
+            return
+
+        # Save the updated configuration back to the file
+        try:
+            with CONFIG_FILE.open("w") as f:
+                json.dump(config, f, indent=4)
+            logger.info(f"Updated configuration file: {CONFIG_FILE}")
+        except Exception as e:
+            message = f"Failed to update configuration file: {str(e)}"
+            logger.error(message)
+            raise RuntimeError(message)
+    except FileNotFoundError:
+        message = "Configuration file not found."
+        logger.error(message)
+        raise RuntimeError(message)
+
+
 def add_tileset(tileset_type: str, tileset_id: int) -> str:
     """
     Start a Tippecanoe job in Kubernetes to process the tileset.
@@ -256,6 +297,9 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         msg = f"Failed to process GeoJSON data: {str(e)}"
         logger.error(msg)
         raise RuntimeError(msg)
+
+    # Remove any pre-existing entry from the config.json file
+    wipe_config(f"{tileset_type}/{tileset_id}")
 
     # Construct the Tippecanoe command
     command = " ".join([
