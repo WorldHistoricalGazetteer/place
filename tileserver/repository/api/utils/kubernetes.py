@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from urllib.request import urlopen
 
 import ijson
 import kubernetes
@@ -116,18 +117,18 @@ def build_attribution(citation_data: Dict[str, Any]) -> str:
     return " ".join(attribution_parts)
 
 
-def split_geojson(response, geojson_path, table_path):
+def split_geojson(f, geojson_path, table_path):
     """
-    Streams GeoJSON data from a response, saving unmodified features to `tiles_path`
+    Streams GeoJSON data from a file, saving unmodified features to `geojson_path`
     and reduced features (geometry type only) to `table_path`.
 
     Args:
-        response: HTTP response object containing GeoJSON data.
+        f: File-like object containing GeoJSON data.
         geojson_path: Path to save unmodified GeoJSON features for use in tileset generation.
         table_path: Path to save geometry-less features.
     """
-    with open(geojson_path, "w") as geojson_file, open(table_path, "w") as table_file:
-        try:
+    try:
+        with open(geojson_path, "w") as geojson_file, open(table_path, "w") as table_file:
             # Write headers for both files
             geojson_file.write('{"type": "FeatureCollection", "features": [\n')
             table_file.write('{"features": [\n')
@@ -136,47 +137,33 @@ def split_geojson(response, geojson_path, table_path):
             first_geojson_feature = True
             first_table_feature = True
 
-            for prefix, event, value in ijson.parse(response.raw):
-                if prefix == "features.item":
-                    if event == "start_map":
-                        current_feature = {}
-                    elif event == "map_key":
-                        current_key = value
-                    elif event == "end_map":
-                        # Write unmodified feature to tiles_path
-                        if not first_geojson_feature:
-                            geojson_file.write(",\n")
-                        geojson_file.write(json.dumps(current_feature))
-                        first_geojson_feature = False
+            features = ijson.items(f, "features.item")
+            for feature in features:
+                # Write unmodified feature to geojson_path
+                if not first_geojson_feature:
+                    geojson_file.write(",\n")
+                geojson_file.write(json.dumps(feature))
+                first_geojson_feature = False
 
-                        # Write reduced feature to table_path
-                        if "geometry" in current_feature and current_feature["geometry"]:
-                            current_feature["geometry"] = {
-                                "type": current_feature["geometry"].get("type")
-                            }
-                        if not first_table_feature:
-                            table_file.write(",\n")
-                        table_file.write(json.dumps(current_feature))
-                        first_table_feature = False
-                    else:
-                        logger.info(f"Processing key: {current_key}, value: {value}")
-                        # Process current feature data
-                        if current_key == "geometry" and event == "start_map":
-                            current_feature["geometry"] = {}
-                        elif current_key == "geometry" and event == "map_key":
-                            geom_key = value
-                        elif current_key == "geometry" and event == "string":
-                            if geom_key == "type":
-                                current_feature["geometry"]["type"] = value
-                        else:
-                            current_feature[current_key] = value
+                # Process and write reduced feature to table_path
+                if "geometry" in feature and feature["geometry"]:
+                    feature["geometry"] = {"type": feature["geometry"].get("type")}
+                if not first_table_feature:
+                    table_file.write(",\n")
+                table_file.write(json.dumps(feature))
+                first_table_feature = False
 
-        except Exception as e:
-            raise RuntimeError(f"Failed to process GeoJSON data: {str(e)}")
-
-        # Write footers for both GeoJSON files
-        geojson_file.write("\n]}")
-        table_file.write("\n]}")
+    except ijson.common.JSONError as e:
+        logger.error(f"JSON parsing error: {e}")
+        raise RuntimeError(f"Failed to process GeoJSON data: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise RuntimeError(f"Failed to process GeoJSON data: {str(e)}")
+    finally:
+        # Ensure file footers are written even in case of error
+        with open(geojson_path, "a") as geojson_file, open(table_path, "a") as table_file:
+            geojson_file.write("\n]}")
+            table_file.write("\n]}")
 
 
 def add_tileset(tileset_type: str, tileset_id: int) -> str:
@@ -235,13 +222,8 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
     # Fetch GeoJSON and create map table data (reduce geometry to type only)
     try:
         logger.info(f"Fetching data from {geojson_url}")
-        response = requests.get(geojson_url, stream=True)
-        response.raise_for_status()
-        split_geojson(response, geojson_path, table_path)
-    except requests.RequestException as e:
-        msg = f"Failed to fetch GeoJSON data: {str(e)}"
-        logger.error(msg)
-        raise RuntimeError(msg)
+        f = urlopen(geojson_url)
+        split_geojson(f, geojson_path, table_path)
     except Exception as e:
         msg = f"Failed to process GeoJSON data: {str(e)}"
         logger.error(msg)
