@@ -70,8 +70,6 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
                 "&&",
             ] + command
 
-        # command = ["ls", "-la", "/mnt/data/configs/"]  # DEBUG command
-
         logger.debug(f"Command to execute: {' '.join(command)}")
 
         api_instance = kubernetes.client.CoreV1Api()

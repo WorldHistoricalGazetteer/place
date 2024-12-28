@@ -22,45 +22,53 @@ const fileExists = (filePath) => {
 };
 
 // Function to recursively scan a directory and process all its subdirectories
-const scanDirectory = (dir, configData, isRoot = true) => {
+const scanDirectory = async (dir, configData, isRoot = true) => {
     if (fileExists(dir)) {
         console.log(`Scanning directory: ${dir}`);
         const files = fs.readdirSync(dir);
+        const promises = [];
+
         files.forEach((file) => {
             const filePath = path.join(dir, file);
             const stat = fs.statSync(filePath);
 
             if (stat.isDirectory()) {
-                // If the file is a directory, recurse into it
-                scanDirectory(filePath, configData, false);
+                // Recursively scan subdirectories
+                promises.push(scanDirectory(filePath, configData, false));
             } else if (file.endsWith('.mbtiles') && !isRoot) {
-                // If the file is a .mbtiles file, check if it exists in config
                 const key = `${path.basename(dir)}-${path.basename(file, '.mbtiles')}`;
-                if (!configData[key]) { // If the tileset is not already in config.json
+                if (!configData[key]) {
                     console.log(`Adding tileset missing from config.json: ${file} from ${dir}`);
-                    // Open the file and read the -A attribute from the `generator_options` field
-                    const mbt = new mbtiles(filePath, (err) => {
-                        if (err) {
-                            console.error(`Error opening mbtiles file: ${filePath}`);
-                            return;
-                        }
-                        mbt.getInfo((err, info) => {
+                    // Collect the promise for each .mbtiles file
+                    const promise = new Promise((resolve, reject) => {
+                        const mbt = new mbtiles(filePath, (err) => {
                             if (err) {
-                                console.error(`Error reading metadata from mbtiles file: ${filePath}`);
+                                console.error(`Error opening mbtiles file: ${filePath}`);
+                                reject(err);
                                 return;
                             }
-                            configData[key] = {
-                                // Remove the base directory from the path
-                                mbtiles: filePath.replace(`${tilesDir}/`, ''),
-                                tilejson: {
-                                    attribution: info.attribution || "-unknown-"
+                            mbt.getInfo((err, info) => {
+                                if (err) {
+                                    console.error(`Error reading metadata from mbtiles file: ${filePath}`);
+                                    reject(err);
+                                    return;
                                 }
-                            };
+                                console.log(`Info for ${filePath}:`, info);
+                                configData[key] = {
+                                    mbtiles: filePath.replace(`${tilesDir}/`, ''),
+                                    tilejson: { attribution: info.attribution || "-unknown-" },
+                                };
+                                resolve();
+                            });
                         });
                     });
+                    promises.push(promise);
                 }
             }
         });
+
+        // Wait for all subdirectory scans and .mbtiles processing to complete
+        await Promise.all(promises);
     }
 };
 
@@ -93,7 +101,7 @@ try {
     }
 
     // Step 2: Recursively add missing entries to the data object
-    scanDirectory(tilesDir, config.data);
+    await scanDirectory(tilesDir, config.data);
 
     // Step 3: Merge the processed config data into the base config
     console.log('Merging with base configuration...');
