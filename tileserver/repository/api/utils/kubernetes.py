@@ -211,9 +211,9 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         table_path = f"{tileserver_mountpath}/mapdata/tables/{tileset_type}/{tileset_id}.json"
         os.makedirs(os.path.dirname(table_path), exist_ok=True)
     except Exception as e:
-        message = f"Failed to create directories: {str(e)}"
-        logger.error(message)
-        raise RuntimeError(message)
+        msg = f"Failed to create directories: {str(e)}"
+        logger.error(msg)
+        raise RuntimeError(msg)
 
     # Fetch name and attribution from the citation endpoint
     try:
@@ -224,9 +224,9 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         attribution = build_attribution(citation_data)
 
     except requests.RequestException as e:
-        message = f"Failed to fetch citation data: {str(e)}"
-        logger.error(message)
-        raise RuntimeError(message)
+        msg = f"Failed to fetch citation data: {str(e)}"
+        logger.error(msg)
+        raise RuntimeError(msg)
 
     # Fetch GeoJSON and create map table data (reduce geometry to type only)
     try:
