@@ -60,6 +60,7 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
         command = ["kill", "-HUP", "1"]  # Default command
         if refresh:
             command = [
+                "ls -la /opt/reconfiguration/ /mnt/data/configs/ &&",
                 "/usr/bin/node",
                 "/opt/reconfiguration/merge-config.js",
                 "/opt/reconfiguration/base-config.json",
