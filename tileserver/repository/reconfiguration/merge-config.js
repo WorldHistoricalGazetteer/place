@@ -11,7 +11,7 @@ const path = require('path');
 const baseConfigPath = process.argv[2];
 const configPath = process.argv[3];
 const tilesDir = process.argv[4];
-const mbtiles = require('@mapbox/mbtiles');
+const mbtiles = require('/usr/src/app/node_modules/@mapbox/mbtiles');
 
 const fileExists = (filePath) => {
     try {
