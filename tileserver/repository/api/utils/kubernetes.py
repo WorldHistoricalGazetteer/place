@@ -34,9 +34,9 @@ def generate_random_suffix() -> str:
     return str(uuid.uuid4().hex[:12])  # First 12 characters for brevity
 
 
-def restart_tileserver() -> Dict[str, Any]:
+def restart_tileserver(refresh=True) -> Dict[str, Any]:
     """
-    Restarts the tileserver by sending a SIGHUP signal.
+    Restarts the tileserver by sending a SIGHUP signal, optionally refreshing the configuration.
 
     Returns:
         Dict[str, Any]: A dictionary with 'success' and 'message' keys.
@@ -57,13 +57,24 @@ def restart_tileserver() -> Dict[str, Any]:
 
         pod_name = pods.items[0].metadata.name
 
+        command = ["kill", "-HUP", "1"]  # Default command
+        if refresh:
+            command = [
+                "node",
+                "/opt/reconfiguration/merge-config.js",
+                "/opt/reconfiguration/base-config.json",
+                "/mnt/data/configs/config.json",
+                "/mnt/data/tiles",
+                "&&",
+            ] + command
+
         api_instance = kubernetes.client.CoreV1Api()
         response = stream(
             api_instance.connect_get_namespaced_pod_exec,
             name=pod_name,
             namespace="tileserver",
             container="tileserver-gl",
-            command=["kill", "-HUP", "1"],
+            command=["sh", "-c", " ".join(command)],
             stderr=True,
             stdin=False,
             stdout=True,
