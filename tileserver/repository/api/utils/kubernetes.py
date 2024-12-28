@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from decimal import Decimal
 from urllib.request import urlopen
 
 import ijson
