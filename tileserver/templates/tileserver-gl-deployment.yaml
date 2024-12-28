@@ -83,6 +83,9 @@ spec:
         - name: tileserver
           mountPath: {{ .Values.pv.tileserver.assets.mountPath }}
           subPath: {{ .Values.pv.tileserver.assets.subPath }}
+        - name: tileserver
+          mountPath: {{ .Values.pv.tileserver.mapdata.mountPath }}
+          subPath: {{ .Values.pv.tileserver.mapdata.subPath }}
         resources: {{ toYaml .Values.tileserver.resources | nindent 10 }}
         livenessProbe:
           httpGet:
