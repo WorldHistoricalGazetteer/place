@@ -219,6 +219,7 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         citation_response = requests.get(citation_url)
         citation_response.raise_for_status()
         citation_data = citation_response.json()
+        logger.info(f"Fetched citation data: {citation_data}")
         name = citation_data.get("title", "-Unknown-")
         attribution = build_attribution(citation_data)
     except requests.RequestException as e:
