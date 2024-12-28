@@ -72,61 +72,65 @@ const scanDirectory = async (dir, configData, isRoot = true) => {
     }
 };
 
-try {
-    console.log('Updating config file...');
+const updateConfig = async () => {
+    try {
+        console.log('Updating config file...');
 
-    if (!fileExists(baseConfigPath)) {
-        console.error(`Base config file not found: ${baseConfigPath}`);
-        process.exit(1);
-    }
+        if (!fileExists(baseConfigPath)) {
+            console.error(`Base config file not found: ${baseConfigPath}`);
+            process.exit(1);
+        }
 
-    if (!fileExists(configPath)) {
-        console.error(`Config file not found: ${configPath}`);
-        process.exit(1);
-    }
+        if (!fileExists(configPath)) {
+            console.error(`Config file not found: ${configPath}`);
+            process.exit(1);
+        }
 
-    const baseConfig = JSON.parse(fs.readFileSync(baseConfigPath, 'utf8'));
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const baseConfig = JSON.parse(fs.readFileSync(baseConfigPath, 'utf8'));
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-    // Step 1: Loop through the data object and remove entries for missing mbtiles files
-    console.log('Removing entries for any missing tilesets...');
-    for (const key in config.data) {
-        if (config.data.hasOwnProperty(key) && (key.startsWith('datasets-') || key.startsWith('collections-'))) {
-            const tile = config.data[key];
-            if (tile.mbtiles && !fileExists(`${tilesDir}/${tile.mbtiles}`)) {
-                console.log(`Removing config entry for missing tileset: ${tile.mbtiles} for key ${key}`);
-                delete config.data[key]; // Remove the entry for this tile
+        // Step 1: Loop through the data object and remove entries for missing mbtiles files
+        console.log('Removing entries for any missing tilesets...');
+        for (const key in config.data) {
+            if (config.data.hasOwnProperty(key) && (key.startsWith('datasets-') || key.startsWith('collections-'))) {
+                const tile = config.data[key];
+                if (tile.mbtiles && !fileExists(`${tilesDir}/${tile.mbtiles}`)) {
+                    console.log(`Removing config entry for missing tileset: ${tile.mbtiles} for key ${key}`);
+                    delete config.data[key]; // Remove the entry for this tile
+                }
             }
         }
+
+        // Step 2: Recursively add missing entries to the data object
+        await scanDirectory(tilesDir, config.data);
+
+        // Step 3: Merge the processed config data into the base config
+        console.log('Merging with base configuration...');
+        baseConfig.data = config.data;
+
+        // Step 4: Sort the keys of config.data numerically (natural sorting)
+        console.log('Sorting keys naturally...');
+        const sortKeysNaturally = (data) => {
+            const sortedKeys = Object.keys(data).sort((a, b) => {
+                return a.localeCompare(b, undefined, { numeric: true });
+            });
+
+            const sortedData = {};
+            sortedKeys.forEach((key) => {
+                sortedData[key] = data[key];
+            });
+
+            return sortedData;
+        };
+        baseConfig.data = sortKeysNaturally(config.data);
+
+        // Write the updated configuration back to the config file
+        fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2));
+        console.log('Config updated and merged successfully');
+    } catch (error) {
+        console.error('Error merging configs:', error);
+        process.exit(1);
     }
+};
 
-    // Step 2: Recursively add missing entries to the data object
-    await scanDirectory(tilesDir, config.data);
-
-    // Step 3: Merge the processed config data into the base config
-    console.log('Merging with base configuration...');
-    baseConfig.data = config.data;
-
-    // Step 4: Sort the keys of config.data numerically (natural sorting)
-    console.log('Sorting keys naturally...');
-    const sortKeysNaturally = (data) => {
-        const sortedKeys = Object.keys(data).sort((a, b) => {
-            return a.localeCompare(b, undefined, { numeric: true });
-        });
-
-        const sortedData = {};
-        sortedKeys.forEach((key) => {
-            sortedData[key] = data[key];
-        });
-
-        return sortedData;
-    };
-    baseConfig.data = sortKeysNaturally(config.data);
-
-    // Write the updated configuration back to the config file
-    fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2));
-    console.log('Config updated and merged successfully');
-} catch (error) {
-    console.error('Error merging configs:', error);
-    process.exit(1);
-}
+updateConfig();
