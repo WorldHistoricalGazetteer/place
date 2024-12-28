@@ -23,7 +23,6 @@ class DeleteResponse(BaseModel):
     message: str
 
 class AddResponse(BaseModel):
-    success: bool
     status: str
 
 
