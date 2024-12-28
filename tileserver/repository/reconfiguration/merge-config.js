@@ -22,7 +22,7 @@ const fileExists = (filePath) => {
 
 // Function to recursively scan a directory and process all its subdirectories
 const scanDirectory = (dir, configData, isRoot = true) => {
-    const mbtiles = require('mbtiles').mbtiles;
+    const mbtiles = require('@mapbox/mbtiles').mbtiles;
     if (fileExists(dir)) {
         const files = fs.readdirSync(dir);
         files.forEach((file) => {
