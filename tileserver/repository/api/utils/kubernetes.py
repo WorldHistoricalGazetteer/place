@@ -73,8 +73,6 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
                 "&&",
             ] + command
 
-        logger.debug(f"Command to execute: {' '.join(command)}")
-
         api_instance = kubernetes.client.CoreV1Api()
         response = stream(
             api_instance.connect_get_namespaced_pod_exec,
@@ -87,7 +85,6 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
             stdout=True,
             tty=False,
         )
-        logger.debug(f"Command executed, response: {response}")
         # Poll the health endpoint
         start_time = time.time()
         while time.time() - start_time < RESTART_TIMEOUT:
