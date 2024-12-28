@@ -120,14 +120,15 @@ def build_attribution(citation_data: Dict[str, Any]) -> str:
     attribution_parts = []
 
     if author_names:
-        attribution_parts.append(f"<strong>{author_names}</strong>,")
-    attribution_parts.append(f"<em>{citation_data.get('title', 'Unknown')}</em>,")
+        attribution_parts.append(f"{author_names},")
+    attribution_parts.append(f"<strong><em>{citation_data.get('title', 'Unknown')}</em></strong>,")
     attribution_parts.append(f"({citation_data.get('publisher', 'Unknown Publisher')}")
     if citation_data.get("publisher-place"):
         attribution_parts[-1] += f", {citation_data.get('publisher-place')}"
-    attribution_parts.append(f" {citation_data.get('issued', {}).get('date-parts', [[]])[0]})")
+    publication_year = citation_data.get('issued', {}).get('date-parts', [[None]])[0][0]
+    attribution_parts.append(f" {publication_year}" if publication_year else "")
     if citation_data.get("DOI"):
-        attribution_parts.append(f'<a href="https://doi.org/{citation_data["DOI"]}" target="_blank">DOI</a>')
+        attribution_parts.append(f'<a href="https://doi.org/{citation_data["DOI"]}" target="_blank">doi:{citation_data["DOI"]}</a>')
     elif citation_data.get("URL"):
         attribution_parts.append(f'(<a href="{citation_data["URL"]}" target="_blank">link</a>)')
 
