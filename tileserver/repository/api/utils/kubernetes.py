@@ -4,6 +4,7 @@ import os
 
 import ijson
 import kubernetes
+from google.auth import message
 from kubernetes import client
 from kubernetes.client import BatchV1Api, V1Job, V1PodSpec, V1PodTemplateSpec, V1ObjectMeta, V1Container, V1Volume, \
     V1VolumeMount, V1PersistentVolumeClaimVolumeSource, V1Affinity
@@ -204,10 +205,15 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
     citation_url = f"http://django-service.whg.svc.cluster.local:8000/{tileset_type}/{tileset_id}/citation"
     restart_url = f"http://tileapi.{namespace}.svc.cluster.local:{os.getenv('PORT')}/restart"
 
-    geojson_path = f"{tileserver_mountpath}/mapdata/geojson/{tileset_type}/{tileset_id}.geojson"
-    os.makedirs(os.path.dirname(geojson_path), exist_ok=True)
-    table_path = f"{tileserver_mountpath}/mapdata/tables/{tileset_type}/{tileset_id}.json"
-    os.makedirs(os.path.dirname(table_path), exist_ok=True)
+    try:
+        geojson_path = f"{tileserver_mountpath}/mapdata/geojson/{tileset_type}/{tileset_id}.geojson"
+        os.makedirs(os.path.dirname(geojson_path), exist_ok=True)
+        table_path = f"{tileserver_mountpath}/mapdata/tables/{tileset_type}/{tileset_id}.json"
+        os.makedirs(os.path.dirname(table_path), exist_ok=True)
+    except Exception as e:
+        message = f"Failed to create directories: {str(e)}"
+        logger.error(message)
+        raise RuntimeError(message)
 
     # Fetch name and attribution from the citation endpoint
     try:
@@ -218,7 +224,9 @@ def add_tileset(tileset_type: str, tileset_id: int) -> str:
         attribution = build_attribution(citation_data)
 
     except requests.RequestException as e:
-        raise RuntimeError(f"Failed to fetch citation data: {str(e)}")
+        message = f"Failed to fetch citation data: {str(e)}"
+        logger.error(message)
+        raise RuntimeError(message)
 
     # Fetch GeoJSON and create map table data (reduce geometry to type only)
     try:
