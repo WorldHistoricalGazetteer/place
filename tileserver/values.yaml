@@ -75,7 +75,7 @@ pv:
       subPath: src/tileserver/repository/assets
     mapdata:
       mountPath: /mnt/data/mapdata
-      subPath: src/tileserver/mapdata
+      subPath: mapdata
 
 affinity:
   nodeAffinity:
