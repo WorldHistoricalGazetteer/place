@@ -117,6 +117,16 @@ def build_attribution(citation_data: Dict[str, Any]) -> str:
     return " ".join(attribution_parts)
 
 
+def decimal_default(obj):
+    """
+    Custom serialization for Decimal types.
+    Converts Decimal to float for JSON serialization.
+    """
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError(f"Type {obj.__class__.__name__} not serializable")
+
+
 def split_geojson(f, geojson_path, table_path):
     """
     Streams GeoJSON data from a file, saving unmodified features to `geojson_path`
@@ -142,7 +152,7 @@ def split_geojson(f, geojson_path, table_path):
                 # Write unmodified feature to geojson_path
                 if not first_geojson_feature:
                     geojson_file.write(",\n")
-                geojson_file.write(json.dumps(feature))
+                geojson_file.write(json.dumps(feature, default=decimal_default))
                 first_geojson_feature = False
 
                 # Process and write reduced feature to table_path
@@ -150,7 +160,7 @@ def split_geojson(f, geojson_path, table_path):
                     feature["geometry"] = {"type": feature["geometry"].get("type")}
                 if not first_table_feature:
                     table_file.write(",\n")
-                table_file.write(json.dumps(feature))
+                table_file.write(json.dumps(feature, default=decimal_default))
                 first_table_feature = False
 
     except ijson.common.JSONError as e:
