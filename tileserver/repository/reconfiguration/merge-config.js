@@ -11,6 +11,7 @@ const path = require('path');
 const baseConfigPath = process.argv[2];
 const configPath = process.argv[3];
 const tilesDir = process.argv[4];
+const mbtiles = require('@mapbox/mbtiles');
 
 const fileExists = (filePath) => {
     try {
@@ -22,7 +23,6 @@ const fileExists = (filePath) => {
 
 // Function to recursively scan a directory and process all its subdirectories
 const scanDirectory = (dir, configData, isRoot = true) => {
-    const mbtiles = require('@mapbox/mbtiles').mbtiles;
     if (fileExists(dir)) {
         const files = fs.readdirSync(dir);
         files.forEach((file) => {
