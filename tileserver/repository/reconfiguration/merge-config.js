@@ -93,7 +93,8 @@ const updateConfig = async () => {
         // Step 1: Loop through the data object and remove entries for missing mbtiles files
         console.log('Removing entries for any missing tilesets...');
         for (const key in config.data) {
-            if (config.data.hasOwnProperty(key) && (key.startsWith('datasets-') || key.startsWith('collections-'))) {
+            // if (config.data.hasOwnProperty(key) && (key.startsWith('datasets-') || key.startsWith('collections-'))) {
+            if (config.data.hasOwnProperty(key)) {
                 const tile = config.data[key];
                 if (tile.mbtiles && !fileExists(`${tilesDir}/${tile.mbtiles}`)) {
                     console.log(`Removing config entry for missing tileset: ${tile.mbtiles} for key ${key}`);
