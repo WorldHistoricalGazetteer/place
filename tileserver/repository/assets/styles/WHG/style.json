@@ -26,7 +26,8 @@
       "url": "mbtiles://{natural-earth-2-landcover}"
     },
     "openmaptiles": {
-      "url": "https://api.maptiler.com/tiles/v3-openmaptiles/tiles.json?key=rgrrQKVDtFRvuAyGD1lO",
+      "url": "mbtiles://{open-map-tiles}",
+      "maxzoom": 14,
       "type": "vector"
     },
     "terrarium": {
