@@ -26,23 +26,14 @@
       "url": "mbtiles://{natural-earth-2-landcover}"
     },
     "openmaptiles": {
-      "url": "https://api.maptiler.com/tiles/v3-openmaptiles/tiles.json?key=rgrrQKVDtFRvuAyGD1lO",
+      "url": "mbtiles://{osm}",
+      "maxzoom": 14,
       "type": "vector"
     },
-    "terrarium-local": {
+    "terrarium": {
       "type": "raster-dem",
       "url": "mbtiles://{terrarium}",
       "minzoom": 0,
-      "maxzoom": 8,
-      "tileSize": 256,
-      "encoding": "terrarium"
-    },
-    "terrarium-aws": {
-      "type": "raster-dem",
-      "tiles": [
-        "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
-      ],
-      "minzoom": 9,
       "maxzoom": 15,
       "tileSize": 256,
       "encoding": "terrarium"
@@ -54,7 +45,7 @@
     }
   },
   "terrain": {
-  	"source": "terrarium-local",
+  	"source": "terrarium",
   	"exaggeration": 1
   },
   "glyphs": "{fontstack}/{range}.pbf",
@@ -151,21 +142,8 @@
       }
     },
     {
-      "id": "terrain-rgb-local",
-      "source": "terrarium-local",
-      "type": "hillshade",
-      "layout": {
-        "visibility": "visible"
-      },
-      "paint": {
-        "hillshade-shadow-color": "hsl(39, 21%, 33%)",
-        "hillshade-illumination-direction": 315,
-        "hillshade-exaggeration": 0.4
-      }
-    },
-    {
-      "id": "terrain-rgb-aws",
-      "source": "terrarium-aws",
+      "id": "terrain-rgb",
+      "source": "terrarium",
       "type": "hillshade",
       "layout": {
         "visibility": "visible"
