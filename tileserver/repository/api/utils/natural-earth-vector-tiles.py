@@ -28,7 +28,7 @@ def natural_earth_tileset():
         str: The name of the Job that was created (or an error message if the Job could not be created).
     """
     # kubernetes.config.load_incluster_config()
-    kubernetes.config.load_kube_config("/home/stephen/.kube/config-pycharm")
+    kubernetes.config.load_kube_config("~/.kube/config-pycharm")
 
     tiles_mountpath = "/srv/tiles"
     tileserver_mountpath = "/mnt/data"
@@ -39,7 +39,7 @@ def natural_earth_tileset():
     image = f"{os.getenv('TIPPECANOE_IMAGE', 'worldhistoricalgazetteer/tippecanoe')}:{os.getenv('TIPPECANOE_IMAGE_TAG', 'v0.0.2')}"
     restart_url = f"http://tileapi.{namespace}.svc.cluster.local:{os.getenv('PORT', '30081')}/restart"
 
-    # Define output layers (this mirrors the Bash script's layerset)
+    # Define output layers (first configure and run ./bash/fetch_NE_vector_layers.sh to download the GeoJSON files and generate labels)
     output_layers = [
         ("ne_10m_rivers_lake_centerlines", "-Z0", "-z7", "rivers"),
         ("ne_10m_lakes", "-Z0", "-z7", "lakes"),
