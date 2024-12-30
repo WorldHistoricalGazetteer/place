@@ -1,8 +1,14 @@
 import json
 import os
 import sys
+import uuid
 
 import mbutil
+
+
+def generate_random_suffix() -> str:
+    """Generates a random suffix string using UUID."""
+    return str(uuid.uuid4().hex[:12])  # First 12 characters for brevity
 
 
 def print_flush(message):

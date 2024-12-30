@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 from pydantic import BaseModel
 import logging
-from .kubernetes import restart_tileserver
+from .kube import restart_tileserver
 
 # Constants
 CONFIG_DIR = "/mnt/data/configs"

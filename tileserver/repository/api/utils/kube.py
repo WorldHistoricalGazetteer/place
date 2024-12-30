@@ -15,7 +15,8 @@ import time
 import requests
 import shlex
 from typing import Dict, Any
-import uuid
+
+from tileserver.repository.api.utils.utils import generate_random_suffix
 
 # Configure logging
 logger = logging.getLogger("tileserver.addition")
@@ -28,14 +29,9 @@ if not logger.hasHandlers():
 logger.propagate = True
 
 TILESERVER_HEALTH_URL = "http://tileserver-gl:8080/health"
-RESTART_TIMEOUT = 30
+RESTART_TIMEOUT = 60 # seconds
 CONFIG_DIR = "/mnt/data/configs"
 CONFIG_FILE = Path(CONFIG_DIR) / "config.json"
-
-
-def generate_random_suffix() -> str:
-    """Generates a random suffix string using UUID."""
-    return str(uuid.uuid4().hex[:12])  # First 12 characters for brevity
 
 
 def restart_tileserver(refresh=True) -> Dict[str, Any]:
@@ -50,6 +46,7 @@ def restart_tileserver(refresh=True) -> Dict[str, Any]:
         kubernetes.config.load_incluster_config()
 
         v1 = client.CoreV1Api()
+        v1.api_client.configuration.timeout = RESTART_TIMEOUT # Set the timeout for the API client
 
         pods = v1.list_namespaced_pod(
             namespace="tileserver",

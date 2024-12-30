@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
-from .utils.kubernetes import restart_tileserver, add_tileset
+from .utils.kube import restart_tileserver, add_tileset
 from .utils.tileset import get_tileset_data, get_all_tileset_data
 from .utils.deletion import delete_tileset
 

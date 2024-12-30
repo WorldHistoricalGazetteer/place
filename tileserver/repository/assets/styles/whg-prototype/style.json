@@ -75,7 +75,7 @@
     "natural_earth": {
       "type": "vector",
       "maxzoom": 7,
-      "url": "mbtiles://{natural-earth-vector}"
+      "url": "mbtiles://{whg-ne-basic}"
     }
   },
   "glyphs": "{fontstack}/{range}.pbf",
