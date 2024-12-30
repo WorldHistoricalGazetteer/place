@@ -38,7 +38,7 @@ const scanDirectory = async (dir, configData, isRoot = true) => {
             // } else if (file.endsWith('.mbtiles') && !isRoot) {
             } else if (file.endsWith('.mbtiles')) {
                 const key = `${isRoot ? '' : `${path.basename(dir)}-`}${path.basename(file, '.mbtiles')}`;
-                if (!configData[key]) {
+                if (key && !configData[key]) {
                     console.log(`Adding tileset missing from config.json: ${file} from ${dir}`);
                     // Collect the promise for each .mbtiles file
                     const promise = new Promise((resolve, reject) => {
