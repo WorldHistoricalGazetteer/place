@@ -7,7 +7,7 @@ from kubernetes import client
 from kubernetes.client import BatchV1Api, V1Job, V1PodSpec, V1PodTemplateSpec, V1ObjectMeta, V1Container, V1Volume, \
     V1VolumeMount, V1PersistentVolumeClaimVolumeSource, V1Affinity
 
-from tileserver.repository.api.utils.utils import generate_random_suffix
+from utils import generate_random_suffix
 
 # Configure logging
 logger = logging.getLogger("tileserver.addition")

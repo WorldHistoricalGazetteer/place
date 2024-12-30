@@ -16,7 +16,7 @@ import requests
 import shlex
 from typing import Dict, Any
 
-from tileserver.repository.api.utils.utils import generate_random_suffix
+from utils import generate_random_suffix
 
 # Configure logging
 logger = logging.getLogger("tileserver.addition")
