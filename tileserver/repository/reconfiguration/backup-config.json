@@ -1,0 +1,121 @@
+{
+  "options": {
+    "paths": {
+      "root": "../",
+      "fonts": "./assets/fonts",
+      "sprites": "./assets/sprites",
+      "icons": "./assets/icons",
+      "styles": "./assets/styles",
+      "mbtiles": "./tiles",
+      "files": "./mapdata",
+      "images": "/usr/src/app/public/resources/images"
+    }
+  },
+  "serveAllFonts": true,
+  "serveAllStyles": true,
+  "serveStaticMaps": true,
+  "styles": {
+    "WHG": {
+      "style": "WHG/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "OSM": {
+      "style": "OSM/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "Satellite": {
+      "style": "satellite/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-portal": {
+      "style": "whg-portal/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-prototype": {
+      "style": "whg-prototype/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-basic-light": {
+      "style": "whg-basic-light/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-basic-dark": {
+      "style": "whg-basic-dark/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    },
+    "whg-enhanced": {
+      "style": "whg-enhanced/style.json",
+      "serve_rendered": false,
+      "serve_data": true
+    }
+  },
+  "data": {
+    "wwf-ecoregions": {
+      "mbtiles": "wwf-ecoregions.mbtiles",
+      "tilejson": {
+        "attribution": "Ecoregions: <a href='https://www.worldwildlife.org/publications/terrestrial-ecoregions-of-the-world'>WWF</a>"
+      }
+    },
+    "natural-earth-1-landcover": {
+      "mbtiles": "NE1_HR_LC.raster.mbtiles",
+      "tilejson": {
+        "attribution": "Basemap: <a href=\"https://www.naturalearthdata.com/\" target=\"_blank\">&copy; Natural Earth</a>"
+      }
+    },
+    "natural-earth-2-landcover": {
+      "mbtiles": "NE2_HR_LC.raster.mbtiles",
+      "tilejson": {
+        "attribution": "Basemap: <a href=\"https://www.naturalearthdata.com/\" target=\"_blank\">&copy; Natural Earth</a>"
+      }
+    },
+    "natural-earth-hypsometric-noshade": {
+      "mbtiles": "HYP_HR.raster.mbtiles",
+      "tilejson": {
+        "attribution": "Basemap: <a href=\"https://www.naturalearthdata.com/\" target=\"_blank\">&copy; Natural Earth</a>"
+      }
+    },
+    "NE1_HR_LC.raster": {
+      "mbtiles": "NE1_HR_LC.raster.mbtiles",
+      "tilejson": {
+        "attribution": "Basemap: <a href=\"https://www.naturalearthdata.com/\" target=\"_blank\">&copy; Natural Earth</a>"
+      }
+    },
+    "NE2_HR_LC_SR_W": {
+      "mbtiles": "NE2_HR_LC_SR_W.mbtiles",
+      "tilejson": {
+        "attribution": "Basemap: <a href=\"https://www.naturalearthdata.com/\" target=\"_blank\">&copy; Natural Earth</a>"
+      }
+    },
+    "NE2_HR_LC_SR_W_DR": {
+      "mbtiles": "NE2_HR_LC_SR_W_DR.mbtiles",
+      "tilejson": {
+        "attribution": "Basemap: <a href=\"https://www.naturalearthdata.com/\" target=\"_blank\">&copy; Natural Earth</a>"
+      }
+    },
+    "NE2_HR_LC.raster": {
+      "mbtiles": "NE2_HR_LC.raster.mbtiles",
+      "tilejson": {
+        "attribution": "Basemap: <a href=\"https://www.naturalearthdata.com/\" target=\"_blank\">&copy; Natural Earth</a>"
+      }
+    },
+    "open-map-tiles": {
+      "mbtiles": "open-map-tiles.mbtiles",
+      "tilejson": {
+        "attribution": "<a href=\"https://www.maptiler.com/copyright/\" target=\"_blank\">&copy; MapTiler</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>"
+      }
+    },
+    "terrarium": {
+      "mbtiles": "terrarium.mbtiles",
+      "tilejson": {
+        "attribution": "Terrain: <a href='https://github.com/tilezen/joerd/blob/master/docs/data-sources.md'>Mapzen</a>"
+      }
+    }
+  }
+}

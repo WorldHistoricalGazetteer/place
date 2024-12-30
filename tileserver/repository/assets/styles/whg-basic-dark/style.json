@@ -81,7 +81,7 @@
     "ecoregions": {
       "type": "vector",
       "maxzoom": 10,
-      "url": "mbtiles://{ecoregions}"
+      "url": "mbtiles://{wwf-ecoregions}"
     }
   },
   "glyphs": "{fontstack}/{range}.pbf",
