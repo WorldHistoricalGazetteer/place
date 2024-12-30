@@ -7,7 +7,7 @@ import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 
-from tileserver.repository.api.utils.utils import dir_to_mbtiles, print_flush
+from .utils import dir_to_mbtiles, print_flush
 
 LOCAL_DATA_DIR = "/data/k8s/tileserver/data"
 LOCAL_TILES_DIR = "/data/k8s/tiles"
