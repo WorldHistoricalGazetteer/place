@@ -14,6 +14,10 @@
   "serveAllFonts": true,
   "serveAllStyles": true,
   "serveStaticMaps": true,
+  "allowRemoteMarkerIcons": true,
+  "allowInlineMarkerImages": true,
+  "staticAttributionText": "© World Historical Gazetteer",
+  "tileMargin": 0,
   "styles": {
     "WHG": {
       "style": "WHG/style.json",
