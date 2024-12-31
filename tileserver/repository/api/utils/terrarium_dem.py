@@ -147,11 +147,32 @@ def dir_to_mbtiles(input_dir, output_file, metadata):
 
 
 def download_file(s3_client, bucket_name, file_name, local_path, prefix):
-    try:
-        s3_client.download_file(bucket_name, f"{prefix}{file_name}", local_path)
-        print_flush(f"Downloaded {file_name}")
-    except Exception as e:
-        print_flush(f"Error downloading {file_name}: {e}")
+    """
+    Downloads a file from an S3 bucket with fixed retry intervals and script termination on failure.
+
+    :param s3_client: Boto3 S3 client
+    :param bucket_name: Name of the S3 bucket
+    :param file_name: Name of the file to download
+    :param local_path: Local path where the file will be saved
+    :param prefix: Prefix to be added to the file name in S3
+    """
+    retry_intervals = [60, 300, 3600]  # Retry intervals in seconds (1 min, 5 min, 1 hour)
+    attempts = 0
+
+    while attempts <= len(retry_intervals):
+        try:
+            s3_client.download_file(bucket_name, f"{prefix}{file_name}", local_path)
+            print_flush(f"Downloaded {file_name}")
+            return  # Success
+        except Exception as e:
+            attempts += 1
+            if attempts > len(retry_intervals):
+                print_flush(f"Failed to download {file_name} after {attempts} attempts. Halting the script.")
+                sys.exit(1)  # Exit the entire script
+
+            delay = retry_intervals[attempts - 1]
+            print_flush(f"Error downloading {file_name}: {e}. Attempt {attempts} of {len(retry_intervals) + 1}. Retrying in {delay // 60} minutes...")
+            time.sleep(delay)
 
 
 def download_files(local_path, zoom_range, bucket_name="elevation-tiles-prod", prefix="terrarium/"):
