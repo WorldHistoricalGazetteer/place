@@ -29,9 +29,6 @@
       "serve_rendered": false,
       "serve_data": true
     },
-    "elevation": {
-      "style": "elevation/elevation.json"
-    },
     "Satellite": {
       "style": "satellite/style.json",
       "serve_rendered": false,
