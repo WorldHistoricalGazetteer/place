@@ -251,5 +251,6 @@ def terrarium_download(range_start=0, range_end=21):
 
     dir_to_mbtiles(data_dir, os.path.join(LOCAL_TILES_DIR, "terrarium.mbtiles"), metadata)
 
-
-terrarium_download(0, 10)
+# Zoom levels 0-10 result in a 110 GB MBTiles file; adding 11 would increase the size to 470 GB
+# Tiles are available up to zoom level 15, but 10 (with upsampling when needed) is sufficient for WHG
+terrarium_download(0, 11)

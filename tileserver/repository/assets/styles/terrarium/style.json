@@ -1,0 +1,21 @@
+{
+  "version": 8,
+  "name": "Terrarium DEM",
+  "sources": {
+    "terrarium": {
+      "type": "raster-dem",
+      "url": "mbtiles://{terrarium}",
+      "minzoom": 0,
+      "maxzoom": 15,
+      "tileSize": 256,
+      "encoding": "terrarium"
+    }
+  },
+  "layers": [
+    {
+      "id": "terrarium",
+      "type": "raster",
+      "source": "terrarium"
+    }
+  ]
+}

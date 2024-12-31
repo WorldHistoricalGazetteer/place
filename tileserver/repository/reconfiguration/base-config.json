@@ -29,6 +29,11 @@
       "serve_rendered": false,
       "serve_data": true
     },
+    "DEM": {
+      "style": "terrarium/style.json",
+      "serve_rendered": false,
+      "serve_data": false
+    },
     "Satellite": {
       "style": "satellite/style.json",
       "serve_rendered": false,
