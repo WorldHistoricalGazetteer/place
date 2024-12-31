@@ -1,6 +1,10 @@
 {
   "version": 8,
   "name": "Terrarium DEM",
+  "center": [20.72770651703172, 51.91110028037039],
+  "zoom": 2.305730813458177,
+  "bearing": 0,
+  "pitch": 0,
   "sources": {
     "terrarium": {
       "type": "raster-dem",
