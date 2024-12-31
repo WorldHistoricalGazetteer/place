@@ -31,8 +31,14 @@
     },
     "DEM": {
       "style": "terrarium/style.json",
-      "serve_rendered": false,
-      "serve_data": true
+      "tilejson": {
+        "bounds": [-180, -85, 180, 85],
+        "center": [0, 0, 2],
+        "minzoom": 0,
+        "maxzoom": 15,
+        "format": "png",
+        "type": "baselayer"
+      }
     },
     "Satellite": {
       "style": "satellite/style.json",
