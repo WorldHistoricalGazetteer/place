@@ -29,6 +29,9 @@ spec:
           - sh
           - -c
           - |
+            # Install xvfb for headless server
+            apk update && apk add xvfb
+
             git init /mnt/shared/{{ .Values.tileserver.git.targetFolder }} && \
             git config --global --add safe.directory /mnt/shared/src && \
             cd /mnt/shared/{{ .Values.tileserver.git.targetFolder }} && \
@@ -64,6 +67,7 @@ spec:
           # Merge base-config.json and config.json
           node {{ .Values.pv.tileserver.reconfiguration.mountPath }}/merge-config.js {{ .Values.pv.tileserver.reconfiguration.mountPath }}/base-config.json {{ .Values.pv.tileserver.configs.mountPath }}/config.json {{ .Values.pv.tiles.mountPath }}
           # Run Tileserver-GL
+          xvfb-run -a -s "-screen 0 1024x768x24"
           node /usr/src/app/src/main.js --config {{ .Values.pv.tileserver.configs.mountPath }}/config.json --verbose
         workingDir: /usr/src/app
         ports:
