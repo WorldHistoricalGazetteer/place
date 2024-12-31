@@ -44,9 +44,9 @@
       "serve_data": true
     },
     "elevation": {
-      "style": "elevation/elevation.json",
+      "style": "elevation/style.json",
       "serve_rendered": true,
-      "serve_data": false,
+      "serve_data": true,
       "tilejson": {
         "bounds": [-180, -85, 180, 85],
         "center": [0, 0, 2],
