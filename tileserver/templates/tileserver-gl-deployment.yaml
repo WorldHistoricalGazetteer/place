@@ -64,7 +64,7 @@ spec:
           # Merge base-config.json and config.json
           node {{ .Values.pv.tileserver.reconfiguration.mountPath }}/merge-config.js {{ .Values.pv.tileserver.reconfiguration.mountPath }}/base-config.json {{ .Values.pv.tileserver.configs.mountPath }}/config.json {{ .Values.pv.tiles.mountPath }}
           # Run Tileserver-GL
-          node /usr/src/app/src/main.js --config {{ .Values.pv.tileserver.configs.mountPath }}/config.json
+          node /usr/src/app/src/main.js --config {{ .Values.pv.tileserver.configs.mountPath }}/config.json --verbose
         workingDir: /usr/src/app
         ports:
         - containerPort: {{ .Values.service.tileserver.port }}
