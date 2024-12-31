@@ -15,6 +15,10 @@ REMOTE_HOST_TILER="134.209.177.234"
 SSH_KEY="$SCRIPT_DIR/whg/files/private/id_rsa_whg"
 SSH_KEY_TILER="$SCRIPT_DIR/whg/files/private/id_rsa"
 
+# Load values from values.yaml using yq
+DJANGO_GITHUB_REPO=$(yq eval '.django.githubRepository' "$SCRIPT_DIR/whg/values.yaml")
+DJANGO_GITHUB_BRANCH=$(yq eval '.django.githubBranch' "$SCRIPT_DIR/whg/values.yaml")
+
 # Directories to sync or prepare
 declare -A DIRECTORIES=(
   [redis]="/data/k8s/redis:1000:755:LOCAL,PITT1,AAU1"
@@ -135,6 +139,30 @@ fetch_and_extract_backup() {
   sudo rm -f "$local_database_dir/$backup_filename"
 }
 
+# Clone the Git repository into the correct directory (from DIRECTORIES)
+clone_django_repo() {
+  echo "Forcefully cloning the Django repository..."
+
+  # Extract the path for the django_app directory from DIRECTORIES
+  local django_app_dir
+  django_app_dir=$(echo "${DIRECTORIES[django_app]}" | cut -d ':' -f 1)
+
+  # Check if the directory is already a Git repository
+  if [ -d "$django_app_dir/.git" ]; then
+    echo "The directory $django_app_dir is already a Git repository. Skipping clone."
+  else
+    echo "Cloning the Django repository..."
+
+    if [ -d "$django_app_dir" ]; then
+      echo "Removing existing contents of $django_app_dir..."
+      sudo rm -rf "$django_app_dir"/*
+    fi
+
+    git clone -b "$DJANGO_GITHUB_BRANCH" "https://github.com/$DJANGO_GITHUB_REPO.git" "$django_app_dir" || { echo 'Cloning failed'; exit 1; }
+    echo "Repository cloned successfully."
+  fi
+}
+
 # Prepare directories based on K8S_ID
 echo "Preparing local directories based on K8S_ID..."
 for key in "${!DIRECTORIES[@]}"; do
@@ -178,6 +206,8 @@ if [[ -n "$CLONE_TILES" && "$CLONE_TILES" == "true" && -d "${DIRECTORIES[tiles]%
 else
   echo "Map tiles backup not required for node <$K8S_ID>."
 fi
+
+clone_django_repo
 
 # Notes for manual steps
 echo "NOTE: Wordpress database migration must be done manually."

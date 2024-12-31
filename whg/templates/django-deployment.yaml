@@ -26,6 +26,10 @@ spec:
         - |
           if [ ! -d "/app/.git" ]; then
             echo "Repository not found, cloning...";
+            # Remove any pre-existing content in /app (might be placed there by webpack)
+            rm -rf /app/* || { echo 'Failed to remove existing content from /app'; exit 1; }
+            rm -rf /app/.* || { echo 'Failed to remove hidden content from /app'; exit 1; }
+            # Clone the repository
             git clone -b {{ .Values.django.githubBranch }} https://github.com/{{ .Values.django.githubRepository }}.git /app || { echo 'Cloning failed'; exit 1; }
           else
             echo "Repository already cloned. Pulling latest changes...";

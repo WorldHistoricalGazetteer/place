@@ -248,8 +248,13 @@ else
 
 fi
 
-# Get the current node name (safer than simply using `hostname`)
-NODE_NAME=$(kubectl get node --selector="kubernetes.io/hostname=$(hostname)" -o jsonpath='{.items[0].metadata.name}')
+# Get the current node name based on the node's internal IP
+NODE_INTERNAL_IP=$(hostname -I | awk '{print $1}')
+NODE_NAME=$(kubectl get nodes -o json | jq -r ".items[] | select(.status.addresses[] | select(.type==\"InternalIP\" and .address==\"$NODE_INTERNAL_IP\")) | .metadata.name")
+if [[ -z "$NODE_NAME" ]]; then
+  echo "Error: Unable to determine the current node name based on InternalIP ($NODE_INTERNAL_IP)."
+  exit 1
+fi
 export NODE_NAME
 
 # Label the node based on K8S_CONTROLLER, K8S_ROLE, and K8S_ENVIRONMENT; always allow pods on a control plane node
@@ -443,16 +448,18 @@ if [ $? -ne 0 ]; then
 else
     echo "CRDs established successfully."
 fi
+helm dependency build ./prometheus-grafana
 helm install prometheus-grafana ./prometheus-grafana
 
 ##  Deploy Plausible Analytics
+helm dependency build ./plausible-analytics
 helm install plausible-analytics ./plausible-analytics
 
 ##  Deploy Glitchtip
 kubectl get secret whg-secret -o json \
-  | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "monitoring"' \
+  | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "monitoring" | del(.metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp)' \
   | kubectl apply -f -
-helm install glitchtip ./glitchtip --debug
+helm install glitchtip ./glitchtip
 
 # Apply global label critical=true to all resources
 echo "Labeling all resources as critical..."
