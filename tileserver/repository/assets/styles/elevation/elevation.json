@@ -1,24 +1,24 @@
 {
   "version": 8,
-  "name": "Terrarium DEM",
-  "center": [20.72770651703172, 51.91110028037039],
-  "zoom": 2.305730813458177,
+  "name": "Terrarium Elevation",
+  "center": [0,0],
+  "zoom": 3,
   "bearing": 0,
   "pitch": 0,
   "sources": {
-    "terrarium": {
+    "elevation": {
       "type": "raster",
       "url": "mbtiles://{terrarium}",
       "minzoom": 0,
-      "maxzoom": 15,
+      "maxzoom": 10,
       "tileSize": 256
     }
   },
   "layers": [
     {
-      "id": "terrarium",
+      "id": "elevation",
       "type": "raster",
-      "source": "terrarium"
+      "source": "elevation"
     }
   ]
 }
