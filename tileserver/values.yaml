@@ -42,11 +42,11 @@ tileserver:
     targetFolder: "src"
   resources:
     requests:
-      memory: "512Mi"
-      cpu: "500m"
+      memory: "2Gi"
+      cpu: "2"
     limits:
-      memory: "1Gi"
-      cpu: "1"
+      memory: "4Gi"
+      cpu: "4"
 
 tippecanoe:
   image: "worldhistoricalgazetteer/tippecanoe"

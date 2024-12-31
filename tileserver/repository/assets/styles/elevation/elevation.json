@@ -10,7 +10,7 @@
       "type": "raster",
       "url": "mbtiles://{terrarium}",
       "minzoom": 0,
-      "maxzoom": 10,
+      "maxzoom": 2,
       "tileSize": 256
     }
   },
