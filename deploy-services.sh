@@ -29,16 +29,6 @@ else
 fi
 helm install tileserver ./tileserver --set service.type=$SERVICE_TYPE
 
-#  # Deploy TileServer-GL
-#  echo "Deploying Tile services..."
-#  kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-pv-pvc.yaml"
-#  yq e '.spec.template.spec.volumes += [{"name": "assets", "hostPath": {"path": "'$SCRIPT_DIR'/tileserver/assets/", "type": "Directory"}}]' "$SCRIPT_DIR/tileserver/tileserver-gl-deployment.yaml" | kubectl apply -f -
-#  if [ "$K8S_ENVIRONMENT" == "development" ]; then
-#    kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-service-local.yaml" # Serve on http://localhost:30080
-#  else
-#    kubectl apply -f "$SCRIPT_DIR/tileserver/tileserver-gl-service.yaml"
-#    yq e "$YQ_TLS" "$SCRIPT_DIR/tileserver/tileserver-gl-ingress.yaml" | kubectl apply -f - # Remove cert-manager and tls section for worker nodes
-#  fi
 
 # Deploy WHG services
 echo "Deploying WHG services..."
