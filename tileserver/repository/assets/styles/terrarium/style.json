@@ -7,7 +7,7 @@
   "pitch": 0,
   "sources": {
     "terrarium": {
-      "type": "raster-dem",
+      "type": "raster",
       "url": "mbtiles://{terrarium}",
       "minzoom": 0,
       "maxzoom": 15,
