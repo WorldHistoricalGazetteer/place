@@ -1,0 +1,28 @@
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: monitoring
+              operator: In
+              values:
+                - "true"
+
+grafanaDeployment:
+  image: grafana/grafana
+  imageTag: 11.4.0
+  imagePullPolicy: IfNotPresent
+  pv:
+    storageClassName: grafana-storage
+    storage: 5Gi
+    path: /data/k8s/grafana
+  spec:
+    replicas: 1
+    port: 3000
+    resources:
+      limits:
+        cpu: 200m
+        memory: 200Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
