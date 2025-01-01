@@ -1,5 +1,4 @@
 import pickle
-import rtree
 import json
 import requests
 import gzip
@@ -7,8 +6,8 @@ from io import BytesIO
 from shapely.geometry import shape
 import os
 
-# Initialize the RTree index and descriptions map
-idx = rtree.index.Index()
+bounds_map = {}
+geometry_map = {}
 properties_map = {}
 descriptions_map = {
     "austria": "Digital elevation model with 10-meter resolution over Austria, provided by data.gv.at.",
@@ -37,24 +36,28 @@ with gzip.GzipFile(fileobj=BytesIO(response.content)) as f:
     geojson_data = json.load(f)
 
 # Filter out only resolution and source properties
-for i, feature in enumerate(geojson_data['features']):
+i = 0
+for feature in geojson_data['features']:
 
     if feature['geometry']['coordinates'] == []:
-        print(f"Skipping feature {i} with empty coordinates", feature)
+        print(f"Skipping feature with empty coordinates", feature)
         continue
 
     feature['properties'] = {key: feature['properties'][key] for key in ['resolution', 'source']}
-    properties_map[i] = feature['properties']  # Save properties to the map
-
     polygon = shape(feature['geometry'])
-    # Get the bounding box
     bounds = polygon.bounds
+    i += 1
+    geometry_map[i] = polygon
+    properties_map[i] = feature['properties']
     # Split if the bounding box crosses the antimeridian
     if bounds[0] > bounds[2]:
-        idx.insert(i, (bounds[0], bounds[1], 180, bounds[3]))
-        idx.insert(i, (-180, bounds[1], bounds[2], bounds[3]))
+        bounds_map[i] = [bounds[0], bounds[1], 180, bounds[3]]
+        i += 1
+        geometry_map[i] = polygon
+        properties_map[i] = feature['properties']
+        bounds_map[i] = [-180, bounds[1], bounds[2], bounds[3]]
     else:
-        idx.insert(i, bounds)
+        bounds_map[i] = bounds
 
 # Ensure the directory exists
 os.makedirs('./data', exist_ok=True)
@@ -62,7 +65,8 @@ os.makedirs('./data', exist_ok=True)
 # Save the index, properties_map, and descriptions_map to a single pickle file
 with open("./data/terrarium-data.pkl", "wb") as f:
     pickle.dump({
-        'index': idx,
+        'bounds': bounds_map,
+        'geometry': geometry_map,
         'properties': properties_map,
         'descriptions': descriptions_map
     }, f)

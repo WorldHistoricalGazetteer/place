@@ -5,6 +5,7 @@ import pickle
 from io import BytesIO
 
 import requests
+import rtree
 from PIL import Image
 from fastapi import HTTPException
 
@@ -27,17 +28,20 @@ def get_elevation_metadata(lat: float, lng: float):
     pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
     data = load_data(pickle_file_path)
     if data:
-        idx = data['index']
+        bounds_map = data['bounds']
         properties_map = data['properties']
         descriptions_map = data['descriptions']
     else:
         logger.info("No data loaded from pickle file")
-        idx = properties_map = descriptions_map = {}
+        bounds_map = properties_map = descriptions_map = {}
 
     try:
-        logger.info(f"Fetching elevation metadata for lat: {lat}, lng: {lng}")
-        logger.info(f"Index length: {len(properties_map)}")
-        logger.info(f"Descriptions: {descriptions_map}")
+        logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
+
+        # Build RTree index
+        idx = rtree.index.Index()
+        for i, bounds in bounds_map.items():
+            idx.insert(i, bounds)
 
         # Query the RTree index with the latitude and longitude
         result = list(idx.intersection((lng - 0.0001, lat - 0.0001, lng + 0.0001, lat + 0.0001)))
@@ -51,7 +55,7 @@ def get_elevation_metadata(lat: float, lng: float):
             return {"elevation_resolution": None,
                     "elevation_source": None}
 
-        # Select the feature with the minimum resolution (this can be enhanced)
+        # Select the feature with the minimum resolution
         feature_id = min(result, key=lambda x: properties_map[x]['resolution'])
         feature = properties_map[feature_id]
         source = feature['source']
