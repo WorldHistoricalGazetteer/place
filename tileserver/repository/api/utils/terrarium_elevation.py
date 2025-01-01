@@ -2,12 +2,13 @@ import logging
 import math
 import os
 import pickle
+from contextlib import asynccontextmanager
 from io import BytesIO
 
 import requests
 import rtree
 from PIL import Image
-from fastapi import HTTPException
+from fastapi import HTTPException, FastAPI
 from shapely.geometry import shape
 
 # Configure logging
@@ -18,6 +19,13 @@ geometry_map = {}
 properties_map = {}
 descriptions_map = {}
 idx = rtree.index.Index()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Perform startup tasks
+    init_elevation_data()
+    yield
 
 
 # Load the pickle data

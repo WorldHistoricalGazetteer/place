@@ -1,5 +1,4 @@
 import logging
-from contextlib import asynccontextmanager
 from typing import List, Dict, Any
 
 import rtree
@@ -8,7 +7,7 @@ from pydantic import BaseModel
 
 from .utils.deletion import delete_tileset
 from .utils.kube import restart_tileserver, add_tileset
-from .utils.terrarium_elevation import get_elevation_data, init_elevation_data
+from .utils.terrarium_elevation import get_elevation_data, lifespan
 from .utils.tileset import get_tileset_data, get_all_tileset_data
 
 '''
@@ -16,7 +15,7 @@ Dynamically-generated API documentation can be accessed at http://localhost:3008
 '''
 
 # FastAPI app instance
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,13 +41,6 @@ class DeleteResponse(BaseModel):
 
 class AddResponse(BaseModel):
     status: str
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Perform startup tasks
-    init_elevation_data()
-    yield
 
 
 @app.get("/restart", response_model=Dict[str, Any])
