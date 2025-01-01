@@ -151,13 +151,28 @@ async def get_elevation(lat_string: str, lng_string: str):
         lat_string (str): Latitude of the location (use of string preserves implied precision).
         lng_string (str): Longitude of the location (use of string preserves implied precision).
 
+
+        return {"elevation_text": elevation_text, "ground_resolution_text": ground_resolution_text,
+                "ground_resolution_note": f"Calculation is dependent on the latitude, maximum data zoom level (currently {max_zoom}), and decimal-precision of the coordinates.",
+                "elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata,
+                "source_note": f"Elevation data collated from various sources by Mapzen/Terrarium, and self-hosted by WHG.",
+                "units": "metres", "status": "success"}
+
     Returns:
         Dict[str, Any]: A dictionary containing:
+            - 'status' (str): Status of the operation ('success' or 'error').
+            If 'status' is 'success', the dictionary will also contain:
+            - 'elevation_text' (str): Elevation text description.
+            - 'ground_resolution_text' (str): Ground resolution text description.
+            - 'ground_resolution_note' (str): Note about the ground resolution calculation.
             - 'elevation' (float): Elevation in metres.
             - 'ground_resolution' (float): Ground resolution in metres.
             - 'elevation_resolution' (float): Elevation resolution in metres.
             - 'elevation_source' (str): Description of the elevation data source.
+            - 'source_note' (str): Note about the elevation data source.
             - 'units' (str): Measurement units ('metres').
+            Otherwise, the dictionary will contain:
+            - 'message' (str): Error message.
     """
     try:
         elevation_data = get_elevation_data(lat_string, lng_string)
