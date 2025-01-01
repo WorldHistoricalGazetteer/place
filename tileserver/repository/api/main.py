@@ -1,3 +1,8 @@
+import math
+from io import BytesIO
+
+import requests
+from PIL import Image
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
@@ -73,7 +78,7 @@ async def fetch_tileset(tileset_type: str, tileset_id: int):
 
 
 @app.delete("/{tileset_type}/{tileset_id}", response_model=DeleteResponse)
-def remove_tileset(tileset_type: str, tileset_id: str):
+def remove_tileset(tileset_type: str, tileset_id: int):
     """
     Delete tileset data and associated MBTiles files for a specific dataset or collection.
 
@@ -98,3 +103,46 @@ async def insert_tileset(request: TilesetRequest):
         return {"status": result}
     except Exception as e:
         return {"status": f"Error adding tileset: {str(e)}"}
+
+@app.get("/elevation/{lat}/{lng}", response_model=Dict[str, Any])
+async def get_elevation(lat: float, lng: float):
+    """
+    Get the elevation at a given latitude and longitude.
+
+    Args:
+        lat (float): Latitude in the URL path.
+        lng (float): Longitude in the URL path.
+
+    Returns:
+        Dict[str, Any]: Elevation data.
+    """
+    try:
+        # Fetch the maxzoom from the tileserver
+        terrarium_url = "http://tileserver-gl:30080/data/terrarium.json"
+        metadata_response = requests.get(terrarium_url)
+        metadata_response.raise_for_status()
+        maxzoom = metadata_response.json().get("maxzoom", 10)  # Default to 14 if not found
+
+        # Calculate the tile indices
+        x = int((lng + 180.0) / 360.0 * (2 ** maxzoom))
+        y = int((1.0 - math.log(math.tan(math.radians(lat)) + (1 / math.cos(math.radians(lat)))) / math.pi) / 2.0 * (2 ** maxzoom))
+
+        # Fetch the tile
+        tile_url = f"http://tileserver-gl:30080/data/terrarium/{maxzoom}/{x}/{y}.png"
+        response = requests.get(tile_url)
+        response.raise_for_status()
+
+        # Decode the image
+        tile_image = Image.open(BytesIO(response.content))
+        pixel_x = int((lng + 180.0) % 360.0 * (tile_image.width / 360.0))
+        pixel_y = int((1.0 - (lat + 90.0) / 180.0) * tile_image.height)
+
+        # Get RGB values
+        r, g, b = tile_image.getpixel((pixel_x, pixel_y))
+
+        # Calculate elevation based on Terrarium format
+        elevation = (r * 256 + g + b / 256) - 32768
+
+        return {"latitude": lat, "longitude": lng, "zoom": maxzoom, "elevation": elevation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving elevation: {str(e)}")
