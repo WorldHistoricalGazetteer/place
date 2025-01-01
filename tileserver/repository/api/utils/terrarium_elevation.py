@@ -1,5 +1,6 @@
 import logging
 import math
+import os
 import pickle
 from io import BytesIO
 
@@ -23,7 +24,8 @@ def load_data(file_path: str):
 
 
 def get_elevation_metadata(lat: float, lng: float):
-    data = load_data("./utils/data/terrarium-data.pkl")
+    pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
+    data = load_data(pickle_file_path)
     if data:
         idx = data['index']
         properties_map = data['properties']
