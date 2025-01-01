@@ -43,6 +43,18 @@
       "serve_rendered": false,
       "serve_data": true
     },
+    "elevation": {
+      "style": "elevation/style.json",
+      "serve_rendered": true,
+      "serve_data": true,
+      "tilejson": {
+        "bounds": [-180, -85, 180, 85],
+        "center": [0, 0, 2],
+        "minzoom": 0,
+        "maxzoom": 10,
+        "format": "png"
+      }
+    },
     "Satellite": {
       "style": "satellite/style.json",
       "serve_rendered": false,
