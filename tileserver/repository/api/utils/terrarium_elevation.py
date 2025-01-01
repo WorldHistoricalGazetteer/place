@@ -43,6 +43,11 @@ def get_elevation_metadata(lat: float, lng: float):
         result = list(idx.intersection((lng - 0.0001, lat - 0.0001, lng + 0.0001, lat + 0.0001)))
 
         if not result:
+            logger.info("No elevation metadata found")
+            # Log the first 100 idx entries
+            for i, item in enumerate(idx):
+                if i < 100:
+                    logger.info(f"Index item {i}: {item}")
             return {"elevation_resolution": None,
                     "elevation_source": None}
 
@@ -61,6 +66,25 @@ def get_elevation_metadata(lat: float, lng: float):
         return {"elevation_resolution": None, "elevation_source": None}
 
 
+def get_ground_resolution(lat: float, lng: float, maxzoom: int):
+    # Earth radius in meters
+    earth_radius = 6378137
+
+    # Convert lat/lng to resolution in meters per pixel at the given zoom level
+    # Latitudinal resolution is constant, longitudinal resolution depends on the latitude
+    pixel_resolution_latitude = (2 * math.pi * earth_radius) / (256 * 2 ** maxzoom)
+    pixel_resolution_longitude = (math.cos(math.radians(lat)) * 2 * math.pi * earth_radius) / (256 * 2 ** maxzoom)
+
+    # Calculate the precision based on the number of supplied decimal places, allowing for none
+    precision_lat = 1 / (10 ** len(str(lat).split(".")[1])) if "." in str(lat) else 1
+    precision_resolution_latitude = precision_lat * (math.pi * earth_radius / 180)
+    precision_lng = 1 / (10 ** len(str(lng).split(".")[1])) if "." in str(lng) else 1
+    precision_resolution_longitude = precision_lng * (math.pi * earth_radius / 180)
+
+    return max(pixel_resolution_latitude, pixel_resolution_longitude, precision_resolution_latitude,
+               precision_resolution_longitude)
+
+
 def get_elevation_data(lat: float, lng: float):
     try:
         logger.info(f"Fetching elevation for lat: {lat}, lng: {lng}")
@@ -75,7 +99,7 @@ def get_elevation_data(lat: float, lng: float):
         # Calculate the tile indices
         x = int((lng + 180.0) / 360.0 * (2 ** maxzoom))
         y = int((1.0 - math.log(math.tan(math.radians(lat)) + (1 / math.cos(math.radians(lat)))) / math.pi) / 2.0 * (
-                    2 ** maxzoom))
+                2 ** maxzoom))
 
         # Fetch the tile
         tile_url = f"http://tileserver-gl:8080/data/terrarium/{maxzoom}/{x}/{y}.png"
@@ -97,9 +121,7 @@ def get_elevation_data(lat: float, lng: float):
         logger.info(f"Elevation: {elevation} metres")
 
         # Calculate ground resolution
-        # TODO: Account for input resolution implicit in decimal places provided
-        ground_resolution = (math.cos(math.radians(lat)) * 2 * math.pi * 6378137) / (
-                    256 * 2 ** maxzoom)  # metres per pixel
+        ground_resolution = get_ground_resolution(lat, lng, maxzoom)
 
         # Read elevation resolution from Pickle file
         elevation_metadata = get_elevation_metadata(lat, lng)
