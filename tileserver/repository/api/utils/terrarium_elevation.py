@@ -196,6 +196,10 @@ def get_elevation_data(lat_string: str, lng_string: str):
         lat = float(lat_string)
         lng = float(lng_string)
 
+        # Check if lat/lng are within bounds
+        if lat < -90 or lat > 90 or lng < -180 or lng > 180:
+            return {"status": "error", "message": "Invalid latitude or longitude"}
+
         # Fetch the max_zoom from the tileserver
         terrarium_url = "http://tileserver-gl:8080/data/terrarium.json"
         metadata_response = requests.get(terrarium_url)
@@ -236,15 +240,15 @@ def get_elevation_data(lat_string: str, lng_string: str):
         # Build text representations
         elevation_text = f"{elevation_metadata['elevation']} ±{elevation_metadata['elevation_resolution']} metres"
         ground_resolution_radius = f"{ground_resolution}m" if ground_resolution < 1000 else f"{round(ground_resolution / 1000, 1)}km"
-        lat_text = f"{lat_string.lstrip('-')}{chr(176)}{'S' if lat < 0 else 'N'}"
-        lng_text = f"{lng_string.lstrip('-')}{chr(176)}{'W' if lng < 0 else 'E'}"
+        lat_text = f"{lat_string.lstrip('-')}°{'S' if lat < 0 else 'N'}"
+        lng_text = f"{lng_string.lstrip('-')}°{'W' if lng < 0 else 'E'}"
         ground_resolution_text = f"within a radius of {ground_resolution_radius} of {lat_text} {lng_text}"
 
         return {"elevation_text": elevation_text, "ground_resolution_text": ground_resolution_text,
                 "ground_resolution_note": f"Calculation is dependent on the latitude, maximum data zoom level (currently {max_zoom}), and decimal-precision of the coordinates.",
                 "elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata,
                 "source_note": f"Elevation data collated from various sources by Mapzen/Terrarium, and self-hosted by WHG.",
-                "units": "metres"}
+                "units": "metres", "status": "success"}
     except Exception as e:
         logger.info(f"Error retrieving elevation: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving elevation: {str(e)}")
