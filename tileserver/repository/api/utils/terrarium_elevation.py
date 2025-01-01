@@ -166,9 +166,13 @@ def get_ground_resolution(lat: float, max_zoom: int, lat_string: str, lng_string
     precision_lng = 1 / (10 ** len(lng_string.split(".")[1])) if "." in lng_string else 1
     precision_resolution_longitude = precision_lng * (math.pi * earth_radius / 180)
 
-    # Round largest value up to the nearest metre
-    return math.ceil(max(pixel_resolution_latitude, pixel_resolution_longitude, precision_resolution_latitude,
-                         precision_resolution_longitude))
+    # Multiply largest value by square root of 2 to get diagonal resolution
+    largest_value = max(pixel_resolution_latitude, pixel_resolution_longitude, precision_resolution_latitude,
+                        precision_resolution_longitude)
+    diagonal_resolution = largest_value * math.sqrt(2)
+
+    # Round up to the nearest metre
+    return math.ceil(diagonal_resolution)
 
 
 def get_elevation_data(lat_string: str, lng_string: str):
@@ -229,7 +233,16 @@ def get_elevation_data(lat_string: str, lng_string: str):
         # Read elevation resolution from Pickle file
         elevation_metadata = get_elevation_metadata(lat, lng, elevation)
 
-        return {"elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata, "units": "metres"}
+        # Build text representations
+        elevation_text = f"{elevation} {chr(177)}{elevation_metadata['elevation_resolution']} metres"
+        if ground_resolution > 1000:
+            ground_resolution_units = f"{round(ground_resolution / 1000, 1)} km"
+        else:
+            ground_resolution_units = f"{ground_resolution} metres"
+        ground_resolution_text = f"within a radius of {ground_resolution_units} of lat: {lat_string}, lng: {lng_string}"
+
+        return {"elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata, "units": "metres",
+                "elevation_text": elevation_text, "ground_resolution_text": ground_resolution_text}
     except Exception as e:
         logger.info(f"Error retrieving elevation: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving elevation: {str(e)}")
