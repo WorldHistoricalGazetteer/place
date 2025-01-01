@@ -191,7 +191,7 @@ def get_elevation_data(lat_string: str, lng_string: str):
     """
     try:
         logger.info(f"Fetching elevation for lat: {lat_string}, lng: {lng_string}")
-        
+
         # Convert lat/lng to float
         lat = float(lat_string)
         lng = float(lng_string)
@@ -240,8 +240,10 @@ def get_elevation_data(lat_string: str, lng_string: str):
         lng_text = f"{lng_string.lstrip('-')}{chr(176)}{'W' if lng < 0 else 'E'}"
         ground_resolution_text = f"within a radius of {ground_resolution_radius} of {lat_text} {lng_text}"
 
-        return {"elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata, "units": "metres",
-                "elevation_text": elevation_text, "ground_resolution_text": ground_resolution_text}
+        return {"elevation_text": elevation_text, "ground_resolution_text": ground_resolution_text,
+                "ground_resolution_note": "Calculation is dependent on the latitude, zoom level, and decimal-precision of the coordinates.",
+                "elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata,
+                "source_note": "Elevation data collated from various sources by Mapzen/Terrarium", "units": "metres"}
     except Exception as e:
         logger.info(f"Error retrieving elevation: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving elevation: {str(e)}")
