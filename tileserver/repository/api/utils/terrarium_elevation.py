@@ -23,7 +23,7 @@ def load_data(file_path: str):
 
 
 def get_elevation_metadata(lat: float, lng: float):
-    data = load_data("./data/terrarium-data.pkl")
+    data = load_data("./utils/data/terrarium-data.pkl")
     if data:
         idx = data['index']
         properties_map = data['properties']
