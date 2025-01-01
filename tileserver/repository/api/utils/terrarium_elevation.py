@@ -234,7 +234,7 @@ def get_elevation_data(lat_string: str, lng_string: str):
         elevation_metadata = get_elevation_metadata(lat, lng, elevation)
 
         # Build text representations
-        elevation_text = f"{elevation} {chr(177)}{elevation_metadata['elevation_resolution']} metres"
+        elevation_text = f"{elevation_metadata['elevation']} {chr(177)}{elevation_metadata['elevation_resolution']} metres"
         ground_resolution_radius = f"{ground_resolution}m" if ground_resolution < 1000 else f"{round(ground_resolution / 1000, 1)}km"
         lat_text = f"{lat_string.lstrip('-')}{chr(176)}{'S' if lat < 0 else 'N'}"
         lng_text = f"{lng_string.lstrip('-')}{chr(176)}{'W' if lng < 0 else 'E'}"
