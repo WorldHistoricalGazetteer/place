@@ -10,7 +10,7 @@ import rtree
 from PIL import Image
 from fastapi import HTTPException
 
-from ...api.main import geometry_map, properties_map, descriptions_map, idx
+from ..main import geometry_map, properties_map, descriptions_map, idx
 
 # Configure logging
 logger = logging.getLogger(__name__)
