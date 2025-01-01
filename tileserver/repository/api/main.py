@@ -128,7 +128,7 @@ async def get_elevation(lat: float, lng: float):
         logger.info(f"Fetching elevation for lat: {lat}, lng: {lng}")
 
         # Fetch the maxzoom from the tileserver
-        terrarium_url = "http://tileserver-gl:30080/data/terrarium.json"
+        terrarium_url = "http://tileserver-gl:8080/data/terrarium.json"
         logger.info(f"Fetching maxzoom from {terrarium_url}")
         metadata_response = requests.get(terrarium_url)
         metadata_response.raise_for_status()
@@ -141,7 +141,7 @@ async def get_elevation(lat: float, lng: float):
         logger.info(f"Tile indices calculated: x={x}, y={y}")
 
         # Fetch the tile
-        tile_url = f"http://tileserver-gl:30080/data/terrarium/{maxzoom}/{x}/{y}.png"
+        tile_url = f"http://tileserver-gl:8080/data/terrarium/{maxzoom}/{x}/{y}.png"
         logger.info(f"Fetching tile from {tile_url}")
         response = requests.get(tile_url)
         response.raise_for_status()
