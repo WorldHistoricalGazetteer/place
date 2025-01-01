@@ -25,7 +25,7 @@ def load_data(file_path: str):
         return None
 
 
-def get_elevation_metadata(lat: float, lng: float):
+def get_elevation_metadata(lat: float, lng: float, elevation: float):
     pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
     data = load_data(pickle_file_path)
     if data:
@@ -64,7 +64,10 @@ def get_elevation_metadata(lat: float, lng: float):
         source = feature['source']
         description = descriptions_map.get(source, "No description available")
 
+        elevation = round(elevation / feature['resolution']) * feature['resolution']
+
         return {
+            "elevation": elevation,
             "elevation_resolution": feature['resolution'],
             "elevation_source": description
         }
@@ -131,9 +134,9 @@ def get_elevation_data(lat: float, lng: float):
         ground_resolution = get_ground_resolution(lat, lng, maxzoom)
 
         # Read elevation resolution from Pickle file
-        elevation_metadata = get_elevation_metadata(lat, lng)
+        elevation_metadata = get_elevation_metadata(lat, lng, elevation)
 
-        return {"elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata}
+        return {"elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata, "units": "metres"}
     except Exception as e:
         logger.info(f"Error retrieving elevation: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving elevation: {str(e)}")
