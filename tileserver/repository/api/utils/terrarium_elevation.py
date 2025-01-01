@@ -243,7 +243,7 @@ def get_elevation_data(lat_string: str, lng_string: str):
         return {"elevation_text": elevation_text, "ground_resolution_text": ground_resolution_text,
                 "ground_resolution_note": "Calculation is dependent on the latitude, zoom level, and decimal-precision of the coordinates.",
                 "elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata,
-                "source_note": f"Elevation data collated from various sources by Mapzen/Terrarium. WHG currently employs data up to zoom level {max_zoom}.",
+                "source_note": f"Elevation data collated from various sources by Mapzen/Terrarium. WHG currently employs self-hosted data up to zoom level {max_zoom}.",
                 "units": "metres"}
     except Exception as e:
         logger.info(f"Error retrieving elevation: {e}")
