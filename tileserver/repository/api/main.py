@@ -48,6 +48,7 @@ class AddResponse(BaseModel):
 async def lifespan(app: FastAPI):
     # Perform startup tasks
     init_elevation_data()
+    yield
 
 
 @app.get("/restart", response_model=Dict[str, Any])

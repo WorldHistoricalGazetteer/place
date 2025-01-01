@@ -35,23 +35,24 @@ def init_elevation_data():
     pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
     data = load_data(pickle_file_path)
     if data:
+        logger.info("Loaded data from pickle file")
         global bounds_map, geometry_map, properties_map, descriptions_map, idx
         bounds_map = data['bounds']
         geometry_map = data['geometry']
         properties_map = data['properties']
         descriptions_map = data['descriptions']
+        logger.info(f"Descriptions: {descriptions_map}")
 
         # Build the RTree index
         for i, bounds in bounds_map.items():
             idx.insert(i, bounds)
+        logger.info("Built RTree index")
     else:
         logger.error("Failed to load data or build index")
 
-    yield
-
 
 def get_elevation_metadata(lat: float, lng: float, elevation: float):
-    if 'idx' not in globals():
+    if len(bounds_map) == 0:
         logger.info("No data loaded from pickle file")
         return {"elevation_resolution": None, "elevation_source": None}
 
