@@ -30,11 +30,12 @@ def get_elevation_metadata(lat: float, lng: float):
     data = load_data(pickle_file_path)
     if data:
         bounds_map = data['bounds']
+        geometry_map = data['geometry']
         properties_map = data['properties']
         descriptions_map = data['descriptions']
     else:
         logger.info("No data loaded from pickle file")
-        bounds_map = properties_map = descriptions_map = {}
+        return {"elevation_resolution": None, "elevation_source": None}
 
     try:
         logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
@@ -50,11 +51,12 @@ def get_elevation_metadata(lat: float, lng: float):
         if not result:
             logger.info("No elevation metadata found")
             logger.info(f"idx type: {type(idx)}")
-            # Log intersection with a larger area
-            result = list(idx.intersection((10, 10, 90, 90)))
-            logger.info(f"Intersection with larger area: {result}")
             return {"elevation_resolution": None,
                     "elevation_source": None}
+
+        # Refine results by checking intersections with geometry_map
+        if len(result) > 1:
+            result = [i for i in result if geometry_map[i].contains(shape({'type': 'Point', 'coordinates': [lng, lat]}))]
 
         # Select the feature with the minimum resolution
         feature_id = min(result, key=lambda x: properties_map[x]['resolution'])
