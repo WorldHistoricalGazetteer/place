@@ -2,6 +2,7 @@ import logging
 import math
 import os
 import pickle
+from shapely.geometry import shape
 from io import BytesIO
 
 import requests
