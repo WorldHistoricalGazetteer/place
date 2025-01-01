@@ -141,15 +141,15 @@ async def insert_tileset(request: TilesetRequest):
 
 
 @app.get("/elevation/{lat}/{lng}", response_model=Dict[str, Any])
-async def get_elevation(lat: float, lng: float):
+async def get_elevation(lat_string: str, lng_string: str):
     """
     Retrieve elevation data for a given location.
 
     Calculates the elevation, resolution, and source information for a specific latitude and longitude.
 
     Args:
-        lat (float): Latitude of the location.
-        lng (float): Longitude of the location.
+        lat_string (str): Latitude of the location (use of string preserves implied precision).
+        lng_string (str): Longitude of the location (use of string preserves implied precision).
 
     Returns:
         Dict[str, Any]: A dictionary containing:
@@ -160,7 +160,7 @@ async def get_elevation(lat: float, lng: float):
             - 'units' (str): Measurement units ('metres').
     """
     try:
-        elevation_data = get_elevation_data(lat, lng)
+        elevation_data = get_elevation_data(lat_string, lng_string)
         return elevation_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving elevation: {str(e)}")

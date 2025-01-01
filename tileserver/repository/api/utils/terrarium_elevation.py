@@ -139,14 +139,15 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float):
         return {"elevation_resolution": None, "elevation_source": None}
 
 
-def get_ground_resolution(lat: float, lng: float, maxzoom: int):
+def get_ground_resolution(lat: float, max_zoom: int, lat_string: str, lng_string: str):
     """
     Calculate the ground resolution in metres per pixel for a given latitude, longitude, and zoom level.
 
     Args:
         lat (float): Latitude coordinate.
-        lng (float): Longitude coordinate.
-        maxzoom (int): Maximum zoom level.
+        max_zoom (int): Maximum zoom level.
+        lat_string (str): Latitude coordinate as a string.
+        lng_string (str): Longitude coordinate as a string.
 
     Returns:
         int: Ground resolution rounded to the nearest metre.
@@ -156,13 +157,13 @@ def get_ground_resolution(lat: float, lng: float, maxzoom: int):
 
     # Convert lat/lng to resolution in meters per pixel at the given zoom level
     # Latitudinal resolution is constant, longitudinal resolution depends on the latitude
-    pixel_resolution_latitude = (2 * math.pi * earth_radius) / (256 * 2 ** maxzoom)
-    pixel_resolution_longitude = (math.cos(math.radians(lat)) * 2 * math.pi * earth_radius) / (256 * 2 ** maxzoom)
+    pixel_resolution_latitude = (2 * math.pi * earth_radius) / (256 * 2 ** max_zoom)
+    pixel_resolution_longitude = (math.cos(math.radians(lat)) * 2 * math.pi * earth_radius) / (256 * 2 ** max_zoom)
 
     # Calculate the precision based on the number of supplied decimal places, allowing for none
-    precision_lat = 1 / (10 ** len(str(lat).split(".")[1])) if "." in str(lat) else 1
+    precision_lat = 1 / (10 ** len(lat_string.split(".")[1])) if "." in lat_string else 1
     precision_resolution_latitude = precision_lat * (math.pi * earth_radius / 180)
-    precision_lng = 1 / (10 ** len(str(lng).split(".")[1])) if "." in str(lng) else 1
+    precision_lng = 1 / (10 ** len(lng_string.split(".")[1])) if "." in lng_string else 1
     precision_resolution_longitude = precision_lng * (math.pi * earth_radius / 180)
 
     # Round largest value up to the nearest metre
@@ -170,7 +171,7 @@ def get_ground_resolution(lat: float, lng: float, maxzoom: int):
                          precision_resolution_longitude))
 
 
-def get_elevation_data(lat: float, lng: float):
+def get_elevation_data(lat_string: str, lng_string: str):
     """
     Retrieve elevation data for a given latitude and longitude.
 
@@ -178,29 +179,33 @@ def get_elevation_data(lat: float, lng: float):
     using Terrarium format, and retrieves metadata about the elevation.
 
     Args:
-        lat (float): Latitude coordinate.
-        lng (float): Longitude coordinate.
+        lat_string (str): Latitude coordinate.
+        lng_string (str): Longitude coordinate.
 
     Returns:
         dict: A dictionary containing elevation, ground resolution, metadata, and units.
     """
     try:
-        logger.info(f"Fetching elevation for lat: {lat}, lng: {lng}")
+        logger.info(f"Fetching elevation for lat: {lat_string}, lng: {lng_string}")
+        
+        # Convert lat/lng to float
+        lat = float(lat_string)
+        lng = float(lng_string)
 
-        # Fetch the maxzoom from the tileserver
+        # Fetch the max_zoom from the tileserver
         terrarium_url = "http://tileserver-gl:8080/data/terrarium.json"
         metadata_response = requests.get(terrarium_url)
         metadata_response.raise_for_status()
-        maxzoom = metadata_response.json().get("maxzoom", 10)
-        logger.info(f"Maxzoom fetched from terrarium.json: {maxzoom}")
+        max_zoom = metadata_response.json().get("max_zoom", 10)
+        logger.info(f"max_zoom fetched from terrarium.json: {max_zoom}")
 
         # Calculate the tile indices
-        x = int((lng + 180.0) / 360.0 * (2 ** maxzoom))
+        x = int((lng + 180.0) / 360.0 * (2 ** max_zoom))
         y = int((1.0 - math.log(math.tan(math.radians(lat)) + (1 / math.cos(math.radians(lat)))) / math.pi) / 2.0 * (
-                2 ** maxzoom))
+                2 ** max_zoom))
 
         # Fetch the tile
-        tile_url = f"http://tileserver-gl:8080/data/terrarium/{maxzoom}/{x}/{y}.png"
+        tile_url = f"http://tileserver-gl:8080/data/terrarium/{max_zoom}/{x}/{y}.png"
         logger.info(f"Fetching tile from {tile_url}")
         response = requests.get(tile_url)
         response.raise_for_status()
@@ -219,7 +224,7 @@ def get_elevation_data(lat: float, lng: float):
         logger.info(f"Elevation: {elevation} metres")
 
         # Calculate ground resolution
-        ground_resolution = get_ground_resolution(lat, lng, maxzoom)
+        ground_resolution = get_ground_resolution(lat, max_zoom, lat_string, lng_string)
 
         # Read elevation resolution from Pickle file
         elevation_metadata = get_elevation_metadata(lat, lng, elevation)
