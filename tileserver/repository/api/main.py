@@ -1,5 +1,4 @@
 import logging
-import os
 from contextlib import asynccontextmanager
 from typing import List, Dict, Any
 
@@ -9,7 +8,7 @@ from pydantic import BaseModel
 
 from .utils.deletion import delete_tileset
 from .utils.kube import restart_tileserver, add_tileset
-from .utils.terrarium_elevation import get_elevation_data, load_data
+from .utils.terrarium_elevation import get_elevation_data, init_elevation_data
 from .utils.tileset import get_tileset_data, get_all_tileset_data
 
 '''
@@ -43,6 +42,12 @@ class DeleteResponse(BaseModel):
 
 class AddResponse(BaseModel):
     status: str
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Perform startup tasks
+    init_elevation_data()
 
 
 @app.get("/restart", response_model=Dict[str, Any])
@@ -117,27 +122,6 @@ async def insert_tileset(request: TilesetRequest):
         return {"status": result}
     except Exception as e:
         return {"status": f"Error adding tileset: {str(e)}"}
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Perform startup tasks
-    pickle_file_path = os.path.join(os.path.dirname(__file__), 'utils', 'data', 'terrarium-data.pkl')
-    data = load_data(pickle_file_path)
-    if data:
-        global bounds_map, geometry_map, properties_map, descriptions_map, idx
-        bounds_map = data['bounds']
-        geometry_map = data['geometry']
-        properties_map = data['properties']
-        descriptions_map = data['descriptions']
-
-        # Build the RTree index
-        for i, bounds in bounds_map.items():
-            idx.insert(i, bounds)
-    else:
-        logger.error("Failed to load data or build index")
-
-    yield
 
 
 @app.get("/elevation/{lat}/{lng}", response_model=Dict[str, Any])

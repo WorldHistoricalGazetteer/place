@@ -2,18 +2,22 @@ import logging
 import math
 import os
 import pickle
-from shapely.geometry import shape
 from io import BytesIO
 
 import requests
 import rtree
 from PIL import Image
 from fastapi import HTTPException
-
-from ..main import geometry_map, properties_map, descriptions_map, idx
+from shapely.geometry import shape
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+bounds_map = {}
+geometry_map = {}
+properties_map = {}
+descriptions_map = {}
+idx = rtree.index.Index()
 
 
 # Load the pickle data
@@ -27,8 +31,26 @@ def load_data(file_path: str):
         return None
 
 
-def get_elevation_metadata(lat: float, lng: float, elevation: float):
+def init_elevation_data():
+    pickle_file_path = os.path.join(os.path.dirname(__file__), 'utils', 'data', 'terrarium-data.pkl')
+    data = load_data(pickle_file_path)
+    if data:
+        global bounds_map, geometry_map, properties_map, descriptions_map, idx
+        bounds_map = data['bounds']
+        geometry_map = data['geometry']
+        properties_map = data['properties']
+        descriptions_map = data['descriptions']
 
+        # Build the RTree index
+        for i, bounds in bounds_map.items():
+            idx.insert(i, bounds)
+    else:
+        logger.error("Failed to load data or build index")
+
+    yield
+
+
+def get_elevation_metadata(lat: float, lng: float, elevation: float):
     if 'idx' not in globals():
         logger.info("No data loaded from pickle file")
         return {"elevation_resolution": None, "elevation_source": None}
@@ -47,7 +69,8 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float):
 
         # Refine results by checking intersections with geometry_map
         if len(result) > 1:
-            result = [i for i in result if geometry_map[i].contains(shape({'type': 'Point', 'coordinates': [lng, lat]}))]
+            result = [i for i in result if
+                      geometry_map[i].contains(shape({'type': 'Point', 'coordinates': [lng, lat]}))]
 
         # Select the feature with the minimum resolution
         feature_id = min(result, key=lambda x: properties_map[x]['resolution'])
@@ -83,7 +106,8 @@ def get_ground_resolution(lat: float, lng: float, maxzoom: int):
     precision_resolution_longitude = precision_lng * (math.pi * earth_radius / 180)
 
     # Round largest value up to the nearest metre
-    return math.ceil(max(pixel_resolution_latitude, pixel_resolution_longitude, precision_resolution_latitude, precision_resolution_longitude))
+    return math.ceil(max(pixel_resolution_latitude, pixel_resolution_longitude, precision_resolution_latitude,
+                         precision_resolution_longitude))
 
 
 def get_elevation_data(lat: float, lng: float):
