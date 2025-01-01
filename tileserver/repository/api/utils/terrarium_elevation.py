@@ -32,7 +32,7 @@ def load_data(file_path: str):
 
 
 def init_elevation_data():
-    pickle_file_path = os.path.join(os.path.dirname(__file__), 'utils', 'data', 'terrarium-data.pkl')
+    pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
     data = load_data(pickle_file_path)
     if data:
         global bounds_map, geometry_map, properties_map, descriptions_map, idx
