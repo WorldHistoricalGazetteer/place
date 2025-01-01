@@ -44,10 +44,10 @@ def get_elevation_metadata(lat: float, lng: float):
 
         if not result:
             logger.info("No elevation metadata found")
-            # Log the first 100 idx entries
-            for i, item in enumerate(idx):
-                if i < 100:
-                    logger.info(f"Index item {i}: {item}")
+            logger.info(f"idx type: {type(idx)}")
+            # Log intersection with a larger area
+            result = list(idx.intersection((10, 10, 90, 90)))
+            logger.info(f"Intersection with larger area: {result}")
             return {"elevation_resolution": None,
                     "elevation_source": None}
 
@@ -81,8 +81,8 @@ def get_ground_resolution(lat: float, lng: float, maxzoom: int):
     precision_lng = 1 / (10 ** len(str(lng).split(".")[1])) if "." in str(lng) else 1
     precision_resolution_longitude = precision_lng * (math.pi * earth_radius / 180)
 
-    return max(pixel_resolution_latitude, pixel_resolution_longitude, precision_resolution_latitude,
-               precision_resolution_longitude)
+    # Round largest value up to the nearest metre
+    return math.ceil(max(pixel_resolution_latitude, pixel_resolution_longitude, precision_resolution_latitude, precision_resolution_longitude))
 
 
 def get_elevation_data(lat: float, lng: float):
