@@ -87,7 +87,11 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float):
         source = feature['source']
         description = descriptions_map.get(source, "No description available")
 
-        elevation = round(elevation / feature['resolution']) * feature['resolution']
+        # Round feature resolution to nearest 0.1 metres
+        feature['resolution'] = round(feature['resolution'], 1)
+
+        # Round elevation appropriately
+        elevation = round(round(elevation / feature['resolution']) * feature['resolution'])
 
         return {
             "elevation": elevation,
