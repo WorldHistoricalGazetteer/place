@@ -10,6 +10,8 @@ import rtree
 from PIL import Image
 from fastapi import HTTPException
 
+from tileserver.repository.api.main import geometry_map, properties_map, descriptions_map, idx
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -26,24 +28,13 @@ def load_data(file_path: str):
 
 
 def get_elevation_metadata(lat: float, lng: float, elevation: float):
-    pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
-    data = load_data(pickle_file_path)
-    if data:
-        bounds_map = data['bounds']
-        geometry_map = data['geometry']
-        properties_map = data['properties']
-        descriptions_map = data['descriptions']
-    else:
+
+    if 'idx' not in globals():
         logger.info("No data loaded from pickle file")
         return {"elevation_resolution": None, "elevation_source": None}
 
     try:
         logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
-
-        # Build RTree index
-        idx = rtree.index.Index()
-        for i, bounds in bounds_map.items():
-            idx.insert(i, bounds)
 
         # Query the RTree index with the latitude and longitude
         result = list(idx.intersection((lng - 0.0001, lat - 0.0001, lng + 0.0001, lat + 0.0001)))
