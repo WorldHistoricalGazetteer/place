@@ -31,14 +31,19 @@ def get_elevation_metadata(lat: float, lng: float):
         properties_map = data['properties']
         descriptions_map = data['descriptions']
     else:
+        logger.info("No data loaded from pickle file")
         idx = properties_map = descriptions_map = {}
 
     try:
+        logger.info(f"Fetching elevation metadata for lat: {lat}, lng: {lng}")
+        logger.info(f"Index length: {len(properties_map)}")
+        logger.info(f"Descriptions: {descriptions_map}")
+
         # Query the RTree index with the latitude and longitude
         result = list(idx.intersection((lng - 0.0001, lat - 0.0001, lng + 0.0001, lat + 0.0001)))
 
         if not result:
-            return {"elevation": None, "ground_resolution": None, "elevation_resolution": None,
+            return {"elevation_resolution": None,
                     "elevation_source": None}
 
         # Select the feature with the minimum resolution (this can be enhanced)
@@ -89,6 +94,7 @@ def get_elevation_data(lat: float, lng: float):
 
         # Calculate elevation based on Terrarium format
         elevation = (r * 256 + g + b / 256) - 32768
+        logger.info(f"Elevation: {elevation} metres")
 
         # Calculate ground resolution
         # TODO: Account for input resolution implicit in decimal places provided
@@ -100,5 +106,5 @@ def get_elevation_data(lat: float, lng: float):
 
         return {"elevation": elevation, "ground_resolution": ground_resolution, **elevation_metadata}
     except Exception as e:
-        logger.error(f"Error retrieving elevation: {e}")
+        logger.info(f"Error retrieving elevation: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving elevation: {str(e)}")
