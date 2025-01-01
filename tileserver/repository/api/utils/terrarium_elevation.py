@@ -23,13 +23,29 @@ idx = rtree.index.Index()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Perform startup tasks
+    """
+    Lifespan context manager for FastAPI.
+
+    This function performs necessary startup tasks and yields control
+    to the application during its lifecycle.
+
+    Args:
+        app (FastAPI): The FastAPI application instance.
+    """
     init_elevation_data()
     yield
 
 
-# Load the pickle data
 def load_data(file_path: str):
+    """
+    Load data from a pickle file.
+
+    Args:
+        file_path (str): Path to the pickle file.
+
+    Returns:
+        Any: Data loaded from the pickle file, or None if an error occurs.
+    """
     try:
         with open(file_path, "rb") as f:
             data = pickle.load(f)
@@ -40,6 +56,15 @@ def load_data(file_path: str):
 
 
 def init_elevation_data():
+    """
+    Initialise Terrarium elevation metadata by loading it from a pickle file.
+
+    The pickle file is generated from geojson data available
+    at https://github.com/tilezen/joerd/blob/master/docs/data-sources.md
+
+    This function also constructs an RTree index using the loaded data and
+    populates global maps for bounds, geometry, properties, and descriptions.
+    """
     pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
     data = load_data(pickle_file_path)
     if data:
@@ -60,6 +85,17 @@ def init_elevation_data():
 
 
 def get_elevation_metadata(lat: float, lng: float, elevation: float):
+    """
+    Retrieve metadata about the elevation for a given latitude and longitude.
+
+    Args:
+        lat (float): Latitude coordinate.
+        lng (float): Longitude coordinate.
+        elevation (float): Elevation value.
+
+    Returns:
+        dict: Elevation metadata including resolution and source.
+    """
     if len(bounds_map) == 0:
         logger.info("No data loaded from pickle file")
         return {"elevation_resolution": None, "elevation_source": None}
@@ -104,6 +140,17 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float):
 
 
 def get_ground_resolution(lat: float, lng: float, maxzoom: int):
+    """
+    Calculate the ground resolution in metres per pixel for a given latitude, longitude, and zoom level.
+
+    Args:
+        lat (float): Latitude coordinate.
+        lng (float): Longitude coordinate.
+        maxzoom (int): Maximum zoom level.
+
+    Returns:
+        int: Ground resolution rounded to the nearest metre.
+    """
     # Earth radius in meters
     earth_radius = 6378137
 
@@ -124,6 +171,19 @@ def get_ground_resolution(lat: float, lng: float, maxzoom: int):
 
 
 def get_elevation_data(lat: float, lng: float):
+    """
+    Retrieve elevation data for a given latitude and longitude.
+
+    This function fetches tile data from a tileserver, calculates the elevation
+    using Terrarium format, and retrieves metadata about the elevation.
+
+    Args:
+        lat (float): Latitude coordinate.
+        lng (float): Longitude coordinate.
+
+    Returns:
+        dict: A dictionary containing elevation, ground resolution, metadata, and units.
+    """
     try:
         logger.info(f"Fetching elevation for lat: {lat}, lng: {lng}")
 

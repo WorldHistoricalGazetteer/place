@@ -46,10 +46,14 @@ class AddResponse(BaseModel):
 @app.get("/restart", response_model=Dict[str, Any])
 def restart():
     """
-    Restart the tileserver by sending a SIGHUP signal.
+    Restart the tileserver.
+
+    Sends a SIGHUP signal to the tileserver process to reload its configuration.
 
     Returns:
-        Dict[str, Any]: A dictionary with 'success' and 'message' keys.
+        Dict[str, Any]: A dictionary containing:
+            - 'success' (bool): Indicates if the operation was successful.
+            - 'message' (str): Details about the operation result.
     """
     try:
         return restart_tileserver()
@@ -60,10 +64,12 @@ def restart():
 @app.get("/", response_model=List[Dict[str, Any]])
 async def fetch_all_tilesets():
     """
-    Fetch tileset data for all datasets and collections.
+    Retrieve metadata for all tilesets.
+
+    Queries and returns information about all available datasets and collections.
 
     Returns:
-        List[Dict[str, Any]]: Metadata and information about all tilesets.
+        List[Dict[str, Any]]: A list of dictionaries, each containing metadata for a tileset.
     """
     try:
         return await get_all_tileset_data()
@@ -74,14 +80,14 @@ async def fetch_all_tilesets():
 @app.get("/{tileset_type}/{tileset_id}", response_model=Dict[str, Any])
 async def fetch_tileset(tileset_type: str, tileset_id: int):
     """
-    Fetch tileset data for a specific dataset or collection.
+    Retrieve metadata for a specific tileset.
 
     Args:
-        tileset_type (str): The type of tileset (e.g., "datasets" or "collections").
-        tileset_id (str): The identifier of the dataset or collection.
+        tileset_type (str): Type of tileset ('datasets' or 'collections').
+        tileset_id (int): Identifier of the tileset.
 
     Returns:
-        TilesetResponse: Metadata and information about the tileset.
+        Dict[str, Any]: A dictionary containing metadata for the specified tileset.
     """
     try:
         return await get_tileset_data(tileset_type, tileset_id)
@@ -92,14 +98,18 @@ async def fetch_tileset(tileset_type: str, tileset_id: int):
 @app.delete("/{tileset_type}/{tileset_id}", response_model=DeleteResponse)
 def remove_tileset(tileset_type: str, tileset_id: int):
     """
-    Delete tileset data and associated MBTiles files for a specific dataset or collection.
+    Delete a specific tileset.
+
+    Removes tileset data and its associated MBTiles files from the server.
 
     Args:
-        tileset_type (str): The type of tileset (e.g., "datasets" or "collections").
-        tileset_id (str): The identifier of the dataset or collection.
+        tileset_type (str): Type of tileset ('datasets' or 'collections').
+        tileset_id (int): Identifier of the tileset.
 
     Returns:
-        DeleteResponse: Status of the delete operation.
+        DeleteResponse: An object containing:
+            - 'success' (bool): Indicates if the deletion was successful.
+            - 'message' (str): Details about the deletion operation.
     """
     try:
         result = delete_tileset(tileset_type, tileset_id)
@@ -110,6 +120,19 @@ def remove_tileset(tileset_type: str, tileset_id: int):
 
 @app.post("/create", response_model=AddResponse)
 async def insert_tileset(request: TilesetRequest):
+    """
+    Add a new tileset.
+
+    Inserts a tileset into the server by specifying its type and identifier.
+
+    Args:
+        request (TilesetRequest): Request payload containing:
+            - type (str): Type of the tileset ('datasets' or 'collections').
+            - id (int): Identifier of the tileset.
+
+    Returns:
+        AddResponse: An object containing the status of the operation.
+    """
     try:
         result = add_tileset(request.type, request.id)
         return {"status": result}
@@ -120,14 +143,21 @@ async def insert_tileset(request: TilesetRequest):
 @app.get("/elevation/{lat}/{lng}", response_model=Dict[str, Any])
 async def get_elevation(lat: float, lng: float):
     """
-    Get the elevation at a given latitude and longitude.
+    Retrieve elevation data for a given location.
+
+    Calculates the elevation, resolution, and source information for a specific latitude and longitude.
 
     Args:
-        lat (float): Latitude in the URL path.
-        lng (float): Longitude in the URL path.
+        lat (float): Latitude of the location.
+        lng (float): Longitude of the location.
 
     Returns:
-        Dict[str, Any]: Elevation data.
+        Dict[str, Any]: A dictionary containing:
+            - 'elevation' (float): Elevation in metres.
+            - 'ground_resolution' (float): Ground resolution in metres.
+            - 'elevation_resolution' (float): Elevation resolution in metres.
+            - 'elevation_source' (str): Description of the elevation data source.
+            - 'units' (str): Measurement units ('metres').
     """
     try:
         elevation_data = get_elevation_data(lat, lng)
