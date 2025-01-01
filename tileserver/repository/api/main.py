@@ -140,7 +140,7 @@ async def insert_tileset(request: TilesetRequest):
         return {"status": f"Error adding tileset: {str(e)}"}
 
 
-@app.get("/elevation/{lat}/{lng}", response_model=Dict[str, Any])
+@app.get("/elevation/{lat_string}/{lng_string}", response_model=Dict[str, Any])
 async def get_elevation(lat_string: str, lng_string: str):
     """
     Retrieve elevation data for a given location.
