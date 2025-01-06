@@ -19,10 +19,11 @@ spec:
           - sh
           - -c
           - |
-            echo "Zipping Vespa application package...";
-            zip -r /tmp/application.zip /vespa/application-config;
             echo "Deploying Vespa application package...";
-            vespa-deploy prepare /tmp/application.zip && vespa-deploy activate;
+            ls -l /vespa/application
+            cat /vespa/application/hosts.xml
+            cat /vespa/application/services.xml
+            vespa-deploy prepare /vespa/application && vespa-deploy activate
             echo "Deployment complete.";
         envFrom:
           - configMapRef:
