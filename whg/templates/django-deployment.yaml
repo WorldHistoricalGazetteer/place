@@ -35,8 +35,11 @@ spec:
             echo "Repository already cloned. Pulling latest changes...";
             cd /app
             git fetch origin {{ .Values.django.githubBranch }}
+            # Discard any local changes and untracked files
+            git reset --hard origin/{{ .Values.django.githubBranch }} || { echo 'Failed to reset branch'; exit 1; }
+            # Rebase on the latest changes from the remote branch
             git checkout {{ .Values.django.githubBranch }} || { echo 'Failed to checkout branch'; exit 1; }
-            git reset --hard origin/{{ .Values.django.githubBranch }} && git pull --rebase || { echo 'Pulling failed'; exit 1; }
+            git pull --rebase origin {{ .Values.django.githubBranch }} || { echo 'Rebasing failed'; exit 1; }
           fi
           mkdir -p /app/whg/authorisation
           cp --remove-destination /app/whg/secret/local_settings.py /app/whg/

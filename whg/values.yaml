@@ -28,10 +28,10 @@ whgDevAffinity:
 django:
   replicaCount: 1
   image: "worldhistoricalgazetteer/web"
-  imageTag: "0.1.7"
+  imageTag: "1.0.2"
   imagePullPolicy: "IfNotPresent"
   githubRepository: "WorldHistoricalGazetteer/whg3"
-  githubBranch: "staging"
+  githubBranch: "place"
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000

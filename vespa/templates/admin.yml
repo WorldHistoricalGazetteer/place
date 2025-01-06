@@ -20,6 +20,8 @@ spec:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             {{ toYaml .Values.nodeAffinities.admin.required | nindent 12 }}
+      initContainers: # Init container to force wait for readiness of configservers
+        - {{- tpl .Values.common.initContainer $ | nindent 10 }}
       containers:
       - name: vespa-admin
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

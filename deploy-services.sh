@@ -37,6 +37,7 @@ helm install whg ./whg
 # Deploy Vespa manifests
 echo "Deploying Vespa components..."
 helm install vespa ./vespa
+# kubectl exec -it vespa-admin-0 --n vespa -- vespa deploy --config-dir /opt/vespa/etc/vespa ????
 
 if [ "$K8S_CONTROLLER" == 1 ]; then
 

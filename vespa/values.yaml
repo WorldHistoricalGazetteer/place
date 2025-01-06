@@ -13,16 +13,16 @@ image:
   pullPolicy: IfNotPresent
   tag: "8"
 
-imagePullSecrets: []
+imagePullSecrets: [ ]
 nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
   create: true
-  annotations: {}
+  annotations: { }
   name: ""
 
-podAnnotations: {}
+podAnnotations: { }
 
 podSecurityContext:
   fsGroup: 1000
@@ -57,11 +57,11 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-nodeSelector: {}
+nodeSelector: { }
 
-tolerations: []
+tolerations: [ ]
 
-affinity: {}
+affinity: { }
 
 # MetalLB LoadBalancer configuration (useful if you are exposing services via LoadBalancer)
 loadBalancerIP: "auto"  # or specify an IP if you are using MetalLB
@@ -103,9 +103,38 @@ resources:
     limits:
       memory: "1.5G"
 
+common:
+  initContainer: |
+    name: wait-for-config-servers
+    image: alpine:3.18
+    imagePullPolicy: IfNotPresent
+    command:
+      - sh
+      - -c
+      - |
+        echo "Installing curl and jq..."
+        apk add --no-cache curl jq  # Install curl and jq
+        echo "Waiting for all config servers to be ready..."
+        CONFIG_SERVERS=$(echo "$VESPA_CONFIGSERVERS" | tr ',' '\n')
+        for SERVER in $CONFIG_SERVERS; do
+          echo "Checking health of $SERVER..."
+          RESPONSE=$(curl -sf "http://$SERVER:19071/state/v1/health")
+          echo "Response: $RESPONSE"
+          until echo "$RESPONSE" | jq -e '.status.code == "up"' > /dev/null; do
+            echo "$SERVER not ready. Retrying in 5 seconds..."
+            sleep 5
+            RESPONSE=$(curl -sf "http://$SERVER:19071/state/v1/health")  # Retry fetching the health response
+          done
+          echo "$SERVER is ready."
+        done
+        echo "All config servers are ready."
+    envFrom:
+      - configMapRef:
+          name: vespa-config
+
 configserver:
-  configserverJvmArgs: "-Xms32M -Xmx128M" # TODO: Comment out for production
-  configproxyJvmArgs: "-Xms32M -Xmx32M" # TODO: Comment out for production
+  #  configserverJvmArgs: "-Xms32M -Xmx128M" # TODO: Comment out for production
+  #  configproxyJvmArgs: "-Xms32M -Xmx32M" # TODO: Comment out for production
   pvRootPath: "/data/k8s/vespa-config"
   pvs:
     - name: var

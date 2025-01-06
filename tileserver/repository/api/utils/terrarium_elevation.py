@@ -1,3 +1,4 @@
+import json
 import logging
 import math
 import os
@@ -20,68 +21,26 @@ properties_map = {}
 descriptions_map = {}
 idx = rtree.index.Index()
 
+vespa_query_url = os.getenv("VESPA_QUERY_URL",
+                            "http://vespa-query-container-0.vespa-internal.vespa.svc.cluster.local:8080")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for FastAPI.
-
-    This function performs necessary startup tasks and yields control
-    to the application during its lifecycle.
-
-    Args:
-        app (FastAPI): The FastAPI application instance.
-    """
-    init_elevation_data()
-    yield
-
-
-def load_data(file_path: str):
-    """
-    Load data from a pickle file.
-
-    Args:
-        file_path (str): Path to the pickle file.
-
-    Returns:
-        Any: Data loaded from the pickle file, or None if an error occurs.
-    """
-    try:
-        with open(file_path, "rb") as f:
-            data = pickle.load(f)
-        return data
-    except Exception as e:
-        logger.error(f"Error loading pickle file: {e}")
-        return None
-
-
-def init_elevation_data():
-    """
-    Initialise Terrarium elevation metadata by loading it from a pickle file.
-
-    The pickle file is generated from geojson data available
-    at https://github.com/tilezen/joerd/blob/master/docs/data-sources.md
-
-    This function also constructs an RTree index using the loaded data and
-    populates global maps for bounds, geometry, properties, and descriptions.
-    """
-    pickle_file_path = os.path.join(os.path.dirname(__file__), 'data', 'terrarium-data.pkl')
-    data = load_data(pickle_file_path)
-    if data:
-        logger.info("Loaded data from pickle file")
-        global bounds_map, geometry_map, properties_map, descriptions_map, idx
-        bounds_map = data['bounds']
-        geometry_map = data['geometry']
-        properties_map = data['properties']
-        descriptions_map = data['descriptions']
-        logger.info(f"Descriptions: {descriptions_map}")
-
-        # Build the RTree index
-        for i, bounds in bounds_map.items():
-            idx.insert(i, bounds)
-        logger.info("Built RTree index")
-    else:
-        logger.error("Failed to load data or build index")
+descriptions_map = {
+    "austria": "Digital elevation model with 10-metre resolution over Austria, provided by data.gv.at.",
+    "etopo1": "Global ocean bathymetry model with a 1 arc-minute resolution, covering the world’s oceans.",
+    "eudem": "EU-DEM offers 30-metre resolution in most European countries, created from multiple European datasets.",
+    "geoscience_au": "Geoscience Australia's 5-metre resolution DEM, focusing on coastal areas of South Australia, Victoria, and the Northern Territory.",
+    "gmted": "Global Multi-Resolution Terrain Elevation Data at resolutions of 7.5\", 15\", and 30\", covering land globally.",
+    "kartverket": "Norway’s 10-metre resolution Digital Terrain Model, managed by Kartverket.",
+    "mx_lidar": "INEGI’s lidar-based continental relief data for Mexico, offering high accuracy.",
+    "ned": "National Elevation Dataset with 10-metre resolution across most of the United States, excluding Alaska.",
+    "ned13": "Higher-resolution 3-metre data from the US 3DEP program, available in selected areas.",
+    "ned_topobathy": "3-metre resolution dataset of US coastal and water regions, part of the 3DEP initiative.",
+    "nrcan_cdem": "Canadian Digital Elevation Model with variable resolutions from 20 to 400 metres depending on latitude, provided by NRCan.",
+    "nzlinz": "New Zealand’s LINZ 8-metre resolution elevation model, covering the entire country.",
+    "pgdc_5m": "ArcticDEM 5-metre mosaic for polar regions above 60° latitude, covering the Arctic nations.",
+    "srtm": "NASA's Shuttle Radar Topography Mission dataset at 30-metre resolution, excluding high latitudes.",
+    "uk_lidar": "2-metre resolution lidar dataset over the UK, provided by data.gov.uk.",
+}
 
 
 def get_elevation_metadata(lat: float, lng: float, elevation: float):
@@ -96,44 +55,43 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float):
     Returns:
         dict: Elevation metadata including resolution and source.
     """
-    if len(bounds_map) == 0:
-        logger.info("No data loaded from pickle file")
-        return {"elevation_resolution": None, "elevation_source": None}
 
     try:
         logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
 
-        # Query the RTree index with the latitude and longitude
-        result = list(idx.intersection((lng - 0.0001, lat - 0.0001, lng + 0.0001, lat + 0.0001)))
+        # Create a Shapely point for the lat/lng
+        point = shape({'type': 'Point', 'coordinates': [lng, lat]})
 
-        if not result:
-            logger.info("No elevation metadata found")
-            logger.info(f"idx type: {type(idx)}")
-            return {"elevation_resolution": None,
-                    "elevation_source": None}
-
-        # Refine results by checking intersections with geometry_map
-        if len(result) > 1:
-            result = [i for i in result if
-                      geometry_map[i].contains(shape({'type': 'Point', 'coordinates': [lng, lat]}))]
-
-        # Select the feature with the minimum resolution
-        feature_id = min(result, key=lambda x: properties_map[x]['resolution'])
-        feature = properties_map[feature_id]
-        source = feature['source']
-        description = descriptions_map.get(source, "No description available")
-
-        # Round feature resolution to nearest 0.1 metres
-        feature['resolution'] = round(feature['resolution'], 1)
-
-        # Round elevation appropriately
-        elevation = round(round(elevation / feature['resolution']) * feature['resolution'])
-
-        return {
-            "elevation": elevation,
-            "elevation_resolution": feature['resolution'],
-            "elevation_source": description
+        # Perform Vespa query for documents with bounding boxes containing the point
+        query = {
+            "yql": f"select resolution, source, geometry from terrarium_sources where contains(bounding_box, {point.wkt}) order by resolution asc;"
         }
+
+        response = requests.get(f"{vespa_query_url}/document/v1/terrarium_sources/query", params=query)
+        response.raise_for_status()
+
+        results = response.json()['hits']
+
+        if not results:
+            logger.info("No elevation metadata found")
+            return {"elevation_resolution": None, "elevation_source": None}
+
+        # Iterate over the fetched results
+        for source in results:
+            if point.within(shape(json.loads(source['fields']['geometry']))):
+                source['fields']['resolution'] = round(source['fields']['resolution'], 1)
+                elevation = round(round(elevation / source['fields']['resolution']) * source['fields']['resolution'])
+                description = descriptions_map.get(source['fields']['source'], 'No description available')
+                return {
+                    "elevation": elevation,
+                    "elevation_resolution": source['fields']['resolution'],
+                    "elevation_source": description
+                }
+
+        # If no source contains the point
+        logger.info("No source containing the point was found")
+        return {"elevation_resolution": None, "elevation_source": None}
+
     except Exception as e:
         logger.error(f"Error retrieving elevation: {e}")
         return {"elevation_resolution": None, "elevation_source": None}

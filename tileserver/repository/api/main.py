@@ -15,7 +15,7 @@ Dynamically-generated API documentation can be accessed at http://localhost:3008
 '''
 
 # FastAPI app instance
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

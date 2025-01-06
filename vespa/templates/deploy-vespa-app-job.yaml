@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-vespa-app
+  namespace: {{ .Values.namespace }}
+  annotations:
+    "helm.sh/hook": post-install
+spec:
+  ttlSecondsAfterFinished: 300 # Automatically clean up job after 5 minutes
+  template:
+    spec:
+      initContainers: # Init container to force wait for readiness of configservers
+        - {{- tpl .Values.common.initContainer $ | nindent 10 }}
+      containers:
+      - name: deploy-app
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+            echo "Deploying Vespa application package...";
+            vespa-deploy prepare /vespa/application && vespa-deploy activate
+            echo "Deployment complete."
+        envFrom:
+          - configMapRef:
+              name: vespa-config
+        volumeMounts:
+          - name: app-package
+            mountPath: /vespa/application
+      volumes:
+        - name: app-package
+          configMap:
+            name: vespa-app-package
+      restartPolicy: Never

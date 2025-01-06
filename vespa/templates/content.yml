@@ -26,6 +26,8 @@ spec:
               matchLabels:
                 app: vespa-content
             topologyKey: kubernetes.io/hostname
+      initContainers: # Init container to force wait for readiness of configservers
+        - {{- tpl .Values.common.initContainer $ | nindent 10 }}
       containers:
       - name: vespa-content
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

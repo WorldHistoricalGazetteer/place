@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<validation-overrides>
-<allow until="2024-12-18">content-cluster-removal</allow>
-</validation-overrides>

@@ -16,6 +16,8 @@ spec:
         app: vespa-query-container
         name: vespa-internal
     spec:
+      initContainers: # Init container to force wait for readiness of configservers
+        - {{- tpl .Values.common.initContainer $ | nindent 10 }}
       containers:
       - name: vespa-query-container
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

@@ -1,0 +1,23 @@
+schema terrarium_sources {
+    document terrarium_sources {
+        field bounding_box type tensor(x[2],y[2]) {
+            indexing: attribute
+        }
+        field resolution type float {
+            indexing: attribute
+            attribute: fast-search
+        }
+        field source type string {
+            indexing: summary
+        }
+        field geometry type string {
+            indexing: summary
+        }
+    }
+
+    rank-profile smallest_resolution {
+        first-phase {
+            expression: attribute(resolution)
+        }
+    }
+}
