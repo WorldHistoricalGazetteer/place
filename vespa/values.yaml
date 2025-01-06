@@ -5,8 +5,8 @@ replicaCounts:
   configserver: 3
   admin: 1         # Only one admin node is needed
   content: 1       # TODO: Increase this value for production
-  feed: 2
-  query: 2
+  feed: 1          # TODO: Increase this value for production
+  query: 1         # TODO: Increase this value for production
 
 image:
   repository: vespaengine/vespa
@@ -106,14 +106,12 @@ resources:
 common:
   initContainer: |
     name: wait-for-config-servers
-    image: alpine:3.18
+    image: badouralix/curl-jq:alpine
     imagePullPolicy: IfNotPresent
     command:
       - sh
       - -c
       - |
-        echo "Installing curl and jq..."
-        apk add --no-cache curl jq  # Install curl and jq
         echo "Waiting for all config servers to be ready..."
         CONFIG_SERVERS=$(echo "$VESPA_CONFIGSERVERS" | tr ',' '\n')
         for SERVER in $CONFIG_SERVERS; do

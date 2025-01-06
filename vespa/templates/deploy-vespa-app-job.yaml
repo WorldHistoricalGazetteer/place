@@ -19,17 +19,20 @@ spec:
           - sh
           - -c
           - |
+            echo "Zipping Vespa application package...";
+            zip -r /tmp/application.zip /vespa/application-config;
             echo "Deploying Vespa application package...";
-            vespa-deploy prepare /vespa/application && vespa-deploy activate
-            echo "Deployment complete."
+            vespa-deploy prepare /tmp/application.zip && vespa-deploy activate;
+            echo "Deployment complete.";
         envFrom:
           - configMapRef:
               name: vespa-config
         volumeMounts:
-          - name: app-package
-            mountPath: /vespa/application
+          - name: vespa-application-config-files
+            mountPath: /vespa/application-config
+            readOnly: true
       volumes:
-        - name: app-package
+        - name: vespa-application-config-files
           configMap:
-            name: vespa-app-package
+            name: vespa-application-config-files
       restartPolicy: Never

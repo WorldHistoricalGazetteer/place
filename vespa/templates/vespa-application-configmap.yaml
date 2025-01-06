@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vespa-application-config-files
+  namespace: {{ .Values.namespace }}
+data:
+  services.xml: |
+    <services version="1.0">
+        <admin version="2.0">
+            <adminserver hostalias="vespa-adminserver-0"/>
+            <configservers>
+                {{- range $i := until (.Values.replicaCounts.configserver | int) }}
+                <configserver hostalias="vespa-configserver-{{ $i }}"/>
+                {{- end }}
+            </configservers>
+            <cluster-controllers>
+                {{- range $i := until (.Values.replicaCounts.configserver | int) }}
+                <cluster-controller hostalias="vespa-configserver-{{ $i }}"/>
+                {{- end }}
+            </cluster-controllers>
+            <slobroks>
+                {{- range $i := until (.Values.replicaCounts.configserver | int) }}
+                <slobrok hostalias="vespa-configserver-{{ $i }}"/>
+                {{- end }}
+            </slobroks>
+        </admin>
+
+        <container id="feed" version="1.0">
+            <document-api/>
+            <document-processing/>
+            <nodes>
+                {{- range $i := until (.Values.replicaCounts.feed | int) }}
+                <node hostalias="vespa-feed-{{ $i }}"/>
+                {{- end }}
+            </nodes>
+        </container>
+
+        <container id="query" version="1.0">
+            <search/>
+            <nodes>
+                {{- range $i := until (.Values.replicaCounts.query | int) }}
+                <node hostalias="vespa-query-{{ $i }}"/>
+                {{- end }}
+            </nodes>
+        </container>
+
+        <content version="1.0">
+            <min-redundancy>{{ .Values.replicaCounts.content | int }}</min-redundancy>
+            {{- range $i := until (.Values.replicaCounts.content | int) }}
+            <node hostalias="vespa-content-{{ $i }}"/>
+            {{- end }}
+        </content>
+    </services>
+  hosts.xml: |
+    <hosts version="1.0">
+        {{- $namespace := .Values.namespace }}
+
+        {{- range $i := until (int .Values.replicaCounts.configserver) }}
+        <host hostalias="vespa-configserver-{{ $i }}"
+              address="vespa-configserver-{{ $i }}.{{ $namespace }}.svc.cluster.local"/>
+        {{- end }}
+
+        {{- range $i := until (int .Values.replicaCounts.admin) }}
+        <host hostalias="vespa-admin-{{ $i }}" address="vespa-admin-{{ $i }}.{{ $namespace }}.svc.cluster.local"/>
+        {{- end }}
+
+        {{- range $i := until (int .Values.replicaCounts.feed) }}
+        <host hostalias="vespa-feed-{{ $i }}" address="vespa-feed-{{ $i }}.{{ $namespace }}.svc.cluster.local"/>
+        {{- end }}
+
+        {{- range $i := until (int .Values.replicaCounts.query) }}
+        <host hostalias="vespa-query-{{ $i }}" address="vespa-query-{{ $i }}.{{ $namespace }}.svc.cluster.local"/>
+        {{- end }}
+
+        {{- range $i := until (int .Values.replicaCounts.content) }}
+        <host hostalias="vespa-content-{{ $i }}" address="vespa-content-{{ $i }}.{{ $namespace }}.svc.cluster.local"/>
+        {{- end }}
+    </hosts>
