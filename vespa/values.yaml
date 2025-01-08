@@ -7,6 +7,7 @@ replicaCounts:
   content: 1       # TODO: Increase this value for production
   feed: 1          # TODO: Increase this value for production
   query: 1         # TODO: Increase this value for production
+  api: 1           # TODO: Increase this value for production
 
 image:
   repository: vespaengine/vespa
@@ -102,6 +103,11 @@ resources:
       memory: "2G"
     limits:
       memory: "4G"
+  api:
+    requests:
+      memory: "1G"
+    limits:
+      memory: "1G"
 
 common:
   initContainer: |
@@ -175,3 +181,18 @@ ports:
   - containerPort: 19090
   - containerPort: 19098
   - containerPort: 19097
+
+api:
+  image:
+    repository: worldhistoricalgazetteer/vespa-api
+    pullPolicy: IfNotPresent
+    tag: "0.0.1"
+  git:
+    url: "https://github.com/WorldHistoricalGazetteer/place.git"
+    sourceFolder: "vespa/repository"
+  containerPort: 8082
+  service:
+#    type: ClusterIP # Switch to ClusterIP from NodePort for production
+    type: NodePort
+    port: 8082
+    servicePort: 30082

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vespa-api
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.api.service.type }}
+  selector:
+      app: vespa
+      role: api
+  ports:
+    - protocol: TCP
+      port: {{ .Values.api.service.port }}
+      targetPort: {{ .Values.api.service.port }}
+      {{- if eq .Values.api.service.type "NodePort" }}
+      nodePort: {{ .Values.api.service.servicePort }}
+      {{- end }}

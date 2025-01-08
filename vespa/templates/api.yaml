@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vespa-api
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCounts.api }}
+  selector:
+    matchLabels:
+      app: vespa
+      role: api
+  template:
+    metadata:
+      labels:
+        app: vespa
+        role: api
+    spec:
+      initContainers:
+        # Pull code via sparse checkout from GitHub
+        - name: git-sparse-clone
+          image: alpine/git
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /mnt/repo && \
+              cd /mnt/repo && \
+              git init && \
+              git remote add origin {{ .Values.api.git.url }} && \
+              git sparse-checkout init --cone && \
+              git sparse-checkout set {{ .Values.api.git.sourceFolder }} && \
+              git pull origin main
+          volumeMounts:
+            - mountPath: /mnt/repo
+              name: repo-volume
+        # Init container to force wait for readiness of configservers
+        - {{- tpl .Values.common.initContainer $ | nindent 10 }}
+      containers:
+      - name: vespa-api
+        image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+        imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.api.containerPort }}
+        securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
+        env:
+        - name: VESPA_QUERY_HOST
+          value: "http://vespa-query-container-0.vespa-internal.{{ .Values.namespace }}.svc.cluster.local:8080"
+        - name: VESPA_FEED_HOST
+          value: "http://vespa-feed-container-0.vespa-internal.{{ .Values.namespace }}.svc.cluster.local:8080"
+        resources: {{- toYaml .Values.resources.api | nindent 10 }}
+        volumeMounts:
+          - mountPath: /code
+            name: repo-volume
+      volumes:
+        - name: repo-volume
+          emptyDir: {}
+
