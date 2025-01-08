@@ -45,6 +45,8 @@ spec:
         - containerPort: {{ .Values.api.containerPort }}
         securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
         env:
+        - name: VESPA_NAMESPACE
+          value: "{{ .Values.namespace }}"
         - name: VESPA_QUERY_HOST
           value: "http://vespa-query-container-0.vespa-internal.{{ .Values.namespace }}.svc.cluster.local:8080"
         - name: VESPA_FEED_HOST

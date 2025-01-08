@@ -2,7 +2,8 @@
 
 import os
 
-# Vespa container hosts
+namespace = os.getenv("VESPA_NAMESPACE", "vespa")
+
 host_mapping = {
     "query": os.getenv("VESPA_QUERY_HOST",
                        "http://vespa-query-container-0.vespa-internal.vespa.svc.cluster.local:8080"),
