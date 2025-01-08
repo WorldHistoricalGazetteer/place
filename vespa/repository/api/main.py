@@ -3,14 +3,33 @@
 from typing import Union, Dict, Any
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 
 from .feed.processor import process_documents, feed_progress  # Import feed processing functions
+from .search.processor import filter_and_paginate_documents
 from .system.status import get_vespa_status  # Import the function from the status module
 from .utils import get_uuid
 
 app = FastAPI()
+
+
+@app.get("/search")
+async def search_documents(
+        doc_type: str = Query(..., description="The document type to filter by"),
+        page: int = Query(1, ge=1, description="The page number for pagination (starting from 1)"),
+        limit: int = Query(10, ge=1, le=100, description="The number of results per page (max 100)")
+):
+    """
+    Search for documents of a given type with pagination.
+    """
+    try:
+        results = await filter_and_paginate_documents(doc_type, page, limit)
+        return JSONResponse(status_code=200, content=results)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
 @app.get("/status")
