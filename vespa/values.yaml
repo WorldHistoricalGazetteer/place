@@ -189,7 +189,7 @@ api:
     tag: "0.0.1"
   git:
     url: "https://github.com/WorldHistoricalGazetteer/place.git"
-    sourceFolder: "vespa/repository"
+    sourceFolder: "vespa/repository/"
   containerPort: 8082
   service:
 #    type: ClusterIP # Switch to ClusterIP from NodePort for production

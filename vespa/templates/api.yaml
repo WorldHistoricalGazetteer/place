@@ -28,9 +28,10 @@ spec:
               cd /mnt/repo && \
               git init && \
               git remote add origin {{ .Values.api.git.url }} && \
-              git sparse-checkout init --cone && \
-              git sparse-checkout set {{ .Values.api.git.sourceFolder }} && \
-              git pull origin main
+              git config core.sparseCheckout true && \
+              echo "{{ .Values.api.git.sourceFolder }}" > .git/info/sparse-checkout && \
+              git pull origin main && \
+              ls -la "/mnt/repo/{{ .Values.api.git.sourceFolder }}"
           volumeMounts:
             - mountPath: /mnt/repo
               name: repo-volume
@@ -51,6 +52,7 @@ spec:
         resources: {{- toYaml .Values.resources.api | nindent 10 }}
         volumeMounts:
           - mountPath: /code
+            subPath: {{ .Values.api.git.sourceFolder }}
             name: repo-volume
       volumes:
         - name: repo-volume
