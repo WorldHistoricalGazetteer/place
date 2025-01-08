@@ -7,13 +7,15 @@ spec:
   replicas: {{ .Values.replicaCounts.admin }}
   selector:
     matchLabels:
-      app: vespa-admin
+      app: vespa
+      role: admin
       name: vespa-internal
   serviceName: vespa-internal
   template:
     metadata:
       labels:
-        app: vespa-admin
+        app: vespa
+        role: admin
         name: vespa-internal
     spec:
       affinity:

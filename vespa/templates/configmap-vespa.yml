@@ -6,6 +6,7 @@ metadata:
 data:
   # NOTE: Do not split the following line as that would break internal parsing
   VESPA_CONFIGSERVERS: "{{- $servers := (.Values.replicaCounts.configserver | int) }}{{- range $i := until $servers }}vespa-configserver-{{ $i }}.vespa-internal.{{ $.Values.namespace }}.svc.cluster.local{{- if ne (add $i 1) $servers }}, {{- end }}{{- end }}"
+  HTTP_SERVER_BIND: "0.0.0.0"
   {{- if .Values.configserver.configserverJvmArgs }}
   VESPA_CONFIGSERVER_JVMARGS: "{{ .Values.configserver.configserverJvmArgs }}"
   {{- end }}

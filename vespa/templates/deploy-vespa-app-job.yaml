@@ -4,7 +4,7 @@ metadata:
   name: deploy-vespa-app
   namespace: {{ .Values.namespace }}
   annotations:
-    "helm.sh/hook": post-install
+    "helm.sh/hook": post-install,post-upgrade
 spec:
   ttlSecondsAfterFinished: 300 # Automatically clean up job after 5 minutes
   template:
@@ -19,21 +19,47 @@ spec:
           - sh
           - -c
           - |
-            echo "Deploying Vespa application package...";
-            ls -l /vespa/application
-            cat /vespa/application/hosts.xml
-            cat /vespa/application/services.xml
-            vespa-deploy prepare /vespa/application && vespa-deploy activate
-            echo "Deployment complete.";
+            printf "\nDeploying Vespa application package...\n";
+            mkdir -p /tmp/application-deployment
+            cp -L /application-deployment/hosts-services/* /tmp/application-deployment
+            cp -Lr /application-deployment/schemas /tmp/application-deployment/schemas
+            cp -Lr /application-deployment/docproc /tmp/application-deployment/docproc
+            # Strip the carriage returns from all files including those in subdirectories
+            find /tmp/application-deployment -type f -exec sed -i 's/\r//' {} \;
+            printf "\nContents of /tmp/application-deployment:\n";
+            ls -la /tmp/application-deployment
+            printf "\nContents of /tmp/application-deployment/schemas:\n";
+            ls -la /tmp/application-deployment/schemas
+            printf "\nContents of /tmp/application-deployment/docproc:\n";
+            ls -la /tmp/application-deployment/docproc
+            printf "\nContents of /tmp/application-deployment/hosts.xml:\n";
+            cat -A /tmp/application-deployment/hosts.xml
+            printf "\nContents of /tmp/application-deployment/services.xml:\n";
+            cat -A /tmp/application-deployment/services.xml
+            printf "\nDeploying Vespa application package...\n";
+            vespa-deploy prepare /tmp/application-deployment && vespa-deploy activate
+            printf "\nDeployment complete.\n";
         envFrom:
           - configMapRef:
               name: vespa-config
         volumeMounts:
-          - name: vespa-application-config-files
-            mountPath: /vespa/application-config
+          - name: vespa-application-hosts-services
+            mountPath: /application-deployment/hosts-services
+            readOnly: true
+          - name: vespa-application-schemas
+            mountPath: /application-deployment/schemas
+            readOnly: true
+          - name: vespa-application-docproc
+            mountPath: /application-deployment/docproc
             readOnly: true
       volumes:
-        - name: vespa-application-config-files
+        - name: vespa-application-hosts-services
           configMap:
-            name: vespa-application-config-files
+            name: vespa-application-hosts-services
+        - name: vespa-application-schemas
+          configMap:
+            name: vespa-application-schemas
+        - name: vespa-application-docproc
+          configMap:
+            name: vespa-application-docproc
       restartPolicy: Never

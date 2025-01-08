@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vespa-application-schemas
+  namespace: {{ .Values.namespace }}
+data:
+  {{ (.Files.Glob "files/schemas/*").AsConfig | nindent 2 }}

@@ -99,9 +99,9 @@ resources:
       memory: "1.5G"
   query:
     requests:
-      memory: "1.5G"
+      memory: "2G"
     limits:
-      memory: "1.5G"
+      memory: "4G"
 
 common:
   initContainer: |
@@ -122,6 +122,7 @@ common:
             echo "$SERVER not ready. Retrying in 5 seconds..."
             sleep 5
             RESPONSE=$(curl -sf "http://$SERVER:19071/state/v1/health")  # Retry fetching the health response
+            echo $RESPONSE
           done
           echo "$SERVER is ready."
         done
@@ -169,3 +170,8 @@ nodeAffinities:
               operator: In
               values:
                 - "true"
+ports:
+  - containerPort: 8080
+  - containerPort: 19090
+  - containerPort: 19098
+  - containerPort: 19097

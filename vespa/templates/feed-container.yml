@@ -7,13 +7,15 @@ spec:
   replicas: {{ .Values.replicaCounts.feed }}
   selector:
     matchLabels:
-      app: vespa-feed-container
+      app: vespa
+      role: feed
       name: vespa-internal
   serviceName: vespa-internal
   template:
     metadata:
       labels:
-        app: vespa-feed-container
+        app: vespa
+        role: feed
         name: vespa-internal
     spec:
       initContainers: # Init container to force wait for readiness of configservers
@@ -21,8 +23,9 @@ spec:
       containers:
       - name: vespa-feed-container
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        args: ["services"]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports: {{- toYaml .Values.ports | nindent 10 }}
+        args: ["services"]
         securityContext: {{- toYaml .Values.securityContext.container | nindent 10 }}
         envFrom:
         - configMapRef:

@@ -9,8 +9,10 @@ spec:
   # Set LoadBalancer for an endpoint reachable from the internet
   #type: LoadBalancer
   selector:
-    app: vespa-query-container
+    app: vespa
+    role: query
   ports:
   - name: api
+    protocol: TCP
     port: 8080
     targetPort: 8080

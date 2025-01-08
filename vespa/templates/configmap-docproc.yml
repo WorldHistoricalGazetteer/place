@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vespa-application-docproc
+  namespace: {{ .Values.namespace }}
+data:
+  {{ (.Files.Glob "files/docproc/*").AsConfig | nindent 2 }}

@@ -276,6 +276,15 @@ export CLONE_TILES=true
 sudo chmod +x ./*.sh && sudo -E ./deploy.sh
 ```
 
+##### Vespa Status
+
+The readiness of the `feed` and `query` containers can be checked inside a configserver with:
+
+```bash
+vespa status -t http://vespa-feed-container-0.vespa-internal.vespa.svc.cluster.local:8080
+vespa status -t http://vespa-query-container-0.vespa-internal.vespa.svc.cluster.local:8080
+````
+
 ##### Expose services (local development only)
 
 ```bash
@@ -311,31 +320,4 @@ sudo chmod +x ./*.sh && sudo -E ./deploy-services.sh
 ```bash
 # You MUST replace <kubeadm-join-command> with the actual join command from the master node.
 sudo chmod +x ./*.sh && sudo -E ./deploy.sh "<kubeadm-join-command>"
-```
-
-### Check loading of example Vespa application
-
-```bash
-# Port-forward to Vespa Config Server
-sudo kubectl port-forward pod/vespa-configserver-0 -n vespa 19071 &
-export PORT_FORWARD_PID=$!
-
-# Wait for port-forwarding to establish
-wait_for_port() {
-  local port=$1
-  echo "Waiting for port $port to be ready..."
-  while ! nc -z localhost "$port"; do
-    sleep 0.5
-  done
-  echo "Port $port is now ready."
-}
-wait_for_port 19071
-
-# Load application
-cd ./vespa/application/config
-zip -r - . |   curl --header Content-Type:application/zip   --data-binary @-   http://localhost:19071/application/v2/tenant/default/prepareandactivate
-cd ../../../
-
-# Terminate the port-forward process
-sudo kill $PORT_FORWARD_PID
 ```

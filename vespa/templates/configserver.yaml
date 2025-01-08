@@ -7,13 +7,15 @@ spec:
   replicas: {{ .Values.replicaCounts.configserver }}
   selector:
     matchLabels:
-      app: vespa-configserver
+      app: vespa
+      role: configserver
       name: vespa-internal
   serviceName: vespa-internal
   template:
     metadata:
       labels:
-        app: vespa-configserver
+        app: vespa
+        role: configserver
         name: vespa-internal
     spec:
       affinity:
