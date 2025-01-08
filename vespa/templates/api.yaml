@@ -51,6 +51,8 @@ spec:
           value: "http://vespa-query.{{ .Values.namespace }}.svc.cluster.local:8080"
         - name: VESPA_FEED_HOST
           value: "http://vespa-feed.{{ .Values.namespace }}.svc.cluster.local:8080"
+        - name: VESPA_BATCH_FEED_SIZE
+          value: "{{ .Values.api.batchFeedSize }}"
         resources: {{- toYaml .Values.resources.api | nindent 10 }}
         volumeMounts:
           - mountPath: /code

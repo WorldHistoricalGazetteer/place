@@ -186,7 +186,7 @@ api:
   image:
     repository: worldhistoricalgazetteer/vespa-api
     pullPolicy: IfNotPresent
-    tag: "0.0.1"
+    tag: "0.0.3"
   git:
     url: "https://github.com/WorldHistoricalGazetteer/place.git"
     sourceFolder: "vespa/repository/"
@@ -196,3 +196,4 @@ api:
     type: NodePort
     port: 8082
     servicePort: 30082
+  batchFeedSize: 500

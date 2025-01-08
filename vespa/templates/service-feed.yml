@@ -6,8 +6,6 @@ metadata:
   labels:
     app: vespa
 spec:
-  # Set LoadBalancer for an endpoint reachable from the internet
-  #type: LoadBalancer
   selector:
     app: vespa
     role: feed
