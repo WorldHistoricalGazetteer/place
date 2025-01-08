@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from system.status import get_vespa_status  # Import the function from the status module
+from .system.status import get_vespa_status  # Import the function from the status module
 
 app = FastAPI()
 
