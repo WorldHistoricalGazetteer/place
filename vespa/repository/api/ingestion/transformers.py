@@ -279,10 +279,10 @@ class DocTransformer:
     }
 
     @staticmethod
-    def transform(data, dataset_name):
-        transformers = DocTransformer.transformers.get(dataset_name)
-        if not transformers:
+    def transform(data, dataset_name, transformer_index=0):
+        transformer = DocTransformer.transformers.get(dataset_name)[transformer_index]
+        if not transformer:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
 
-        results = [transformer(data) for transformer in transformers]
+        results = transformer(data)
         return results

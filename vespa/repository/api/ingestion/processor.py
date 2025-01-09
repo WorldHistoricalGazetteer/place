@@ -53,7 +53,7 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
                         logger.info, ingestion_progress, task_id, "processing",
                         f"Processing document {count + 1}: {str(document)[:3000]}..."
                     )
-                    transformed_document, toponyms = DocTransformer.transform(document, dataset_name)
+                    transformed_document, toponyms = DocTransformer.transform(document, dataset_name, transformer_index=i)
                     document_file.write(f"{transformed_document}\n".encode('utf-8'))  # Write each transformed document to the file
 
             # Process the file
