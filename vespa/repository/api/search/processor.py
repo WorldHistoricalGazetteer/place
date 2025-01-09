@@ -28,7 +28,7 @@ async def filter_and_paginate_documents(doc_type: str, page: int, limit: int) ->
         try:
             # Send a query to Vespa
             response = await client.get(query_url, params={
-                "yql": f"select * from {doc_type} where true",
+                "yql": f"select * from sources * where true",
                 "hits": limit,
                 "offset": offset
             })
