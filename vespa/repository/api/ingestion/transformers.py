@@ -1,11 +1,12 @@
-# /ingestion/transfomers.py
-from ..gis.utils import isocodes
+# /ingestion/transformers.py
+from ..gis.utils import isocodes, bbox
+from ..utils import get_uuid
 
 
-class NPRTransformer:
+class DocTransformer:
     """
     A utility class for transforming raw data from various geographic or historical datasets
-    into a consistent Normalised Place Record (NPR) format.
+    into a consistent format, primarily the Normalised Place Record (NPR) format.
 
     The transformation process involves:
     - Structuring raw data into a standardised NPR schema.
@@ -44,7 +45,7 @@ class NPRTransformer:
                     {"romanized": "Athens", "language": "en", "start": 1453}
                 ]
             }
-        >>> result = NPRTransformer.transform(data, "Pleiades")
+        >>> result = DocTransformer.transform(data, "Pleiades")
         >>> print(result)
 
     Notes:
@@ -88,7 +89,7 @@ class NPRTransformer:
                     "feature_classes": data.get("placeTypes", []),
                     "ccodes": isocodes(
                         data.get("features", [{'type': 'Point', 'coordinates': data.get("reprPoint", None)}]),
-                        has_Decimal=True),
+                        has_decimal=True),
                     "lpf_feature": {},  # TODO: Build LPF feature
                 },
                 [
@@ -244,11 +245,42 @@ class NPRTransformer:
                 ]
             )
         ],
+        "ISO3166": [
+            lambda data: (
+                {
+                    "put": f"id:vespa:iso3166::{data.get('properties', {}).get('ISO_A2', get_uuid())}",
+                    "fields": {
+                        "name": data.get("properties", {}).get("ADMIN", None),
+                        "code2": data.get("properties", {}).get("ISO_A2", None),
+                        "code3": data.get("properties", {}).get("ISO_A3", None),
+                        "geometry": data.get("geometry", None),
+                        "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
+                    },
+                },
+                [
+                ]
+            )
+        ],
+        "Terrarium": [
+            lambda data: (
+                {
+                    "put": f"id:vespa:terrarium::{data.get('properties', {}).get('id', get_uuid())}",
+                    "fields": {
+                        "resolution": data.get("properties", {}).get("resolution", None),
+                        "source": data.get("properties", {}).get("source", None),
+                        "geometry": data.get("geometry", None),
+                        "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
+                    },
+                },
+                [
+                ]
+            )
+        ],
     }
 
     @staticmethod
     def transform(data, dataset_name):
-        transformers = NPRTransformer.transformers.get(dataset_name)
+        transformers = DocTransformer.transformers.get(dataset_name)
         if not transformers:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
 

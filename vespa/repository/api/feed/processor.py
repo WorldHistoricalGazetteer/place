@@ -46,27 +46,18 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
                     feed_progress[task_id] = {"status": "Failed", "error": f"Error fetching URL: {str(e)}"}
                     return
             elif os.path.isfile(documents):
-                with open(documents, "r") as f:
-                    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                        tmp_file.write(f.read())
-                        doc_file_path = tmp_file.name
+                doc_file_path = documents
             else:
                 feed_progress[task_id] = {"status": "Failed",
                                           "error": f"Provided string ({documents}) is neither a valid URL nor a file path."}
                 return
-            with open(doc_file_path, "rb") as f, tempfile.NamedTemporaryFile(delete=False) as processed_file:
-                objects = ijson.items(f, '')
-                for obj in objects:
-                    if "id" not in obj:
-                        obj["id"] = f"id:{namespace}:{doc_type}::{get_uuid()}"
-                    json.dump(obj, processed_file)
-                    processed_file.write(b"\n")
         elif isinstance(documents, list):  # If it's a list of documents
             documents = [{"id": f"id:{namespace}:{doc_type}::{get_uuid()}", **doc} for doc in documents]
-            with tempfile.NamedTemporaryFile(delete=False) as processed_file:
-                json.dump(documents, processed_file)
-                processed_file.seek(0)
-        command = ["vespa", "feed", processed_file.name]
+            with tempfile.NamedTemporaryFile(delete=False) as doc_file:
+                json.dump(documents, doc_file)
+                doc_file.seek(0)
+                doc_file_path = doc_file.name
+        command = ["vespa", "feed", doc_file_path]
 
     try:
         result = subprocess.run(
@@ -83,7 +74,5 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
     except Exception as e:
         feed_progress[task_id] = {"status": "Failed", "error": str(e)}
     finally:
-        if doc_file_path:
+        if doc_file_path and not os.path.isfile(documents): # Clean up any temporary file, but not any passed file
             os.remove(doc_file_path)
-        if processed_file:
-            os.remove(processed_file.name)

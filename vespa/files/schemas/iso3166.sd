@@ -1,0 +1,38 @@
+schema iso3166 {
+    document iso3166 {
+        # Bounding box field (tensor representation of [minX, minY], [maxX, maxY])
+        field bounding_box type tensor(x[2],y[2]) {
+            indexing: attribute
+        }
+
+        # Country name
+        field name type string {
+            indexing: attribute
+            attribute: fast-search
+        }
+
+        # ISO Alpha-2 code (e.g., AW, AF)
+        field id type string {
+            indexing: attribute
+            attribute: fast-search
+        }
+
+        # ISO Alpha-3 code (e.g., ABW, AFG)
+        field code3 type string {
+            indexing: attribute
+            attribute: fast-search
+        }
+
+        # Geometry field (stored as a JSON string or another suitable format)
+        field geometry type string {
+            indexing: summary
+        }
+    }
+
+    # Default rank profile
+    rank-profile default {
+        first-phase {
+            expression: nativeRank(id)
+        }
+    }
+}

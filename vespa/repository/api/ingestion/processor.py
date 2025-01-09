@@ -1,12 +1,14 @@
 # /ingestion/processor.py
 import logging
+import os
 import tempfile
 from typing import Dict, Any
 
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
-from .transformers import NPRTransformer
+from .transformers import DocTransformer
 from ..feed.processor import process_documents
+from ..utils import log_message
 
 logger = logging.getLogger(__name__)
 ingestion_progress = {}
@@ -24,42 +26,56 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
     dataset_config = next((config for config in REMOTE_DATASET_CONFIGS if config['dataset_name'] == dataset_name), None)
 
     if dataset_config is None:
-        msg = f"Dataset configuration not found for dataset: {dataset_name}"
-        logger.error(msg)
-        ingestion_progress[task_id] = {"status": "error", "message": msg}
-        return {"status": "error", "message": msg}
+        return log_message(
+            logger.info, ingestion_progress, task_id, "error",
+            f"Dataset configuration not found for dataset: {dataset_name}"
+        )
 
     # TODO: Either remove existing data from Vespa or update
 
     try:
         # Process each file in the dataset configuration
-        for file_config in dataset_config['files']:
+        for i, file_config in enumerate(dataset_config['files']):
 
             # Use StreamFetcher to get the stream of data from the file URL
             stream_fetcher = StreamFetcher(file_config)
             documents = stream_fetcher.get_items()
             with tempfile.NamedTemporaryFile(delete=False) as document_file:
-                for document in documents:
-                    transformed_document, toponyms = NPRTransformer.transform(document, dataset_name)
+                temp_file_path = document_file.name
+                log_message(
+                    logger.info, ingestion_progress, task_id, "processing",
+                    f"Processing dataset: {dataset_name} ({i + 1}/{len(dataset_config['files'])})"
+                )
+                for count, document in enumerate(documents):
+                    if limit is not None and count >= limit:
+                        break
+                    transformed_document, toponyms = DocTransformer.transform(document, dataset_name)
                     document_file.write(f"{transformed_document}\n".encode('utf-8'))  # Write each transformed document to the file
-                    document_file.flush()  # Ensure the data is written to disk
-                document_file.close()  # Close the file to ensure it's not in use when passed
-                # Send documents to the Vespa feed processor
-                process_documents('npr', document_file.name, task_id)
 
-            msg = f"Successfully processed dataset: {dataset_name}"
-            logger.info(msg)
-            ingestion_progress[task_id] = {"status": "success", "message": msg}
-            return {"status": "success", "message": msg}
+            # Process the file
+            try:
+                log_message(
+                    logger.info, ingestion_progress, task_id, "processing",
+                    f"Sending documents to Vespa: {dataset_name} ({i + 1}/{len(dataset_config['files'])})"
+                )
+                process_documents(dataset_config['vespa_schema'], temp_file_path, task_id)
+            finally:
+                # Ensure the tempfile is deleted even if processing fails
+                os.remove(temp_file_path)
+
+        return log_message(
+            logger.info, ingestion_progress, task_id, "success",
+            f"Successfully processed dataset: {dataset_name}"
+        )
 
     except ValueError as e:
-        msg = f"ValueError while processing dataset: {e}"
-        logger.error(msg)
-        ingestion_progress[task_id] = {"status": "error", "message": msg}
-        return {"status": "error", "message": msg}
+        return log_message(
+            logger.exception, ingestion_progress, task_id, "error",
+            f"ValueError while processing dataset: {e}"
+        )
 
     except Exception as e:
-        msg = f"Error processing dataset: {e}"
-        logger.error(msg)
-        ingestion_progress[task_id] = {"status": "error", "message": msg}
-        return {"status": "error", "message": msg}
+        return log_message(
+            logger.exception, ingestion_progress, task_id, "error",
+            f"Error processing dataset: {e}"
+        )

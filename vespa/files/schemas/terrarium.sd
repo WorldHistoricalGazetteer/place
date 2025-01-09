@@ -1,5 +1,5 @@
-schema terrarium_sources {
-    document terrarium_sources {
+schema terrarium {
+    document terrarium {
         field bounding_box type tensor(x[2],y[2]) {
             indexing: attribute
         }

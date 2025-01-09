@@ -5,6 +5,7 @@ REMOTE_DATASET_CONFIGS = [
     { # 2024: 37k+ places
         'dataset_name': 'Pleiades',
         'namespace': 'pleiades',
+        'vespa_schema': 'npr',
         'api_item': 'https://pleiades.stoa.org/places/<id>/json',
         'citation': 'Pleiades: A community-built gazetteer and graph of ancient places. Copyright © Institute for the Study of the Ancient World. Sharing and remixing permitted under terms of the Creative Commons Attribution 3.0 License (cc-by). https://pleiades.stoa.org/',
         'files': [
@@ -18,6 +19,7 @@ REMOTE_DATASET_CONFIGS = [
     { # 2024: 12m+ places
         'dataset_name': 'GeoNames',
         'namespace': 'gn',
+        'vespa_schema': 'npr',
         'api_item': 'http://api.geonames.org/getJSON?formatted=true&geonameId=<id>&username=<username>&style=full',
         'citation': 'GeoNames geographical database. https://www.geonames.org/',
         'files': [
@@ -47,6 +49,7 @@ REMOTE_DATASET_CONFIGS = [
     { # 2024: 3m+ places
         'dataset_name': 'TGN',
         'namespace': 'tgn',
+        'vespa_schema': 'npr',
         'api_item': 'https://vocab.getty.edu/tgn/<id>.jsonld',
         'citation': 'The Getty Thesaurus of Geographic Names® (TGN) is provided by the J. Paul Getty Trust under the Open Data Commons Attribution License (ODC-By) 1.0. https://www.getty.edu/research/tools/vocabularies/tgn/',
         'files': [
@@ -71,6 +74,7 @@ REMOTE_DATASET_CONFIGS = [
     { # 2024: 8m+ items classified as places
         'dataset_name': 'Wikidata',
         'namespace': 'wd',
+        'vespa_schema': 'npr',
         'api_item': 'https://www.wikidata.org/wiki/Special:EntityData/<id>.json',
         'citation': 'Wikidata is a free and open knowledge base that can be read and edited by both humans and machines. https://www.wikidata.org/',
         'files': [
@@ -84,6 +88,7 @@ REMOTE_DATASET_CONFIGS = [
     { # 2024: 6m+ nodes tagged as places
         'dataset_name': 'OSM',
         'namespace': 'osm',
+        'vespa_schema': 'npr',
         'api_item': 'https://nominatim.openstreetmap.org/details.php?osmtype=R&osmid=<id>&format=json',
         'citation': 'OpenStreetMap is open data, licensed under the Open Data Commons Open Database License (ODbL). https://www.openstreetmap.org/',
         'files': [
@@ -96,6 +101,7 @@ REMOTE_DATASET_CONFIGS = [
     {
         'dataset_name': 'LOC',
         'namespace': 'loc',
+        'vespa_schema': 'npr',
         'api_item': 'https://www.loc.gov/item/<id>/',
         'citation': 'Library of Congress. https://www.loc.gov/',
         'files': [
@@ -108,6 +114,7 @@ REMOTE_DATASET_CONFIGS = [
     {
         'dataset_name': 'GB1900',
         'namespace': 'GB1900',
+        'vespa_schema': 'npr',
         'api_item': '',
         'citation': 'GB1900 Gazetteer: British place names, 1888-1914. https://www.pastplace.org/data/#tabgb1900',
         'files': [
@@ -121,12 +128,41 @@ REMOTE_DATASET_CONFIGS = [
     { #  24,000 place names
         'dataset_name': 'IndexVillaris',
         'namespace': 'IV1680',
+        'vespa_schema': 'npr',
         'api_item': '',
         'citation': 'Index Villaris, 1680',
         'files': [
             {
                 'url': 'https://github.com/docuracy/IndexVillaris1680/raw/refs/heads/main/docs/data/IV-GB1900-OSM-WD.lp.json',
                 'file_type': 'json',
+            }
+        ],
+    },
+    { # ISO Countries
+        'dataset_name': 'ISO3166',
+        'namespace': 'iso3166',
+        'vespa_schema': 'iso3166',
+        'api_item': '',
+        'citation': 'Natural Earth Data. Public domain. https://www.naturalearthdata.com/',
+        'files': [
+            {
+                'url': 'https://datahub.io/core/geo-countries/_r/-/data/countries.geojson',
+                'file_type': 'json',
+                'item_path': 'features',
+            }
+        ],
+    },
+    { # Terrarium Sources
+        'dataset_name': 'Terrarium',
+        'namespace': 'terrarium',
+        'vespa_schema': 'terrarium',
+        'api_item': '',
+        'citation': 'Mapzen Terrarium. https://github.com/mapzen/terrarium',
+        'files': [
+            {
+                'url': 'https://s3.amazonaws.com/elevation-tiles-prod/docs/footprints.geojson.gz',
+                'file_type': 'json',
+                'item_path': 'features',
             }
         ],
     },

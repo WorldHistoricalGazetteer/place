@@ -1,6 +1,7 @@
 # /utils.py
 import tempfile
 import uuid
+from typing import Callable, Dict, Any
 from urllib.parse import urlparse
 
 import httpx
@@ -38,3 +39,27 @@ async def url_to_tempfile(url: str) -> str:
             raise Exception(f"HTTP error: {e.response.text}")
         except Exception as e:
             raise Exception(f"An error occurred: {str(e)}")
+
+
+def log_message(
+        log_method: Callable[[str], None],
+        progress_monitor: Dict[str, Any] = None,
+        task_id: str = None,
+        status: str = None,
+        message: str = None
+) -> Dict[str, Any]:
+    """
+    Logs a message using the specified log method and optionally updates a progress monitor.
+
+    :param log_method: The logger method to use (e.g., logger.info, logger.exception)
+    :param progress_monitor: Optional dictionary to track progress
+    :param task_id: Task ID for tracking progress
+    :param status: Status message to update in the progress monitor
+    :param message: Log message
+    :return: Updated progress entry or None
+    """
+    log_method(message)
+    if progress_monitor is not None and task_id is not None:
+        progress_monitor[task_id] = {"status": status, "message": message}
+        return progress_monitor[task_id]
+    return {"status": status, "message": message}
