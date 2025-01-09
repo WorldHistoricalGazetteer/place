@@ -129,7 +129,7 @@ class StreamFetcher:
 
     def _parse_json_stream(self, stream):
         # Using ijson for efficient JSON parsing from stream
-        parser = ijson.items(stream, self.item_path)
+        parser = ijson.items(stream, f"{self.item_path}.item")
         for item in parser:
             yield item
 
