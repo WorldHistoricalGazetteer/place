@@ -1,4 +1,5 @@
 # /ingestion/processor.py
+import asyncio
 import logging
 import os
 import tempfile
@@ -62,7 +63,7 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
                     logger.info, ingestion_progress, task_id, "processing",
                     f"Sending documents to Vespa: {dataset_name} ({i + 1}/{len(dataset_config['files'])})"
                 )
-                process_documents(dataset_config['vespa_schema'], temp_file_path, task_id)
+                asyncio.run(process_documents(dataset_config['vespa_schema'], temp_file_path, task_id))
             finally:
                 # Ensure the tempfile is deleted even if processing fails
                 os.remove(temp_file_path)
