@@ -1,5 +1,6 @@
 # /main.py
 
+import logging
 from typing import Union, Dict, Any
 from uuid import UUID
 
@@ -7,9 +8,18 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 
 from .feed.processor import process_documents, feed_progress  # Import feed processing functions
+from .ingestion.processor import process_dataset
 from .search.processor import filter_and_paginate_documents
 from .system.status import get_vespa_status  # Import the function from the status module
 from .utils import get_uuid
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -45,6 +55,26 @@ async def get_status():
     return JSONResponse(
         status_code=200,
         content=statuses,
+    )
+
+
+@app.get("/ingest/{dataset_name}/{limit}")
+async def ingest_dataset(dataset_name: str, background_tasks: BackgroundTasks, limit: int = None):
+    """
+    Ingest a dataset by name with an optional limit parameter.
+    """
+    task_id = get_uuid()  # Generate a unique task ID
+
+    # Add the background task to process the dataset
+    background_tasks.add_task(process_dataset, dataset_name, task_id, limit)
+
+    return JSONResponse(
+        status_code=202,
+        content={
+            "message": f"Ingestion of {dataset_name} started",
+            "task_id": task_id,
+            "status_url": f"/status/{task_id}"
+        }
     )
 
 

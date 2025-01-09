@@ -95,9 +95,9 @@ resources:
       memory: "1G"
   feed:
     requests:
-      memory: "1.5G"
+      memory: "2G"
     limits:
-      memory: "1.5G"
+      memory: "8G"
   query:
     requests:
       memory: "2G"
