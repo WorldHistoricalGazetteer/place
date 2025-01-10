@@ -266,7 +266,7 @@ class DocTransformer:
                 {
                     "put": f"id:vespa:terrarium::{data.get('properties', {}).get('id', get_uuid())}",
                     "fields": {
-                        "resolution": data.get("properties", {}).get("resolution", None),
+                        "resolution": float(data.get("properties", {}).get("resolution", None)),
                         "source": data.get("properties", {}).get("source", None),
                         "geometry": float_geometry(data.get("geometry", None), True),
                         "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},

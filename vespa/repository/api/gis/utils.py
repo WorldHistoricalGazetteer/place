@@ -25,7 +25,7 @@ def bbox(geometry, tensor=True, errors=True):
 
     # Short-circuit for Point geometries
     if isinstance(geom, Point):
-        x, y = geom.x, geom.y
+        x, y = float(geom.x), float(geom.y)
         return {
             "x": [x, x],
             "y": [y, y]
