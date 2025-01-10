@@ -10,11 +10,12 @@ class TaskTracker:
     def __init__(self):
         self.tasks: Dict[str, Dict[str, Any]] = {}
 
-    def add_task(self, task_id: str, task_info: Dict[str, Any]):
+    def add_task(self, task_id: str, task_info=None):
+        if task_info is None:
+            task_info = {}
         self.tasks[task_id] = {
-            "status": "in progress",
             "task_id": task_id,
-            "task": task_info,
+            "task": {"status": "in progress", **task_info},
             "timestamp": time.time()
         }
         self._cleanup()
