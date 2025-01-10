@@ -31,6 +31,8 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
 
     doc_file_path = None
 
+    feed_progress[task_id] = {"status": "Processing"}
+
     if isinstance(documents, dict):  # If it's a single document
         doc_id = documents.get("id", f"id:{namespace}:{doc_type}::{get_uuid()}")
         fields = ','.join([f"{k}:{v}" for k, v in documents.items()])
@@ -56,6 +58,8 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
                 doc_file.seek(0)
                 doc_file_path = doc_file.name
         command = ["vespa", "feed", doc_file_path, "--verbose"]
+
+    feed_progress[task_id] = {"status": "Feeding"}
 
     try:
         result = subprocess.run(

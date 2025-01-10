@@ -2,18 +2,16 @@
 import asyncio
 import json
 import logging
-import os
 import tempfile
 from typing import Dict, Any
 
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
-from ..feed.processor import process_documents
+from ..feed.processor import process_documents, feed_progress
 from ..utils import log_message
 
 logger = logging.getLogger(__name__)
-ingestion_progress = {}
 
 
 def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[str, Any]:
@@ -29,8 +27,13 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
 
     if dataset_config is None:
         return log_message(
-            logger.info, ingestion_progress, task_id, "error",
+            logger.info, feed_progress, task_id, "error",
             f"Dataset configuration not found for dataset: {dataset_name}"
+        )
+    else:
+        log_message(
+            logger.info, feed_progress, task_id, "processing",
+            f"Processing dataset: {dataset_name}"
         )
 
     # TODO: Either remove existing data from Vespa or update
@@ -45,24 +48,26 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
             with tempfile.NamedTemporaryFile(delete=False) as document_file:
                 temp_file_path = document_file.name
                 log_message(
-                    logger.info, ingestion_progress, task_id, "processing",
+                    logger.info, feed_progress, task_id, "processing",
                     f"Processing dataset: {dataset_name} ({i + 1}/{len(dataset_config['files'])})"
                 )
                 for count, document in enumerate(documents):
                     if limit is not None and count >= limit:
                         break
                     # log_message(
-                    #     logger.info, ingestion_progress, task_id, "processing",
+                    #     logger.info, feed_progress, task_id, "processing",
                     #     f"Processing document {count + 1}: {str(document)[:3000]}..."
                     # )
-                    transformed_document, toponyms = DocTransformer.transform(document, dataset_name, transformer_index=i)
-                    document_file.write(json.dumps(transformed_document).encode('utf-8')) # Write each transformed document to the file
+                    transformed_document, toponyms = DocTransformer.transform(document, dataset_name,
+                                                                              transformer_index=i)
+                    document_file.write(
+                        json.dumps(transformed_document).encode('utf-8'))  # Write each transformed document to the file
                 document_file.close()
 
             # Process the file
             try:
                 log_message(
-                    logger.info, ingestion_progress, task_id, "processing",
+                    logger.info, feed_progress, task_id, "processing",
                     f"Sending documents to Vespa: {dataset_name} ({i + 1}/{len(dataset_config['files'])})"
                 )
                 asyncio.run(process_documents(dataset_config['vespa_schema'], temp_file_path, task_id))
@@ -72,18 +77,18 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
                 pass
 
         return log_message(
-            logger.info, ingestion_progress, task_id, "success",
+            logger.info, feed_progress, task_id, "success",
             f"Successfully processed dataset: {dataset_name}"
         )
 
     except ValueError as e:
         return log_message(
-            logger.exception, ingestion_progress, task_id, "error",
+            logger.exception, feed_progress, task_id, "error",
             f"ValueError while processing dataset: {e}"
         )
 
     except Exception as e:
         return log_message(
-            logger.exception, ingestion_progress, task_id, "error",
+            logger.exception, feed_progress, task_id, "error",
             f"Error processing dataset: {e}"
         )
