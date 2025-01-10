@@ -36,7 +36,7 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
         f"Processing dataset: {dataset_name}"
     )
 
-    app = Vespa(url=f"{host_mapping['feed']}", port=8080)
+    app = Vespa(url=f"{host_mapping['feed']}")
 
     # Delete existing documents for the dataset
     # await delete_existing_documents(dataset_config['vespa_schema'])
