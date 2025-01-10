@@ -33,6 +33,9 @@ def bbox(geometry, tensor=True, errors=True):
 
     minx, miny, maxx, maxy = geom.bounds
 
+    # Convert to float
+    minx, miny, maxx, maxy = float(minx), float(miny), float(maxx), float(maxy)
+
     # Convert to tensor format
     return {
         "x": [minx, maxx],
