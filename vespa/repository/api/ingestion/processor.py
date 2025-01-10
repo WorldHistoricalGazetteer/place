@@ -48,7 +48,7 @@ async def send_document(feed_url: str, document: Dict[str, Any], logger: logging
             f"Sending document to Vespa: {document}"
         )
 
-        response = requests.put(feed_url, data=json.dumps(document), headers={"Content-Type": "application/json"})
+        response = requests.put(feed_url, data=document, headers={"Content-Type": "application/json"})
         response.raise_for_status()
 
         log_message(logger.info, feed_progress, task_id, "success",
