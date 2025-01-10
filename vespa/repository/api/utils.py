@@ -1,6 +1,11 @@
 # /utils.py
+import asyncio
 import uuid
+from typing import Dict
 from urllib.parse import urlparse
+
+# Global dictionary to store background tasks by task_id (for tracking purposes)
+background_tasks: Dict[str, asyncio.Task] = {}
 
 
 def is_valid_url(url: str) -> bool:

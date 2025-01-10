@@ -2,6 +2,7 @@
 import asyncio
 import logging
 from asyncio import Task
+from typing import Dict
 
 from vespa.application import Vespa, VespaSync
 
@@ -9,8 +10,7 @@ from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
 from ..config import host_mapping, namespace
-from ..main import background_tasks
-from ..utils import get_uuid
+from ..utils import get_uuid, background_tasks
 
 logger = logging.getLogger(__name__)
 

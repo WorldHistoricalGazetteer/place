@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from .ingestion.processor import start_ingestion_in_background
 from .search.processor import filter_and_paginate_documents
 from .system.status import get_vespa_status  # Import the function from the status module
-from .utils import get_uuid
+from .utils import get_uuid, background_tasks
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,9 +18,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-# Global dictionary to store background tasks by task_id (for tracking purposes)
-background_tasks: Dict[str, asyncio.Task] = {}
 
 app = FastAPI()
 
