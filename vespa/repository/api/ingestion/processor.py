@@ -1,11 +1,8 @@
 # /ingestion/processor.py
-import json
 import logging
 from typing import Dict, Any
 
-import httpx
-import requests
-from httpx import AsyncClient
+from vespa.application import Vespa, VespaSync
 
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
@@ -15,50 +12,6 @@ from ..feed.processor import feed_progress
 from ..utils import log_message, get_uuid
 
 logger = logging.getLogger(__name__)
-
-
-async def delete_existing_documents(dataset_name: str) -> None:
-    """
-    Delete existing documents for a dataset from the Vespa feed service.
-    Args:
-        dataset_name:
-
-    Returns:
-
-    """
-    delete_url = f"{host_mapping['feed']}/document/v1/{namespace}/{dataset_name}/docid?selection=true"
-    async with AsyncClient() as client:
-        response = await client.delete(delete_url)
-        response.raise_for_status()
-        logger.info(f"Existing documents for {dataset_name} deleted successfully.")
-
-
-async def send_document(feed_url: str, document: Dict[str, Any], logger: logging.Logger, task_id: str) -> None:
-    """
-    Send a single document to the Vespa feed service.
-
-    :param feed_url: The URL for feeding the document
-    :param document: The document to feed
-    :param logger: The logger for logging
-    :param task_id: The task ID for progress tracking
-    """
-    try:
-        log_message(
-            logger.info, feed_progress, task_id, "processing",
-            f"Sending document to Vespa: {document}"
-        )
-
-        response = requests.put(feed_url, data=document, headers={"Content-Type": "application/json"})
-        response.raise_for_status()
-
-        log_message(logger.info, feed_progress, task_id, "success",
-                    f"Document fed successfully: {document.get('fields', {}).get('id', 'unknown')}")
-    except requests.HTTPError as e:
-        log_message(logger.error, feed_progress, task_id, "error",
-                    f"HTTP error {e.response.status_code}: {e.response.text}")
-    except Exception as e:
-        log_message(logger.error, feed_progress, task_id, "error",
-                    f"Error sending document: {e}")
 
 
 async def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[str, Any]:
@@ -83,30 +36,53 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
         f"Processing dataset: {dataset_name}"
     )
 
+    app = Vespa(url=f"{host_mapping['feed']}", port=8080)
+
     # Delete existing documents for the dataset
     # await delete_existing_documents(dataset_config['vespa_schema'])
 
     try:
-        # Process each file in the dataset configuration
-        for i, file_config in enumerate(dataset_config['files']):
+        with VespaSync(app) as sync_app:
+            # Process each file in the dataset configuration
+            for i, file_config in enumerate(dataset_config['files']):
 
-            # Use StreamFetcher to get the stream of data from the file URL
-            stream_fetcher = StreamFetcher(file_config)
-            documents = stream_fetcher.get_items()
+                # Use StreamFetcher to get the stream of data from the file URL
+                stream_fetcher = StreamFetcher(file_config)
+                documents = stream_fetcher.get_items()
 
-            for count, document in enumerate(documents):
-                if limit is not None and count >= limit:
-                    break
+                for count, document in enumerate(documents):
+                    if limit is not None and count >= limit:
+                        break
 
-                transformed_document, toponyms = DocTransformer.transform(document, dataset_name, transformer_index=i)
-                document_id = transformed_document.get(file_config['id_field']) if file_config['id_field'] else get_uuid()
-                feed_url = f"{host_mapping['feed']}/document/v1/{namespace}/{dataset_config['vespa_schema']}/docid/{document_id}"
-                feed_json = {"fields": transformed_document}
-                log_message(
-                    logger.info, feed_progress, task_id, "processing",
-                    f"Sending {feed_json} to {feed_url}"
-                )
-                await send_document(feed_url, feed_json, logger, task_id)
+                    transformed_document, toponyms = DocTransformer.transform(document, dataset_name,
+                                                                              transformer_index=i)
+                    document_id = transformed_document.get(file_config['id_field']) if file_config[
+                        'id_field'] else get_uuid()
+                    try:
+                        response = sync_app.feed_data_point(
+                            schema=f"{dataset_config['vespa_schema']}",
+                            data_id=document_id,
+                            fields=transformed_document,
+                            namespace=namespace
+                        )
+                        if response.status_code != 200:
+                            log_message(
+                                logger.error, feed_progress, task_id, "error",
+                                f"Error ingesting document: {response}"
+                            )
+                            continue  # Proceed to next document
+                        else:
+                            log_message(
+                                logger.info, feed_progress, task_id, "feeding",
+                                f"Successfully ingested document: {document_id}"
+                            )
+
+                    except Exception as e:
+                        log_message(
+                            logger.exception, feed_progress, task_id, "error",
+                            f"Error processing document {document_id}: {e}"
+                        )
+                        continue
 
         return log_message(
             logger.info, feed_progress, task_id, "success",
