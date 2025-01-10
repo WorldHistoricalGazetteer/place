@@ -1,7 +1,9 @@
 # /ingestion/processor.py
+import asyncio
 import logging
 from typing import Dict, Any
 
+import httpx
 from vespa.application import Vespa, VespaSync
 
 from .config import REMOTE_DATASET_CONFIGS
@@ -12,6 +14,24 @@ from ..feed.processor import feed_progress
 from ..utils import log_message, get_uuid
 
 logger = logging.getLogger(__name__)
+
+
+def delete_all_docs(sync_app, schema):
+    sync_app.delete_all_docs(
+        schema=schema,
+        namespace=namespace,
+        content_cluster_name="content"
+    )
+
+
+def feed_document(sync_app, dataset_config, document_id, transformed_document):
+    response = sync_app.feed_data_point(
+        schema=f"{dataset_config['vespa_schema']}",
+        data_id=document_id,
+        fields=transformed_document,
+        namespace=namespace
+    )
+    return response
 
 
 async def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[str, Any]:
@@ -38,11 +58,26 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
 
     app = Vespa(url=f"{host_mapping['feed']}")
 
-    # Delete existing documents for the dataset
-    # await delete_existing_documents(dataset_config['vespa_schema'])
-
     try:
         with VespaSync(app) as sync_app:
+
+            try:
+                await asyncio.to_thread(
+                    delete_all_docs, sync_app, dataset_config['vespa_schema']
+                )
+            except httpx.HTTPStatusError as e:
+                return log_message(
+                    logger.exception, feed_progress, task_id, "error",
+                    f"HTTP error while deleting documents: {e.response.status_code} - {e.response.text}"
+                )
+            except Exception as e:
+                return log_message(
+                    logger.exception, feed_progress, task_id, "error",
+                    f"Error deleting existing documents: {e}"
+                )
+
+            tasks = []  # To keep track of async tasks for feeding documents
+
             # Process each file in the dataset configuration
             for i, file_config in enumerate(dataset_config['files']):
 
@@ -58,31 +93,26 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
                                                                               transformer_index=i)
                     document_id = transformed_document.get(file_config['id_field']) if file_config[
                         'id_field'] else get_uuid()
-                    try:
-                        response = sync_app.feed_data_point(
-                            schema=f"{dataset_config['vespa_schema']}",
-                            data_id=document_id,
-                            fields=transformed_document,
-                            namespace=namespace
-                        )
-                        if response.status_code != 200:
-                            log_message(
-                                logger.error, feed_progress, task_id, "error",
-                                f"Error ingesting document: {response}"
-                            )
-                            continue  # Proceed to next document
-                        else:
-                            log_message(
-                                logger.info, feed_progress, task_id, "feeding",
-                                f"Successfully ingested document: {document_id}"
-                            )
 
-                    except Exception as e:
-                        log_message(
-                            logger.exception, feed_progress, task_id, "error",
-                            f"Error processing document {document_id}: {e}"
-                        )
-                        continue
+                    # Add each feed document task to the list for concurrency
+                    tasks.append(asyncio.to_thread(
+                        feed_document, sync_app, dataset_config, document_id, transformed_document
+                    ))
+
+            # Run all tasks concurrently
+            log_message(
+                logger.info, feed_progress, task_id, "processing",
+                f"Feeding documents for dataset: {dataset_name}"
+            )
+            responses = await asyncio.gather(*tasks)
+
+            # Handle responses
+            for response in responses:
+                if response.status_code != 200:
+                    log_message(
+                        logger.error, feed_progress, task_id, "error",
+                        f"Error ingesting document: {response}"
+                    )
 
         return log_message(
             logger.info, feed_progress, task_id, "success",
