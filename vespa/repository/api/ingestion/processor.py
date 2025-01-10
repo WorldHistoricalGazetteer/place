@@ -77,7 +77,7 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
     )
 
     # Delete existing documents for the dataset
-    await delete_existing_documents(dataset_name)
+    await delete_existing_documents(dataset_config['vespa_schema'])
 
     try:
         # Process each file in the dataset configuration
@@ -94,7 +94,7 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
                 transformed_document, toponyms = DocTransformer.transform(document, dataset_name, transformer_index=i)
                 document_id = transformed_document.get(dataset_config['id_field']) if dataset_config[
                     'id_field'] else get_uuid()
-                feed_url = f"{host_mapping['feed']}/document/v1/{namespace}/{dataset_name}/docid/{document_id}"
+                feed_url = f"{host_mapping['feed']}/document/v1/{namespace}/{dataset_config['vespa_schema']}/docid/{document_id}"
                 feed_json = {"fields": transformed_document}
                 await send_document(feed_url, feed_json, logger, task_id)
 
