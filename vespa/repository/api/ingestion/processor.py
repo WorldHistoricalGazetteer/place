@@ -77,7 +77,7 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
     )
 
     # Delete existing documents for the dataset
-    await delete_existing_documents(dataset_config['vespa_schema'])
+    # await delete_existing_documents(dataset_config['vespa_schema'])
 
     try:
         # Process each file in the dataset configuration
