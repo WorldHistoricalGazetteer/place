@@ -42,6 +42,10 @@ async def send_document(feed_url: str, document: Dict[str, Any], logger: logging
     """
     async with AsyncClient() as client:
         try:
+            log_message(
+                logger.info, feed_progress, task_id, "processing",
+                f"Sending document to Vespa: {document}"
+            )
             response = await client.put(feed_url, json=document)
             response.raise_for_status()
             log_message(logger.info, feed_progress, task_id, "success",
