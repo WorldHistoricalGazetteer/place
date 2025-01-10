@@ -58,8 +58,12 @@ async def get_status():
     )
 
 
-@app.get("/ingest/{dataset_name}/{limit}")
-async def ingest_dataset(dataset_name: str, background_tasks: BackgroundTasks, limit: int = None):
+@app.get("/ingest/{dataset_name}")
+async def ingest_dataset(
+    dataset_name: str,
+    background_tasks: BackgroundTasks,
+    limit: int = Query(None, ge=1, description="Optional limit for the number of items to ingest")
+):
     """
     Ingest a dataset by name with an optional limit parameter.
     """
@@ -99,7 +103,7 @@ async def feed_data(doc_type: str, data: Union[Dict[str, Any], list, str], backg
     )
 
 
-@app.get("/feed/status/{task_id}")
+@app.get("/status/{task_id}")
 async def feed_status(task_id: UUID):
     """
     Endpoint to check the status of a feed operation by task ID.

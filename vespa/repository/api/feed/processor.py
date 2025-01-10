@@ -6,7 +6,6 @@ import tempfile
 from typing import Union, Dict, Any
 
 import httpx
-import ijson
 
 from ..config import namespace
 from ..utils import is_valid_url, get_uuid, url_to_tempfile
@@ -56,7 +55,7 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
                 json.dump(documents, doc_file)
                 doc_file.seek(0)
                 doc_file_path = doc_file.name
-        command = ["vespa", "feed", doc_file_path, "--verbose"]
+        command = ["vespa", "feed", doc_file_path]
 
     try:
         result = subprocess.run(
