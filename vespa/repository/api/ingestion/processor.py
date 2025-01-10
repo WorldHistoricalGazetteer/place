@@ -61,10 +61,12 @@ async def process_document(document, dataset_config, transformer_index, task_id,
         response = await asyncio.to_thread(
             feed_document, sync_app, dataset_config, document_id, transformed_document
         )
-        if response.status_code != 200:
-            log_message(
+        if response.get("success"):
+            return response
+        else:
+            return log_message(
                 logger.error, feed_progress, task_id, "error",
-                f"Error ingesting document {document_id} {transformed_document}: {response}"
+                f"Error ingesting document {document_id}: {response.get('error') or response.get('message')}"
             )
     except Exception as e:
         log_message(
