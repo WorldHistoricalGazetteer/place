@@ -50,7 +50,7 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
         }
 
 
-async def process_document(document, dataset_config, transformer_index, task_id, sync_app):
+async def process_document(document, dataset_config, transformer_index, sync_app):
 
     # Transform the document using the appropriate transformer
     transformed_document, toponyms = DocTransformer.transform(document, dataset_config['dataset_name'],
@@ -64,15 +64,9 @@ async def process_document(document, dataset_config, transformer_index, task_id,
         if response.get("success"):
             return response
         else:
-            return log_message(
-                logger.error, feed_progress, task_id, "error",
-                f"Error ingesting document {document_id} {transformed_document}: {response.get('error') or response.get('message')}"
-            )
+            return {"success": False, "document_id": document_id, "error": response.get('error') or response.get('message')}
     except Exception as e:
-        log_message(
-            logger.exception, feed_progress, task_id, "error",
-            f"Error processing document {document_id}: {e}"
-        )
+        return {"success": False, "document_id": document_id, "error": str(e)}
 
 
 async def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[str, Any]:
@@ -131,7 +125,7 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
                         break
 
                     # Process each document asynchronously
-                    tasks.append(process_document(document, dataset_config, i, task_id, sync_app))
+                    tasks.append(process_document(document, dataset_config, i, sync_app))
 
             # Run all tasks concurrently
             log_message(
@@ -157,7 +151,6 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
                     error_message = (
                         f"Error ingesting document: {response['document_id']} - "
                         f"{response.get('error') or response.get('message', 'Unknown error')} "
-                        f"(Status code: {response.get('status_code')})"
                     )
                     errors.append(error_message)
                     log_message(

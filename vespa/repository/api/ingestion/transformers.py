@@ -263,7 +263,7 @@ class DocTransformer:
         "Terrarium": [
             lambda data: (
                 { # Use ** to omit empty fields
-                    **({"resolution": resolution} if (resolution := data.get("properties", {}).get("resolution")) is not None else {}),
+                    **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get("resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     **({"geometry": geometry} if (geometry := (json.dumps(float_geometry(data.get("geometry", None), True)) if data.get("geometry") else None)) else {}),
                     **({"bounding_box": bbox_val} if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}),
