@@ -4,6 +4,7 @@ import logging
 from typing import Dict, Any
 
 import httpx
+import requests
 from httpx import AsyncClient
 
 from .config import REMOTE_DATASET_CONFIGS
@@ -41,22 +42,23 @@ async def send_document(feed_url: str, document: Dict[str, Any], logger: logging
     :param logger: The logger for logging
     :param task_id: The task ID for progress tracking
     """
-    async with AsyncClient() as client:
-        try:
-            log_message(
-                logger.info, feed_progress, task_id, "processing",
-                f"Sending document to Vespa: <<<{json.dumps(document)}>>>"
-            )
-            response = await client.put(feed_url, json=document)
-            response.raise_for_status()
-            log_message(logger.info, feed_progress, task_id, "success",
-                        f"Document fed successfully: {document.get('fields', {}).get('id', 'unknown')}")
-        except httpx.HTTPStatusError as e:
-            log_message(logger.error, feed_progress, task_id, "error",
-                        f"HTTP error {e.response.status_code}: {e.response.text}")
-        except Exception as e:
-            log_message(logger.error, feed_progress, task_id, "error",
-                        f"Error sending document: {e}")
+    try:
+        log_message(
+            logger.info, feed_progress, task_id, "processing",
+            f"Sending document to Vespa: {document}"
+        )
+
+        response = requests.put(feed_url, data=json.dumps(document), headers={"Content-Type": "application/json"})
+        response.raise_for_status()
+
+        log_message(logger.info, feed_progress, task_id, "success",
+                    f"Document fed successfully: {document.get('fields', {}).get('id', 'unknown')}")
+    except requests.HTTPError as e:
+        log_message(logger.error, feed_progress, task_id, "error",
+                    f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        log_message(logger.error, feed_progress, task_id, "error",
+                    f"Error sending document: {e}")
 
 
 async def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[str, Any]:
