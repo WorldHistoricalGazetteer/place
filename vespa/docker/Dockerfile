@@ -45,8 +45,8 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY ./api /code/api
 
 # Ensure the application code is owned by the correct user
-RUN chown -R 999:999 /code
-USER 999:999
+RUN chown -R 1000:1000 /code
+USER 1000:1000
 
 # Set the default port and run the FastAPI server
 ENV PORT=8082
