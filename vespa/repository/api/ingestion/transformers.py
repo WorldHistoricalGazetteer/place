@@ -1,5 +1,5 @@
 # /ingestion/transformers.py
-from ..gis.utils import isocodes, bbox
+from ..gis.utils import isocodes, bbox, float_geometry
 from ..utils import get_uuid
 
 
@@ -268,7 +268,7 @@ class DocTransformer:
                     "fields": {
                         "resolution": data.get("properties", {}).get("resolution", None),
                         "source": data.get("properties", {}).get("source", None),
-                        "geometry": data.get("geometry", None),
+                        "geometry": float_geometry(data.get("geometry", None), True),
                         "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
                     },
                 },
