@@ -86,12 +86,15 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         with VespaSync(app) as sync_app:
 
             # Run `delete_all_docs` asynchronously to avoid blocking the event loop
+            logger.info(f"Deleting all documents for schema: {dataset_config['vespa_schema']}")
             await asyncio.to_thread(delete_all_docs, sync_app, dataset_config['vespa_schema'])
 
             tasks = []  # To keep track of async tasks for feeding documents
 
             for i, file_config in enumerate(dataset_config['files']):
+                logger.info(f"Opening stream: {file_config['stream_url']}")
                 stream_fetcher = StreamFetcher(file_config)
+                logger.info(f"Fetching items from stream.")
                 documents = stream_fetcher.get_items()
 
                 for count, document in enumerate(documents):
@@ -99,9 +102,11 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                         break
 
                     # Process each document asynchronously
+                    logger.info(f"Processing document: {count + 1}")
                     tasks.append(process_document(document, dataset_config, i, sync_app))
 
             # Run all tasks concurrently
+            logger.info(f"Feeding {len(tasks)} documents to Vespa.")
             responses = await asyncio.gather(*tasks)
 
             # Handle responses and logging
