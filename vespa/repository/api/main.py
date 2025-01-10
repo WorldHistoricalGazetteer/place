@@ -75,8 +75,8 @@ async def task_status(task_id: str):
     print(task_info)
 
     if task_info:
-        task = task_info["task"]
-        status = task_info["status"]
+        task = task_info.get("task")
+        status = task.get("status")
 
         if status == "completed":
             return {"status": "completed", "result": task.result()}
