@@ -31,21 +31,21 @@ async def delete_existing_documents(dataset_name: str) -> None:
         logger.info(f"Existing documents for {dataset_name} deleted successfully.")
 
 
-async def send_document(feed_url: str, feed_json: Dict[str, Any], logger: logging.Logger, task_id: str) -> None:
+async def send_document(feed_url: str, document: Dict[str, Any], logger: logging.Logger, task_id: str) -> None:
     """
     Send a single document to the Vespa feed service.
 
     :param feed_url: The URL for feeding the document
-    :param feed_json: The JSON payload for the document
+    :param document: The document to feed
     :param logger: The logger for logging
     :param task_id: The task ID for progress tracking
     """
     async with AsyncClient() as client:
         try:
-            response = await client.put(feed_url, json=feed_json)
+            response = await client.put(feed_url, json=document)
             response.raise_for_status()
             log_message(logger.info, feed_progress, task_id, "success",
-                        f"Document fed successfully: {feed_json.get('fields', {}).get('id', 'unknown')}")
+                        f"Document fed successfully: {document.get('fields', {}).get('id', 'unknown')}")
         except httpx.HTTPStatusError as e:
             log_message(logger.error, feed_progress, task_id, "error",
                         f"HTTP error {e.response.status_code}: {e.response.text}")
