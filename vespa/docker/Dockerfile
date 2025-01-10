@@ -44,9 +44,14 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 # Copy application code
 COPY ./api /code/api
 
-# Ensure the application code is owned by the correct user
-RUN chown -R 1000:1000 /code
+# Add /.vespa directory for Vespa CLI and set ownership for that and the code directory
+RUN mkdir -p /.vespa && chown -R 1000:1000 /.vespa /code
+
+# Switch to non-root user
 USER 1000:1000
+
+# Add Vespa CLI to the PATH
+ENV PATH="/usr/local/vespa/vespa-cli/bin:${PATH}"
 
 # Set the default port and run the FastAPI server
 ENV PORT=8082
