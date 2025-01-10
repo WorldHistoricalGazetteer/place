@@ -1,4 +1,6 @@
 # /gis/utils.py
+import math
+
 from shapely.geometry.geo import shape
 from shapely.geometry.point import Point
 from shapely.validation import explain_validity
@@ -10,6 +12,7 @@ def bbox(geometry, tensor=True, errors=True):
 
     :param geometry: A GeoJSON geometry object.
     :param tensor: Whether to return the bounding box as a tensor(x[2],y[2]) or a list(xmin,ymin,xmax,ymax).
+    :param errors: Whether to return an error message if the geometry is invalid.
     :return: A dictionary representing the tensor(x[2],y[2]) format for Vespa, or a list(xmin,ymin,xmax,ymax), or an error message.
     """
     if not geometry or 'type' not in geometry or 'coordinates' not in geometry:
@@ -26,12 +29,19 @@ def bbox(geometry, tensor=True, errors=True):
     # Short-circuit for Point geometries
     if isinstance(geom, Point):
         x, y = float(geom.x), float(geom.y)
-        return {
+        if any(math.isnan(v) or math.isinf(v) for v in (x, y)):
+            return {"error": "Invalid geometry (NaN or Infinity)"} if errors else None
+        else:
+            return {
             "x": [x, x],
             "y": [y, y]
         }
 
     minx, miny, maxx, maxy = geom.bounds
+
+    # return None if any value is NaN or Infinity
+    if any(math.isnan(v) or math.isinf(v) for v in (minx, miny, maxx, maxy)):
+        return {"error": "Invalid geometry (NaN or Infinity)"} if errors else None
 
     # Convert to float
     minx, miny, maxx, maxy = float(minx), float(miny), float(maxx), float(maxy)
