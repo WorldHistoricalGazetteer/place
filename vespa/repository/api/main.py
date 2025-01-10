@@ -1,14 +1,12 @@
 # /main.py
-
+import asyncio
 import logging
-from typing import Union, Dict, Any
-from uuid import UUID
+from typing import Dict
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from .feed.processor import process_documents, feed_progress  # Import feed processing functions
-from .ingestion.processor import process_dataset
+from .ingestion.processor import start_ingestion_in_background
 from .search.processor import filter_and_paginate_documents
 from .system.status import get_vespa_status  # Import the function from the status module
 from .utils import get_uuid
@@ -20,6 +18,9 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Global dictionary to store background tasks by task_id (for tracking purposes)
+background_tasks: Dict[str, asyncio.Task] = {}
 
 app = FastAPI()
 
@@ -42,6 +43,46 @@ async def search_documents(
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
+@app.get("/ingest/{dataset_name}")
+async def ingest_dataset(
+        dataset_name: str,
+        limit: int = Query(None, ge=1, description="Optional limit for the number of items to ingest")
+):
+    """
+    Ingest a dataset by name with an optional limit parameter.
+    """
+    task_id = get_uuid()  # Generate a unique task ID
+
+    # Start the ingestion in the background
+    task = await start_ingestion_in_background(dataset_name, task_id, limit)
+
+    return JSONResponse(
+        status_code=202,
+        content={
+            "message": f"Ingestion of {dataset_name} started",
+            "task_id": task_id,
+            "status_url": f"/status/{task_id}"
+        }
+    )
+
+
+@app.get("/status/{task_id}")
+async def task_status(task_id: str):
+    # Check if the task is in the background tasks dictionary
+    if task_id in background_tasks:
+        task = background_tasks[task_id]
+        if task.done():
+            try:
+                result = task.result()
+                return {"status": "completed", "result": result}
+            except Exception as e:
+                return {"status": "failed", "error": str(e)}
+        else:
+            return {"status": "in progress"}
+    else:
+        return {"status": "not found"}
+
+
 @app.get("/status")
 async def get_status():
     """
@@ -56,62 +97,3 @@ async def get_status():
         status_code=200,
         content=statuses,
     )
-
-
-@app.get("/ingest/{dataset_name}")
-async def ingest_dataset(
-    dataset_name: str,
-    background_tasks: BackgroundTasks,
-    limit: int = Query(None, ge=1, description="Optional limit for the number of items to ingest")
-):
-    """
-    Ingest a dataset by name with an optional limit parameter.
-    """
-    task_id = get_uuid()  # Generate a unique task ID
-
-    # Add the background task to process the dataset
-    background_tasks.add_task(process_dataset, dataset_name, task_id, limit)
-
-    return JSONResponse(
-        status_code=202,
-        content={
-            "message": f"Ingestion of {dataset_name} started",
-            "task_id": task_id,
-            "status_url": f"/status/{task_id}"
-        }
-    )
-
-
-@app.post("/feed")
-async def feed_data(doc_type: str, data: Union[Dict[str, Any], list, str], background_tasks: BackgroundTasks):
-    """
-    Accepts the data to be fed to the Vespa feed container, identifies the type of input (single document, array, or URL),
-    and starts the feeding process asynchronously.
-    """
-    task_id = get_uuid()  # Generate a unique task ID
-
-    # Add the background task to process the feed data
-    background_tasks.add_task(process_documents, doc_type, data, task_id)
-
-    return JSONResponse(
-        status_code=202,
-        content={
-            "message": "Data feeding started",
-            "task_id": task_id,
-            "status_url": f"/status/{task_id}"
-        }
-    )
-
-
-@app.get("/status/{task_id}")
-async def feed_status(task_id: UUID):
-    """
-    Endpoint to check the status of a feed operation by task ID.
-    """
-    task_id_str = str(task_id)
-    progress = feed_progress.get(task_id_str)
-
-    if not progress:
-        raise HTTPException(status_code=404, detail=f"Task {task_id_str} not found.")
-
-    return JSONResponse(status_code=200, content=progress)

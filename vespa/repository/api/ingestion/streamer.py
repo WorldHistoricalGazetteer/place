@@ -11,6 +11,8 @@ import zipfile
 import ijson
 import requests
 
+from vespa.repository.api.utils import is_valid_url
+
 
 class StreamFetcher:
     """
@@ -66,6 +68,11 @@ class StreamFetcher:
         self.delimiter = file.get('delimiter', '\t')  # Delimiter for CSV files
 
     def get_stream(self):
+        # First, validate the URL before fetching
+        if not is_valid_url(self.file_url):
+            self.logger.error(f"Invalid URL: {self.file_url}")
+            raise ValueError(f"Invalid URL: {self.file_url}")
+
         self.logger.info(f"Fetching stream for URL: {self.file_url}")
         if self.file_url.endswith('.gz'):
             return self._get_gzip_stream()
@@ -115,7 +122,7 @@ class StreamFetcher:
         stream = self.get_stream()
         format_type = self.file_type
 
-        if format_type == 'json':
+        if format_type in ['json', 'geojson']:
             return self._parse_json_stream(stream)
         elif format_type == 'csv':
             return self._parse_csv_stream(stream)
