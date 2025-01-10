@@ -92,7 +92,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             tasks = []  # To keep track of async tasks for feeding documents
 
             for i, file_config in enumerate(dataset_config['files']):
-                logger.info(f"Opening stream: {file_config['stream_url']}")
+                logger.info(f"Opening stream: {file_config['url']}")
                 stream_fetcher = StreamFetcher(file_config)
                 logger.info(f"Fetching items from stream.")
                 documents = stream_fetcher.get_items()
