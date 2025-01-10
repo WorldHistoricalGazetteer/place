@@ -69,24 +69,7 @@ async def ingest_dataset(
 
 @app.get("/status/{task_id}")
 async def task_status(task_id: str):
-    task_info = task_tracker.get(task_id)
-
-    # debug
-    print(task_info)
-
-    if task_info:
-        task = task_info.get("task")
-        status = task.get("status")
-
-        if status == "completed":
-            return {"status": "completed", "result": task.result()}
-        elif status == "failed":
-            error = task_info.get("error", "Unknown error")
-            return {"status": "failed", "error": error}
-        else:
-            return {"status": "in progress"}
-    else:
-        return {"status": "not found"}
+    return task_tracker.get_info(task_id)
 
 
 @app.get("/status")

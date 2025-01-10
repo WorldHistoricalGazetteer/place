@@ -30,8 +30,8 @@ class TaskTracker:
         for task_id in expired_tasks:
             del self.tasks[task_id]
 
-    def get(self, task_id: str):
-        return self.tasks.get(task_id)
+    def get_info(self, task_id: str):
+        return self.tasks.get(task_id, {"task": {"status": "not found"}}).get("task")
 
 
 # Global task tracker instance
