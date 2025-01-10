@@ -28,7 +28,7 @@ async def send_batch(feed_service_url: str, batch: List[Dict[str, Any]], logger:
     """
     async with AsyncClient() as client:
         try:
-            response = await client.post(feed_service_url, json=batch)
+            response = await client.put(feed_service_url, json=batch)
             response.raise_for_status()
             log_message(logger.info, feed_progress, task_id, "success",
                         f"Successfully fed a batch of {len(batch)} documents")
