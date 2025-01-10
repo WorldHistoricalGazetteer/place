@@ -31,7 +31,6 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
     """
 
     doc_file_path = None
-    processed_file = None
 
     if isinstance(documents, dict):  # If it's a single document
         doc_id = documents.get("id", f"id:{namespace}:{doc_type}::{get_uuid()}")
@@ -39,13 +38,13 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
         command = ["vespa", "document", "put", doc_id, f"fields={fields}"]
     else:
         if isinstance(documents, str):
-            if is_valid_url(documents):
+            if is_valid_url(documents): # If it's a URL
                 try:
                     doc_file_path = await url_to_tempfile(documents)
                 except httpx.RequestError as e:
                     feed_progress[task_id] = {"status": "Failed", "error": f"Error fetching URL: {str(e)}"}
                     return
-            elif os.path.isfile(documents):
+            elif os.path.isfile(documents): # If it's a file path
                 doc_file_path = documents
             else:
                 feed_progress[task_id] = {"status": "Failed",
@@ -57,7 +56,7 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
                 json.dump(documents, doc_file)
                 doc_file.seek(0)
                 doc_file_path = doc_file.name
-        command = ["vespa", "feed", doc_file_path]
+        command = ["vespa", "feed", doc_file_path, "--verbose"]
 
     try:
         result = subprocess.run(

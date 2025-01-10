@@ -68,7 +68,7 @@ data:
             <document-processing/>
             <nodes>
                 {{- range $i := until (.Values.replicaCounts.feed | int) }}
-                <node hostalias="vespa-feed-{{ $i }}"/>
+                <node hostalias="vespa-feed-container-{{ $i }}"/>
                 {{- end }}
             </nodes>
         </container>
@@ -77,7 +77,7 @@ data:
             <search/>
             <nodes>
                 {{- range $i := until (.Values.replicaCounts.query | int) }}
-                <node hostalias="vespa-query-{{ $i }}"/>
+                <node hostalias="vespa-query-container-{{ $i }}"/>
                 {{- end }}
             </nodes>
         </container>
