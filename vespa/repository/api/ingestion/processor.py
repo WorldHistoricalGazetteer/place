@@ -149,7 +149,7 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
     """
     task = asyncio.create_task(background_ingestion(dataset_name, task_id, limit))
 
-    # Add the task to the task tracker (triggers cleanup of expired tasks)
+    # Add the task to the task tracker (also triggers cleanup of expired tasks)
     task_tracker.add_task(task_id, task)
 
     return task

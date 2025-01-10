@@ -71,6 +71,9 @@ async def ingest_dataset(
 async def task_status(task_id: str):
     task_info = task_tracker.get(task_id)
 
+    # debug
+    print(task_info)
+
     if task_info:
         task = task_info["task"]
         status = task_info["status"]
