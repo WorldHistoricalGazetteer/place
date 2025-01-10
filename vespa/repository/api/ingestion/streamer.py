@@ -11,7 +11,7 @@ import zipfile
 import ijson
 import requests
 
-from vespa.repository.api.utils import is_valid_url
+from ..utils import is_valid_url
 
 
 class StreamFetcher:
