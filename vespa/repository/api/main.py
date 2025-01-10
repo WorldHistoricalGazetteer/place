@@ -1,15 +1,13 @@
 # /main.py
-import asyncio
 import logging
-from typing import Dict
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.responses import JSONResponse
 
 from .ingestion.processor import start_ingestion_in_background
 from .search.processor import filter_and_paginate_documents
 from .system.status import get_vespa_status  # Import the function from the status module
-from .utils import get_uuid, background_tasks
+from .utils import get_uuid, task_tracker
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,15 +41,21 @@ async def search_documents(
 @app.get("/ingest/{dataset_name}")
 async def ingest_dataset(
         dataset_name: str,
+        background_tasks: BackgroundTasks,
         limit: int = Query(None, ge=1, description="Optional limit for the number of items to ingest")
 ):
     """
     Ingest a dataset by name with an optional limit parameter.
+
+    Args:
+        limit: The number of items to ingest.
+        dataset_name: The name of the dataset to ingest.
+        background_tasks (object): BackgroundTasks instance to run tasks in the background.
     """
     task_id = get_uuid()  # Generate a unique task ID
 
     # Start the ingestion in the background
-    task = await start_ingestion_in_background(dataset_name, task_id, limit)
+    background_tasks.add_task(start_ingestion_in_background, dataset_name, task_id, limit)
 
     return JSONResponse(
         status_code=202,
@@ -65,15 +69,17 @@ async def ingest_dataset(
 
 @app.get("/status/{task_id}")
 async def task_status(task_id: str):
-    # Check if the task is in the background tasks dictionary
-    if task_id in background_tasks:
-        task = background_tasks[task_id]
-        if task.done():
-            try:
-                result = task.result()
-                return {"status": "completed", "result": result}
-            except Exception as e:
-                return {"status": "failed", "error": str(e)}
+    task_info = task_tracker.get(task_id)
+
+    if task_info:
+        task = task_info["task"]
+        status = task_info["status"]
+
+        if status == "completed":
+            return {"status": "completed", "result": task.result()}
+        elif status == "failed":
+            error = task_info.get("error", "Unknown error")
+            return {"status": "failed", "error": error}
         else:
             return {"status": "in progress"}
     else:

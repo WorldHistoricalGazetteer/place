@@ -1,8 +1,8 @@
 # /ingestion/processor.py
 import asyncio
 import logging
+import time
 from asyncio import Task
-from typing import Dict
 
 from vespa.application import Vespa, VespaSync
 
@@ -10,7 +10,7 @@ from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
 from ..config import host_mapping, namespace
-from ..utils import get_uuid, background_tasks
+from ..utils import get_uuid, task_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -121,8 +121,22 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
             logger.info(f"Success count: {success_count}, Failure count: {failure_count}")
 
+            # Store the result (success/failure) in the task_tracker dictionary
+            task_tracker[task_id] = {
+                "status": "completed" if failure_count == 0 else "failed",
+                "success_count": success_count,
+                "failure_count": failure_count,
+                "errors": errors if errors else None
+            }
+
     except Exception as e:
         logger.exception(f"Error processing dataset: {e}")
+
+        # In case of failure, store the error result in the task_tracker
+        task_tracker[task_id] = {
+            "status": "failed",
+            "error": str(e)
+        }
 
 
 async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None) -> Task:
@@ -134,5 +148,8 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
     :param limit: Maximum number of items to ingest
     """
     task = asyncio.create_task(background_ingestion(dataset_name, task_id, limit))
-    background_tasks[task_id] = task
+
+    # Add the task to the task tracker (triggers cleanup of expired tasks)
+    task_tracker.add_task(task_id, task)
+
     return task

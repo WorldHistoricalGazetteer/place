@@ -1,11 +1,39 @@
 # /utils.py
 import asyncio
+import time
 import uuid
-from typing import Dict
 from urllib.parse import urlparse
 
-# Global dictionary to store background tasks by task_id (for tracking purposes)
-background_tasks: Dict[str, asyncio.Task] = {}
+
+class TaskTracker:
+    def __init__(self):
+        self.tasks = {}
+
+    def add_task(self, task_id: str, task: asyncio.Task):
+        self.tasks[task_id] = {
+            "status": "in progress",
+            "task_id": task_id,
+            "task": task,
+            "timestamp": time.time()
+        }
+        self._cleanup()
+
+    def _cleanup(self, max_age: int = 86400):  # Default 24 hours in seconds
+        current_time = time.time()
+        expired_tasks = [
+            task_id for task_id, task_info in self.tasks.items()
+            if current_time - task_info["timestamp"] > max_age
+        ]
+
+        for task_id in expired_tasks:
+            del self.tasks[task_id]
+
+    def get_task(self, task_id: str):
+        return self.tasks.get(task_id)
+
+
+# Global task tracker instance
+task_tracker = TaskTracker()
 
 
 def is_valid_url(url: str) -> bool:
