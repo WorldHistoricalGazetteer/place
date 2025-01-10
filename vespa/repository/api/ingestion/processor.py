@@ -66,7 +66,7 @@ async def process_document(document, dataset_config, transformer_index, task_id,
         else:
             return log_message(
                 logger.error, feed_progress, task_id, "error",
-                f"Error ingesting document {document_id}: {response.get('error') or response.get('message')}"
+                f"Error ingesting document {document_id} {transformed_document}: {response.get('error') or response.get('message')}"
             )
     except Exception as e:
         log_message(
