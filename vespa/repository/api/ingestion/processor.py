@@ -56,6 +56,7 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
                     # )
                     transformed_document, toponyms = DocTransformer.transform(document, dataset_name, transformer_index=i)
                     document_file.write(f"{transformed_document}\n".encode('utf-8'))  # Write each transformed document to the file
+                document_file.close()
 
             # Process the file
             try:

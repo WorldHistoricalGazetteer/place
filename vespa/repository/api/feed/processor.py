@@ -55,7 +55,7 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
                 json.dump(documents, doc_file)
                 doc_file.seek(0)
                 doc_file_path = doc_file.name
-        command = ["vespa", "feed", doc_file_path]
+        command = ["vespa", "feed", doc_file_path, "--verbose"]
 
     try:
         result = subprocess.run(
