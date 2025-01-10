@@ -95,6 +95,10 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
                 document_id = transformed_document.get(file_config['id_field']) if file_config['id_field'] else get_uuid()
                 feed_url = f"{host_mapping['feed']}/document/v1/{namespace}/{dataset_config['vespa_schema']}/docid/{document_id}"
                 feed_json = {"fields": transformed_document}
+                log_message(
+                    logger.info, feed_progress, task_id, "processing",
+                    f"Sending {feed_json} to {feed_url}"
+                )
                 await send_document(feed_url, feed_json, logger, task_id)
 
         return log_message(
