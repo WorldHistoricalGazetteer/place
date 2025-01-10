@@ -70,7 +70,7 @@ def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[
                     logger.info, feed_progress, task_id, "processing",
                     f"Sending documents to Vespa: {dataset_name} ({i + 1}/{len(dataset_config['files'])})"
                 )
-                asyncio.run(process_documents(dataset_config['vespa_schema'], temp_file_path, task_id))
+                asyncio.run(process_documents(dataset_config['vespa_schema'], temp_file_path, logger, task_id))
             finally:
                 # Ensure the tempfile is deleted even if processing fails # TODO !
                 # os.remove(temp_file_path)

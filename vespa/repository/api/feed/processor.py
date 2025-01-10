@@ -8,13 +8,39 @@ from typing import Union, Dict, Any
 import httpx
 
 from ..config import namespace
-from ..utils import is_valid_url, get_uuid, url_to_tempfile
+from ..utils import is_valid_url, get_uuid, url_to_tempfile, log_message
 
 # A simple in-memory progress tracker
 feed_progress = {}
 
+def log_subprocess_output(command, logger, task_id):
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
 
-async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any], list], task_id: str) -> None:
+    # Read the stdout and stderr in real-time
+    for stdout_line in iter(process.stdout.readline, ""):
+        log_message(
+            logger.info, feed_progress, task_id, "stdout",
+            stdout_line.strip()
+        )
+    for stderr_line in iter(process.stderr.readline, ""):
+        log_message(
+            logger.error, feed_progress, task_id, "stderr",
+            stderr_line.strip()
+        )
+
+    process.stdout.close()
+    process.stderr.close()
+    process.wait()  # Wait for the subprocess to complete
+
+    return process.returncode
+
+
+async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any], list], logger, task_id: str) -> None:
     """
     Process the documents by one of the following methods:
     - Fetching data from a URL
@@ -62,17 +88,12 @@ async def process_documents(doc_type: str, documents: Union[str, Dict[str, Any],
     feed_progress[task_id] = {"status": "Feeding"}
 
     try:
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
+        returncode = log_subprocess_output(command, logger, task_id)
 
-        if result.returncode == 0:
-            feed_progress[task_id] = {"status": "Completed", "output": result.stdout}
+        if returncode == 0:
+            feed_progress[task_id] = {"status": "Completed"}
         else:
-            feed_progress[task_id] = {"status": "Failed", "error": result.stderr}
+            feed_progress[task_id] = {"status": "Failed"}
     except Exception as e:
         feed_progress[task_id] = {"status": "Failed", "error": str(e)}
     finally:
