@@ -25,13 +25,28 @@ def delete_all_docs(sync_app, schema):
 
 
 def feed_document(sync_app, dataset_config, document_id, transformed_document):
-    response = sync_app.feed_data_point(
-        schema=f"{dataset_config['vespa_schema']}",
-        data_id=document_id,
-        fields=transformed_document,
-        namespace=namespace
-    )
-    return response
+    try:
+        response = sync_app.feed_data_point(
+            schema=f"{dataset_config['vespa_schema']}",
+            data_id=document_id,
+            fields=transformed_document,
+            namespace=namespace
+        )
+        if response.status_code == 200:
+            return {"success": True, "document_id": document_id}
+        else:
+            return {
+                "success": False,
+                "document_id": document_id,
+                "status_code": response.status_code,
+                "message": response.json() if response.headers.get('content-type') == 'application/json' else response.text
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "document_id": document_id,
+            "error": str(e)
+        }
 
 
 async def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[str, Any]:
@@ -107,17 +122,41 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
             responses = await asyncio.gather(*tasks)
 
             # Handle responses
+            success_count = 0
+            failure_count = 0
+            errors = []
+
             for response in responses:
-                if response.status_code != 200:
+                if response["success"]:
+                    log_message(
+                        logger.info, feed_progress, task_id, "feeding",
+                        f"Successfully ingested document: {response['document_id']}"
+                    )
+                    success_count += 1
+                else:
+                    failure_count += 1
+                    error_message = (
+                        f"Error ingesting document: {response['document_id']} - "
+                        f"{response.get('error') or response.get('message', 'Unknown error')} "
+                        f"(Status code: {response.get('status_code')})"
+                    )
+                    errors.append(error_message)
                     log_message(
                         logger.error, feed_progress, task_id, "error",
-                        f"Error ingesting document: {response}"
+                        error_message
                     )
 
-        return log_message(
-            logger.info, feed_progress, task_id, "success",
-            f"Successfully processed dataset: {dataset_name}"
-        )
+            # Aggregate final status
+            if failure_count > 0:
+                return log_message(
+                    logger.error, feed_progress, task_id, "error",
+                    f"Processed dataset: {dataset_name} with {failure_count} failures out of {success_count + failure_count} documents. Errors: {errors}"
+                )
+
+            return log_message(
+                logger.info, feed_progress, task_id, "success",
+                f"Successfully processed dataset: {dataset_name}. Ingested {success_count} documents."
+            )
 
     except ValueError as e:
         return log_message(
