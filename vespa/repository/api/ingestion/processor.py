@@ -39,7 +39,8 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
                 "success": False,
                 "document_id": document_id,
                 "status_code": response.status_code,
-                "message": response.json() if response.headers.get('content-type') == 'application/json' else response.text
+                "message": response.json() if response.headers.get(
+                    'content-type') == 'application/json' else response.text
             }
     except Exception as e:
         return {
@@ -47,6 +48,29 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
             "document_id": document_id,
             "error": str(e)
         }
+
+
+async def process_document(document, dataset_config, transformer_index, task_id, sync_app):
+
+    # Transform the document using the appropriate transformer
+    transformed_document, toponyms = DocTransformer.transform(document, dataset_config['dataset_name'],
+                                                              transformer_index)
+    document_id = transformed_document.get(dataset_config['files'][transformer_index]['id_field']) or get_uuid()
+
+    try:
+        response = await asyncio.to_thread(
+            feed_document, sync_app, dataset_config, document_id, transformed_document
+        )
+        if response.status_code != 200:
+            log_message(
+                logger.error, feed_progress, task_id, "error",
+                f"Error ingesting document {document_id} {transformed_document}: {response}"
+            )
+    except Exception as e:
+        log_message(
+            logger.exception, feed_progress, task_id, "error",
+            f"Error processing document {document_id}: {e}"
+        )
 
 
 async def process_dataset(dataset_name: str, task_id: str, limit: int = None) -> Dict[str, Any]:
@@ -104,15 +128,8 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
                     if limit is not None and count >= limit:
                         break
 
-                    transformed_document, toponyms = DocTransformer.transform(document, dataset_name,
-                                                                              transformer_index=i)
-                    document_id = transformed_document.get(file_config['id_field']) if file_config[
-                        'id_field'] else get_uuid()
-
-                    # Add each feed document task to the list for concurrency
-                    tasks.append(asyncio.to_thread(
-                        feed_document, sync_app, dataset_config, document_id, transformed_document
-                    ))
+                    # Process each document asynchronously
+                    tasks.append(process_document(document, dataset_config, i, task_id, sync_app))
 
             # Run all tasks concurrently
             log_message(
