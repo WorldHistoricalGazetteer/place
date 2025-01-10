@@ -265,7 +265,8 @@ class DocTransformer:
                 {
                     "resolution": float(data.get("properties", {}).get("resolution", None)),
                     "source": data.get("properties", {}).get("source", None),
-                    "geometry": json.dumps(float_geometry(data.get("geometry", None), True)) if data.get("geometry") else None,
+                    # "geometry": json.dumps(float_geometry(data.get("geometry", None), True)) if data.get("geometry") else None,
+                    "geometry": "",
                     "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
                 },
                 [
