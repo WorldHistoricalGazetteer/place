@@ -122,21 +122,21 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             logger.info(f"Success count: {success_count}, Failure count: {failure_count}")
 
             # Store the result (success/failure) in the task_tracker dictionary
-            task_tracker[task_id] = {
+            task_tracker.add_task(task_id, {
                 "status": "completed" if failure_count == 0 else "failed",
                 "success_count": success_count,
                 "failure_count": failure_count,
                 "errors": errors if errors else None
-            }
+            })
 
     except Exception as e:
         logger.exception(f"Error processing dataset: {e}")
 
         # In case of failure, store the error result in the task_tracker
-        task_tracker[task_id] = {
+        task_tracker.add_task(task_id, {
             "status": "failed",
             "error": str(e)
-        }
+        })
 
 
 async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None) -> Task:

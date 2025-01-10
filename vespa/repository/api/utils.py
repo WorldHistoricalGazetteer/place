@@ -2,18 +2,19 @@
 import asyncio
 import time
 import uuid
+from typing import Dict, Any
 from urllib.parse import urlparse
 
 
 class TaskTracker:
     def __init__(self):
-        self.tasks = {}
+        self.tasks: Dict[str, Dict[str, Any]] = {}
 
-    def add_task(self, task_id: str, task: asyncio.Task):
+    def add_task(self, task_id: str, task_info: Dict[str, Any]):
         self.tasks[task_id] = {
             "status": "in progress",
             "task_id": task_id,
-            "task": task,
+            "task": task_info,
             "timestamp": time.time()
         }
         self._cleanup()
@@ -28,7 +29,7 @@ class TaskTracker:
         for task_id in expired_tasks:
             del self.tasks[task_id]
 
-    def get_task(self, task_id: str):
+    def get(self, task_id: str):
         return self.tasks.get(task_id)
 
 

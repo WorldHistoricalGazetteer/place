@@ -69,7 +69,7 @@ async def ingest_dataset(
 
 @app.get("/status/{task_id}")
 async def task_status(task_id: str):
-    task_info = task_tracker.get_task(task_id)
+    task_info = task_tracker.get(task_id)
 
     if task_info:
         task = task_info["task"]
