@@ -45,7 +45,8 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY ./api /code/api
 
 # Add /.vespa directory for Vespa CLI and set ownership for that and the code directory
-RUN mkdir -p /.vespa && chown -R 1000:1000 /.vespa /code
+#RUN mkdir -p /.vespa && chown -R 1000:1000 /.vespa /code
+RUN chown -R 1000:1000 /code && chown 1000:1000 /
 
 # Switch to non-root user
 USER 1000:1000

@@ -186,7 +186,7 @@ api:
   image:
     repository: worldhistoricalgazetteer/vespa-api
     pullPolicy: IfNotPresent
-    tag: "0.0.5"
+    tag: "0.0.6"
   git:
     url: "https://github.com/WorldHistoricalGazetteer/place.git"
     sourceFolder: "vespa/repository/"
