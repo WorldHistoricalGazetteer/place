@@ -248,14 +248,11 @@ class DocTransformer:
         "ISO3166": [
             lambda data: (
                 {
-                    "put": f"id:vespa:iso3166::{data.get('properties', {}).get('ISO_A2', get_uuid())}",
-                    "fields": {
-                        "name": data.get("properties", {}).get("ADMIN", None),
-                        "code2": data.get("properties", {}).get("ISO_A2", None),
-                        "code3": data.get("properties", {}).get("ISO_A3", None),
-                        "geometry": data.get("geometry", None),
-                        "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
-                    },
+                    "name": data.get("properties", {}).get("ADMIN", None),
+                    "code2": data.get("properties", {}).get("ISO_A2", None),
+                    "code3": data.get("properties", {}).get("ISO_A3", None),
+                    "geometry": data.get("geometry", None),
+                    "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
                 },
                 [
                 ]
@@ -264,13 +261,10 @@ class DocTransformer:
         "Terrarium": [
             lambda data: (
                 {
-                    "put": f"id:vespa:terrarium::{data.get('properties', {}).get('id', get_uuid())}",
-                    "fields": {
-                        "resolution": float(data.get("properties", {}).get("resolution", None)),
-                        "source": data.get("properties", {}).get("source", None),
-                        "geometry": float_geometry(data.get("geometry", None), True),
-                        "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
-                    },
+                    "resolution": float(data.get("properties", {}).get("resolution", None)),
+                    "source": data.get("properties", {}).get("source", None),
+                    "geometry": float_geometry(data.get("geometry", None), True),
+                    "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
                 },
                 [
                 ]
