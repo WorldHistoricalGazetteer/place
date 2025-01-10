@@ -99,7 +99,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                         break
 
                     # Process each document asynchronously
-                    tasks.append(process_document(document, dataset_config, i, task_id, sync_app))
+                    tasks.append(process_document(document, dataset_config, i, sync_app))
 
             # Run all tasks concurrently
             responses = await asyncio.gather(*tasks)
