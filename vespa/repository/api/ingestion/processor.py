@@ -92,8 +92,7 @@ async def process_dataset(dataset_name: str, task_id: str, limit: int = None) ->
                     break
 
                 transformed_document, toponyms = DocTransformer.transform(document, dataset_name, transformer_index=i)
-                document_id = transformed_document.get(dataset_config['id_field']) if dataset_config[
-                    'id_field'] else get_uuid()
+                document_id = transformed_document.get(file_config['id_field']) if file_config['id_field'] else get_uuid()
                 feed_url = f"{host_mapping['feed']}/document/v1/{namespace}/{dataset_config['vespa_schema']}/docid/{document_id}"
                 feed_json = {"fields": transformed_document}
                 await send_document(feed_url, feed_json, logger, task_id)
