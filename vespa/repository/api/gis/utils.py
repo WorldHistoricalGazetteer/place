@@ -52,7 +52,7 @@ def bbox(geometry, positions=True, errors=True):
     # Convert to positions format
     return { # lat & lng are transposed
         "sw": {"lat": min_lat, "lng": min_lng},
-        "new": {"lat": max_lat, "lng": max_lng}
+        "ne": {"lat": max_lat, "lng": max_lng}
     } if positions else [min_lng, min_lat, max_lng, max_lat]
 
 

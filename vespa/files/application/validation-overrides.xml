@@ -2,4 +2,6 @@
 <validation-overrides>
     <allow until="2025-01-31">content-cluster-removal</allow>
     <allow until='2025-01-31'>schema-removal</allow>
+    <allow until='2025-01-31'>indexing-change</allow>
+    <allow until='2025-01-31'>field-type-change</allow>
 </validation-overrides>
