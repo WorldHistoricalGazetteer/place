@@ -156,15 +156,6 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
 
 
 def isocodes(bbox, geometry):
-
-
-
-
-
-    return [json.dumps(bbox)]
-
-
-
     """
     Determine the ISO 3166 Alpha-2 country codes for countries whose bounding boxes
     intersect with the provided bounding box and whose geometries intersect
@@ -183,8 +174,10 @@ def isocodes(bbox, geometry):
     geom = shape(geometry)
     ccodes = set()
     for country in candidate_countries:
-        country_geom = shape(country['geometry'])
-        if geom.intersects(country_geom):
+
+
+        # country_geom = shape(country['geometry'])
+        # if geom.intersects(country_geom):
             ccodes.add(country['code2'])
 
     return sorted(list(ccodes))
