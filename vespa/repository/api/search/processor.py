@@ -56,8 +56,8 @@ def visit(
             logger.info(f"Total documents retrieved: {total_count}: returning {limit} documents.")
             return {
                 "total_count": total_count,
-                "limit": limit,
-                "documents": all_docs[:limit]
+                "limit": limit if limit > -1 else "no limit",
+                "documents": all_docs[:limit] if limit > -1 else all_docs
             }
 
     except requests.exceptions.RequestException as req_err:

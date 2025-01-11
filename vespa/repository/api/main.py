@@ -23,7 +23,7 @@ app = FastAPI()
 @app.get("/visit")
 async def visit_documents(
         schema: str = Query(..., description="The document type to filter by"),
-        limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000)"),
+        limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000); use -1 for no limit"),
         slices: int = Query(1, ge=1, description="The number of slices for parallel processing")
 ):
     """
@@ -31,7 +31,7 @@ async def visit_documents(
 
     Args:
         schema (str): The document type (schema) to query.
-        limit (int): The number of documents to retrieve.
+        limit (int): The number of documents to retrieve; use -1 for no limit.
         slices (int): The number of slices for parallel processing.
 
     Returns:
