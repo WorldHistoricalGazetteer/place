@@ -18,6 +18,13 @@ schema terrarium {
         field geometry type string {
             indexing: summary
         }
+
+        # Array of ISO Alpha-2 codes (e.g., AW, AF)
+        field ccodes type array<string> {
+            indexing: attribute
+            attribute: fast-search
+        }
+
     }
 
     rank-profile smallest_resolution {
