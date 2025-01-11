@@ -52,8 +52,9 @@ def visit(
                     selection=selection,
                     wanted_document_count=wanted_document_count,
             ):
-
+                logger.info(f"Slice: {slice}")
                 for response in slice:
+                    logger.info(f"Response: {response}")
                     all_docs.extend(response.documents)
                     total_count += response.number_documents_retrieved
 
@@ -64,7 +65,7 @@ def visit(
             }
 
     except requests.exceptions.RequestException as req_err:
-        logger.error(f"HTTP Request failed: {req_err}")
+        logger.error(f"HTTP Request failed: {req_err}", exc_info=True)
         raise Exception(f"Error during Vespa document visit: HTTP Request failed - {req_err}")
 
     except Exception as e:
