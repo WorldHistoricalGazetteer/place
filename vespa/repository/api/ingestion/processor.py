@@ -5,8 +5,6 @@ import time
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
 
-from vespa.application import VespaSync
-
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
@@ -102,7 +100,6 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         return
 
     logger.info(f"Processing dataset: {dataset_name}")
-
 
     try:
         with VespaClient.sync_context("feed") as sync_app:

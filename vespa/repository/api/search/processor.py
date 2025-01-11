@@ -3,7 +3,6 @@ import logging
 from typing import Dict, Any
 
 import requests
-from vespa.application import VespaSync
 
 from ..config import namespace, VespaClient
 
@@ -13,8 +12,7 @@ logger = logging.getLogger(__name__)
 def visit(
         schema: str,
         limit: int,
-        field: str = "id",
-        slices: int = 1
+        slices: int = 1,
 ) -> Dict[str, Any]:
     """
     Visit and retrieve documents of a specified type from a Vespa instance.
@@ -28,7 +26,6 @@ def visit(
     Args:
         schema (str): The Vespa schema (document type) to query.
         limit (int): The maximum number of documents to return.
-        field (str): The field used for filtering; documents must have this field set. Default is "id".
         slices (int): Number of slices for parallel processing. Default is 1.
 
     Returns:
@@ -41,7 +38,6 @@ def visit(
 
             all_docs = []
             total_count = 0
-            # selection = f"{field} contains ''"  # Matches documents where the field is present
             selection = "true"  # Matches all documents
 
             # Use VespaSync.visit to retrieve documents once
@@ -50,7 +46,6 @@ def visit(
                     schema=schema,
                     namespace=namespace,
                     slices=slices,
-                    selection=selection,
             ):
                 logger.info(f"Slice: {slice}")
                 for response in slice:

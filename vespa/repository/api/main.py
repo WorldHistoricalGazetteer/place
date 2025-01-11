@@ -21,10 +21,9 @@ app = FastAPI()
 
 
 @app.get("/visit")
-async def search_documents(
+async def visit_documents(
         schema: str = Query(..., description="The document type to filter by"),
         limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000)"),
-        field: str = Query("id", description="The field used for filtering documents"),
         slices: int = Query(1, ge=1, description="The number of slices for parallel processing")
 ):
     """
@@ -33,14 +32,13 @@ async def search_documents(
     Args:
         schema (str): The document type (schema) to query.
         limit (int): The number of documents to retrieve.
-        field (str): The field used for filtering; documents must have this field set.
         slices (int): The number of slices for parallel processing.
 
     Returns:
         JSONResponse: A JSON response with the total document count and the retrieved documents.
     """
     try:
-        results = visit(schema, limit, field=field, slices=slices)
+        results = visit(schema, limit, slices)
         return JSONResponse(status_code=200, content=results)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
