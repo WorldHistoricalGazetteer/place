@@ -37,7 +37,7 @@ def visit(
 
     try:
         with VespaClient.sync_context("feed") as sync_app:
-            logger.info(f"Visiting documents from Vespa schema: {schema} on {VespaClient.get_url("feed")}")
+            logger.info(f"Visiting documents from Vespa schema: {schema} on {VespaClient.get_url('feed')}")
 
             all_docs = []
             total_count = 0
