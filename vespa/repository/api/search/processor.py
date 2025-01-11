@@ -27,7 +27,7 @@ def visit(
 
     Args:
         schema (str): The Vespa schema (document type) to query.
-        wanted_document_count (int): The maximum number of documents to retrieve.
+        limit (int): The maximum number of documents to return.
         field (str): The field used for filtering; documents must have this field set. Default is "id".
         slices (int): Number of slices for parallel processing. Default is 1.
 
@@ -58,6 +58,7 @@ def visit(
                     all_docs.extend(response.documents)
                     total_count += response.number_documents_retrieved
 
+            logger.info(f"Total documents retrieved: {total_count}: returning {limit} documents.")
             return {
                 "total_count": total_count,
                 "limit": limit,
