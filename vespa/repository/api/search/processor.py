@@ -2,6 +2,7 @@
 import logging
 from typing import Dict, Any
 
+import requests
 from vespa.application import VespaSync, Vespa
 
 from ..config import host_mapping, namespace
@@ -48,7 +49,7 @@ def visit(
                 schema=schema,
                 namespace=namespace,
                 slices=slices,
-                selection=selection,
+                # selection=selection,
                 wanted_document_count=wanted_document_count,
             ):
                 for doc in generator:
@@ -61,5 +62,10 @@ def visit(
                 "documents": results,
             }
 
+    except requests.exceptions.RequestException as req_err:
+        logger.error(f"HTTP Request failed: {req_err}")
+        raise Exception(f"Error during Vespa document visit: HTTP Request failed - {req_err}")
+
     except Exception as e:
+        logger.error(f"An error occurred: {e}")
         raise Exception(f"Error during Vespa document visit: {e}")
