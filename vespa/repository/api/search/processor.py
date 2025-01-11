@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def visit(
         schema: str,
-        wanted_document_count: int,
+        limit: int,
         field: str = "id",
         slices: int = 1
 ) -> Dict[str, Any]:
@@ -51,7 +51,6 @@ def visit(
                     namespace=namespace,
                     slices=slices,
                     selection=selection,
-                    wanted_document_count=wanted_document_count,
             ):
                 logger.info(f"Slice: {slice}")
                 for response in slice:
@@ -61,8 +60,8 @@ def visit(
 
             return {
                 "total_count": total_count,
-                "limit": wanted_document_count,
-                "documents": all_docs
+                "limit": limit,
+                "documents": all_docs[:limit]
             }
 
     except requests.exceptions.RequestException as req_err:
