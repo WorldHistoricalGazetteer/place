@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 def visit(
-    schema: str,
-    wanted_document_count: int,
-    field: str = "id",
-    slices: int = 1
+        schema: str,
+        wanted_document_count: int,
+        field: str = "id",
+        slices: int = 1
 ) -> Dict[str, Any]:
     """
     Visit and retrieve documents of a specified type from a Vespa instance.
@@ -31,40 +31,36 @@ def visit(
     Returns:
         Dict[str, Any]: A dictionary containing total document count and the list of documents.
     """
-    app = Vespa(url=f"{host_mapping['query']}")
-    logger.info(f"Visiting documents from Vespa schema: {schema} on {app.url}")
-
-    results = []
-    total_count = 0
 
     try:
+        app = Vespa(url=f"{host_mapping['query']}")
+        logger.info(f"Visiting documents from Vespa schema: {schema} on {app.url}")
+
         with VespaSync(app) as sync_app:
-            # Build the selection query for filtering by field
+
+            all_docs = []
+            total_count = 0
             # selection = f"{field} contains ''"  # Matches documents where the field is present
             selection = "true"  # Matches all documents
 
             # Use VespaSync.visit to retrieve documents once
-            slice_generator = sync_app.visit(
-                content_cluster_name="content",
-                schema=schema,
-                namespace=namespace,
-                slices=slices,
-                selection=selection,
-                wanted_document_count=wanted_document_count,
-            )
+            for slice in sync_app.visit(
+                    content_cluster_name="content",
+                    schema=schema,
+                    namespace=namespace,
+                    slices=slices,
+                    selection=selection,
+                    wanted_document_count=wanted_document_count,
+            ):
 
-            # Iterate over the generator and collect the actual documents
-            for response_generator in slice_generator:
-                logger.info(f"Processing response generator for slice {response_generator}")
-                for response in response_generator:
-                    logger.info(f"Processing response: {response}")
-                    results.append(response)
-                    total_count += 1
+                for response in slice:
+                    all_docs.extend(response.documents)
+                    total_count += response.number_documents_retrieved
 
             return {
                 "total_count": total_count,
                 "limit": wanted_document_count,
-                "documents": results,
+                "documents": all_docs
             }
 
     except requests.exceptions.RequestException as req_err:
