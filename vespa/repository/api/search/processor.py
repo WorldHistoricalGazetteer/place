@@ -41,8 +41,8 @@ def visit(
 
             all_docs = []
             total_count = 0
-            selection = f"{field} contains ''"  # Matches documents where the field is present
-            # selection = "true"  # Matches all documents
+            # selection = f"{field} contains ''"  # Matches documents where the field is present
+            selection = "true"  # Matches all documents
 
             # Use VespaSync.visit to retrieve documents once
             for slice in sync_app.visit(
