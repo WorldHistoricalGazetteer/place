@@ -3,6 +3,7 @@ import asyncio
 import logging
 import time
 from asyncio import Task
+from concurrent.futures import ThreadPoolExecutor
 
 from vespa.application import Vespa, VespaSync
 
@@ -13,6 +14,8 @@ from ..config import host_mapping, namespace
 from ..utils import get_uuid, task_tracker
 
 logger = logging.getLogger(__name__)
+
+executor = ThreadPoolExecutor(max_workers=10)
 
 
 def delete_all_docs(sync_app, schema):
@@ -56,8 +59,8 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     document_id = transformed_document.get(dataset_config['files'][transformer_index]['id_field']) or get_uuid()
 
     try:
-        response = await asyncio.to_thread(
-            feed_document, sync_app, dataset_config, document_id, transformed_document
+        response = await asyncio.get_event_loop().run_in_executor(
+            executor, feed_document, sync_app, dataset_config, document_id, transformed_document
         )
         if response.get("success"):
             return response
@@ -102,7 +105,6 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                         break
 
                     # Process each document asynchronously
-                    logger.info(f"Processing document: {count + 1}")
                     tasks.append(process_document(document, dataset_config, i, sync_app))
 
             # Run all tasks concurrently
