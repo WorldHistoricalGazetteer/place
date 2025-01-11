@@ -96,7 +96,10 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
     dataset_config = next((config for config in REMOTE_DATASET_CONFIGS if config['dataset_name'] == dataset_name), None)
 
     if dataset_config is None:
-        logger.error(f"Dataset configuration not found for dataset: {dataset_name}. Valid names are {', '.join([c['dataset_name'] for c in REMOTE_DATASET_CONFIGS])}")
+        logger.error(
+            f"Dataset configuration not found for dataset: {dataset_name}. Valid names are {', '.join([c['dataset_name'] for c in REMOTE_DATASET_CONFIGS])}.")
+        task_tracker.update_task(task_id, {"status": "failed",
+                                           "error": f"Dataset configuration not found for dataset: {dataset_name}. Valid names are {', '.join([c['dataset_name'] for c in REMOTE_DATASET_CONFIGS])}."})
         return
 
     logger.info(f"Processing dataset: {dataset_name}")
