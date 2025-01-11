@@ -250,11 +250,11 @@ class DocTransformer:
         "ISO3166": [
             lambda data: (
                 {
-                    "name": data.get("properties", {}).get("ADMIN", None),
-                    "code2": data.get("properties", {}).get("ISO_A2", None),
-                    "code3": data.get("properties", {}).get("ISO_A3", None),
-                    "geometry": data.get("geometry", None),
-                    "bounding_box": bbox(data.get("geometry"), errors=False) or {"x": [None, None], "y": [None, None]},
+                    **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
+                    **({"code2": code2} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
+                    **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
+                    **({"geometry": geometry} if (geometry := (json.dumps(float_geometry(data.get("geometry", None), True)) if data.get("geometry") else None)) else {}),
+                    **({"bounding_box": bbox_val} if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}),
                 },
                 [
                 ]
