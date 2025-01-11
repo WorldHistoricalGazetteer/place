@@ -43,18 +43,20 @@ def visit(
             # selection = f"{field} contains ''"  # Matches documents where the field is present
             selection = "true"  # Matches all documents
 
-            # Use VespaSync.visit to retrieve documents
-            for generator in sync_app.visit(
+            # Use VespaSync.visit to retrieve documents once
+            document_generator = sync_app.visit(
                 content_cluster_name="content",
                 schema=schema,
                 namespace=namespace,
                 slices=slices,
-                # selection=selection,
+                selection=selection,
                 wanted_document_count=wanted_document_count,
-            ):
-                for doc in generator:
-                    results.append(doc)
-                    total_count += 1
+            )
+
+            # Iterate through the generator once
+            for doc in document_generator:
+                results.append(doc)
+                total_count += 1
 
             return {
                 "total_count": total_count,
