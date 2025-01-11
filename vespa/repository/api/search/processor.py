@@ -44,7 +44,7 @@ def visit(
             selection = "true"  # Matches all documents
 
             # Use VespaSync.visit to retrieve documents once
-            document_generator = sync_app.visit(
+            slice_generator = sync_app.visit(
                 content_cluster_name="content",
                 schema=schema,
                 namespace=namespace,
@@ -54,9 +54,11 @@ def visit(
             )
 
             # Iterate over the generator and collect the actual documents
-            for slice_generator in document_generator:
-                for doc in slice_generator:
-                    results.append(doc)
+            for response_generator in slice_generator:
+                logger.info(f"Processing response generator for slice {response_generator}")
+                for response in response_generator:
+                    logger.info(f"Processing response: {response}")
+                    results.append(response)
                     total_count += 1
 
             return {
