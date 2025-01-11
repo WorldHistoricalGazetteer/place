@@ -53,12 +53,11 @@ def visit(
                 wanted_document_count=wanted_document_count,
             )
 
-            # Iterate through the generator once
-            for doc in document_generator:
-                logger.debug(f"Document type: {type(doc)}")
-                logger.info(f"Document: {doc}")
-                results.append(doc)
-                total_count += 1
+            # Iterate over the generator and collect the actual documents
+            for slice_generator in document_generator:
+                for doc in slice_generator:
+                    results.append(doc)
+                    total_count += 1
 
             return {
                 "total_count": total_count,
