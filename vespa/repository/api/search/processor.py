@@ -33,10 +33,10 @@ def visit(
     """
 
     try:
-        app = Vespa(url=f"{host_mapping['query']}")
-        logger.info(f"Visiting documents from Vespa schema: {schema} on {app.url}")
+        app_feed = Vespa(url=f"{host_mapping['feed']}") # Use the feed endpoint for visiting documents, not the query endpoint
+        logger.info(f"Visiting documents from Vespa schema: {schema} on {app_feed.url}")
 
-        with VespaSync(app) as sync_app:
+        with VespaSync(app_feed) as sync_app:
 
             all_docs = []
             total_count = 0
