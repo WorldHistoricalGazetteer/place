@@ -35,10 +35,10 @@ def bbox(geometry, positions=True, errors=True):
         if any(math.isnan(v) or math.isinf(v) for v in (lng, lat)):
             return {"error": "Invalid geometry (NaN or Infinity)"} if errors else None
         else:
-            return [ # lat & lng are transposed
-                {"lat": lat, "lng": lng},
-                {"lat": lat, "lng": lng}
-            ] if positions else [lng, lat, lng, lat]
+            return { # lat & lng are transposed
+                "sw": {"lat": lat, "lng": lng},
+                "ne": {"lat": lat, "lng": lng}
+            } if positions else [lng, lat, lng, lat]
 
     min_lng, min_lat, max_lng, max_lat = geom.bounds
 
@@ -50,10 +50,10 @@ def bbox(geometry, positions=True, errors=True):
     min_lng, min_lat, max_lng, max_lat = float(min_lng), float(min_lat), float(max_lng), float(max_lat)
 
     # Convert to positions format
-    return [ # lat & lng are transposed
-        {"lat": min_lat, "lng": min_lng},
-        {"lat": max_lat, "lng": max_lng}
-    ] if positions else [min_lng, min_lat, max_lng, max_lat]
+    return { # lat & lng are transposed
+        "sw": {"lat": min_lat, "lng": min_lng},
+        "new": {"lat": max_lat, "lng": max_lng}
+    } if positions else [min_lng, min_lat, max_lng, max_lat]
 
 
 def float_geometry(geometry, has_decimal=False):
