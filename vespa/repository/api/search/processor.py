@@ -55,6 +55,8 @@ def visit(
 
             # Iterate through the generator once
             for doc in document_generator:
+                logger.debug(f"Document type: {type(doc)}")
+                logger.info(f"Document: {doc}")
                 results.append(doc)
                 total_count += 1
 
