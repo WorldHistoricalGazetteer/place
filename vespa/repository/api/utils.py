@@ -1,4 +1,5 @@
 # /utils.py
+import math
 import time
 import uuid
 from typing import Dict, Any
@@ -37,7 +38,7 @@ class TaskTracker:
         current_time = time.time()
         expired_tasks = [
             task_id for task_id, task_info in self.tasks.items()
-            if current_time - task_info["timestamp"] > max_age
+            if current_time - task_info.get("start_time", current_time) > max_age
         ]
         for task_id in expired_tasks:
             del self.tasks[task_id]
