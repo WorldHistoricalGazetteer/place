@@ -48,7 +48,7 @@ def visit(
                 schema=schema,
                 namespace=namespace,
                 slices=slices,
-                # selection=selection,
+                selection=selection,
                 wanted_document_count=wanted_document_count,
             ):
                 for doc in generator:
