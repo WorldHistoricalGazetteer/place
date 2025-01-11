@@ -1,15 +1,20 @@
 schema terrarium {
     document terrarium {
-        field bounding_box type tensor(x[2],y[2]) {
+        # SW and NE coordinates of the bounding box: [{lat, lng}, {lat, lng}]
+        field bbox type array<position> {
             indexing: attribute
         }
+
         field resolution type float {
             indexing: attribute
             attribute: fast-search
         }
+
         field source type string {
             indexing: summary
         }
+
+        # Geometry field (stored as a GeoJSON string)
         field geometry type string {
             indexing: summary
         }

@@ -1,7 +1,7 @@
 schema iso3166 {
     document iso3166 {
-        # Bounding box field (tensor representation of [minX, minY], [maxX, maxY])
-        field bounding_box type tensor(x[2],y[2]) {
+        # SW and NE coordinates of the bounding box: [{lat, lng}, {lat, lng}]
+        field bbox type array<position> {
             indexing: attribute
         }
 
@@ -23,7 +23,7 @@ schema iso3166 {
             attribute: fast-search
         }
 
-        # Geometry field (stored as a JSON string or another suitable format)
+        # Geometry field (stored as a GeoJSON string)
         field geometry type string {
             indexing: summary
         }
