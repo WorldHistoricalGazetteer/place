@@ -100,22 +100,22 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
     try:
         with VespaClient.sync_context("feed") as sync_app:
 
-            if test_box[1]['lng'] > test_box[0]['lng']:
+            if test_box.nw.lng > test_box.se.lng:
                 query = {
                     "yql": f"""
                                 select {schema_fields} 
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range({schema_box}[0]["lng"], {test_box[0]["lng"]}, {test_box[1]["lng"]}) 
+                                    range({schema_box}.se.lng, {test_box.se.lng}, {test_box.nw.lng}) 
                                     or 
-                                    range({schema_box}[1]["lng"], {test_box[0]["lng"]}, {test_box[1]["lng"]})
+                                    range({schema_box}.nw.lng, {test_box.se.lng}, {test_box.nw.lng})
                                 ) 
                                 and
                                 (
-                                    range({schema_box}[0]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]}) 
+                                    range({schema_box}.se.lat, {test_box.se.lat}, {test_box.nw.lat}) 
                                     or 
-                                    range({schema_box}[1]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]})
+                                    range({schema_box}.nw.lat, {test_box.se.lat}, {test_box.nw.lat})
                                 )
                             """
                 }
@@ -126,19 +126,19 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range({schema_box}[0]["lng"], -180, {test_box[1]["lng"]}) 
+                                    range({schema_box}.se.lng, -180, {test_box.nw.lng}) 
                                     or 
-                                    range({schema_box}[0]["lng"], {test_box[0]["lng"]}, 180) 
+                                    range({schema_box}.se.lng, {test_box.se.lng}, 180) 
                                     or 
-                                    range({schema_box}[1]["lng"], -180, {test_box[1]["lng"]}) 
+                                    range({schema_box}.nw.lng, -180, {test_box.nw.lng}) 
                                     or 
-                                    range({schema_box}[1]["lng"], {test_box[0]["lng"]}, 180)
+                                    range({schema_box}.nw.lng, {test_box.se.lng}, 180)
                                 ) 
                                 and
                                 (
-                                    range({schema_box}[0]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]}) 
+                                    range({schema_box}.se.lat, {test_box.se.lat}, {test_box.nw.lat}) 
                                     or 
-                                    range({schema_box}[1]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]})
+                                    range({schema_box}.nw.lat, {test_box.se.lat}, {test_box.nw.lat})
                                 )
                             """
                 }

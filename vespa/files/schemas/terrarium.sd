@@ -1,8 +1,12 @@
 schema terrarium {
     document terrarium {
         # SW and NE coordinates of the bounding box: {sw: {lat, lng}, ne: {lat, lng}}
-        field bbox type struct<sw:position, ne:position> {
-            indexing: attribute
+        struct bbox_struct {
+            field sw type position {}
+            field ne type position {}
+        }
+        field bbox type bbox_struct {
+            indexing: summary
         }
 
         field resolution type float {
