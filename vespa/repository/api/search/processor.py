@@ -15,21 +15,23 @@ def visit(
         slices: int = 1,
 ) -> Dict[str, Any]:
     """
-    Visit and retrieve documents of a specified type from a Vespa instance.
+    Fetch documents of a specified type from a Vespa instance.
 
-    This function uses VespaSync's visit method to fetch documents that match a given field
-    and returns a paginated list of results. It supports slicing for parallel processing.
-
-    It uses the feed endpoint to visit documents because the query endpoint does not have the document-api
-    service enabled (see `configmap-hosts-services.yaml`).
+    This function uses VespaSync's `visit` method to retrieve documents from a Vespa instance.
+    It supports pagination and parallel processing through slicing. The documents are fetched
+    from the feed endpoint because the query endpoint does not have the document API enabled
+    (refer to `configmap-hosts-services.yaml`).
 
     Args:
         schema (str): The Vespa schema (document type) to query.
-        limit (int): The maximum number of documents to return.
+        limit (int): The maximum number of documents to return. A value of -1 means no limit.
         slices (int): Number of slices for parallel processing. Default is 1.
 
     Returns:
-        Dict[str, Any]: A dictionary containing total document count and the list of documents.
+        Dict[str, Any]: A dictionary containing:
+            - `total_count` (int): The total number of documents retrieved.
+            - `limit` (int or str): The specified document limit or "no limit" if -1 is provided.
+            - `documents` (list): A list of documents, limited to the specified number.
     """
 
     try:
@@ -38,7 +40,6 @@ def visit(
 
             all_docs = []
             total_count = 0
-            selection = "true"  # Matches all documents
 
             # Use VespaSync.visit to retrieve documents once
             for slice in sync_app.visit(
