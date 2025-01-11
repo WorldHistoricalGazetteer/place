@@ -1,7 +1,7 @@
 schema terrarium {
     document terrarium {
-        # SW and NE coordinates of the bounding box: [{lat, lng}, {lat, lng}]
-        field bbox type array<position> {
+        # SW and NE coordinates of the bounding box: {sw: {lat, lng}, ne: {lat, lng}}
+        field bbox type struct<sw:position, ne:position> {
             indexing: attribute
         }
 

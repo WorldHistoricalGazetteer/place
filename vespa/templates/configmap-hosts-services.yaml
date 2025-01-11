@@ -66,6 +66,7 @@ data:
         <container id="feed" version="1.0">
             <document-api/>
             <document-processing/>
+            <search/>
             <nodes>
                 {{- range $i := until (.Values.replicaCounts.feed | int) }}
                 <node hostalias="vespa-feed-container-{{ $i }}"/>
