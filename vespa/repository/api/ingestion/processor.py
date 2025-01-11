@@ -1,7 +1,6 @@
 # /ingestion/processor.py
 import asyncio
 import logging
-import time
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
 
@@ -53,22 +52,28 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
 
 
 async def process_document(document, dataset_config, transformer_index, sync_app):
-    # Transform the document using the appropriate transformer
     transformed_document, toponyms = DocTransformer.transform(document, dataset_config['dataset_name'],
                                                               transformer_index)
     document_id = transformed_document.get(dataset_config['files'][transformer_index]['id_field']) or get_uuid()
 
-    try:
-        response = await asyncio.get_event_loop().run_in_executor(
-            executor, feed_document, sync_app, dataset_config, document_id, transformed_document
-        )
-        if response.get("success"):
-            return response
-        else:
-            return {"success": False, "document_id": document_id,
-                    "error": response.get('error') or response.get('message')}
-    except Exception as e:
-        return {"success": False, "document_id": document_id, "error": str(e)}
+    return await asyncio.get_event_loop().run_in_executor(
+        executor, feed_document, sync_app, dataset_config, document_id, transformed_document
+    )
+
+
+async def process_documents(documents, dataset_config, transformer_index, sync_app, limit):
+    semaphore = asyncio.Semaphore(5)  # Limit concurrent tasks
+
+    async def process_limited(document):
+        async with semaphore:
+            return await process_document(document, dataset_config, transformer_index, sync_app)
+
+    tasks = [
+        process_limited(document)
+        for count, document in enumerate(documents)
+        if limit is None or count < limit
+    ]
+    return await asyncio.gather(*tasks)
 
 
 async def background_ingestion(dataset_name: str, task_id: str, limit: int = None) -> None:
@@ -92,58 +97,28 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             logger.info(f"Deleting all documents for schema: {dataset_config['vespa_schema']}")
             await asyncio.to_thread(delete_all_docs, sync_app, dataset_config['vespa_schema'])
 
-            tasks = []  # To keep track of async tasks for feeding documents
-
+            all_responses = []
             for i, file_config in enumerate(dataset_config['files']):
                 logger.info(f"Opening stream: {file_config['url']}")
                 stream_fetcher = StreamFetcher(file_config)
                 logger.info(f"Fetching items from stream.")
                 documents = stream_fetcher.get_items()
+                responses = await process_documents(documents, dataset_config, i, sync_app, limit)
+                all_responses.extend(responses)
 
-                for count, document in enumerate(documents):
-                    if limit is not None and count >= limit:
-                        break
+            success_count = sum(1 for r in all_responses if r.get("success"))
+            failure_count = len(all_responses) - success_count
+            logger.info(f"Success: {success_count}, Failures: {failure_count}")
 
-                    # Process each document asynchronously
-                    tasks.append(process_document(document, dataset_config, i, sync_app))
-
-            # Run all tasks concurrently
-            logger.info(f"Feeding {len(tasks)} documents to Vespa.")
-            responses = await asyncio.gather(*tasks)
-
-            # Handle responses and logging
-            success_count, failure_count, errors = 0, 0, []
-            for response in responses:
-                if response["success"]:
-                    success_count += 1
-                else:
-                    failure_count += 1
-                    error_message = f"Error ingesting document: {response['document_id']} - {response.get('error')}"
-                    errors.append(error_message)
-
-            if failure_count > 0:
-                logger.error(f"Ingestion failed: {failure_count}/{success_count + failure_count} documents")
-                for error in errors:
-                    logger.error(error)
-
-            logger.info(f"Success count: {success_count}, Failure count: {failure_count}")
-
-            # Store the result (success/failure) in the task_tracker dictionary
             task_tracker.add_task(task_id, {
                 "status": "completed" if failure_count == 0 else "failed",
                 "success_count": success_count,
                 "failure_count": failure_count,
-                "errors": errors if errors else None
             })
 
     except Exception as e:
-        logger.exception(f"Error processing dataset: {e}")
-
-        # In case of failure, store the error result in the task_tracker
-        task_tracker.add_task(task_id, {
-            "status": "failed",
-            "error": str(e)
-        })
+        logger.exception(f"Error during ingestion: {e}")
+        task_tracker.add_task(task_id, {"status": "failed", "error": str(e)})
 
 
 async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None) -> Task:
