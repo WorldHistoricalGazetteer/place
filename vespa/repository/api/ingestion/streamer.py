@@ -128,7 +128,7 @@ class StreamFetcher:
         # Check for gzip compression based on the Content-Encoding header or magic bytes
         if response.headers.get('Content-Encoding') == 'gzip' or response.content[:2] == b'\x1f\x8b':
             self.logger.info(f"Detected gzip compression for <{self.file_type}> file {self.file_url}")
-            return gzip.GzipFile(fileobj=io.BytesIO(response.raw))
+            return gzip.GzipFile(fileobj=io.BytesIO(response.raw.read()))
 
         self.logger.info(f"Successfully fetched regular <{self.file_type}> file from {self.file_url}")
         return response.raw
