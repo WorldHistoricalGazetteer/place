@@ -68,16 +68,20 @@ class StreamFetcher:
         self.delimiter = file.get('delimiter', '\t')  # Delimiter for CSV files
 
     def get_stream(self):
-        # First, validate the URL before fetching
-        if not is_valid_url(self.file_url):
-            self.logger.error(f"Invalid URL: {self.file_url}")
-            raise ValueError(f"Invalid URL: {self.file_url}")
+        # First, validate the URL or file path
+        if not is_valid_url(self.file_url) and not os.path.exists(self.file_url):
+            self.logger.error(f"Invalid URL or file path: {self.file_url}")
+            raise ValueError(f"Invalid URL or file path: {self.file_url}")
 
-        self.logger.info(f"Fetching stream for URL: {self.file_url}")
+        self.logger.info(f"Fetching stream for file: {self.file_url}")
         if self.file_url.endswith('.gz'):
             return self._get_gzip_stream()
         elif self.file_url.endswith('.zip'):
             return self._get_zip_stream()
+        elif is_valid_url(self.file_url):  # Assume it's a regular file
+            return self._get_regular_file_stream()
+        elif os.path.exists(self.file_url):
+            return self._get_local_file_stream()
         else:
             self.logger.error("Unsupported file format")
             raise ValueError("Unsupported file format")
@@ -87,7 +91,7 @@ class StreamFetcher:
         self.logger.info(f"Fetching gzip stream from {self.file_url}")
         response = requests.get(self.file_url, stream=True)
         response.raise_for_status()
-        self.logger.info(f"Successfully fetched gzip file from {self.file_url}")
+        self.logger.info(f"Successfully fetched <{self.file_type}> gzip file from {self.file_url}")
         return gzip.GzipFile(fileobj=response.raw)
 
     def _get_zip_stream(self):
@@ -107,13 +111,26 @@ class StreamFetcher:
                 if self.file_name not in zip_file.namelist():
                     self.logger.error(f"{self.file_name} not found in the ZIP archive")
                     raise ValueError(f"{self.file_name} not found in the ZIP archive")
-                self.logger.info(f"Successfully located {self.file_name} in the ZIP archive")
+                self.logger.info(f"Successfully located <{self.file_type}> file {self.file_name} in the ZIP archive")
                 return zip_file.open(self.file_name)
         finally:
             # Clean up the temporary file
             if os.path.exists(temp_file_path):
                 os.remove(temp_file_path)
                 self.logger.info(f"Temporary file {temp_file_path} has been deleted")
+
+    def _get_regular_file_stream(self):
+        # Directly stream regular files (non-compressed, non-zip) from the URL
+        self.logger.info(f"Fetching regular file stream from {self.file_url}")
+        response = requests.get(self.file_url, stream=True)
+        response.raise_for_status()
+        self.logger.info(f"Successfully fetched regular <{self.file_type}> file from {self.file_url}")
+        return response.raw
+
+    def _get_local_file_stream(self):
+        # Open and return a local file stream for non-compressed files
+        self.logger.info(f"Opening local <{self.file_type}> file stream for {self.file_url}")
+        return open(self.file_url, 'rb')
 
     def get_items(self):
         """
