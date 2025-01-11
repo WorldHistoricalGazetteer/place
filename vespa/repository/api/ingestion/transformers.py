@@ -64,7 +64,7 @@ class DocTransformer:
                     # "primary_name": ,
                     # "latitude": ,
                     # "longitude": ,
-                    # "geometry_bbox": ,
+                    **({"bounding_box": bbox_val} if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}),
                     # "feature_classes": ,
                     # "ccodes": ,
                     "lpf_feature": data,
@@ -267,6 +267,8 @@ class DocTransformer:
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     **({"geometry": geometry} if (geometry := (json.dumps(float_geometry(data.get("geometry", None), True)) if data.get("geometry") else None)) else {}),
                     **({"bounding_box": bbox_val} if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}),
+                    # TODO: Remove the following line after testing functionality
+                    **({"ccodes": ccodes} if (ccodes := isocodes(bbox_val, data.get("geometry", None))) else {}),
                 },
                 [
                 ]

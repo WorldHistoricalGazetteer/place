@@ -81,24 +81,13 @@ def float_geometry(geometry, has_decimal=False):
     }
 
 
-def isocodes(geometries, has_decimal=False):
+def isocodes(bbox, geometry):
     # Collect ISO codes from countries intersecting with the provided geometries
 
-    # TODO: Convert this from PostGIS to Vespa + Shapely
+    # Use Search API to query the iso3166 schema for Alpha-2 codes and geometries of countries whose bounding boxes intersect with that provided
 
-    # ccodes = set()
-    # for geom in geometries:
-    #     geometry = geom.get('geometry', geom)
-    #
-    #     if geometry:
-    #         parsed_geometry = float_geometry(geometry, has_decimal)
-    #         logger.debug(f"Parsed geometry: {parsed_geometry}")
-    #         geos_geometry = GEOSGeometry(json.dumps(parsed_geometry))
-    #
-    #         # Query the Country model for intersections with the provided geometry
-    #         qs = Country.objects.filter(mpoly__intersects=geos_geometry)
-    #         ccodes.update([country.iso for country in qs])
-    #
+    # Use Shapely to check for intersections with the provided geometry
+
     # return sorted(ccodes)
 
-    return {}
+    return []
