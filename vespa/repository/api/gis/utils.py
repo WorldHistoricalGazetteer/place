@@ -161,7 +161,7 @@ def isocodes(bbox, geometry):
 
 
 
-    return []
+    return [json.dumps(bbox)]
 
 
 
