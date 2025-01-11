@@ -3,9 +3,9 @@ import logging
 from typing import Dict, Any
 
 import requests
-from vespa.application import VespaSync, Vespa
+from vespa.application import VespaSync
 
-from ..config import host_mapping, namespace
+from ..config import namespace, VespaClient
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,9 @@ def visit(
     This function uses VespaSync's visit method to fetch documents that match a given field
     and returns a paginated list of results. It supports slicing for parallel processing.
 
+    It uses the feed endpoint to visit documents because the query endpoint does not have the document-api
+    service enabled (see `configmap-hosts-services.yaml`).
+
     Args:
         schema (str): The Vespa schema (document type) to query.
         wanted_document_count (int): The maximum number of documents to retrieve.
@@ -33,15 +36,13 @@ def visit(
     """
 
     try:
-        app_feed = Vespa(url=f"{host_mapping['feed']}") # Use the feed endpoint for visiting documents, not the query endpoint
-        logger.info(f"Visiting documents from Vespa schema: {schema} on {app_feed.url}")
-
-        with VespaSync(app_feed) as sync_app:
+        with VespaClient.sync_context("feed") as sync_app:
+            logger.info(f"Visiting documents from Vespa schema: {schema} on {VespaClient.get_url("feed")}")
 
             all_docs = []
             total_count = 0
-            # selection = f"{field} contains ''"  # Matches documents where the field is present
-            selection = "true"  # Matches all documents
+            selection = f"{field} contains ''"  # Matches documents where the field is present
+            # selection = "true"  # Matches all documents
 
             # Use VespaSync.visit to retrieve documents once
             for slice in sync_app.visit(

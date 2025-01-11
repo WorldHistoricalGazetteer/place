@@ -5,12 +5,12 @@ import time
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
 
-from vespa.application import Vespa, VespaSync
+from vespa.application import VespaSync
 
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
-from ..config import host_mapping, namespace
+from ..config import namespace, VespaClient
 from ..utils import get_uuid, task_tracker
 
 logger = logging.getLogger(__name__)
@@ -103,10 +103,9 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
     logger.info(f"Processing dataset: {dataset_name}")
 
-    app = Vespa(url=f"{host_mapping['feed']}")
 
     try:
-        with VespaSync(app) as sync_app:
+        with VespaClient.sync_context("feed") as sync_app:
 
             # Run `delete_all_docs` asynchronously to avoid blocking the event loop
             logger.info(f"Deleting all documents for schema: {dataset_config['vespa_schema']}")
