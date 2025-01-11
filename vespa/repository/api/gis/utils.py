@@ -156,6 +156,15 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
 
 
 def isocodes(bbox, geometry):
+
+
+
+
+
+    return []
+
+
+
     """
     Determine the ISO 3166 Alpha-2 country codes for countries whose bounding boxes
     intersect with the provided bounding box and whose geometries intersect
