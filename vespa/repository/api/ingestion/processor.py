@@ -1,6 +1,7 @@
 # /ingestion/processor.py
 import asyncio
 import logging
+import time
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
 
@@ -51,22 +52,36 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
         }
 
 
-async def process_document(document, dataset_config, transformer_index, sync_app):
+async def process_document(document, dataset_config, transformer_index, sync_app, task_id):
     transformed_document, toponyms = DocTransformer.transform(document, dataset_config['dataset_name'],
                                                               transformer_index)
     document_id = transformed_document.get(dataset_config['files'][transformer_index]['id_field']) or get_uuid()
+    task_tracker.update_task(task_id, {
+        "transformed": 1,
+    })
 
-    return await asyncio.get_event_loop().run_in_executor(
-        executor, feed_document, sync_app, dataset_config, document_id, transformed_document
-    )
+    try:
+        response = await asyncio.get_event_loop().run_in_executor(
+            executor, feed_document, sync_app, dataset_config, document_id, transformed_document
+        )
+        success = response.get("success", False)
+        task_tracker.update_task(task_id, {
+            "processed": 1,
+            "success": 1 if success else 0,
+            "failure": 1 if not success else 0
+        })
+        return response
+    except Exception as e:
+        task_tracker.update_task(task_id, {"processed": 1, "failure": 1})
+        return {"success": False, "document_id": document_id, "error": str(e)}
 
 
-async def process_documents(documents, dataset_config, transformer_index, sync_app, limit):
+async def process_documents(documents, dataset_config, transformer_index, sync_app, limit, task_id):
     semaphore = asyncio.Semaphore(5)  # Limit concurrent tasks
 
     async def process_limited(document):
         async with semaphore:
-            return await process_document(document, dataset_config, transformer_index, sync_app)
+            return await process_document(document, dataset_config, transformer_index, sync_app, task_id)
 
     tasks = [
         process_limited(document)
@@ -99,26 +114,25 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
             all_responses = []
             for i, file_config in enumerate(dataset_config['files']):
-                logger.info(f"Opening stream: {file_config['url']}")
+                logger.info(f"Fetching items from stream: {file_config['url']}")
                 stream_fetcher = StreamFetcher(file_config)
-                logger.info(f"Fetching items from stream.")
                 documents = stream_fetcher.get_items()
-                responses = await process_documents(documents, dataset_config, i, sync_app, limit)
+                responses = await process_documents(documents, dataset_config, i, sync_app, limit, task_id)
                 all_responses.extend(responses)
 
             success_count = sum(1 for r in all_responses if r.get("success"))
             failure_count = len(all_responses) - success_count
             logger.info(f"Success: {success_count}, Failures: {failure_count}")
 
-            task_tracker.add_task(task_id, {
+            # Final update to the task tracker
+            task_tracker.update_task(task_id, {
                 "status": "completed" if failure_count == 0 else "failed",
-                "success_count": success_count,
-                "failure_count": failure_count,
+                "end_time": time.time()
             })
 
     except Exception as e:
         logger.exception(f"Error during ingestion: {e}")
-        task_tracker.add_task(task_id, {"status": "failed", "error": str(e)})
+        task_tracker.update_task(task_id, {"status": "failed", "error": str(e)})
 
 
 async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None) -> Task:
