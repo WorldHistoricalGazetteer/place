@@ -107,15 +107,15 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range({schema_box}[0].lng, {test_box[0].lng}, {test_box[1].lng}) 
+                                    range({schema_box}[0]["lng"], {test_box[0]["lng"]}, {test_box[1]["lng"]}) 
                                     or 
-                                    range({schema_box}[1].lng, {test_box[0].lng}, {test_box[1].lng})
+                                    range({schema_box}[1]["lng"], {test_box[0]["lng"]}, {test_box[1]["lng"]})
                                 ) 
                                 and
                                 (
-                                    range({schema_box}[0].lat, {test_box[0].lat}, {test_box[1].lat}) 
+                                    range({schema_box}[0]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]}) 
                                     or 
-                                    range({schema_box}[1].lat, {test_box[0].lat}, {test_box[1].lat})
+                                    range({schema_box}[1]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]})
                                 )
                             """
                 }
@@ -126,19 +126,19 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range({schema_box}[0].lng, -180, {test_box[1].lng}) 
+                                    range({schema_box}[0]["lng"], -180, {test_box[1]["lng"]}) 
                                     or 
-                                    range({schema_box}[0].lng, {test_box[0].lng}, 180) 
+                                    range({schema_box}[0]["lng"], {test_box[0]["lng"]}, 180) 
                                     or 
-                                    range({schema_box}[1].lng, -180, {test_box[1].lng}) 
+                                    range({schema_box}[1]["lng"], -180, {test_box[1]["lng"]}) 
                                     or 
-                                    range({schema_box}[1].lng, {test_box[0].lng}, 180)
+                                    range({schema_box}[1]["lng"], {test_box[0]["lng"]}, 180)
                                 ) 
                                 and
                                 (
-                                    range({schema_box}[0].lat, {test_box[0].lat}, {test_box[1].lat}) 
+                                    range({schema_box}[0]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]}) 
                                     or 
-                                    range({schema_box}[1].lat, {test_box[0].lat}, {test_box[1].lat})
+                                    range({schema_box}[1]["lat"], {test_box[0]["lat"]}, {test_box[1]["lat"]})
                                 )
                             """
                 }
