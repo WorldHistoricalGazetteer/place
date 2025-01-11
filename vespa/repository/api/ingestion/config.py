@@ -149,7 +149,7 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'https://datahub.io/core/geo-countries/_r/-/data/countries.geojson',
                 'file_type': 'json',
                 'item_path': 'features',
-                'id_field': 'code2',
+                'id_field': None, # Code2 is not unique, as it has multiple "-" values
             }
         ],
     },

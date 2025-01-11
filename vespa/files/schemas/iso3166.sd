@@ -12,7 +12,7 @@ schema iso3166 {
         }
 
         # ISO Alpha-2 code (e.g., AW, AF)
-        field id type string {
+        field code2 type string {
             indexing: attribute
             attribute: fast-search
         }
@@ -32,7 +32,7 @@ schema iso3166 {
     # Default rank profile
     rank-profile default {
         first-phase {
-            expression: nativeRank(id)
+            expression: nativeRank(name)
         }
     }
 }
