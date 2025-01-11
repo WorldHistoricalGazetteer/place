@@ -100,6 +100,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         return
 
     logger.info(f"Processing dataset: {dataset_name}")
+    task_tracker.update_task(task_id, {"visit_url": f"/visit?schema={dataset_config['vespa_schema']}"})
 
     try:
         with VespaClient.sync_context("feed") as sync_app:
