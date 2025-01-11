@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 from vespa.application import VespaSync, Vespa
 
-from ..config import host_mapping
+from ..config import host_mapping, namespace
 
 
 def visit(
@@ -35,17 +35,17 @@ def visit(
     try:
         with VespaSync(app) as sync_app:
             # Build the selection query for filtering by field
-            selection = f"{field} contains ''"  # Matches documents where the field is present
+            # selection = f"{field} contains ''"  # Matches documents where the field is present
+            selection = "true"  # Matches all documents
 
             # Use VespaSync.visit to retrieve documents
             for generator in sync_app.visit(
-                schema=doc_type,
-                cluster="content",
-                selection=selection,
-                continuation=None,
-                wanted_document_count=wanted_document_count,
-                slices=slices,
                 content_cluster_name="content",
+                schema=doc_type,
+                namespace=namespace,
+                slices=slices,
+                selection=selection,
+                wanted_document_count=wanted_document_count,
             ):
                 for doc in generator:
                     results.append(doc)

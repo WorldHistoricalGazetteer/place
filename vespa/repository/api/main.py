@@ -20,13 +20,12 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 
-
 @app.get("/visit")
 async def search_documents(
-    doc_type: str = Query(..., description="The document type to filter by"),
-    limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000)"),
-    field: str = Query("id", description="The field used for filtering documents"),
-    slices: int = Query(1, ge=1, description="The number of slices for parallel processing")
+        doc_type: str = Query(..., description="The document type to filter by"),
+        limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000)"),
+        field: str = Query("id", description="The field used for filtering documents"),
+        slices: int = Query(1, ge=1, description="The number of slices for parallel processing")
 ):
     """
     Endpoint to search for documents of a given type with pagination.
