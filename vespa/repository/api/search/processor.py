@@ -1,51 +1,61 @@
 # ./search/processor.py
 from typing import Dict, Any
 
-import httpx
+from vespa.application import VespaSync, Vespa
 
 from ..config import host_mapping
 
 
-async def filter_and_paginate_documents(doc_type: str, page: int, limit: int) -> Dict[str, Any]:
+def visit(
+    doc_type: str,
+    wanted_document_count: int,
+    field: str = "id",
+    slices: int = 1
+) -> Dict[str, Any]:
     """
-    Fetch documents of the given type and apply pagination.
+    Visit and retrieve documents of a specified type from a Vespa instance.
+
+    This function uses VespaSync's visit method to fetch documents that match a given field
+    and returns a paginated list of results. It supports slicing for parallel processing.
 
     Args:
-        doc_type (str): The document type to filter by.
-        page (int): The page number (starting from 1).
-        limit (int): The number of results per page.
+        doc_type (str): The Vespa schema (document type) to query.
+        wanted_document_count (int): The maximum number of documents to retrieve.
+        field (str): The field used for filtering; documents must have this field set. Default is "id".
+        slices (int): Number of slices for parallel processing. Default is 1.
 
     Returns:
-        Dict[str, Any]: Paginated results including metadata and documents.
+        Dict[str, Any]: A dictionary containing total document count and the list of documents.
     """
-    # URL for querying Vespa documents
-    query_url = f"{host_mapping['query']}/search/"
+    app = Vespa(url=f"{host_mapping['query']}")
 
-    # Calculate the offset based on the page and limit
-    offset = (page - 1) * limit
+    results = []
+    total_count = 0
 
-    async with httpx.AsyncClient() as client:
-        try:
-            # Send a query to Vespa
-            response = await client.get(query_url, params={
-                "yql": f"select * from {doc_type} where true",
-                "hits": limit,
-                "offset": offset
-            })
-            response.raise_for_status()
-            data = response.json()
+    try:
+        with VespaSync(app) as sync_app:
+            # Build the selection query for filtering by field
+            selection = f"{field} contains ''"  # Matches documents where the field is present
 
-            # Extract total count and documents from the response
-            total_count = data.get("root", {}).get("fields", {}).get("totalCount", 0)
-            documents = data.get("root", {}).get("children", [])
+            # Use VespaSync.visit to retrieve documents
+            for generator in sync_app.visit(
+                schema=doc_type,
+                cluster="content",
+                selection=selection,
+                continuation=None,
+                wanted_document_count=wanted_document_count,
+                slices=slices,
+                content_cluster_name="content",
+            ):
+                for doc in generator:
+                    results.append(doc)
+                    total_count += 1
 
             return {
                 "total_count": total_count,
-                "page": page,
-                "limit": limit,
-                "documents": [doc.get("fields", {}) for doc in documents]
+                "limit": wanted_document_count,
+                "documents": results,
             }
-        except httpx.RequestError as e:
-            raise Exception(f"Error contacting Vespa query service: {e}")
-        except httpx.HTTPStatusError as e:
-            raise Exception(f"HTTP error: {e.response.text}")
+
+    except Exception as e:
+        raise Exception(f"Error during Vespa document visit: {e}")
