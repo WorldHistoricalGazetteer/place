@@ -131,8 +131,8 @@ class StreamFetcher:
         elif format_type == 'nt':
             return self._parse_nt_stream(stream)
         else:
-            self.logger.error("Unsupported format type")
-            raise ValueError("Unsupported format type")
+            self.logger.error(f"Unsupported format type: {format_type}")
+            raise ValueError(f"Unsupported format type: {format_type}")
 
     def _parse_json_stream(self, stream):
         # Using ijson for efficient JSON parsing from stream
