@@ -1,13 +1,16 @@
 # ./search/processor.py
+import logging
 from typing import Dict, Any
 
 from vespa.application import VespaSync, Vespa
 
 from ..config import host_mapping, namespace
 
+logger = logging.getLogger(__name__)
+
 
 def visit(
-    doc_type: str,
+    schema: str,
     wanted_document_count: int,
     field: str = "id",
     slices: int = 1
@@ -19,7 +22,7 @@ def visit(
     and returns a paginated list of results. It supports slicing for parallel processing.
 
     Args:
-        doc_type (str): The Vespa schema (document type) to query.
+        schema (str): The Vespa schema (document type) to query.
         wanted_document_count (int): The maximum number of documents to retrieve.
         field (str): The field used for filtering; documents must have this field set. Default is "id".
         slices (int): Number of slices for parallel processing. Default is 1.
@@ -28,6 +31,7 @@ def visit(
         Dict[str, Any]: A dictionary containing total document count and the list of documents.
     """
     app = Vespa(url=f"{host_mapping['query']}")
+    logger.info(f"Visiting documents from Vespa schema: {schema} on {app.url}")
 
     results = []
     total_count = 0
@@ -41,10 +45,10 @@ def visit(
             # Use VespaSync.visit to retrieve documents
             for generator in sync_app.visit(
                 content_cluster_name="content",
-                schema=doc_type,
+                schema=schema,
                 namespace=namespace,
                 slices=slices,
-                selection=selection,
+                # selection=selection,
                 wanted_document_count=wanted_document_count,
             ):
                 for doc in generator:
