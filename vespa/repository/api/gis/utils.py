@@ -155,7 +155,17 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
             #     }
 
             # Execute the Vespa query and handle the response
-            response = sync_app.query(query).json
+            vespa_response = sync_app.query(query)
+
+
+            logger.info(f"Response: {vespa_response}")
+            response = vespa_response.json
+
+
+
+
+
+
             if "error" in response:
                 raise ValueError(f"Error during Vespa query: {response['error']}")
 
