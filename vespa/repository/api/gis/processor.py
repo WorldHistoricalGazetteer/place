@@ -124,7 +124,7 @@ class GeometryProcessor:
             "bbox_sw_lng": min_lng,
             "bbox_ne_lat": max_lat,
             "bbox_ne_lng": max_lng,
-            **({"ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat)} if self.include_ccodes else {})
+            # **({"ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat)} if self.include_ccodes else {})
         }
 
     def _float_geometry(self):
