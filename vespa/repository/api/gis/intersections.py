@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 class IsoCodeResolver:
     """
-    Resolves ISO 3166 Alpha-2 country codes for countries whose bounding boxes
-    intersect with a given bounding box and whose geometries intersect with a given geometry.
+    Resolves ISO 3166 Alpha-2 country codes for countries whose geometries intersect with a given geometry.
+
+    This is achieved by first finding candidate countries whose bounding boxes intersect with a given geometry's
+    bounding box, and then checking for actual geometry intersections.
+
     """
 
     def __init__(self, geometry=None, geom=None, bbox=None) -> None:
@@ -65,7 +68,7 @@ class IsoCodeResolver:
 
 class BoxIntersect:
     """
-    Perform a spatial query in Vespa to find documents where the bounding box intersects
+    Perform a spatial query in Vespa to find documents whose bounding box intersects
     with the provided bounding box. The Vespa schema and fields to query are configurable: the default values
     are for ISO 3166 country codes.
     """
@@ -91,7 +94,7 @@ class BoxIntersect:
 
     def box_intersect(self) -> list:
         """
-        Perform the Vespa query to find intersecting documents.
+        Perform a Vespa query to find intersecting documents.
 
         Returns:
             list: A list of documents whose bounding boxes intersect with the provided bounding box.
