@@ -226,7 +226,7 @@ class GeometryProcessor:
         if min_lng > max_lng:
             return {
                 "yql": f"""
-                            select "code2,geometry" from sources iso3166
+                            select code2,geometry from sources iso3166
                             where
                             (
                                 range(bbox_sw_lng, {min_lng}, {max_lng})
