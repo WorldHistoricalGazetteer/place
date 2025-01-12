@@ -267,7 +267,7 @@ class DocTransformer:
                         "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     # The following includes bounding box coordinates for range queries, convex hull, etc.
-                    **(GeometryProcessor(data.get("geometry")).process() if data.get("geometry") else {}),
+                    **(processed_geometry if (processed_geometry := GeometryProcessor(data.get("geometry")).process()) else {}),
                 },
                 [
                 ]
