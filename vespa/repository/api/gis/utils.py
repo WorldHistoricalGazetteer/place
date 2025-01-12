@@ -1,8 +1,7 @@
 # /gis/utils.py
-import json
 import math
 
-from shapely.geometry.geo import shape, box
+from shapely.geometry.geo import shape
 from shapely.geometry.point import Point
 from shapely.validation import explain_validity
 
@@ -35,7 +34,7 @@ def bbox(geometry, positions=True, errors=True):
         if any(math.isnan(v) or math.isinf(v) for v in (lng, lat)):
             return {"error": "Invalid geometry (NaN or Infinity)"} if errors else None
         else:
-            return { # lat & lng are transposed
+            return {  # lat & lng are transposed
                 "sw": {"lat": lat, "lng": lng},
                 "ne": {"lat": lat, "lng": lng}
             } if positions else [lng, lat, lng, lat]
@@ -50,7 +49,7 @@ def bbox(geometry, positions=True, errors=True):
     min_lng, min_lat, max_lng, max_lat = float(min_lng), float(min_lat), float(max_lng), float(max_lat)
 
     # Convert to positions format
-    return { # lat & lng are transposed
+    return {  # lat & lng are transposed
         "sw": {"lat": min_lat, "lng": min_lng},
         "ne": {"lat": max_lat, "lng": max_lng}
     } if positions else [min_lng, min_lat, max_lng, max_lat]
@@ -89,8 +88,7 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
     Perform a spatial query in Vespa to find documents in the specified schema 
     where the specified field (default: `bounding_box`) intersects with the given bounding box.
 
-    :param test_box: A list representing the SW and NE corners of a bounding box in Vespa `position` format,
-                         e.g., [{lat, lng}, {lat, lng}].
+    :param test_box: An object representing the SW and NE corners of a bounding box: {sw: {lat, lng}, ne: {lat, lng}}.
     :param schema_name: The name of the Vespa schema to query.
     :param schema_fields: A comma-separated string of field names to retrieve in the query result (default: "*", which retrieves all fields).
     :param schema_box: The field name in the schema (default: "bounding_box") to check for spatial intersection with the bounding box.
@@ -107,13 +105,13 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range(sw.lng, {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]}) 
+                                    range({schema_box}["sw"]["lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]}) 
                                     or 
                                     range({schema_box}["ne"]["lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
                                 ) 
                                 and
                                 (
-                                    range(sw.lat, {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
+                                    range({schema_box}["sw"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
                                     or 
                                     range({schema_box}["ne"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
@@ -126,9 +124,9 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range(sw.lng, -180, {test_box["ne"]["lng"]}) 
+                                    range({schema_box}["sw"]["lng"], -180, {test_box["ne"]["lng"]}) 
                                     or 
-                                    range(sw.lng, {test_box["sw"]["lng"]}, 180) 
+                                    range({schema_box}["sw"]["lng"], {test_box["sw"]["lng"]}, 180) 
                                     or 
                                     range({schema_box}["ne"]["lng"], -180, {test_box["ne"]["lng"]}) 
                                     or 
@@ -136,7 +134,7 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 ) 
                                 and
                                 (
-                                    range(sw.lat, {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
+                                    range({schema_box}["sw"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
                                     or 
                                     range({schema_box}["ne"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
@@ -161,8 +159,7 @@ def isocodes(bbox, geometry):
     intersect with the provided bounding box and whose geometries intersect
     with the provided geometry.
 
-    :param bbox: A dictionary representing the SW and NE corners of the bounding box in Vespa `position` format,
-                 e.g., [{lat, lng}, {lat, lng}].
+    :param bbox: A dictionary representing the SW and NE corners of the bounding box: {sw: {lat, lng}, ne: {lat, lng}}.
     :param geometry: A GeoJSON geometry object used to refine the intersection
                      check beyond the bounding box level.
     :return: A sorted list of ISO 3166 Alpha-2 country codes for intersecting countries.
@@ -175,7 +172,6 @@ def isocodes(bbox, geometry):
     ccodes = set()
     for country in candidate_countries:
         ccodes.add(country['code2'])
-
 
         # country_geom = shape(country['geometry'])
         # if geom.intersects(country_geom):
