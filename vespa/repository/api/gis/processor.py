@@ -5,7 +5,7 @@ import math
 
 from shapely.geometry.geo import shape
 from shapely.geometry.point import Point
-from shapely.lib import to_geojson
+from shapely.io import to_geojson
 from shapely.validation import explain_validity
 
 from ..config import VespaClient
