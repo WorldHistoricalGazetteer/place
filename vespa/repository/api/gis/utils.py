@@ -169,7 +169,7 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                 raise ValueError(f"Error during Vespa query: {response['error']}")
 
             # Return the documents matching the spatial intersection condition
-            return response.get("children", [])
+            return response.get("root",{}).get("children", [])
 
     except Exception as e:
         raise ValueError(f"Error during Vespa query: {str(e)}")
