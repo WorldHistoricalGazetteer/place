@@ -170,13 +170,16 @@ class GeometryProcessor:
             candidate_countries = self._box_intersect(min_lng, min_lat, max_lng, max_lat)
             geom = shape(self.geometry)
             ccodes = set()
+
+            country_codes = {country['code2'] for country in candidate_countries}
+            logger.info(f"Candidate countries: {country_codes}")
+
             for country in candidate_countries:
                 if 'code2' in country and country['code2'] != '-' and 'geometry' in country:
                     country_geom = shape(json.loads(country['geometry']))
                     if geom.intersects(country_geom):
                         ccodes.add(country['code2'])
 
-            logger.info(f"ISO codes for bounding box: {ccodes}")
             return sorted(list(ccodes))
 
         except Exception as e:
