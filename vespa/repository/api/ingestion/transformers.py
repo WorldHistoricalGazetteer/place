@@ -282,6 +282,5 @@ class DocTransformer:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
 
         results = transformer(data)
-        logger.info(f"Transformed data: {results}")
-
+        # logger.info(f"Transformed data: {results}")
         return results
