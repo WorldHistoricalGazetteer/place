@@ -35,6 +35,8 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
         if response.status_code == 200:
             return {"success": True, "document_id": document_id}
         else:
+            logger.error(
+                f"Failed to feed document: {document_id}, Status code: {response.status_code}, Response: {response.json() if response.headers.get('content-type') == 'application/json' else response.text}")
             return {
                 "success": False,
                 "document_id": document_id,
@@ -43,6 +45,7 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
                     'content-type') == 'application/json' else response.text
             }
     except Exception as e:
+        logger.error(f"Error feeding document: {document_id}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
             "document_id": document_id,
