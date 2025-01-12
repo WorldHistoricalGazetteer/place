@@ -78,7 +78,7 @@ class GeometryProcessor:
         return {
             "area": self.geom.area,
             **self._bbox_ccodes(),
-            "convex_hull": json.dumps(self.geom.convex_hull.coords),
+            "convex_hull": json.dumps(self.geom.convex_hull),
             "geometry": json.dumps(self._float_geometry()),
             "length": self.geom.length,
             "representative_point": self.geom.representative_point().coords,
