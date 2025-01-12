@@ -101,58 +101,49 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
     try:
         with VespaClient.sync_context("feed") as sync_app:
 
-            query = {
-                "yql": f"""
-                        select code2
-                        from sources {schema_name}
-                        where range(bbox_sw_lat, 20, 30)
-                        limit 25
-                        """
-            }
+            if test_box["bbox_sw_lng"] > test_box["bbox_ne_lng"]:
+                query = {
+                    "yql": f"""
+                                select {schema_fields}
+                                from sources {schema_name}
+                                where
+                                (
+                                    range({schema_box}["bbox_sw_lng"], {test_box["bbox_sw_lng"]}, {test_box["bbox_ne_lng"]})
+                                    or
+                                    range({schema_box}["bbox_ne_lng"], {test_box["bbox_sw_lng"]}, {test_box["bbox_ne_lng"]})
+                                )
+                                and
+                                (
+                                    range({schema_box}["bbox_sw_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                    or
+                                    range({schema_box}["bbox_ne_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                )
+                            """
+                }
+            else:
+                query = {
+                    "yql": f"""
+                                select {schema_fields}
+                                from sources {schema_name}
+                                where
+                                (
+                                    range({schema_box}["bbox_sw_lng"], -180, {test_box["bbox_ne_lng"]})
+                                    or
+                                    range({schema_box}["bbox_sw_lng"], {test_box["bbox_sw_lng"]}, 180)
+                                    or
+                                    range({schema_box}["bbox_ne_lng"], -180, {test_box["bbox_ne_lng"]})
+                                    or
+                                    range({schema_box}["bbox_ne_lng"], {test_box["bbox_sw_lng"]}, 180)
+                                )
+                                and
+                                (
+                                    range({schema_box}["bbox_sw_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                    or
+                                    range({schema_box}["bbox_ne_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                )
+                            """
+                }
             logger.info(f"Query: {query}")
-
-            # if test_box["sw"]["lng"] > test_box["ne"]["lng"]:
-            #     query = {
-            #         "yql": f"""
-            #                     select {schema_fields}
-            #                     from sources {schema_name}
-            #                     where
-            #                     (
-            #                         range({schema_box}["sw"]["lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
-            #                         or
-            #                         range({schema_box}["ne"]["lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
-            #                     )
-            #                     and
-            #                     (
-            #                         range({schema_box}["sw"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
-            #                         or
-            #                         range({schema_box}["ne"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
-            #                     )
-            #                 """
-            #     }
-            # else:
-            #     query = {
-            #         "yql": f"""
-            #                     select {schema_fields}
-            #                     from sources {schema_name}
-            #                     where
-            #                     (
-            #                         range({schema_box}["sw"]["lng"], -180, {test_box["ne"]["lng"]})
-            #                         or
-            #                         range({schema_box}["sw"]["lng"], {test_box["sw"]["lng"]}, 180)
-            #                         or
-            #                         range({schema_box}["ne"]["lng"], -180, {test_box["ne"]["lng"]})
-            #                         or
-            #                         range({schema_box}["ne"]["lng"], {test_box["sw"]["lng"]}, 180)
-            #                     )
-            #                     and
-            #                     (
-            #                         range({schema_box}["sw"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
-            #                         or
-            #                         range({schema_box}["ne"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
-            #                     )
-            #                 """
-            #     }
 
             # Execute the Vespa query and handle the response
             response = sync_app.query(query).json
