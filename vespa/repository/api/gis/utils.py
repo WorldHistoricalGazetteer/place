@@ -103,22 +103,22 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
 
             logger.info(f"bbox: {test_box}")
 
-            if test_box["bbox_sw_lng"] > test_box["bbox_ne_lng"]:
+            if test_box["sw"]["lng"] > test_box["ne"]["lng"]:
                 query = {
                     "yql": f"""
                                 select {schema_fields}
                                 from sources {schema_name}
                                 where
                                 (
-                                    range({schema_box}["bbox_sw_lng"], {test_box["bbox_sw_lng"]}, {test_box["bbox_ne_lng"]})
+                                    range({schema_box}["bbox_sw_lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
                                     or
-                                    range({schema_box}["bbox_ne_lng"], {test_box["bbox_sw_lng"]}, {test_box["bbox_ne_lng"]})
+                                    range({schema_box}["bbox_ne_lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
                                 )
                                 and
                                 (
-                                    range({schema_box}["bbox_sw_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                    range({schema_box}["bbox_sw_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                     or
-                                    range({schema_box}["bbox_ne_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                    range({schema_box}["bbox_ne_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
                             """
                 }
@@ -129,19 +129,19 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name}
                                 where
                                 (
-                                    range({schema_box}["bbox_sw_lng"], -180, {test_box["bbox_ne_lng"]})
+                                    range({schema_box}["bbox_sw_lng"], -180, {test_box["ne"]["lng"]})
                                     or
-                                    range({schema_box}["bbox_sw_lng"], {test_box["bbox_sw_lng"]}, 180)
+                                    range({schema_box}["bbox_sw_lng"], {test_box["sw"]["lng"]}, 180)
                                     or
-                                    range({schema_box}["bbox_ne_lng"], -180, {test_box["bbox_ne_lng"]})
+                                    range({schema_box}["bbox_ne_lng"], -180, {test_box["ne"]["lng"]})
                                     or
-                                    range({schema_box}["bbox_ne_lng"], {test_box["bbox_sw_lng"]}, 180)
+                                    range({schema_box}["bbox_ne_lng"], {test_box["sw"]["lng"]}, 180)
                                 )
                                 and
                                 (
-                                    range({schema_box}["bbox_sw_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                    range({schema_box}["bbox_sw_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                     or
-                                    range({schema_box}["bbox_ne_lat"], {test_box["bbox_sw_lat"]}, {test_box["bbox_ne_lat"]})
+                                    range({schema_box}["bbox_ne_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
                             """
                 }
