@@ -107,13 +107,13 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range({schema_box}["sw"]["lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]}) 
+                                    range({schema_box}.sw.lng, {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]}) 
                                     or 
                                     range({schema_box}["ne"]["lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
                                 ) 
                                 and
                                 (
-                                    range({schema_box}["sw"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
+                                    range({schema_box}.sw.lat, {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
                                     or 
                                     range({schema_box}["ne"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
@@ -126,9 +126,9 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name} 
                                 where 
                                 (
-                                    range({schema_box}["sw"]["lng"], -180, {test_box["ne"]["lng"]}) 
+                                    range({schema_box}.sw.lng, -180, {test_box["ne"]["lng"]}) 
                                     or 
-                                    range({schema_box}["sw"]["lng"], {test_box["sw"]["lng"]}, 180) 
+                                    range({schema_box}.sw.lng, {test_box["sw"]["lng"]}, 180) 
                                     or 
                                     range({schema_box}["ne"]["lng"], -180, {test_box["ne"]["lng"]}) 
                                     or 
@@ -136,7 +136,7 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 ) 
                                 and
                                 (
-                                    range({schema_box}["sw"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
+                                    range({schema_box}.sw.lat, {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]}) 
                                     or 
                                     range({schema_box}["ne"]["lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
