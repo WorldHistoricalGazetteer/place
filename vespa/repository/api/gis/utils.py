@@ -189,5 +189,5 @@ def isocodes(bbox, geometry):
         return sorted(list(ccodes))
 
     except Exception as e:
-        logger.error(f"Error determining ISO codes: {e}")
+        logger.error(f"Error determining ISO codes: {e}", exc_info=True)
         return []
