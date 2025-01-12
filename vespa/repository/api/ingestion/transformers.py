@@ -254,7 +254,15 @@ class DocTransformer:
                     **({"code2": code2} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
                     **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
                     **({"geometry": geometry} if (geometry := (json.dumps(float_geometry(data.get("geometry", None), True)) if data.get("geometry") else None)) else {}),
-                    **({"bbox": bbox_val} if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}),
+                    **(
+                        {
+                            "bbox_sw_lat": bbox_val["sw"]["lat"],
+                            "bbox_sw_lng": bbox_val["sw"]["lng"],
+                            "bbox_ne_lat": bbox_val["ne"]["lat"],
+                            "bbox_ne_lng": bbox_val["ne"]["lng"],
+                        }
+                        if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}
+                    ),
                 },
                 [
                 ]
@@ -266,7 +274,15 @@ class DocTransformer:
                     **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get("resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     **({"geometry": geometry} if (geometry := (json.dumps(float_geometry(data.get("geometry", None), True)) if data.get("geometry") else None)) else {}),
-                    **({"bbox": bbox_val} if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}),
+                    **(
+                        {
+                            "bbox_sw_lat": bbox_val["sw"]["lat"],
+                            "bbox_sw_lng": bbox_val["sw"]["lng"],
+                            "bbox_ne_lat": bbox_val["ne"]["lat"],
+                            "bbox_ne_lng": bbox_val["ne"]["lng"],
+                        }
+                        if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}
+                    ),
                     # TODO: Remove the following line after testing functionality
                     **({"ccodes": ccodes} if (ccodes := isocodes(bbox_val, data.get("geometry", None))) else {}),
                 },
