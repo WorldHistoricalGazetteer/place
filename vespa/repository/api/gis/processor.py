@@ -223,10 +223,10 @@ class GeometryProcessor:
         Returns:
             dict: The YQL query for the bounding box intersection.
         """
-        if min_lng > max_lng:
+        if min_lng < max_lng:
             return {
                 "yql": f"""
-                            select code2, geometry from iso3166
+                            select code2, geometry from sources iso3166
                             where
                             (
                                 range(bbox_sw_lng, {min_lng}, {max_lng})
@@ -244,7 +244,7 @@ class GeometryProcessor:
         else:
             return {
                 "yql": f"""
-                            select "code2,geometry" from sources iso3166
+                            select code2, geometry from sources iso3166
                             where
                             (
                                 range(bbox_sw_lng, -180, {max_lng})
