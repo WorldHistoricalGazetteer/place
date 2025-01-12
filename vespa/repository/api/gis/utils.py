@@ -86,7 +86,7 @@ def float_geometry(geometry, has_decimal=False):
     }
 
 
-def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
+def box_intersect(test_box, schema_name, schema_fields="*"):
     """
     Perform a spatial query in Vespa to find documents in the specified schema 
     where the specified field (default: `bounding_box`) intersects with the given bounding box.
@@ -110,15 +110,15 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name}
                                 where
                                 (
-                                    range({schema_box}["bbox_sw_lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
+                                    range(bbox_sw_lng, {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
                                     or
-                                    range({schema_box}["bbox_ne_lng"], {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
+                                    range(bbox_ne_lng, {test_box["sw"]["lng"]}, {test_box["ne"]["lng"]})
                                 )
                                 and
                                 (
-                                    range({schema_box}["bbox_sw_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
+                                    range(bbox_sw_lat, {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                     or
-                                    range({schema_box}["bbox_ne_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
+                                    range(bbox_ne_lat, {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
                             """
                 }
@@ -129,19 +129,19 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                                 from sources {schema_name}
                                 where
                                 (
-                                    range({schema_box}["bbox_sw_lng"], -180, {test_box["ne"]["lng"]})
+                                    range(bbox_sw_lng, -180, {test_box["ne"]["lng"]})
                                     or
-                                    range({schema_box}["bbox_sw_lng"], {test_box["sw"]["lng"]}, 180)
+                                    range(bbox_sw_lng, {test_box["sw"]["lng"]}, 180)
                                     or
-                                    range({schema_box}["bbox_ne_lng"], -180, {test_box["ne"]["lng"]})
+                                    range(bbox_ne_lng, -180, {test_box["ne"]["lng"]})
                                     or
-                                    range({schema_box}["bbox_ne_lng"], {test_box["sw"]["lng"]}, 180)
+                                    range(bbox_ne_lng, {test_box["sw"]["lng"]}, 180)
                                 )
                                 and
                                 (
-                                    range({schema_box}["bbox_sw_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
+                                    range(bbox_sw_lat, {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                     or
-                                    range({schema_box}["bbox_ne_lat"], {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
+                                    range("bbox_ne_lat", {test_box["sw"]["lat"]}, {test_box["ne"]["lat"]})
                                 )
                             """
                 }
