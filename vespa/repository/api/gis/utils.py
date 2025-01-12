@@ -105,9 +105,10 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                 "yql": f"""
                         select {schema_fields} 
                         from sources {schema_name} 
-                        where bbox_sw_lat = 10.140054
+                        where bbox_sw_lat <= 10.140054
                         """
             }
+            logger.info(f"Query: {query}")
 
             # if test_box["sw"]["lng"] > test_box["ne"]["lng"]:
             #     query = {
