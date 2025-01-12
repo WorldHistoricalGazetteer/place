@@ -1,4 +1,5 @@
 # /gis/utils.py
+import json
 import logging
 import math
 
@@ -182,7 +183,7 @@ def isocodes(bbox, geometry):
         geom = shape(geometry)
         ccodes = set()
         for country in candidate_countries:
-            country_geom = shape(country['geometry'])
+            country_geom = shape(json.loads(country['geometry']))
             if geom.intersects(country_geom):
                 ccodes.add(country['code2'])
 
