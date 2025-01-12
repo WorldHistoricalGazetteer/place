@@ -173,17 +173,21 @@ def isocodes(bbox, geometry):
         logger.info("Bounding box or geometry not provided")
         return []
 
-    # Use Search API to query the iso3166 schema for countries whose bounding boxes intersect with that provided
-    candidate_countries = box_intersect(bbox, "iso3166", "code2,geometry")
+    try:
 
-    # Use Shapely to check for intersections with the provided geometry
-    geom = shape(geometry)
-    ccodes = set()
-    for country in candidate_countries:
-        ccodes.add(country.get('code2',''))
+        # Use Search API to query the iso3166 schema for countries whose bounding boxes intersect with that provided
+        candidate_countries = box_intersect(bbox, "iso3166", "code2,geometry")
 
-        # country_geom = shape(country.get('geometry'), None)
-        # if geom.intersects(country_geom):
-        #     ccodes.add(country['code2'])
+        # Use Shapely to check for intersections with the provided geometry
+        geom = shape(geometry)
+        ccodes = set()
+        for country in candidate_countries:
+            country_geom = shape(country.get('geometry'), None)
+            if geom.intersects(country_geom):
+                ccodes.add(country['code2'])
 
-    return sorted(list(ccodes))
+        return sorted(list(ccodes))
+
+    except Exception as e:
+        logger.error(f"Error determining ISO codes: {e}")
+        return []
