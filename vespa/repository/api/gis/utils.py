@@ -105,7 +105,7 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                 "yql": f"""
                         select {schema_fields} 
                         from sources {schema_name} 
-                        where range(bbox_sw_lat, 10, 40)
+                        where bbox_sw_lat = 10.140054
                         """
             }
 
