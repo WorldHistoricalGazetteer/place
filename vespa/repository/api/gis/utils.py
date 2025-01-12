@@ -101,6 +101,8 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
     try:
         with VespaClient.sync_context("feed") as sync_app:
 
+            logger.info(f"bbox: {test_box}")
+
             if test_box["bbox_sw_lng"] > test_box["bbox_ne_lng"]:
                 query = {
                     "yql": f"""
