@@ -103,8 +103,8 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
 
             query = {
                 "yql": f"""
-                        select * 
-                        from sources *
+                        select code2
+                        from sources {schema_name}
                         where true
                         limit 25
                         """
