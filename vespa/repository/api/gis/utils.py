@@ -101,8 +101,6 @@ def box_intersect(test_box, schema_name, schema_fields="*"):
     try:
         with VespaClient.sync_context("feed") as sync_app:
 
-            logger.info(f"bbox: {test_box}")
-
             if test_box["sw"]["lng"] > test_box["ne"]["lng"]:
                 query = {
                     "yql": f"""
@@ -145,19 +143,10 @@ def box_intersect(test_box, schema_name, schema_fields="*"):
                                 )
                             """
                 }
-            logger.info(f"Query: {query}")
+            # logger.info(f"Query: {query}")
 
             # Execute the Vespa query and handle the response
             response = sync_app.query(query).json
-
-
-            logger.info(f"Response: {response}")
-
-
-
-
-
-
             if "error" in response:
                 raise ValueError(f"Error during Vespa query: {response['error']}")
 
@@ -186,8 +175,6 @@ def isocodes(bbox, geometry):
 
     # Use Search API to query the iso3166 schema for countries whose bounding boxes intersect with that provided
     candidate_countries = box_intersect(bbox, "iso3166", "code2,geometry")
-
-    logger.info(f"Found {len(candidate_countries)} candidate countries: {candidate_countries}")
 
     # Use Shapely to check for intersections with the provided geometry
     geom = shape(geometry)
