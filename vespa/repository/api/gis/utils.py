@@ -98,11 +98,14 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
     try:
         with VespaClient.sync_context("feed") as sync_app:
 
-            yql = f"""
-                    select {schema_fields} 
-                    from sources {schema_name} 
-                    where range({schema_box}["sw"]["lat"], 10, 20)
-                    """
+            query = {
+                "yql": f"""
+                        select {schema_fields} 
+                        from sources {schema_name} 
+                        where range({schema_box}["sw"]["lat"], 10, 20)
+                        """
+            }
+
 
             # if test_box["sw"]["lng"] > test_box["ne"]["lng"]:
             #     query = {
