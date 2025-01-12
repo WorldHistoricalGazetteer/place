@@ -284,7 +284,7 @@ class DocTransformer:
                         if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}
                     ),
                     # TODO: Remove the following line after testing functionality
-                    **({"ccodes": ccodes} if (ccodes := isocodes(bbox_val, data.get("geometry", None))) else {}),
+                    # **({"ccodes": ccodes} if (ccodes := isocodes(bbox_val, data.get("geometry", None))) else {}),
                 },
                 [
                 ]
