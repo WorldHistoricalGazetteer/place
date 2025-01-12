@@ -183,9 +183,10 @@ def isocodes(bbox, geometry):
         geom = shape(geometry)
         ccodes = set()
         for country in candidate_countries:
-            country_geom = shape(json.loads(country['geometry']))
-            if geom.intersects(country_geom):
-                ccodes.add(country['code2'])
+            if 'code2' in country and country['code2'] != '-' and 'geometry' in country:
+                country_geom = shape(json.loads(country['geometry']))
+                if geom.intersects(country_geom):
+                    ccodes.add(country['code2'])
 
         return sorted(list(ccodes))
 
