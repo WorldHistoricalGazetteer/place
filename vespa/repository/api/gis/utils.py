@@ -47,12 +47,20 @@ def get_valid_geom(geometry) -> shape:
     """
     if not geometry or 'type' not in geometry or 'coordinates' not in geometry:
         logger.warning("Invalid geometry: missing type or coordinates.")
-        return False
+        return None
     try:
         geom = shape(geometry)
         if geom.is_valid and not geom.is_empty:
             return geom
         logger.warning(f"Invalid geometry: {explain_validity(geom)}")
+
+        # Attempt to fix invalid geometries by applying a zero buffer
+        fixed_geom = geom.buffer(0)
+        if fixed_geom.is_valid and not fixed_geom.is_empty:
+            logger.info("Fixed invalid geometry using zero buffer.")
+            return fixed_geom
+        else:
+            logger.warning("Unable to fix geometry using zero buffer.")
     except Exception as e:
         logger.error("Error converting geometry.", exc_info=True)
     return None
