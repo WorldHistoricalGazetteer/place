@@ -266,8 +266,9 @@ class DocTransformer:
                     **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get(
                         "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
-                    # The following includes bounding box coordinates for range queries, convex hull, etc.
-                    **(processed_geometry if (processed_geometry := GeometryProcessor(data.get("geometry")).process()) else {}),
+                    **(processed_geometry if (
+                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox",
+                                                                                              "geometry"]).process()) else {}),
                 },
                 [
                 ]
@@ -282,6 +283,5 @@ class DocTransformer:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
 
         results = transformer(data)
-
 
         return results

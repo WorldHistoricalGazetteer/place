@@ -20,22 +20,27 @@ class GeometryProcessor:
 
     Attributes:
         geometry (dict): The GeoJSON geometry to be processed.
+        values (list): A list of properties to compute.
         errors (bool): If True, errors will be returned as messages.
         geom (shapely.geometry.base.BaseGeometry): The Shapely geometry object derived from the GeoJSON.
     """
 
-    def __init__(self, geometry, errors=False, include_ccodes=False, values = []):
+    def __init__(self, geometry, values=None, errors=False):
         """
-        Initializes the GeometryProcessor with a given geometry and error-handling option.
+        Initializes the GeometryProcessor with a given geometry, optional attributes to compute,
+        and an error-handling option.
 
         Args:
             geometry (dict): The GeoJSON geometry to be processed.
+            values (list, optional): A list of properties to compute. Defaults to ["area", "bbox",
+                                      "ccodes", "convex_hull", "geometry", "length", "representative_point"]
+                                      if not provided.
             errors (bool): If True, errors will be returned as messages. Defaults to False.
         """
+        self.values = values or ["area", "bbox", "ccodes", "convex_hull", "geometry", "length", "representative_point"]
         self.geometry = geometry  # GeoJSON geometry
         self.geom = None  # Shapely geometry object
         self.errors = errors
-        self.include_ccodes = include_ccodes
 
         if self.is_valid_geometry():
             self.geom = shape(geometry)
@@ -75,13 +80,13 @@ class GeometryProcessor:
         if self.geom.is_empty:
             return {"error": "Empty geometry"} if self.errors else None
 
-        # Cache values for performance
-        area = self.geom.area
-        bbox_codes = self._bbox_ccodes()
-        convex_hull = self.geom.convex_hull
-        float_geometry = self._float_geometry()
-        length = self.geom.length
-        representative_point = self.geom.representative_point()
+        # If requested, cache values for performance efficiency
+        area = self.geom.area if "area" in self.values else None
+        bbox_codes = self._bbox_ccodes() if "bbox" in self.values else {}
+        convex_hull = self.geom.convex_hull if "convex_hull" in self.values else None
+        float_geometry = self._float_geometry() if "geometry" in self.values else None
+        length = self.geom.length if "length" in self.values else None
+        representative_point = self.geom.representative_point() if "representative_point" in self.values else None
 
         return {
             **({"area": area} if area else {}),
@@ -111,7 +116,7 @@ class GeometryProcessor:
             "bbox_sw_lng": min_lng,
             "bbox_ne_lat": max_lat,
             "bbox_ne_lng": max_lng,
-            **({"ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat)} if self.include_ccodes else {})
+            **({"ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat)} if "ccodes" in self.values else {})
         }
 
     def _float_geometry(self):
