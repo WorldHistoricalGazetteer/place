@@ -76,13 +76,21 @@ class GeometryProcessor:
         if self.geom.is_empty:
             return {"error": "Empty geometry"} if self.errors else None
 
+        # Cache values for performance
+        area = self.geom.area
+        bbox_codes = self._bbox_ccodes()
+        convex_hull = self.geom.convex_hull
+        float_geometry = self._float_geometry()
+        length = self.geom.length
+        representative_point = self.geom.representative_point()
+
         return {
-            "area": self.geom.area,
-            **self._bbox_ccodes(),
-            "convex_hull": to_geojson(self.geom.convex_hull),
-            "geometry": json.dumps(self._float_geometry()),
-            "length": self.geom.length,
-            "representative_point": to_geojson(self.geom.representative_point()),
+            **({"area": area} if area else {}),
+            **({**bbox_codes } if bbox_codes else {}),
+            **({"convex_hull": to_geojson(convex_hull)} if convex_hull else {}),
+            **({"geometry": json.dumps(float_geometry)} if float_geometry else {}),
+            **({"length": length} if length else {}),
+            **({"representative_point": to_geojson(representative_point) if representative_point else {}}),
         }
 
     def _bbox_ccodes(self):
