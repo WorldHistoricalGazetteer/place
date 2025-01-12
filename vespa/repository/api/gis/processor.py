@@ -76,12 +76,12 @@ class GeometryProcessor:
             return {"error": "Empty geometry"} if self.errors else None
 
         # Cache values for performance
-        area = self.geom.area or None
-        bbox_codes = self._bbox_ccodes() or None
-        convex_hull = self.geom.convex_hull or None
-        float_geometry = self._float_geometry() or None
-        length = self.geom.length or None
-        representative_point = self.geom.representative_point() or None
+        area = self.geom.area
+        bbox_codes = self._bbox_ccodes()
+        convex_hull = self.geom.convex_hull
+        float_geometry = self._float_geometry()
+        length = self.geom.length
+        representative_point = self.geom.representative_point()
 
         result = {
             **({"area": area} if area else {}),
@@ -93,6 +93,8 @@ class GeometryProcessor:
         }
 
         logging.info(f"Processed geometry: {result}")
+
+        return {}
 
         return {
             **({"area": area} if area else {}),
