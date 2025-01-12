@@ -4,7 +4,6 @@ import logging
 import math
 
 from shapely.geometry.geo import shape
-from shapely.geometry.point import Point
 from shapely.io import to_geojson
 from shapely.validation import explain_validity
 
@@ -33,8 +32,8 @@ class GeometryProcessor:
             geometry (dict): The GeoJSON geometry to be processed.
             errors (bool): If True, errors will be returned as messages. Defaults to False.
         """
-        self.geometry = geometry # GeoJSON geometry
-        self.geom = None # Shapely geometry object
+        self.geometry = geometry  # GeoJSON geometry
+        self.geom = None  # Shapely geometry object
         self.errors = errors
         self.include_ccodes = include_ccodes
 
@@ -86,7 +85,7 @@ class GeometryProcessor:
 
         result = {
             **({"area": area} if area else {}),
-            **({**bbox_codes } if bbox_codes else {}),
+            **({**bbox_codes} if bbox_codes else {}),
             **({"convex_hull": to_geojson(convex_hull)} if convex_hull else {}),
             **({"geometry": json.dumps(float_geometry)} if float_geometry else {}),
             **({"length": length} if length else {}),
@@ -97,7 +96,7 @@ class GeometryProcessor:
 
         return {
             **({"area": area} if area else {}),
-            **({**bbox_codes } if bbox_codes else {}),
+            **({**bbox_codes} if bbox_codes else {}),
             **({"convex_hull": to_geojson(convex_hull)} if convex_hull else {}),
             **({"geometry": json.dumps(float_geometry)} if float_geometry else {}),
             **({"length": length} if length else {}),
@@ -123,7 +122,7 @@ class GeometryProcessor:
             "bbox_sw_lng": min_lng,
             "bbox_ne_lat": max_lat,
             "bbox_ne_lng": max_lng,
-            **({ "ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat) } if self.include_ccodes else {})
+            **({"ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat)} if self.include_ccodes else {})
         }
 
     def _float_geometry(self):

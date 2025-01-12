@@ -1,8 +1,9 @@
 # /ingestion/transformers.py
-import json
+import logging
 
 from ..gis.processor import GeometryProcessor
-from ..utils import get_uuid
+
+logger = logging.getLogger(__name__)
 
 
 class DocTransformer:
@@ -63,7 +64,8 @@ class DocTransformer:
                     # "item_id": ,
                     # "primary_name": ,
                     # The following includes bounding box coordinates for range queries, country codes for filtering, convex hull, etc.
-                    **( GeometryProcessor(data.get("geometry"), include_ccodes=True).process() if data.get("geometry") else {} ),
+                    **(GeometryProcessor(data.get("geometry"), include_ccodes=True).process() if data.get(
+                        "geometry") else {}),
                     # "feature_classes": ,
                     "lpf_feature": data,
                 },
@@ -252,7 +254,7 @@ class DocTransformer:
                     **({"code2": code2} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
                     **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
                     # The following includes bounding box coordinates for range queries, convex hull, etc.
-                    **( GeometryProcessor(data.get("geometry")).process() if data.get("geometry") else {} ),
+                    **(GeometryProcessor(data.get("geometry")).process() if data.get("geometry") else {}),
                 },
                 [
                 ]
@@ -260,11 +262,12 @@ class DocTransformer:
         ],
         "Terrarium": [
             lambda data: (
-                { # Use ** to omit empty fields
-                    **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get("resolution")) is not None else {}),
+                {  # Use ** to omit empty fields
+                    **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get(
+                        "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     # The following includes bounding box coordinates for range queries, convex hull, etc.
-                    **( GeometryProcessor(data.get("geometry")).process() if data.get("geometry") else {} ),
+                    **(GeometryProcessor(data.get("geometry")).process() if data.get("geometry") else {}),
                 },
                 [
                 ]
@@ -279,4 +282,7 @@ class DocTransformer:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
 
         results = transformer(data)
+
+        logger.info(f"Transformed data: {results}")
+
         return results
