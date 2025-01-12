@@ -24,7 +24,7 @@ class GeometryProcessor:
         geom (shapely.geometry.base.BaseGeometry): The Shapely geometry object derived from the GeoJSON.
     """
 
-    def __init__(self, geometry, errors=False, include_ccodes=False):
+    def __init__(self, geometry, errors=False, include_ccodes=False, values = []):
         """
         Initializes the GeometryProcessor with a given geometry and error-handling option.
 
@@ -111,7 +111,7 @@ class GeometryProcessor:
             "bbox_sw_lng": min_lng,
             "bbox_ne_lat": max_lat,
             "bbox_ne_lng": max_lng,
-            # **({"ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat)} if self.include_ccodes else {})
+            **({"ccodes": self._isocodes(min_lng, min_lat, max_lng, max_lat)} if self.include_ccodes else {})
         }
 
     def _float_geometry(self):
