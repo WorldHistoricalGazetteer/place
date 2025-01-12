@@ -1,6 +1,7 @@
 # /ingestion/transformers.py
 import logging
 
+from ..gis.intersections import IsoCodeResolver
 from ..gis.processor import GeometryProcessor
 
 logger = logging.getLogger(__name__)
@@ -88,9 +89,7 @@ class DocTransformer:
                     ),
                     # TODO: Map to GeoNames feature classes from https://pleiades.stoa.org/vocabularies/place-types
                     "feature_classes": data.get("placeTypes", []),
-                    "ccodes": isocodes(
-                        data.get("features", [{'type': 'Point', 'coordinates': data.get("reprPoint", None)}]),
-                        has_decimal=True),
+                    "ccodes": IsoCodeResolver(geometry={'type': 'Point', 'coordinates': data.get("reprPoint", None)}).resolve(),
                     "lpf_feature": {},  # TODO: Build LPF feature
                 },
                 [
@@ -125,9 +124,8 @@ class DocTransformer:
                         data.get("cc2", "").split(",")
                         if data.get("cc2") else
                         [data.get("country_code")] or (
-                            isocodes(
-                                [{'type': 'Point', 'coordinates': [float(data["latitude"]), float(data["longitude"])]}]
-                            ) if data.get("latitude") and data.get("longitude") else None
+                            IsoCodeResolver(geometry={"type": "Point", "coordinates": [float(data["latitude"]), float(data["longitude"])]}).resolve()
+                            if data.get("latitude") and data.get("longitude") else None
                         )
                     ),
                     "lpf_feature": {},
@@ -249,11 +247,11 @@ class DocTransformer:
         "ISO3166": [
             lambda data: (
                 {
+                    **(geometry_etc if (
+                        geometry_etc := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
                     **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
                     **({"code2": code2} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
                     **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
-                    **(processed_geometry if (
-                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
                 },
                 [
                 ]
@@ -261,12 +259,12 @@ class DocTransformer:
         ],
         "Terrarium": [
             lambda data: (
-                {  # Use ** to omit empty fields
+                {
+                    **(geometry_etc if (
+                        geometry_etc := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
                     **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get(
                         "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
-                    **(processed_geometry if (
-                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
                 },
                 [
                 ]
