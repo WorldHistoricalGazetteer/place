@@ -1,4 +1,5 @@
 # /gis/utils.py
+import logging
 import math
 
 from shapely.geometry.geo import shape
@@ -6,6 +7,8 @@ from shapely.geometry.point import Point
 from shapely.validation import explain_validity
 
 from ..config import VespaClient
+
+logger = logging.getLogger(__name__)
 
 
 def bbox(geometry, positions=True, errors=True):
@@ -102,10 +105,9 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                 "yql": f"""
                         select {schema_fields} 
                         from sources {schema_name} 
-                        where range(bbox_sw_lat, 10, 20)
+                        where range(bbox_sw_lat, 10, 40)
                         """
             }
-
 
             # if test_box["sw"]["lng"] > test_box["ne"]["lng"]:
             #     query = {
@@ -175,6 +177,8 @@ def isocodes(bbox, geometry):
     """
     # Use Search API to query the iso3166 schema for countries whose bounding boxes intersect with that provided
     candidate_countries = box_intersect(bbox, "iso3166", "code2,geometry")
+
+    logger.info(f"Found {len(candidate_countries)} candidate countries: {[c['code2'] for c in candidate_countries]}")
 
     # Use Shapely to check for intersections with the provided geometry
     geom = shape(geometry)
