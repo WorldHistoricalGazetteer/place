@@ -85,7 +85,7 @@ class GeometryProcessor:
 
         result = {
             **({"area": area} if area else {}),
-            **({**bbox_codes} if bbox_codes else {}),
+            **bbox_codes,
             **({"convex_hull": to_geojson(convex_hull)} if convex_hull else {}),
             **({"geometry": json.dumps(float_geometry)} if float_geometry else {}),
             **({"length": length} if length else {}),
@@ -98,7 +98,7 @@ class GeometryProcessor:
 
         return {
             **({"area": area} if area else {}),
-            **({**bbox_codes} if bbox_codes else {}),
+            **bbox_codes,
             **({"convex_hull": to_geojson(convex_hull)} if convex_hull else {}),
             **({"geometry": json.dumps(float_geometry)} if float_geometry else {}),
             **({"length": length} if length else {}),
