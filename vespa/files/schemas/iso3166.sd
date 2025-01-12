@@ -23,19 +23,19 @@ schema iso3166 {
 
         # Country name
         field name type string {
-            indexing: attribute
+            indexing: attribute | summary
             attribute: fast-search
         }
 
         # ISO Alpha-2 code (e.g., AW, AF)
         field code2 type string {
-            indexing: attribute
+            indexing: attribute | summary
             attribute: fast-search
         }
 
         # ISO Alpha-3 code (e.g., ABW, AFG)
         field code3 type string {
-            indexing: attribute
+            indexing: attribute | summary
             attribute: fast-search
         }
 

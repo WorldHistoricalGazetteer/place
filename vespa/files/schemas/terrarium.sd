@@ -22,7 +22,7 @@ schema terrarium {
         }
 
         field resolution type float {
-            indexing: attribute
+            indexing: attribute | summary
             attribute: fast-search
         }
 
