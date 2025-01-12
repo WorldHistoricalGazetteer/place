@@ -84,11 +84,11 @@ class GeometryProcessor:
         representative_point = self.geom.representative_point()
 
         result = {
-            **({"area": area} if area else {}),
+            # **({"area": area} if area else {}),
             # **bbox_codes,
             # **({"convex_hull": to_geojson(convex_hull)} if convex_hull else {}),
             # **({"geometry": json.dumps(float_geometry)} if float_geometry else {}),
-            **({"length": length} if length else {}),
+            # **({"length": length} if length else {}),
             # **({"representative_point": to_geojson(representative_point) if representative_point else {}}),
         }
 
