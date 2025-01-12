@@ -63,9 +63,8 @@ class DocTransformer:
                 {  # NPR (Normalised Place Record)
                     # "item_id": ,
                     # "primary_name": ,
-                    # The following includes bounding box coordinates for range queries, country codes for filtering, convex hull, etc.
-                    **(GeometryProcessor(data.get("geometry"), include_ccodes=True).process() if data.get(
-                        "geometry") else {}),
+                    # Add a `values` parameter to the GeometryProcessor to limit the extracted geometry fields
+                    **(processed_geometry if (processed_geometry := GeometryProcessor(data.get("geometry")).process()) else {}),
                     # "feature_classes": ,
                     "lpf_feature": data,
                 },
@@ -253,8 +252,8 @@ class DocTransformer:
                     **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
                     **({"code2": code2} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
                     **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
-                    # The following includes bounding box coordinates for range queries, convex hull, etc.
-                    **(GeometryProcessor(data.get("geometry")).process() if data.get("geometry") else {}),
+                    **(processed_geometry if (
+                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
                 },
                 [
                 ]
@@ -267,7 +266,7 @@ class DocTransformer:
                         "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     **(processed_geometry if (
-                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
+                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry", "ccodes"]).process()) else {}),
                 },
                 [
                 ]
