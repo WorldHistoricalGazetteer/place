@@ -5,6 +5,7 @@ import math
 
 from shapely.geometry.geo import shape
 from shapely.geometry.point import Point
+from shapely.lib import to_geojson
 from shapely.validation import explain_validity
 
 from ..config import VespaClient
@@ -78,10 +79,10 @@ class GeometryProcessor:
         return {
             "area": self.geom.area,
             **self._bbox_ccodes(),
-            "convex_hull": json.dumps(self.geom.convex_hull),
-            "geometry": json.dumps(self._float_geometry()),
+            "convex_hull": to_geojson(self.geom.convex_hull),
+            "geometry": to_geojson(self._float_geometry()),
             "length": self.geom.length,
-            "representative_point": self.geom.representative_point().coords,
+            "representative_point": to_geojson(self.geom.representative_point()),
         }
 
     def _bbox_ccodes(self):
