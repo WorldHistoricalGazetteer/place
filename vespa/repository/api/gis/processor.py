@@ -92,8 +92,6 @@ class GeometryProcessor:
             # **({"representative_point": to_geojson(representative_point) if representative_point else {}}),
         }
 
-        logging.info(f"Processed geometry: {result}")
-
         return {}
 
         return {

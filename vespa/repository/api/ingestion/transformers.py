@@ -283,6 +283,5 @@ class DocTransformer:
 
         results = transformer(data)
 
-        logger.info(f"Transformed data: {results}")
 
         return results
