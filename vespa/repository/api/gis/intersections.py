@@ -5,7 +5,7 @@ import logging
 
 from shapely.geometry.geo import shape
 
-from .processor import vespa_bbox, get_valid_geom
+from .utils import get_valid_geom, vespa_bbox
 from ..config import VespaClient
 
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class BoxIntersect:
                         range(bbox_ne_lng, {self.min_lng}, {self.max_lng})
                     )
                 """
-            else: # Crosses the antimeridian
+            else:  # Crosses the antimeridian
                 return f"""
                     (
                         range(bbox_sw_lng, -180, {self.max_lng})
