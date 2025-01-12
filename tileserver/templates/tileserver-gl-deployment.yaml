@@ -116,6 +116,12 @@ spec:
           value: "{{ .Values.tippecanoe.imagePullPolicy }}"
         - name: TIPPECANOE_NAMESPACE
           value: "{{ .Values.namespace }}"
+        - name: VESPA_NAMESPACE
+          value: "{{ .Values.vespa.namespace }}"
+        - name: VESPA_QUERY_HOST
+          value: "http://vespa-query.{{ .Values.vespa.namespace }}.svc.cluster.local:8080"
+        - name: VESPA_FEED_HOST
+          value: "http://vespa-feed.{{ .Values.vespa.namespace }}.svc.cluster.local:8080"
         resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
         volumeMounts:
         - name: tiles

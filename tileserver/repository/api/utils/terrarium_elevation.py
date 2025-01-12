@@ -21,9 +21,6 @@ properties_map = {}
 descriptions_map = {}
 idx = rtree.index.Index()
 
-vespa_query_url = os.getenv("VESPA_QUERY_URL",
-                            "http://vespa-query-container-0.vespa-internal.vespa.svc.cluster.local:8080")
-
 descriptions_map = {
     "austria": "Digital elevation model with 10-metre resolution over Austria, provided by data.gv.at.",
     "etopo1": "Global ocean bathymetry model with a 1 arc-minute resolution, covering the world’s oceans.",

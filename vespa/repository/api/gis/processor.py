@@ -6,7 +6,7 @@ import logging
 from shapely.io import to_geojson
 from shapely.validation import explain_validity
 
-from .intersections import IsoCodeResolver
+from .intersections import GeometryIntersect
 from .utils import get_valid_geom, vespa_bbox
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,9 @@ class GeometryProcessor:
         bbox = vespa_bbox(self.geom) if "bbox" in self.values or "ccodes" in self.values else {}
         convex_hull = self.geom.convex_hull if "convex_hull" in self.values else None
         float_geometry = self._float_geometry() if "geometry" in self.values else None
-        iso_codes = IsoCodeResolver(geom=self.geom, bbox=bbox).resolve() if "ccodes" in self.values and bbox else {}
+        iso_codes = GeometryIntersect(geom=self.geom, bbox=bbox).resolve() if "ccodes" in self.values and bbox else {}
+        # Remove "-" from the list of ISO codes if present
+        iso_codes = [code['code2'] for code in iso_codes if not code['code2'] == "-"] or {} if iso_codes else {}
         length = self.geom.length if "length" in self.values else None
         representative_point = self.geom.representative_point() if "representative_point" in self.values else None
 

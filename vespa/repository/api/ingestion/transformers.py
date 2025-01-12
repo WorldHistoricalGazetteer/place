@@ -1,7 +1,7 @@
 # /ingestion/transformers.py
 import logging
 
-from ..gis.intersections import IsoCodeResolver
+from ..gis.intersections import GeometryIntersect
 from ..gis.processor import GeometryProcessor
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,8 @@ class DocTransformer:
                     # "item_id": ,
                     # "primary_name": ,
                     # Add a `values` parameter to the GeometryProcessor to limit the extracted geometry fields
-                    **(processed_geometry if (processed_geometry := GeometryProcessor(data.get("geometry")).process()) else {}),
+                    **(processed_geometry if (
+                        processed_geometry := GeometryProcessor(data.get("geometry")).process()) else {}),
                     # "feature_classes": ,
                     "lpf_feature": data,
                 },
@@ -89,7 +90,8 @@ class DocTransformer:
                     ),
                     # TODO: Map to GeoNames feature classes from https://pleiades.stoa.org/vocabularies/place-types
                     "feature_classes": data.get("placeTypes", []),
-                    "ccodes": IsoCodeResolver(geometry={'type': 'Point', 'coordinates': data.get("reprPoint", None)}).resolve(),
+                    "ccodes": GeometryIntersect(
+                        geometry={'type': 'Point', 'coordinates': data.get("reprPoint", None)}).resolve(),
                     "lpf_feature": {},  # TODO: Build LPF feature
                 },
                 [
@@ -124,7 +126,8 @@ class DocTransformer:
                         data.get("cc2", "").split(",")
                         if data.get("cc2") else
                         [data.get("country_code")] or (
-                            IsoCodeResolver(geometry={"type": "Point", "coordinates": [float(data["latitude"]), float(data["longitude"])]}).resolve()
+                            GeometryIntersect(geometry={"type": "Point", "coordinates": [float(data["latitude"]), float(
+                                data["longitude"])]}).resolve()
                             if data.get("latitude") and data.get("longitude") else None
                         )
                     ),
@@ -248,7 +251,8 @@ class DocTransformer:
             lambda data: (
                 {
                     **(geometry_etc if (
-                        geometry_etc := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
+                        geometry_etc := GeometryProcessor(data.get("geometry"),
+                                                          values=["bbox", "geometry"]).process()) else {}),
                     **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
                     **({"code2": code2} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
                     **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
@@ -261,7 +265,8 @@ class DocTransformer:
             lambda data: (
                 {
                     **(geometry_etc if (
-                        geometry_etc := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
+                        geometry_etc := GeometryProcessor(data.get("geometry"),
+                                                          values=["bbox", "geometry"]).process()) else {}),
                     **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get(
                         "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),

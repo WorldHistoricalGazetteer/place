@@ -1,9 +1,10 @@
 # /main.py
 import logging
 
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Path
 from fastapi.responses import JSONResponse
 
+from .gis.intersections import GeometryIntersect
 from .ingestion.processor import start_ingestion_in_background
 from .search.processor import visit
 from .system.status import get_vespa_status  # Import the function from the status module
@@ -18,6 +19,64 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+
+@app.get("/iso3166/{latitude}/{longitude}")
+async def get_country_codes(
+    latitude: float = Path(..., description="Latitude of the point"),
+    longitude: float = Path(..., description="Longitude of the point"),
+):
+    """
+    Returns a list of country codes for a given latitude and longitude.
+    """
+    try:
+        geometry = {
+            "type": "Point",
+            "coordinates": [longitude, latitude]
+        }
+        bbox = {
+            "bbox_sw_lat": latitude,
+            "bbox_sw_lng": longitude,
+            "bbox_ne_lat": latitude,
+            "bbox_ne_lng": longitude,
+        }
+        intersect = GeometryIntersect(geometry=geometry, bbox=bbox)
+        results = intersect.resolve()
+        return JSONResponse(content={"country_codes": [result["code2"] for result in results if not result["code2"]=="-"]})
+    except Exception as e:
+        logger.error(f"Error in /iso3166: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "Failed to fetch country codes: {e}"})
+
+
+@app.get("/terrarium/{latitude}/{longitude}")
+async def get_terrarium_object(
+    latitude: float = Path(..., description="Latitude of the point"),
+    longitude: float = Path(..., description="Longitude of the point"),
+):
+    """
+    Returns the terrarium object with the smallest resolution for the given latitude and longitude.
+    """
+    try:
+        geometry = {
+            "type": "Point",
+            "coordinates": [longitude, latitude]
+        }
+        bbox = {
+            "bbox_sw_lat": latitude,
+            "bbox_sw_lng": longitude,
+            "bbox_ne_lat": latitude,
+            "bbox_ne_lng": longitude,
+        }
+        intersect = GeometryIntersect(
+            geometry=geometry, bbox=bbox, schema="terrarium", fields="resolution,source"
+        )
+        results = intersect.resolve()
+        if not results:
+            return JSONResponse(content={"error": "No terrarium object found"})
+        return JSONResponse(content=results[0])
+    except Exception as e:
+        logger.error(f"Error in /terrarium: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "Failed to fetch terrarium object: {e}"})
 
 
 @app.get("/visit")

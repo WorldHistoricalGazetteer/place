@@ -11,22 +11,20 @@ from ..config import VespaClient
 logger = logging.getLogger(__name__)
 
 
-class IsoCodeResolver:
+class GeometryIntersect:
     """
-    Resolves ISO 3166 Alpha-2 country codes for countries whose geometries intersect with a given geometry.
-
-    This is achieved by first finding candidate countries whose bounding boxes intersect with a given geometry's
-    bounding box, and then checking for actual geometry intersections.
 
     """
 
-    def __init__(self, geometry=None, geom=None, bbox=None) -> None:
+    def __init__(self, geometry=None, geom=None, bbox=None, schema=None, fields=None) -> None:
         """
         Initializes the resolver with a geometry and bounding box.
 
         Args:
             geometry (dict): The GeoJSON geometry to check against.
             bbox (dict): A bounding box dictionary with keys "bbox_sw_lat", "bbox_sw_lng", "bbox_ne_lat", "bbox_ne_lng".
+            schema (str, optional): Vespa schema to query. Defaults to "iso3166".
+            fields (str, optional): Comma-separated list of fields to query. Defaults to "code2".
         """
 
         # Validate and set geometry: geom is assumed to have been pre-validated
@@ -38,31 +36,30 @@ class IsoCodeResolver:
         # Derive bounding box if not provided
         self.bbox = bbox or (vespa_bbox(self.geom) if self.geom else None)
         self.vespa_client = VespaClient()
+        self.schema = schema or "iso3166"
+        self.fields = fields or "code2"
 
     def resolve(self) -> list:
         """
-        Resolve ISO country codes by performing bounding box and geometry intersection checks.
-
-        Returns:
-            list: A sorted list of ISO country codes that intersect with the geometry.
         """
         if not self.geom or not self.bbox:
-            logger.warning("Cannot resolve ISO codes: missing geometry or bounding box.")
+            logger.warning("Cannot find intersections: missing geometry or bounding box.")
             return []
 
         try:
-            candidate_countries = BoxIntersect(self.bbox).box_intersect()
+            candidates = BoxIntersect(self.bbox, schema=self.schema, fields=self.fields).box_intersect()
 
-            ccodes = set()
-            for country in candidate_countries:
-                if 'code2' in country and country['code2'] != '-' and 'geometry' in country:
-                    country_geom = shape(json.loads(country['geometry']))
-                    if self.geom.intersects(country_geom):
-                        ccodes.add(country['code2'])
+            results = set()
+            for candidate in candidates:
+                if 'geometry' in candidate:
+                    candidate_geom = shape(json.loads(candidate['geometry']))
+                    if self.geom.intersects(candidate_geom):
+                        # Add the candidate to the results excluding the geometry
+                        results.add({k: v for k, v in candidate.items() if k != 'geometry'})
 
-            return sorted(list(ccodes))
+            return sorted(list(results), key=lambda x: x.get(self.fields.split(',')[0], ''))
         except Exception as e:
-            logger.error(f"Error resolving ISO codes: {e}", exc_info=True)
+            logger.error(f"Error finding intersections: {e}", exc_info=True)
             return []
 
 
@@ -83,14 +80,14 @@ class BoxIntersect:
             max_lng (float): Maximum longitude of the bounding box.
             max_lat (float): Maximum latitude of the bounding box.
             schema (str, optional): Vespa schema to query. Defaults to "iso3166".
-            fields (str, optional): Fields to query. Defaults to "code2, geometry".
+            fields (str, optional): Fields to query. Defaults to "code2".
         """
         self.min_lng = bbox.get("bbox_sw_lng", -180)
         self.min_lat = bbox.get("bbox_sw_lat", -90)
         self.max_lng = bbox.get("bbox_ne_lng", 180)
         self.max_lat = bbox.get("bbox_ne_lat", 90)
         self.schema = schema or "iso3166"
-        self.fields = fields or "code2, geometry"
+        self.fields = fields or "code2"
 
     def box_intersect(self) -> list:
         """
@@ -119,33 +116,79 @@ class BoxIntersect:
         """
 
         def _generate_longitude_conditions() -> str:
-            if self.min_lng < self.max_lng:
+            if (self.min_lng <= self.max_lng):
+                # Test box does not cross the antimeridian
+                # 1. SW corner of document box is within bounds of test box
+                # 2. NE corner of document box is within bounds of test box
+                # 3. Document box does not cross the antimeridian, but encompasses the test box
+                # 4. Document box crosses the antimeridian and encompasses the test box
                 return f"""
                     (
                         range(bbox_sw_lng, {self.min_lng}, {self.max_lng})
                         or
                         range(bbox_ne_lng, {self.min_lng}, {self.max_lng})
+                        or
+                        (
+                            bbox_sw_lng <= bbox_ne_lng
+                            and
+                            bbox_sw_lng < {self.min_lng}
+                            and
+                            bbox_ne_lng > {self.max_lng}
+                        )
+                        or
+                        (
+                            bbox_sw_lng > bbox_ne_lng
+                            and
+                            bbox_sw_lng < {self.min_lng}
+                            and
+                            bbox_ne_lng < {self.min_lng}
+                        )
                     )
                 """
-            else:  # Crosses the antimeridian
+            else:
+                # Test box crosses the antimeridian
+                # 1. SW corner of document box is within bounds of test box
+                # 2. NE corner of document box is within bounds of test box
+                # 3. Document box encompasses the test box (also crossing the meridian)
                 return f"""
                     (
-                        range(bbox_sw_lng, -180, {self.max_lng})
+                        (
+                            range(bbox_sw_lng, {self.min_lng}, 180)
+                            or
+                            range(bbox_sw_lng, -180, {self.max_lng})
+                        )
                         or
-                        range(bbox_sw_lng, {self.min_lng}, 180)
+                        (
+                            range(bbox_ne_lng, {self.min_lng}, 180)
+                            or
+                            range(bbox_ne_lng, -180, {self.max_lng})
+                        )
                         or
-                        range(bbox_ne_lng, -180, {self.max_lng})
-                        or
-                        range(bbox_ne_lng, {self.min_lng}, 180)
+                        (
+                            bbox_sw_lng > bbox_ne_lng
+                            and
+                            bbox_sw_lng < {self.min_lng}
+                            and
+                            bbox_ne_lng > {self.max_lng}
+                        )
                     )
                 """
 
         def _generate_latitude_conditions() -> str:
+            # 1. SW corner of document box is within bounds of test box
+            # 2. NE corner of document box is within bounds of test box
+            # 3. Document box encompasses the test box
             return f"""
                 (
                     range(bbox_sw_lat, {self.min_lat}, {self.max_lat})
                     or
                     range(bbox_ne_lat, {self.min_lat}, {self.max_lat})
+                    or
+                    (
+                        bbox_sw_lat < {self.min_lat}
+                        and
+                        bbox_ne_lat > {self.max_lat}
+                    )
                 )
             """
 
@@ -154,7 +197,7 @@ class BoxIntersect:
 
         return {
             "yql": f"""
-                select {self.fields} from sources {self.schema}
+                select {self.fields}, geometry from sources {self.schema}
                 where
                 {longitude_conditions}
                 and

@@ -53,6 +53,9 @@ tippecanoe:
   imageTag: "v0.0.2"
   imagePullPolicy: "IfNotPresent"
 
+vespa:
+  namespace: "vespa"
+
 pv:
   tiles:
     storage: 50Gi
