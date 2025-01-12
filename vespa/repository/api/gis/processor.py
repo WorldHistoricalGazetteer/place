@@ -171,8 +171,6 @@ class GeometryProcessor:
             geom = shape(self.geometry)
             ccodes = set()
 
-            logger.info(f"Candidate countries: {candidate_countries}")
-
             for country in candidate_countries:
                 if 'code2' in country and country['code2'] != '-' and 'geometry' in country:
                     country_geom = shape(json.loads(country['geometry']))
