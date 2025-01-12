@@ -169,7 +169,7 @@ def box_intersect(test_box, schema_name, schema_fields="*", schema_box="bbox"):
                 raise ValueError(f"Error during Vespa query: {response['error']}")
 
             # Return the documents matching the spatial intersection condition
-            return response.get("root",{}).get("children", [])
+            return [child.get("fields",{}) for child in response.get("root",{}).get("children", [])]
 
     except Exception as e:
         raise ValueError(f"Error during Vespa query: {str(e)}")
@@ -189,15 +189,15 @@ def isocodes(bbox, geometry):
     # Use Search API to query the iso3166 schema for countries whose bounding boxes intersect with that provided
     candidate_countries = box_intersect(bbox, "iso3166", "code2,geometry")
 
-    logger.info(f"Found {len(candidate_countries)} candidate countries: {[c['code2'] for c in candidate_countries]}")
+    logger.info(f"Found {len(candidate_countries)} candidate countries: {candidate_countries}")
 
     # Use Shapely to check for intersections with the provided geometry
     geom = shape(geometry)
     ccodes = set()
     for country in candidate_countries:
-        ccodes.add(country['code2'])
+        ccodes.add(country.get('code2',''))
 
-        # country_geom = shape(country['geometry'])
+        # country_geom = shape(country.get('geometry'), None)
         # if geom.intersects(country_geom):
         #     ccodes.add(country['code2'])
 
