@@ -176,6 +176,7 @@ class GeometryProcessor:
                     if geom.intersects(country_geom):
                         ccodes.add(country['code2'])
 
+            logger.info(f"ISO codes for bounding box: {ccodes}")
             return sorted(list(ccodes))
 
         except Exception as e:
@@ -197,7 +198,6 @@ class GeometryProcessor:
             list: A list of documents (children) whose bounding boxes intersect with the given bounding box.
         """
         try:
-            logger.info(f"Querying Vespa for bounding box intersection: {min_lng}, {min_lat}, {max_lng}, {max_lat}")
             with VespaClient.sync_context("feed") as sync_app:
                 query = self._generate_bounding_box_query(min_lng, min_lat, max_lng, max_lat)
                 response = sync_app.query(query).json
