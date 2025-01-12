@@ -267,8 +267,7 @@ class DocTransformer:
                         "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     **(processed_geometry if (
-                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox",
-                                                                                              "geometry"]).process()) else {}),
+                        processed_geometry := GeometryProcessor(data.get("geometry"), values=["bbox", "geometry"]).process()) else {}),
                 },
                 [
                 ]
