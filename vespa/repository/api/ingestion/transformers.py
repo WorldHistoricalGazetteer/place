@@ -62,11 +62,18 @@ class DocTransformer:
                 {  # NPR (Normalised Place Record)
                     # "item_id": ,
                     # "primary_name": ,
-                    # "latitude": ,
-                    # "longitude": ,
-                    **({"bounding_box": bbox_val} if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}),
+                    **(
+                        {
+                            "bbox_sw_lat": bbox_val["sw"]["lat"],
+                            "bbox_sw_lng": bbox_val["sw"]["lng"],
+                            "bbox_ne_lat": bbox_val["ne"]["lat"],
+                            "bbox_ne_lng": bbox_val["ne"]["lng"],
+                        }
+                        if (bbox_val := bbox(data.get("geometry"), errors=False)) else {}
+                    ),
+                    # Calculate ISO country codes from geometry: adds significant processing time
+                    **({"ccodes": ccodes} if (ccodes := isocodes(bbox_val, data.get("geometry", None))) else {}),
                     # "feature_classes": ,
-                    # "ccodes": ,
                     "lpf_feature": data,
                 },
                 [  # Attestations and Toponyms
