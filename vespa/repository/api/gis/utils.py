@@ -177,6 +177,11 @@ def isocodes(bbox, geometry):
                      check beyond the bounding box level.
     :return: A sorted list of ISO 3166 Alpha-2 country codes for intersecting countries.
     """
+    # Return empty list if bounding box or geometry are not provided
+    if not bbox or not geometry:
+        logger.info("Bounding box or geometry not provided")
+        return []
+
     # Use Search API to query the iso3166 schema for countries whose bounding boxes intersect with that provided
     candidate_countries = box_intersect(bbox, "iso3166", "code2,geometry")
 
