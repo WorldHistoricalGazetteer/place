@@ -98,7 +98,6 @@ schema place {
         struct bbox_structure {
             field sw type coordinates {}
             field ne type coordinates {}
-            field antimeridial type bool {}
         }
         field bbox type bbox_structure {
             # The bounding box of the place.
