@@ -54,16 +54,6 @@ class GeometryIntersect:
             for candidate in candidates:
                 if 'geometry' in candidate:
                     candidate_geom = shape(json.loads(candidate['geometry']))
-
-                    # Check validity of candidate geometry
-                    if not candidate_geom.is_valid:
-                        logger.info(f"Invalid geometry found: {candidate['code2']}: {explain_validity(candidate_geom)}")
-                        # Try to fix the geometry
-                        candidate_geom = candidate_geom.buffer(0)
-                        if not candidate_geom.is_valid:
-                            logger.info(f"Could not fix geometry for {candidate['code2']}")
-                            continue
-
                     if self.geom.intersects(candidate_geom):
                         # Exclude the 'geometry' field and convert the candidate to a tuple of key-value pairs (hashable)
                         results.add(frozenset({k: v for k, v in candidate.items() if k != 'geometry'}.items()))
