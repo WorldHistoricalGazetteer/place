@@ -31,7 +31,7 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float) -> dict:
     """
     logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
 
-    terrarium_url = f"http://{host_mapping['feed']}:8080/terrarium/{lat}/{lng}"
+    terrarium_url = f"http://{host_mapping['api']}/terrarium/{lat}/{lng}"
 
     try:
         response = requests.get(terrarium_url)

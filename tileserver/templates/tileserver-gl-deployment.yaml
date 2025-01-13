@@ -122,6 +122,8 @@ spec:
           value: "http://vespa-query.{{ .Values.vespa.namespace }}.svc.cluster.local:8080"
         - name: VESPA_FEED_HOST
           value: "http://vespa-feed.{{ .Values.vespa.namespace }}.svc.cluster.local:8080"
+        - name: VESPA_API_HOST
+          value: "http://vespa-api.{{ .Values.vespa.namespace }}.svc.cluster.local:8082"
         resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
         volumeMounts:
         - name: tiles
