@@ -4,6 +4,7 @@ import json
 import logging
 
 from shapely.geometry.geo import shape
+from shapely.validation import explain_validity
 
 from .utils import get_valid_geom, vespa_bbox
 from ..config import VespaClient
@@ -53,6 +54,12 @@ class GeometryIntersect:
             for candidate in candidates:
                 if 'geometry' in candidate:
                     candidate_geom = shape(json.loads(candidate['geometry']))
+
+                    # Check validity of candidate geometry
+                    if not candidate_geom.is_valid:
+                        logger.info(f"Invalid geometry found: {candidate['code2']}: {explain_validity(candidate_geom)}")
+                        continue
+
                     if self.geom.intersects(candidate_geom):
                         # Exclude the 'geometry' field and convert the candidate to a tuple of key-value pairs (hashable)
                         results.add(frozenset({k: v for k, v in candidate.items() if k != 'geometry'}.items()))
