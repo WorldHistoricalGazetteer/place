@@ -1,0 +1,136 @@
+schema place {
+    document place {
+
+        field lpf_feature type string {
+            # The full JSON of the LPF Feature.
+            indexing: summary
+            attribute: fast-search
+        }
+
+        field toponyms type array<string> {
+            # List of unique toponym IDs associated with the place.
+            # Allows reverse lookup of places associated with a toponym.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        ########### Temporal Fields ###########
+        # Derived from more granular LPF data, they represent the outer bounds of the place's temporal range(s).
+
+        struct year_range_structure {
+            # Start and end years for the place, as integers in the range [-2,147,483,648, 2,147,483,647].
+            # Default values should in all cases be set to the minimum and maximum possible values.
+            field start type int {}
+            field end type int {}
+        }
+        field year_range type year_range_structure {
+            # Year range for the place.
+            indexing: summary
+        }
+
+        ########### Other Metadata ###########
+
+        field ccodes type array<string> {
+            # ISO 3166-1 alpha-2 country codes for the modern extent of containment.
+            # This array allows for efficient filtering of places by their modern geopolitical context, removing the need
+            # for complex GIS filtering when country codes form part of a query.
+            # Example: ["FR", "DE", "LU"]
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field types type array<string> {
+            # An array of AAT (Getty Art & Architecture Thesaurus) types associated with the place.
+            # e.g. ["300008375", "300008347"] (for "cities" and "towns")
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field classes type array<string> {
+            # An array of single-character GeoNames feature classes associated with the place.
+            # e.g. ["P", "A"] (for "populated places" and "administrative areas")
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field source type string {
+            # Indicates the origin or authority of the record (e.g., a specific gazetteer, database, or contributed dataset).
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        ########### Fields derived from the geometry ###########
+
+        field geometry type string {
+            # The geometry of the place as a GeoJSON string.
+            # Validated, corrected where possible, and converted to float values using Shapely.
+            indexing: summary
+        }
+
+        field representative_point type position {
+          # A single geo-position representing the approximate centre of the place.
+          # Calculated using Shapely's representative_point method, and guaranteed to be within the place's geometry.
+          indexing: attribute | summary
+        }
+
+        field area type float {
+          # Where relevant, the area of the place's geometry in square meters.
+          # Calculated using Shapely's area method.
+          indexing: attribute | summary
+        }
+
+        field length type float {
+          # Where relevant, the length of the place's geometry in meters.
+          # Calculated using Shapely's length method.
+          indexing: attribute | summary
+        }
+
+        field convex_hull type string {
+          # Where relevant, the convex hull of the place's geometry as a GeoJSON string.
+          # Calculated using Shapely's convex_hull method.
+          indexing: summary
+        }
+
+        struct coordinates {
+            field lat type float {}
+            field lng type float {}
+        }
+        struct bbox_structure {
+            field sw type coordinates {}
+            field ne type coordinates {}
+            field antimeridial type bool {}
+        }
+        field bbox type bbox_structure {
+            # The bounding box of the place.
+            indexing: summary
+        }
+
+    }
+
+    ########### Synthetic fields derived from the bounding box ###########
+
+    field bbox_sw_lat type float {
+        indexing: input bbox["sw"]["lat"] | attribute: fast-search
+        attribute: fast-search
+    }
+
+    field bbox_sw_lng type float {
+        indexing: input bbox["sw"]["lng"] | attribute: fast-search
+        attribute: fast-search
+    }
+
+    field bbox_ne_lat type float {
+        indexing: input bbox["ne"]["lat"] | attribute: fast-search
+        attribute: fast-search
+    }
+
+    field bbox_ne_lng type float {
+        indexing: input bbox["ne"]["lng"] | attribute: fast-search
+        attribute: fast-search
+    }
+
+    field bbox_antimeridial type bool {
+        indexing: input bbox.ne.lng < bbox.sw.lng | attribute
+        attribute: fast-search
+    }
+}
