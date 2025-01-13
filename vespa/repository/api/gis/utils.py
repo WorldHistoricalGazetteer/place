@@ -32,6 +32,8 @@ def vespa_bbox(geom) -> dict:
         "bbox_sw_lng": min_lng,
         "bbox_ne_lat": max_lat,
         "bbox_ne_lng": max_lng,
+        # Vespa cannot compare fields within queries: precompute a flag to indicate bounding box spanning the antimeridian
+        "bbox_antimeridial": min_lng > max_lng,
     }
 
 

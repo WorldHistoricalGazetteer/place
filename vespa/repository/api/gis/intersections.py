@@ -23,7 +23,7 @@ class GeometryIntersect:
 
         Args:
             geometry (dict): The GeoJSON geometry to check against.
-            bbox (dict): A bounding box dictionary with keys "bbox_sw_lat", "bbox_sw_lng", "bbox_ne_lat", "bbox_ne_lng".
+            bbox (dict): A bounding box dictionary with keys "bbox_sw_lat", "bbox_sw_lng", "bbox_ne_lat", "bbox_ne_lng", and "bbox_antimeridial".
             schema (str, optional): Vespa schema to query. Defaults to "iso3166".
             fields (str, optional): Comma-separated list of fields to query. Defaults to "code2".
         """
@@ -95,10 +95,11 @@ class BoxIntersect:
             schema (str, optional): Vespa schema to query. Defaults to "iso3166".
             fields (str, optional): Fields to query. Defaults to "code2".
         """
-        self.min_lng = bbox.get("bbox_sw_lng", -180)
-        self.min_lat = bbox.get("bbox_sw_lat", -90)
-        self.max_lng = bbox.get("bbox_ne_lng", 180)
-        self.max_lat = bbox.get("bbox_ne_lat", 90)
+        self.sw_lng = bbox.get("bbox_sw_lng", -180)
+        self.sw_lat = bbox.get("bbox_sw_lat", -90)
+        self.ne_lng = bbox.get("bbox_ne_lng", 180)
+        self.ne_lat = bbox.get("bbox_ne_lat", 90)
+        self.antimeridial = bbox.get("bbox_antimeridial", False)
         self.schema = schema or "iso3166"
         self.fields = fields or "code2"
 
@@ -130,7 +131,7 @@ class BoxIntersect:
         """
 
         def _generate_longitude_conditions() -> str:
-            if (self.min_lng <= self.max_lng):
+            if not self.antimeridial:
                 # Test box does not cross the antimeridian
                 # 1. SW corner of document box is within bounds of test box
                 # 2. NE corner of document box is within bounds of test box
@@ -138,24 +139,24 @@ class BoxIntersect:
                 # 4. Document box crosses the antimeridian and encompasses the test box
                 return f"""
                     (
-                        range(bbox_sw_lng, {self.min_lng}, {self.max_lng})
+                        range(bbox_sw_lng, {self.sw_lng}, {self.ne_lng})
                         or
-                        range(bbox_ne_lng, {self.min_lng}, {self.max_lng})
+                        range(bbox_ne_lng, {self.sw_lng}, {self.ne_lng})
                         or
                         (
                             bbox_antimeridial = false
                             and
-                            bbox_sw_lng < {self.min_lng}
+                            bbox_sw_lng < {self.sw_lng}
                             and
-                            bbox_ne_lng > {self.max_lng}
+                            bbox_ne_lng > {self.ne_lng}
                         )
                         or
                         (
                             bbox_antimeridial = true
                             and
-                            bbox_sw_lng < {self.min_lng}
+                            bbox_sw_lng < {self.sw_lng}
                             and
-                            bbox_ne_lng < {self.min_lng}
+                            bbox_ne_lng < {self.sw_lng}
                         )
                     )
                 """
@@ -167,23 +168,23 @@ class BoxIntersect:
                 return f"""
                     (
                         (
-                            range(bbox_sw_lng, {self.min_lng}, 180)
+                            range(bbox_sw_lng, {self.sw_lng}, 180)
                             or
-                            range(bbox_sw_lng, -180, {self.max_lng})
+                            range(bbox_sw_lng, -180, {self.ne_lng})
                         )
                         or
                         (
-                            range(bbox_ne_lng, {self.min_lng}, 180)
+                            range(bbox_ne_lng, {self.sw_lng}, 180)
                             or
-                            range(bbox_ne_lng, -180, {self.max_lng})
+                            range(bbox_ne_lng, -180, {self.ne_lng})
                         )
                         or
                         (
                             bbox_antimeridial = true
                             and
-                            bbox_sw_lng < {self.min_lng}
+                            bbox_sw_lng < {self.sw_lng}
                             and
-                            bbox_ne_lng > {self.max_lng}
+                            bbox_ne_lng > {self.ne_lng}
                         )
                     )
                 """
@@ -194,14 +195,14 @@ class BoxIntersect:
             # 3. Document box encompasses the test box
             return f"""
                 (
-                    range(bbox_sw_lat, {self.min_lat}, {self.max_lat})
+                    range(bbox_sw_lat, {self.sw_lat}, {self.ne_lat})
                     or
-                    range(bbox_ne_lat, {self.min_lat}, {self.max_lat})
+                    range(bbox_ne_lat, {self.sw_lat}, {self.ne_lat})
                     or
                     (
-                        bbox_sw_lat < {self.min_lat}
+                        bbox_sw_lat < {self.sw_lat}
                         and
-                        bbox_ne_lat > {self.max_lat}
+                        bbox_ne_lat > {self.ne_lat}
                     )
                 )
             """
