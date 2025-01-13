@@ -58,7 +58,11 @@ class GeometryIntersect:
                     # Check validity of candidate geometry
                     if not candidate_geom.is_valid:
                         logger.info(f"Invalid geometry found: {candidate['code2']}: {explain_validity(candidate_geom)}")
-                        continue
+                        # Try to fix the geometry
+                        candidate_geom = candidate_geom.buffer(0)
+                        if not candidate_geom.is_valid:
+                            logger.info(f"Could not fix geometry for {candidate['code2']}")
+                            continue
 
                     if self.geom.intersects(candidate_geom):
                         # Exclude the 'geometry' field and convert the candidate to a tuple of key-value pairs (hashable)
