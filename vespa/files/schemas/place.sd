@@ -6,11 +6,41 @@ schema place {
             indexing: summary
         }
 
-        field toponyms type array<string> {
-            # List of unique toponym IDs associated with the place.
-            # Allows reverse lookup of places associated with a toponym.
-            indexing: attribute | summary
-            attribute: fast-search
+        ########### Attestations ###########
+        struct attestation_structure {
+            field toponym_id type string {
+                # The ID of the toponym associated with the place.
+            }
+            field year_start type int {
+                # Start date of the attestation.
+            }
+            field year_end type int {
+                # End date of the attestation.
+            }
+            field is_preferred type bool {
+                # Indicates if this toponym is the preferred one for the place.
+            }
+        }
+
+        field attestations type array<attestation_structure> {
+            # List of attestations for this place.
+            indexing: summary
+            struct-field toponym_id {
+                indexing: attribute | summary
+                attribute: fast-search
+            }
+            struct-field year_start {
+                indexing: attribute | summary
+                attribute: fast-search
+            }
+            struct-field year_end {
+                indexing: attribute | summary
+                attribute: fast-search
+            }
+            struct-field is_preferred {
+                indexing: attribute | summary
+                attribute: fast-search
+            }
         }
 
         ########### Temporal Fields ###########
@@ -118,4 +148,9 @@ schema place {
             attribute: fast-search
         }
     }
+
+    field last_modified type long {
+        indexing: now | attribute | summary
+    }
+
 }
