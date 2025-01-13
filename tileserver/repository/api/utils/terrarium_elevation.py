@@ -1,16 +1,13 @@
-import json
 import logging
 import math
-import os
-import pickle
-from contextlib import asynccontextmanager
 from io import BytesIO
 
 import requests
 import rtree
 from PIL import Image
-from fastapi import HTTPException, FastAPI
-from shapely.geometry import shape
+from fastapi import HTTPException
+
+from ..config import host_mapping, descriptions_map
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -18,29 +15,10 @@ logger = logging.getLogger(__name__)
 bounds_map = {}
 geometry_map = {}
 properties_map = {}
-descriptions_map = {}
 idx = rtree.index.Index()
 
-descriptions_map = {
-    "austria": "Digital elevation model with 10-metre resolution over Austria, provided by data.gv.at.",
-    "etopo1": "Global ocean bathymetry model with a 1 arc-minute resolution, covering the world’s oceans.",
-    "eudem": "EU-DEM offers 30-metre resolution in most European countries, created from multiple European datasets.",
-    "geoscience_au": "Geoscience Australia's 5-metre resolution DEM, focusing on coastal areas of South Australia, Victoria, and the Northern Territory.",
-    "gmted": "Global Multi-Resolution Terrain Elevation Data at resolutions of 7.5\", 15\", and 30\", covering land globally.",
-    "kartverket": "Norway’s 10-metre resolution Digital Terrain Model, managed by Kartverket.",
-    "mx_lidar": "INEGI’s lidar-based continental relief data for Mexico, offering high accuracy.",
-    "ned": "National Elevation Dataset with 10-metre resolution across most of the United States, excluding Alaska.",
-    "ned13": "Higher-resolution 3-metre data from the US 3DEP program, available in selected areas.",
-    "ned_topobathy": "3-metre resolution dataset of US coastal and water regions, part of the 3DEP initiative.",
-    "nrcan_cdem": "Canadian Digital Elevation Model with variable resolutions from 20 to 400 metres depending on latitude, provided by NRCan.",
-    "nzlinz": "New Zealand’s LINZ 8-metre resolution elevation model, covering the entire country.",
-    "pgdc_5m": "ArcticDEM 5-metre mosaic for polar regions above 60° latitude, covering the Arctic nations.",
-    "srtm": "NASA's Shuttle Radar Topography Mission dataset at 30-metre resolution, excluding high latitudes.",
-    "uk_lidar": "2-metre resolution lidar dataset over the UK, provided by data.gov.uk.",
-}
 
-
-def get_elevation_metadata(lat: float, lng: float, elevation: float):
+def get_elevation_metadata(lat: float, lng: float, elevation: float) -> dict:
     """
     Retrieve metadata about the elevation for a given latitude and longitude.
 
@@ -50,48 +28,41 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float):
         elevation (float): Elevation value.
 
     Returns:
-        dict: Elevation metadata including resolution and source.
+        dict: Elevation metadata including resolution, source, and elevation.
     """
+    logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
+
+    terrarium_url = f"http://{host_mapping['feed']}/terrarium/{lat}/{lng}"
 
     try:
-        logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
-
-        # Create a Shapely point for the lat/lng
-        point = shape({'type': 'Point', 'coordinates': [lng, lat]})
-
-        # Perform Vespa query for documents with bounding boxes containing the point
-        query = {
-            "yql": f"select resolution, source, geometry from terrarium_sources where contains(bounding_box, {point.wkt}) order by resolution asc;"
-        }
-
-        response = requests.get(f"{vespa_query_url}/document/v1/terrarium_sources/query", params=query)
+        response = requests.get(terrarium_url)
         response.raise_for_status()
 
-        results = response.json()['hits']
+        response_data = response.json()
+        source = response_data.get("source")
+        result = {
+            "elevation_resolution": response_data.get("resolution"),
+            "elevation_source": descriptions_map.get(source, 'No description available') if source else None,
+        }
 
-        if not results:
-            logger.info("No elevation metadata found")
-            return {"elevation_resolution": None, "elevation_source": None}
+        if result["elevation_resolution"] and result["elevation_source"]:
+            result["elevation"] = elevation
+        else:
+            logger.info("Incomplete elevation metadata found")
 
-        # Iterate over the fetched results
-        for source in results:
-            if point.within(shape(json.loads(source['fields']['geometry']))):
-                source['fields']['resolution'] = round(source['fields']['resolution'], 1)
-                elevation = round(round(elevation / source['fields']['resolution']) * source['fields']['resolution'])
-                description = descriptions_map.get(source['fields']['source'], 'No description available')
-                return {
-                    "elevation": elevation,
-                    "elevation_resolution": source['fields']['resolution'],
-                    "elevation_source": description
-                }
+        return result
 
-        # If no source contains the point
-        logger.info("No source containing the point was found")
-        return {"elevation_resolution": None, "elevation_source": None}
-
+    except requests.RequestException as e:
+        logger.error(f"HTTP error while retrieving elevation metadata: {e}")
+    except ValueError as e:  # For JSON decoding errors
+        logger.error(f"Error parsing JSON response: {e}")
     except Exception as e:
-        logger.error(f"Error retrieving elevation: {e}")
-        return {"elevation_resolution": None, "elevation_source": None}
+        logger.error(f"Unexpected error retrieving elevation metadata: {e}")
+
+    return {
+        "elevation_resolution": None,
+        "elevation_source": None,
+    }
 
 
 def get_ground_resolution(lat: float, max_zoom: int, lat_string: str, lng_string: str):
