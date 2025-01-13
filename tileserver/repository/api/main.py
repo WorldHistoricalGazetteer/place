@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from .utils.deletion import delete_tileset
 from .utils.kube import restart_tileserver, add_tileset
-from .utils.terrarium_elevation import get_elevation_data, lifespan
+from .utils.terrarium_elevation import get_elevation_data
 from .utils.tileset import get_tileset_data, get_all_tileset_data
 
 '''
