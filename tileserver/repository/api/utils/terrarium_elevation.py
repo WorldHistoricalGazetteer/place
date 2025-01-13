@@ -31,7 +31,7 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float) -> dict:
     """
     logger.info(f"Finding elevation metadata for lat: {lat}, lng: {lng}")
 
-    terrarium_url = f"http://{host_mapping['feed']}/terrarium/{lat}/{lng}"
+    terrarium_url = f"http://{host_mapping['feed']}:8080/terrarium/{lat}/{lng}"
 
     try:
         response = requests.get(terrarium_url)
@@ -44,7 +44,7 @@ def get_elevation_metadata(lat: float, lng: float, elevation: float) -> dict:
             "elevation_source": descriptions_map.get(source, 'No description available') if source else None,
         }
 
-        if result["elevation_resolution"] and result["elevation_source"]:
+        if result.get("elevation_resolution") and result.get("elevation_source"):
             result["elevation"] = elevation
         else:
             logger.info("Incomplete elevation metadata found")
