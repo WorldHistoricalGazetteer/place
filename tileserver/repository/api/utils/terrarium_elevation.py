@@ -9,7 +9,6 @@ from fastapi import HTTPException
 
 from ..config import host_mapping, descriptions_map
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
 bounds_map = {}
