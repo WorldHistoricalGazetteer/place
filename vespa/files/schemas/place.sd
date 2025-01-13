@@ -4,7 +4,6 @@ schema place {
         field lpf_feature type string {
             # The full JSON of the LPF Feature.
             indexing: summary
-            attribute: fast-search
         }
 
         field toponyms type array<string> {
@@ -17,15 +16,16 @@ schema place {
         ########### Temporal Fields ###########
         # Derived from more granular LPF data, they represent the outer bounds of the place's temporal range(s).
 
-        struct year_range_structure {
-            # Start and end years for the place, as integers in the range [-2,147,483,648, 2,147,483,647].
-            # Default values should in all cases be set to the minimum and maximum possible values.
-            field start type int {}
-            field end type int {}
+        field year_start type int {
+            # Start date of the attestation.
+            indexing: attribute | summary
+            attribute: fast-search
         }
-        field year_range type year_range_structure {
-            # Year range for the place.
-            indexing: summary
+
+        field year_end type int {
+            # End date of the attestation.
+            indexing: attribute | summary
+            attribute: fast-search
         }
 
         ########### Other Metadata ###########
@@ -91,45 +91,31 @@ schema place {
           indexing: summary
         }
 
-        struct coordinates {
-            field lat type float {}
-            field lng type float {}
-        }
-        struct bbox_structure {
-            field sw type coordinates {}
-            field ne type coordinates {}
-        }
-        field bbox type bbox_structure {
-            # The bounding box of the place.
-            indexing: summary
+        # Fields representing the bounding box of the place and its trans-antimeridial status
+        # These are stored as root-level fields to allow range queries.
+        field bbox_sw_lat type float {
+            indexing: attribute | summary
+            attribute: fast-search
         }
 
-    }
+        field bbox_sw_lng type float {
+            indexing: attribute | summary
+            attribute: fast-search
+        }
 
-    ########### Synthetic fields derived from the bounding box ###########
+        field bbox_ne_lat type float {
+            indexing: attribute | summary
+            attribute: fast-search
+        }
 
-    field bbox_sw_lat type float {
-        indexing: input bbox["sw"]["lat"] | attribute: fast-search
-        attribute: fast-search
-    }
+        field bbox_ne_lng type float {
+            indexing: attribute | summary
+            attribute: fast-search
+        }
 
-    field bbox_sw_lng type float {
-        indexing: input bbox["sw"]["lng"] | attribute: fast-search
-        attribute: fast-search
-    }
-
-    field bbox_ne_lat type float {
-        indexing: input bbox["ne"]["lat"] | attribute: fast-search
-        attribute: fast-search
-    }
-
-    field bbox_ne_lng type float {
-        indexing: input bbox["ne"]["lng"] | attribute: fast-search
-        attribute: fast-search
-    }
-
-    field bbox_antimeridial type bool {
-        indexing: input bbox.ne.lng < bbox.sw.lng | attribute
-        attribute: fast-search
+        field bbox_antimeridial type bool {
+            indexing: attribute
+            attribute: fast-search
+        }
     }
 }

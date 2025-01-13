@@ -1,26 +1,11 @@
 schema toponym {
+
     document toponym {
 
         field name type string {
             # The toponym (e.g., "London", "Londinium").
             indexing: attribute | summary
-            attribute: fast-search
-        }
-
-        struct bcp47_structure {
-            field language type string {}
-            field script type string {}
-            field region type string {}
-            field variant type string {}
-        }
-        field bcp47 type bcp47_structure {
-            # BCP 47 language tag, if applicable.
-            # Structure:
-            # - Language (required): ISO 639-1/639-3 codes, e.g., "en", "zh".
-            # - Script (optional): ISO 15924 codes, e.g., "Latn", "Cyrl".
-            # - Region (optional): ISO 3166-1 alpha-2 codes, e.g., "GB", "US".
-            # - Variant (optional): Custom identifiers, e.g., "pinyin", "pre1993".
-            indexing: attribute | summary
+            stemming: multiple
             attribute: fast-search
         }
 
@@ -31,16 +16,38 @@ schema toponym {
             attribute: fast-search
         }
 
+        ########### BCP 47 Linguistic Fields ###########
+
+        field bcp47_language type string {
+            # Language (required): ISO 639-1/639-3 codes, e.g., "en", "zh".
+            indexing: attribute | summary
+        }
+
+        field bcp47_script type string {
+            # Script (optional): ISO 15924 codes, e.g., "Latn", "Cyrl".
+            indexing: attribute | summary
+        }
+
+        field bcp47_region type string {
+            # Region (optional): ISO 3166-1 alpha-2 codes, e.g., "GB", "US".
+            indexing: attribute | summary
+        }
+
+        field bcp47_variant type string {
+            # Variant (optional): Custom identifiers, e.g., "pinyin", "pre1993".
+            indexing: attribute | summary
+        }
+
+        ########### Vector Embeddings ###########
+
         field phonetic_embedding type tensor<float>(x[128]) {
             # Phonetic embedding of the toponym.
             indexing: attribute
-            attribute: fast-search
         }
 
         field semantic_embedding type tensor<float>(x[128]) {
             # Semantic embedding of the toponym.
             indexing: attribute
-            attribute: fast-search
         }
     }
 }
