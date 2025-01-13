@@ -54,10 +54,12 @@ class GeometryIntersect:
                 if 'geometry' in candidate:
                     candidate_geom = shape(json.loads(candidate['geometry']))
                     if self.geom.intersects(candidate_geom):
-                        # Add the candidate to the results excluding the geometry
-                        results.add({k: v for k, v in candidate.items() if k != 'geometry'})
+                        # Exclude the 'geometry' field and convert the candidate to a tuple of key-value pairs (hashable)
+                        results.add(frozenset({k: v for k, v in candidate.items() if k != 'geometry'}.items()))
 
-            return sorted(list(results), key=lambda x: x.get(self.fields.split(',')[0], ''))
+            # Convert frozensets back to dictionaries and sort by the specified key
+            return sorted([dict(frozenset_item) for frozenset_item in results],
+                                    key=lambda x: x.get(self.fields.split(',')[0], ''))
         except Exception as e:
             logger.error(f"Error finding intersections: {e}", exc_info=True)
             return []
