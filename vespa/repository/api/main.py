@@ -35,10 +35,10 @@ async def get_country_codes(
             "coordinates": [longitude, latitude]
         }
         bbox = {
-            "bbox_sw_lat": latitude,
-            "bbox_sw_lng": longitude,
-            "bbox_ne_lat": latitude,
-            "bbox_ne_lng": longitude,
+            "bbox_sw_lat": latitude - 0.01,
+            "bbox_sw_lng": longitude - 0.01,
+            "bbox_ne_lat": latitude + 0.01,
+            "bbox_ne_lng": longitude + 0.01,
         }
         results = GeometryIntersect(geometry=geometry, bbox=bbox).resolve()
         return JSONResponse(content={"country_codes": [result["code2"] for result in results if not result["code2"]=="-"]})
@@ -61,10 +61,10 @@ async def get_terrarium_object(
             "coordinates": [longitude, latitude]
         }
         bbox = {
-            "bbox_sw_lat": latitude,
-            "bbox_sw_lng": longitude,
-            "bbox_ne_lat": latitude,
-            "bbox_ne_lng": longitude,
+            "bbox_sw_lat": latitude - 0.01,
+            "bbox_sw_lng": longitude - 0.01,
+            "bbox_ne_lat": latitude + 0.01,
+            "bbox_ne_lng": longitude + 0.01,
         }
         results = GeometryIntersect(
             geometry=geometry, bbox=bbox, schema="terrarium", fields="resolution,source"
