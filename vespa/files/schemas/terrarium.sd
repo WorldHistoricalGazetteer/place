@@ -21,6 +21,11 @@ schema terrarium {
             attribute: fast-search
         }
 
+        field bbox_antimeridial type bool {
+            indexing: attribute
+            attribute: fast-search
+        }
+
         field resolution type float {
             indexing: attribute | summary
             attribute: fast-search

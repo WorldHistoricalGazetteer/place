@@ -130,7 +130,7 @@ class BoxIntersect:
                         range(bbox_ne_lng, {self.min_lng}, {self.max_lng})
                         or
                         (
-                            bbox_sw_lng <= bbox_ne_lng
+                            not bbox_antimeridial
                             and
                             bbox_sw_lng < {self.min_lng}
                             and
@@ -138,7 +138,7 @@ class BoxIntersect:
                         )
                         or
                         (
-                            bbox_sw_lng > bbox_ne_lng
+                            bbox_antimeridial
                             and
                             bbox_sw_lng < {self.min_lng}
                             and
@@ -166,7 +166,7 @@ class BoxIntersect:
                         )
                         or
                         (
-                            bbox_sw_lng > bbox_ne_lng
+                            bbox_antimeridial
                             and
                             bbox_sw_lng < {self.min_lng}
                             and
