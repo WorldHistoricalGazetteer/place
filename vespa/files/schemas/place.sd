@@ -17,8 +17,9 @@ schema place {
             field year_end type int {
                 # End date of the attestation.
             }
-            field is_preferred type bool {
-                # Indicates if this toponym is the preferred one for the place.
+            field is_preferred type int {
+                # 0 or 1: Indicates if this toponym is the preferred one for the place.
+                # Boolean type is not supported for indexing in Vespa structs.
             }
         }
 
