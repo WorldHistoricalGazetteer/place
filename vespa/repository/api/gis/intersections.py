@@ -99,6 +99,7 @@ class BoxIntersect:
         try:
             with VespaClient.sync_context("feed") as sync_app:
                 query = self._generate_bounding_box_query()
+                logger.info(f"Performing Vespa query: {query}")
                 response = sync_app.query(query).json
                 if "error" in response:
                     raise ValueError(f"Error during Vespa query: {response['error']}")

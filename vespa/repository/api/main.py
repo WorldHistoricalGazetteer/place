@@ -40,8 +40,7 @@ async def get_country_codes(
             "bbox_ne_lat": latitude,
             "bbox_ne_lng": longitude,
         }
-        intersect = GeometryIntersect(geometry=geometry, bbox=bbox)
-        results = intersect.resolve()
+        results = GeometryIntersect(geometry=geometry, bbox=bbox).resolve()
         return JSONResponse(content={"country_codes": [result["code2"] for result in results if not result["code2"]=="-"]})
     except Exception as e:
         logger.error(f"Error in /iso3166: {e}", exc_info=True)
@@ -67,10 +66,9 @@ async def get_terrarium_object(
             "bbox_ne_lat": latitude,
             "bbox_ne_lng": longitude,
         }
-        intersect = GeometryIntersect(
+        results = GeometryIntersect(
             geometry=geometry, bbox=bbox, schema="terrarium", fields="resolution,source"
-        )
-        results = intersect.resolve()
+        ).resolve()
         if not results:
             return JSONResponse(content={"error": "No terrarium object found"})
         return JSONResponse(content=results[0])
