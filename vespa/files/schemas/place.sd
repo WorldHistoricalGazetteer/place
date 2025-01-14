@@ -1,3 +1,9 @@
+# The Place model represents geographical entities and their associated metadata. It contains fields for
+# toponymic attestation, temporal ranges, and geographical locations, along with metadata from various
+# sources. The schema also includes derived geometric fields for spatial queries, such as bounding boxes,
+# areas, and representative points. Additionally, the schema supports country codes, feature types,
+# and other relevant attributes for efficient querying and filtering of places.
+
 schema place {
     document place {
 

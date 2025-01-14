@@ -1,3 +1,10 @@
+# The Connection model defines specific relationship types between places, captured as predicates that can be
+# used in the link schema to specify how two places (or other objects) are related. Each connection has a
+# label that provides a human-readable description of the relationship, a URI for the connection type
+# (preferably from a recognised authority), and metadata describing the nature of the relationship, such
+# as whether it is symmetric or has an inverse relationship. This schema provides a structured way to
+# formalise connection types for use across the platform.
+
 schema connection {
     document connection {
 

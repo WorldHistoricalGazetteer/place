@@ -1,3 +1,10 @@
+# The Link model is designed to represent relationships between a Place and any other object, whether it is
+# another Place, an event, a concept, or any other relevant entity. It allows for the specification of a wide
+# range of predicates that describe the nature of the relationship. In addition to connections defined in the
+# connection schema, any custom predicate can be used to capture various types of associations, such as
+# "has_population" or "is_part_of". This schema also supports temporal validity, citation, confidence levels,
+# and additional context about each link.
+
 schema link {
     document link {
         ########### Source Metadata ###########

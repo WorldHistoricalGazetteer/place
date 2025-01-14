@@ -138,10 +138,25 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
+    { # ISO Countries DEPRECATED
+        'dataset_name': 'ISO3166_DEPRECATED',
+        'namespace': 'iso3166_DEPRECATED',
+        'vespa_schema': 'iso3166_DEPRECATED',
+        'api_item': '',
+        'citation': 'Natural Earth Data. Public domain. https://www.naturalearthdata.com/',
+        'files': [
+            {
+                'url': 'https://datahub.io/core/geo-countries/_r/-/data/countries.geojson',
+                'file_type': 'json',
+                'item_path': 'features',
+                'id_field': None, # Code2 is not unique, as it has multiple "-" values
+            }
+        ],
+    },
     { # ISO Countries
         'dataset_name': 'ISO3166',
         'namespace': 'iso3166',
-        'vespa_schema': 'iso3166',
+        'vespa_schema': 'place',
         'api_item': '',
         'citation': 'Natural Earth Data. Public domain. https://www.naturalearthdata.com/',
         'files': [

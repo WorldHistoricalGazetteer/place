@@ -1,3 +1,8 @@
+# The Toponym model captures the name of a place (a toponym), and includes linguistic metadata, such as
+# language, script, region, and variant, based on the BCP 47 standard. This schema also allows for
+# associating the toponym with multiple places, facilitating reverse lookups. Additionally, it supports
+# vector embeddings, both phonetic and semantic, to enable advanced search and similarity queries.
+
 schema toponym {
 
     document toponym {

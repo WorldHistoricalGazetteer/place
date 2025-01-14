@@ -4,13 +4,14 @@ from typing import Dict, Any
 
 import requests
 
-from ..config import namespace, VespaClient
+from ..config import VespaClient
 
 logger = logging.getLogger(__name__)
 
 
 def visit(
         schema: str,
+        namespace: str,
         limit: int,
         slices: int = 1,
 ) -> Dict[str, Any]:
@@ -24,6 +25,7 @@ def visit(
 
     Args:
         schema (str): The Vespa schema (document type) to query.
+        namespace (str): The Vespa namespace to query.
         limit (int): The maximum number of documents to return. A value of -1 means no limit.
         slices (int): Number of slices for parallel processing. Default is 1.
 
@@ -57,6 +59,7 @@ def visit(
             logger.info(f"Total documents retrieved: {total_count}: returning {limit} documents.")
             return {
                 "total_count": total_count,
+                "namespace": namespace,
                 "limit": limit if limit > -1 else "no limit",
                 "documents": all_docs[:limit] if limit > -1 else all_docs
             }

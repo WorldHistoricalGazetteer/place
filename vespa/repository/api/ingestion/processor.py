@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
-from ..config import namespace, VespaClient
+from ..config import VespaClient
 from ..utils import get_uuid, task_tracker
 
 logger = logging.getLogger(__name__)
@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor(max_workers=10)
 
 
-def delete_all_docs(sync_app, schema):
+def delete_all_docs(sync_app, dataset_config):
     sync_app.delete_all_docs(
-        schema=schema,
-        namespace=namespace,
+        schema=f"{dataset_config['vespa_schema']}",
+        namespace=f"{dataset_config['namespace']}",
         content_cluster_name="content"
     )
 
@@ -28,9 +28,9 @@ def feed_document(sync_app, dataset_config, document_id, transformed_document):
     try:
         response = sync_app.feed_data_point(
             schema=f"{dataset_config['vespa_schema']}",
+            namespace=f"{dataset_config['namespace']}",
             data_id=document_id,
             fields=transformed_document,
-            namespace=namespace
         )
         if response.status_code == 200:
             return {"success": True, "document_id": document_id}
@@ -114,7 +114,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
             # Run `delete_all_docs` asynchronously to avoid blocking the event loop
             logger.info(f"Deleting all documents for schema: {dataset_config['vespa_schema']}")
-            await asyncio.to_thread(delete_all_docs, sync_app, dataset_config['vespa_schema'])
+            await asyncio.to_thread(delete_all_docs, sync_app, dataset_config)
 
             all_responses = []
             for i, file_config in enumerate(dataset_config['files']):

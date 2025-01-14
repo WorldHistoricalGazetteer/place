@@ -65,12 +65,29 @@ class DocTransformer:
                     # "item_id": ,
                     # "primary_name": ,
                     # Add a `values` parameter to the GeometryProcessor to limit the extracted geometry fields
+                    # TODO: Convert any geometry `when` to start and end before sending for processing
                     **(processed_geometry if (
                         processed_geometry := GeometryProcessor(data.get("geometry")).process()) else {}),
                     # "feature_classes": ,
                     "lpf_feature": data,
                 },
                 [  # Attestations and Toponyms
+                ]
+            )
+        ],
+        "ISO3166": [ # Uses `place` schema
+            lambda data: (
+                {
+                    "source": "",
+                    "names": [{"toponym_id": data.get("properties", {}).get("ADMIN", None)}], # TODO: how to get inserted toponym_id? Generate UUID here as walrus variable?
+                    **(geometry_etc if (
+                        geometry_etc := GeometryProcessor(data.get("geometry"),
+                                                          values=["bbox", "geometry"]).process()) else {}),
+                    **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
+                    **({"ccodes": [code2]} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
+                    # **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
+                },
+                [
                 ]
             )
         ],
@@ -83,6 +100,7 @@ class DocTransformer:
                         data["reprPoint"]) == 2 else None,
                     "longitude": float(data["reprPoint"][1]) if isinstance(data.get("reprPoint"), list) and len(
                         data["reprPoint"]) == 2 else None,
+                    # TODO: Inject location start and end into geometry before sending for processing
                     "geometry_bbox": (
                         [float(coord) for coord in data["bbox"]]
                         if isinstance(data.get("bbox"), list) and len(data["bbox"]) == 4
@@ -246,7 +264,7 @@ class DocTransformer:
                 ]
             )
         ],
-        "ISO3166": [
+        "ISO3166_DEPRECATED": [
             lambda data: (
                 {
                     **(geometry_etc if (

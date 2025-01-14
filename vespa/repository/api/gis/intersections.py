@@ -32,7 +32,7 @@ class GeometryIntersect:
         if geom:
             self.geom = geom
         elif geometry:
-            self.geom = get_valid_geom(geometry)
+            self.geom, _ = get_valid_geom(geometry)
 
         # Derive bounding box if not provided
         self.bbox = bbox or (vespa_bbox(self.geom) if self.geom else None)

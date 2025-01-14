@@ -80,6 +80,7 @@ async def get_terrarium_object(
 @app.get("/visit")
 async def visit_documents(
         schema: str = Query(..., description="The document type to filter by"),
+        namespace: str = Query(None, description="The Vespa namespace to query"),
         limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000); use -1 for no limit"),
         slices: int = Query(1, ge=1, description="The number of slices for parallel processing")
 ):
@@ -88,6 +89,7 @@ async def visit_documents(
 
     Args:
         schema (str): The document type (schema) to query.
+        namespace (str): The Vespa namespace to query.
         limit (int): The number of documents to retrieve; use -1 for no limit.
         slices (int): The number of slices for parallel processing.
 
@@ -95,7 +97,7 @@ async def visit_documents(
         JSONResponse: A JSON response with the total document count and the retrieved documents.
     """
     try:
-        results = visit(schema, limit, slices)
+        results = visit(schema, namespace, limit, slices)
         return JSONResponse(status_code=200, content=results)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
