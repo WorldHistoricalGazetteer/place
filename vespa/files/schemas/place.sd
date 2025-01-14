@@ -28,7 +28,7 @@ schema place {
 
         ########### Toponymic Attestations ###########
 
-        struct attestation_structure {
+        struct name {
             field toponym_id type string {
                 # The ID of the toponym associated with the place.
             }
@@ -44,8 +44,8 @@ schema place {
             }
         }
 
-        field attestations type array<attestation_structure> {
-            # List of attestations for this place.
+        field names type array<name> {
+            # List of temporally bounded names for the place.
             indexing: summary
             struct-field toponym_id {
                 indexing: attribute | summary
@@ -105,39 +105,72 @@ schema place {
             attribute: fast-search
         }
 
-        ########### Fields derived from the geometry ###########
+        ########### Fields derived from geometries ###########
 
-        field geometry type string {
-            # The geometry of the place as a GeoJSON string.
-            # Validated, corrected where possible, and converted to float values using Shapely.
+        struct location {
+            field description type string {
+                # A description of the location.
+            }
+            field geometry type string {
+                # Geometry in GeoJSON format.
+            }
+            field year_start type int {
+                # Start date of validity for this location.
+            }
+            field year_end type int {
+                # End date of validity for this location.
+            }
+        }
+
+        field locations type array<location> {
             indexing: summary
+            struct-field description {
+                indexing: summary
+            }
+            struct-field geometry {
+                indexing: summary
+            }
+            struct-field year_start {
+                indexing: attribute | summary
+                attribute: fast-search
+            }
+            struct-field year_end {
+                indexing: attribute | summary
+                attribute: fast-search
+            }
         }
 
         field representative_point type position {
           # A single geo-position representing the approximate centre of the place.
-          # Calculated using Shapely's representative_point method, and guaranteed to be within the place's geometry.
+          # Calculated using Shapely's representative_point method, and guaranteed to be within the place's combined locations.
+          indexing: attribute | summary
+        }
+        
+        field representative_elevation type int {
+          # The elevation of the representative point relative to mean sea level in metres.
+          # Extracted from the Mapzen Terrarium DEM.
           indexing: attribute | summary
         }
 
         field area type float {
-          # Where relevant, the area of the place's geometry in square meters.
+          # Where relevant, the area of the place's largest location in square metres.
           # Calculated using Shapely's area method.
           indexing: attribute | summary
         }
 
         field length type float {
-          # Where relevant, the length of the place's geometry in meters.
+          # Where relevant, the length of the place's longest location in metres.
           # Calculated using Shapely's length method.
           indexing: attribute | summary
         }
 
         field convex_hull type string {
-          # Where relevant, the convex hull of the place's geometry as a GeoJSON string.
+          # Where relevant, the convex hull of the place's combined locations as a GeoJSON string.
           # Calculated using Shapely's convex_hull method.
           indexing: summary
         }
 
-        # Fields representing the bounding box of the place and its trans-antimeridial status
+        # Fields representing the bounding box of the place's combined locations and its trans-antimeridial status
         # These are stored as root-level fields to allow range queries.
         field bbox_sw_lat type float {
             indexing: attribute | summary

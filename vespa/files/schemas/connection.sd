@@ -1,0 +1,42 @@
+schema connection {
+    document connection {
+
+        field label type string {
+            # A human-readable label for the connection, such as "coextensive with" or "predecessor of".
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field description type string {
+            # A human-readable description of the connection's meaning or use case.
+            # Example: "Indicates that two places have coextensive spatial extents."
+            indexing: summary
+        }
+
+        field predicate type string {
+            # A URI for the connection, preferably from a recognised authority.
+            # Example: "https://vocab.getty.edu/ontology#tgn3411_successor_of".
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field inverse_predicate type string {
+            # The inverse of the relationship, where applicable (e.g., "tgn3412_predecessor_of").
+            # Example: For "is_predecessor_of", the inverse would be "is_successor_of".
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field symmetric type bool {
+            # Indicates whether the predicate is symmetric.
+            # Symmetric: If A is in relation to B, then B is in the same relation to A (e.g., "is_coextensive_with").
+            # Non-symmetric: If A is in relation to B, B is not necessarily in the same relation to A (e.g., "is_part_of").
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+    }
+
+    field last_modified type long {
+        indexing: now | attribute | summary
+    }
+}

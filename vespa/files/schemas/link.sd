@@ -1,0 +1,70 @@
+schema link {
+    document link {
+        ########### Source Metadata ###########
+
+        field source type string {
+            # Origin or authority for this link (e.g., a specific gazetteer, database, dataset, or WHG User).
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field record_id type string {
+            # A unique identifier for the link within the source.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        ########### Core Link Data ###########
+
+        field place_id type string {
+            # The ID of the place this link relates to.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field predicate type string {
+            # The nature of the link (e.g., "has_population", "was_capital_of").
+            # May be a `label` from the `connection` schema, a controlled vocabulary for linking
+            # places (e.g., "coextensive with" or "predecessor of").
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field object type string {
+            # The value of the link (e.g., "10000" for population or "Roman Empire" for a polity).
+            # In the case of a `connection` to another place, this should be the WHG Vespa ID of the linked place.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        ########### Temporal Fields ###########
+
+        field year_start type int {
+            # Start year for the validity of this link.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field year_end type int {
+            # End year for the validity of this link.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        ########### Additional Metadata ###########
+
+        field confidence type float {
+            # A confidence score (e.g., 0.0 to 1.0) indicating the certainty of the link.
+            indexing: attribute | summary
+        }
+
+        field notes type string {
+            # Additional information or context about the link.
+            indexing: summary
+        }
+    }
+
+    field last_modified type long {
+        indexing: now | attribute | summary
+    }
+}
