@@ -5,7 +5,7 @@ REMOTE_DATASET_CONFIGS = [
     { # 2024: 37k+ places
         'dataset_name': 'Pleiades',
         'namespace': 'pleiades',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': 'https://pleiades.stoa.org/places/<id>/json',
         'citation': 'Pleiades: A community-built gazetteer and graph of ancient places. Copyright © Institute for the Study of the Ancient World. Sharing and remixing permitted under terms of the Creative Commons Attribution 3.0 License (cc-by). https://pleiades.stoa.org/',
         'files': [

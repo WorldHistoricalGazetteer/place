@@ -6,7 +6,28 @@ schema place {
             indexing: summary
         }
 
-        ########### Attestations ###########
+        ########### Source Metadata ###########
+
+        field source type string {
+            # Indicates the origin or authority of the record (e.g., a specific gazetteer, database, or contributed dataset).
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field record_id type string {
+            # A unique identifier for the place within the source.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field record_url type string {
+            # A URL pointing to the source record, preferably an API endpoint.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        ########### Toponymic Attestations ###########
+
         struct attestation_structure {
             field toponym_id type string {
                 # The ID of the toponym associated with the place.
@@ -80,12 +101,6 @@ schema place {
         field classes type array<string> {
             # An array of single-character GeoNames feature classes associated with the place.
             # e.g. ["P", "A"] (for "populated places" and "administrative areas")
-            indexing: attribute | summary
-            attribute: fast-search
-        }
-
-        field source type string {
-            # Indicates the origin or authority of the record (e.g., a specific gazetteer, database, or contributed dataset).
             indexing: attribute | summary
             attribute: fast-search
         }

@@ -77,7 +77,7 @@ class DocTransformer:
         "Pleiades": [
             lambda data: (
                 {
-                    "item_id": data.get("id", ""),
+                    "source_id": data.get("id", ""),
                     "primary_name": data.get("title", ""),
                     "latitude": float(data["reprPoint"][0]) if isinstance(data.get("reprPoint"), list) and len(
                         data["reprPoint"]) == 2 else None,
@@ -95,17 +95,16 @@ class DocTransformer:
                     "lpf_feature": {},  # TODO: Build LPF feature
                 },
                 [
-                    {
+                    { # TODO: Merge with other toponyms if present there, but with "is_preferred": True
                         "toponym": data.get("title", ""),  # Add root title as toponym
                         "language": "",  # Language unknown for root title
-                        "is_romanised": False,  # Assume title is not romanised
                         # TODO: No time data for root toponym, but could be inferred from other attributes?
                     }
                 ] + [
                     {
                         "toponym": name.get("attested") or name.get("romanized", ""),
                         "language": name.get("language", ""),  # TODO: Use BCP 47 language tags
-                        "is_romanised": not name.get("attested"),
+                        "is_romanised": not name.get("attested"), # TODO: Use "bcp47_script": "Latn" for romanised toponyms
                         "start": name.get("start", None),
                         "end": name.get("end", None),
                     }
