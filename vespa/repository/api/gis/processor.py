@@ -90,10 +90,10 @@ class GeometryProcessor:
                     "year_end": key[1],
                 }
 
-            grouped_geometries_list = list(grouped_geometries.values())
+            locations = list(grouped_geometries.values())
 
         else:
-            grouped_geometries_list = [self.geometry]
+            locations = [{"geometry": self.geometry}]
             largest_area = self.geom.area if "area" in self.values else None
             longest_length = self.geom.length if "length" in self.values else None
 
@@ -101,8 +101,7 @@ class GeometryProcessor:
             **({"area": largest_area} if largest_area else {}),  # Omitted if zero or None
             **(bbox if bbox else {}),
             **({"convex_hull": to_geojson(convex_hull)} if convex_hull else {}),
-            # NOTE: the following line returns a list of location struct objects, not a GeometryCollection
-            **({"geometry": grouped_geometries_list} if grouped_geometries_list else {}),
+            **({"locations": locations} if locations else {}),
             **({"ccodes": iso_codes} if iso_codes else {}),
             **({"length": longest_length} if longest_length else {}),  # Omitted if zero or None
             **({"representative_point": to_geojson(representative_point)} if representative_point else {}),

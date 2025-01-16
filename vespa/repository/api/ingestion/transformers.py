@@ -81,7 +81,7 @@ class DocTransformer:
                 {
                     "record_id": (document_id := get_uuid()),
                     "names": [{"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018, "is_preferred": 1}],
-                    **({"locations": geometry_etc} if (
+                    **(geometry_etc if (
                         geometry_etc := GeometryProcessor(data.get("geometry"),
                                                           values=["bbox", "geometry"]).process()) else {}),
                     **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
