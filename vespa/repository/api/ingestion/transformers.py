@@ -84,7 +84,6 @@ class DocTransformer:
                     **(geometry_etc if (
                         geometry_etc := GeometryProcessor(data.get("geometry"),
                                                           values=["bbox", "geometry"]).process()) else {}),
-                    **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
                     "year_start": 2018, # Boundaries last updated: see https://github.com/datasets/geo-countries/tree/main/data
                     "year_end": 2018,
                     "ccodes": data.get("code2"),
