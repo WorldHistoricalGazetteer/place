@@ -257,27 +257,26 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
         logger.error(f"Error deleting or updating toponyms: {str(e)}", exc_info=True)
 
 
-def delete_related_links(sync_app, place_ids):
+def delete_related_links(sync_app, place_id):
     """Delete links related to place IDs."""
-    for place_id in place_ids:
-        link_query = f"select * from link where place_id matches '^{place_id}$' or object matches '^{place_id}$' limit {pagination_limit}"
-        links_start = 0
-        while True:
-            link_query_paginated = {
-                "yql": link_query,
-                "offset": links_start
-            }
-            logger.info(f"Paginated link query: {link_query_paginated}")
-            links_response = sync_app.query(link_query_paginated).json
-            links = links_response.get("root", {}).get("children", [])
+    link_query = f"select * from link where place_id matches '^{place_id}$' or object matches '^{place_id}$' limit {pagination_limit}"
+    links_start = 0
+    while True:
+        link_query_paginated = {
+            "yql": link_query,
+            "offset": links_start
+        }
+        logger.info(f"Paginated link query: {link_query_paginated}")
+        links_response = sync_app.query(link_query_paginated).json
+        links = links_response.get("root", {}).get("children", [])
 
-            if not links:
-                break
+        if not links:
+            break
 
-            for link in links:
-                sync_app.delete_data(schema="link", data_id=link["id"].split(":")[-1])
+        for link in links:
+            sync_app.delete_data(schema="link", data_id=link["id"].split(":")[-1])
 
-            links_start += pagination_limit  # Move to next page
+        links_start += pagination_limit  # Move to next page
 
 
 def delete_all_docs(sync_app, dataset_config):
@@ -296,12 +295,13 @@ def delete_all_docs(sync_app, dataset_config):
             for response in slice:
                 for document in response.documents:
                     logger.info(f"Document: {document}")
+                    document_id = document.id.split(":")[-1]
                     # Delete related toponyms
                     for name in document["fields"]["names"]:
-                        delete_related_toponyms(sync_app, name["toponym_id"], document.id.split(":")[-1])
+                        delete_related_toponyms(sync_app, name["toponym_id"], document_id)
 
                     # Delete related links
-                    delete_related_links(sync_app, [document.id.split(":")[-1]])
+                    delete_related_links(sync_app, document_id)
 
     # Delete documents belonging to the given schema and namespace
     sync_app.delete_all_docs(
