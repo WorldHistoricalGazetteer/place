@@ -111,8 +111,8 @@ class BoxIntersect:
                 logger.info(f"Performing Vespa query: {query}")
                 response = sync_app.query(
                     query,
-                    namespace=self.namespace,
-                    schema=self.schema,
+                    # namespace=self.namespace,
+                    # schema=self.schema,
                 ).json
                 if "error" in response:
                     raise ValueError(f"Error during Vespa query: {response['error']}")
