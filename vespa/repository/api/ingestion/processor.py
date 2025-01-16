@@ -297,7 +297,7 @@ def delete_all_docs(sync_app, dataset_config):
                 schema=schema,
                 params=params,
                 content_cluster_name="content"
-            ).json
+            )
 
             # Process the retrieved documents
             for document in place_response.documents:
