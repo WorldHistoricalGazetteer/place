@@ -316,7 +316,7 @@ def delete_all_docs(sync_app, dataset_config):
 
     # Delete documents belonging to the given schema and namespace
     sync_app.delete_all_docs(
-        schema=schema,
         namespace=namespace,
+        schema=schema,
         content_cluster_name="content"
     )
