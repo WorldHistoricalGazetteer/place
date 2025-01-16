@@ -24,9 +24,9 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
             with VespaClient.sync_context("feed") as sync_app:
                 bcp47_fields = ["language", "script", "region", "variant"]
                 query = f"select * from toponym where name = '{transformed_document['name']}' "
-                for field in bcp47_fields:
-                    if transformed_document.get(f"bcp47_{field}"):
-                        query += f"and bcp47_{field} = '{transformed_document[f'bcp47_{field}']}' "
+                # for field in bcp47_fields:
+                #     if transformed_document.get(f"bcp47_{field}"):
+                #         query += f"and bcp47_{field} = '{transformed_document[f'bcp47_{field}']}' "
                 query += "limit 1"
                 logger.info(f"Checking if toponym exists: {query}")
                 existing_response = sync_app.query(query).json
