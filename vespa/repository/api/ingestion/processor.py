@@ -105,7 +105,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         if success and toponyms:
             toponym_responses = await asyncio.gather(*[
                 asyncio.get_event_loop().run_in_executor(
-                    executor, feed_document, sync_app, None, 'toponym', toponym['record_id'], {
+                    executor, feed_document, sync_app, 'toponym', 'toponym', toponym['record_id'], {
                         key: value for key, value in toponym.items() if key != 'record_id'
                     } # Remove record_id from toponym document
                 )
@@ -238,11 +238,16 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                 if len(toponym_hit.get("fields", {}).get("places")) == 1:
                     # Delete toponym if only one place is associated
                     logger.info(f"Deleting toponym: {toponym_id}")
-                    sync_app.delete_data(schema="toponym", data_id=toponym_id)
+                    sync_app.delete_data(
+                        namespace="toponym",
+                        schema="toponym",
+                        data_id=toponym_id
+                    )
                 else:
                     logger.info(f"Updating toponym: {toponym_id}")
                     sync_app.feed_data_point(
-                        schema=schema,
+                        namespace="toponym",
+                        schema="toponym",
                         data={
                             "update": toponym_id,
                             "fields": {
