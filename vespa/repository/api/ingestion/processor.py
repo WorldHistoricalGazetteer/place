@@ -50,7 +50,8 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
                 }
             )
         else:
-            logger.info(f"Feeding document {schema}:{namespace}:{document_id}: {transformed_document}")
+            if schema == 'toponym':
+                logger.info(f"Feeding document {schema}:{namespace}:{document_id}: {transformed_document}")
             response = sync_app.feed_data_point(
                 schema=schema,
                 namespace=namespace,
