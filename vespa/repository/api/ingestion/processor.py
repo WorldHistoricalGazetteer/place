@@ -28,7 +28,9 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
                     if transformed_document.get(f"bcp47_{field}"):
                         query += f"and bcp47_{field} = '{transformed_document[f'bcp47_{field}']}' "
                 query += "limit 1"
+                logger.info(f"Checking if toponym exists: {query}")
                 existing_response = sync_app.query(query).json
+                logger.info(f"Existing toponym response: {existing_response}")
                 toponym_exists = existing_response.get("root", {}).get("totalCount", 0) > 0
 
         if toponym_exists:
