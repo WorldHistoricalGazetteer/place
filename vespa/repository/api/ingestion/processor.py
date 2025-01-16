@@ -206,7 +206,9 @@ def delete_related_toponyms(sync_app, place_ids, schema):
         toponym_query = f"select * from toponym where places contains '{place_id}' limit 1000"
         toponym_start = 0
         while True:
-            toponym_response = sync_app.query(f"{toponym_query} offset {toponym_start}").json
+            toponym_response_paginated = sync_app.query(f"{toponym_query} offset {toponym_start}").json
+            logger.info(f"Paginated toponym query: {toponym_query} offset {toponym_start}")
+            toponym_response = sync_app.query(toponym_response_paginated).json
             toponym_hits = toponym_response.get("root", {}).get("children", [])
 
             if not toponym_hits:
@@ -237,7 +239,9 @@ def delete_related_links(sync_app, place_ids):
         link_query = f"select * from link where place_id = '{place_id}' or object = '{place_id}' limit 1000"
         links_start = 0
         while True:
-            links_response = sync_app.query(f"{link_query} offset {links_start}").json
+            link_query_paginated = f"{link_query} offset {links_start}"
+            logger.info(f"Paginated link query: {link_query_paginated}")
+            links_response = sync_app.query(link_query_paginated).json
             links = links_response.get("root", {}).get("children", [])
 
             if not links:
@@ -259,7 +263,9 @@ def delete_all_docs(sync_app, dataset_config):
         place_query = f"select * from place:{namespace} where true limit 1000"
         start = 0
         while True:
-            place_response = sync_app.query(f"{place_query} offset {start}").json
+            place_query_paginated = f"{place_query} offset {start}"
+            logger.info(f"Paginated place query: {place_query_paginated}")
+            place_response = sync_app.query(place_query_paginated).json
             places = place_response.get("root", {}).get("children", [])
 
             if not places:
