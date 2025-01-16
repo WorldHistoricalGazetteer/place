@@ -238,14 +238,15 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                 if len(toponym_hit.get("fields", {}).get("places")) == 1:
                     # Delete toponym if only one place is associated
                     logger.info(f"Deleting toponym: {toponym_id}")
-                    sync_app.delete_data(
+                    response = sync_app.delete_data(
                         namespace="toponym",
                         schema="toponym",
-                        data_id=f"id:toponym:toponym::{toponym_id}"
+                        data_id=toponym_id
                     )
+                    logger.info(f"Delete response: {response}")
                 else:
                     logger.info(f"Updating toponym: {toponym_id}")
-                    sync_app.feed_data_point(
+                    response = sync_app.feed_data_point(
                         namespace="toponym",
                         schema="toponym",
                         data={
@@ -255,6 +256,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                             }
                         }
                     )
+                    logger.info(f"Update response: {response}")
 
             toponym_start += pagination_limit  # Move to next page
 
