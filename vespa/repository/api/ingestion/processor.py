@@ -223,7 +223,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
             "data_id": toponym_id,
             "namespace": "toponym",
             "schema": "toponym",
-            "raise_on_not_found": True
+            # "raise_on_not_found": True
         }
         logger.info(f"Toponym query: {toponym_query}")
         toponym_response = sync_app.get_data(toponym_query).json
