@@ -226,8 +226,8 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
             raise_on_not_found=True
         ).json
         logger.info(f"Toponym response: {toponym_response}")
-        names = toponym_response.get("fields", {}).get("names", [])
-        if len(names) == 1:
+        places = toponym_response.get("fields", {}).get("places", [])
+        if len(places) == 1:
             # Delete toponym if only one place is associated
             logger.info(f"Deleting toponym: {toponym_id}")
             response = sync_app.delete_data(
@@ -241,11 +241,9 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
             response = sync_app.feed_data_point(
                 namespace="toponym",
                 schema="toponym",
-                data={
-                    "update": toponym_id,
-                    "fields": {
-                        "places": {"remove": [place_id]}
-                    }
+                data_id=toponym_id,
+                fields={
+                    "places": {"remove": [place_id]}
                 }
             )
             logger.info(f"Update response: {response.json}")
