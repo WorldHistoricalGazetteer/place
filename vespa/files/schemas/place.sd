@@ -213,8 +213,4 @@ schema place {
         indexing: now | attribute | summary
     }
 
-    fieldset toponyms {
-        fields: names
-    }
-
 }

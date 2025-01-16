@@ -291,7 +291,7 @@ def delete_all_docs(sync_app, dataset_config):
             namespace=namespace,
             schema=schema,
             wantedDocumentCount=100,
-            fieldSet="place:names.toponym_id"
+            fieldSet="place:names"
         ):
             for response in slice:
                 for document in response.documents:
