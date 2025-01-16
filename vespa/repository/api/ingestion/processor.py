@@ -229,6 +229,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
             toponym_response = sync_app.query(toponym_query_paginated).json
             toponym_hits = toponym_response.get("root", {}).get("children", [])
 
+            logger.info(f"Toponym hits: {toponym_hits}")
             if not toponym_hits:
                 break
 
