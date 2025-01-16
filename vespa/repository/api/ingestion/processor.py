@@ -295,7 +295,7 @@ def delete_all_docs(sync_app, dataset_config):
             for response in slice:
                 for document in response.documents:
                     logger.info(f"Document: {document}")
-                    document_id = document.id.split(":")[-1]
+                    document_id = document["id"].split(":")[-1]
                     # Delete related toponyms
                     for name in document["fields"]["names"]:
                         delete_related_toponyms(sync_app, name["toponym_id"], document_id)
