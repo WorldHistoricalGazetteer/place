@@ -220,7 +220,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
     """Delete or update toponyms related to place IDs."""
     try:
         toponym_query = {
-            "yql": f"select * from toponym where doc_id matches '::{toponym_id}$' limit 1",
+            "data_id": toponym_id,
             "namespace": "toponym",
             "schema": "toponym",
             "raise_on_not_found": True
