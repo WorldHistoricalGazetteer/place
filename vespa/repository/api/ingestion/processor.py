@@ -37,7 +37,8 @@ def feed_document(sync_app, namespace, schema, document_id, transformed_document
             # Extend `places` list
             existing_toponym_id = existing_response.get("root", {}).get("children", [{}])[0].get("id")
 
-            logger.info(f'Extending places with {document_id} for toponym {existing_toponym_id}: {existing_response.get("root", {}).get("children", [{}])[0]}')
+            logger.info(
+                f'Extending places with {document_id} for toponym {existing_toponym_id}: {existing_response.get("root", {}).get("children", [{}])[0]}')
 
             response = sync_app.feed_data_point(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
@@ -107,7 +108,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
                 asyncio.get_event_loop().run_in_executor(
                     executor, feed_document, sync_app, 'toponym', 'toponym', toponym['record_id'], {
                         key: value for key, value in toponym.items() if key != 'record_id'
-                    } # Remove record_id from toponym document
+                    }  # Remove record_id from toponym document
                 )
                 for toponym in toponyms
             ])
@@ -199,7 +200,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         task_tracker.update_task(task_id, {"status": "failed", "error": str(e)})
 
 
-async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None, delete_only = False) -> Task:
+async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None, delete_only=False) -> Task:
     """
     Starts the ingestion in a background task.
 
@@ -215,50 +216,37 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
     return task
 
 
-def delete_related_toponyms(sync_app, place_ids, schema):
+def delete_related_toponyms(sync_app, toponym_id, place_id):
     """Delete or update toponyms related to place IDs."""
-    for place_id in place_ids:
-        toponym_query = f"select * from toponym where places matches '^{place_id}$' limit {pagination_limit}"
-        toponym_start = 0
-        while True:
-            toponym_query_paginated = {
-                "yql": toponym_query,
-                "offset": toponym_start
+    toponym_query = f"select * from toponym where id matches '-{toponym_id}$' limit 1"
+    toponym_response = sync_app.query({"yql": toponym_query}).json
+    toponym_hits = toponym_response.get("root", {}).get("children", [])
+    if not toponym_hits:
+        return
+    toponym_hit = toponym_hits[0]
+    toponym_id = toponym_hit["id"].split(":")[-1]
+    if len(toponym_hit.get("fields", {}).get("places")) == 1:
+        # Delete toponym if only one place is associated
+        logger.info(f"Deleting toponym: {toponym_id}")
+        response = sync_app.delete_data(
+            namespace="toponym",
+            schema="toponym",
+            data_id=toponym_id
+        )
+        logger.info(f"Delete response: {response.json}")
+    else:
+        logger.info(f"Updating toponym: {toponym_id}")
+        response = sync_app.feed_data_point(
+            namespace="toponym",
+            schema="toponym",
+            data={
+                "update": toponym_id,
+                "fields": {
+                    "places": {"remove": [place_id]}
+                }
             }
-            logger.info(f"Paginated toponym query: {toponym_query_paginated}")
-            toponym_response = sync_app.query(toponym_query_paginated).json
-            toponym_hits = toponym_response.get("root", {}).get("children", [])
-
-            logger.info(f"Toponym hits: {toponym_hits}")
-            if not toponym_hits:
-                break
-
-            for toponym_hit in toponym_hits:
-                toponym_id = toponym_hit["id"].split(":")[-1]
-                if len(toponym_hit.get("fields", {}).get("places")) == 1:
-                    # Delete toponym if only one place is associated
-                    logger.info(f"Deleting toponym: {toponym_id}")
-                    response = sync_app.delete_data(
-                        namespace="toponym",
-                        schema="toponym",
-                        data_id=toponym_id
-                    )
-                    logger.info(f"Delete response: {response.json}")
-                else:
-                    logger.info(f"Updating toponym: {toponym_id}")
-                    response = sync_app.feed_data_point(
-                        namespace="toponym",
-                        schema="toponym",
-                        data={
-                            "update": toponym_id,
-                            "fields": {
-                                "places": {"remove": [place_id]}
-                            }
-                        }
-                    )
-                    logger.info(f"Update response: {response.json}")
-
-            toponym_start += pagination_limit  # Move to next page
+        )
+        logger.info(f"Update response: {response.json}")
 
 
 def delete_related_links(sync_app, place_ids):
@@ -306,12 +294,13 @@ def delete_all_docs(sync_app, dataset_config):
             if not places:
                 break
 
+            for place in places:
+                toponym_ids = place.get("fields", {}).get("names", [])
+                for toponym_id in toponym_ids:
+                    delete_related_toponyms(sync_app, toponym_id, place["id"].split(":")[-1])
+
+            # Delete related links for place IDs
             place_ids = [place["id"].split(":")[-1] for place in places]
-
-            # Step 1: Delete or update toponyms related to place IDs
-            delete_related_toponyms(sync_app, place_ids, schema)
-
-            # Step 2: Delete related links for place IDs
             delete_related_links(sync_app, place_ids)
 
             if len(places) < pagination_limit:
