@@ -35,6 +35,8 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
             # Extend `places` list
             existing_toponym_id = existing_response.get("root", {}).get("children", [{}])[0].get("id")
 
+            logger.info(f"Extending places with {document_id} for toponym {existing_toponym_id}: {existing_response.get("root", {}).get("children", [{}])[0]}")
+
             response = sync_app.feed_data_point(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
                 schema=schema,
@@ -137,7 +139,7 @@ async def process_documents(documents, dataset_config, transformer_index, sync_a
     return await asyncio.gather(*tasks)
 
 
-async def background_ingestion(dataset_name: str, task_id: str, limit: int = None) -> None:
+async def background_ingestion(dataset_name: str, task_id: str, limit: int = None, delete_only: bool = False) -> None:
     """
     The main logic of dataset ingestion that will run in the background.
     """
@@ -160,6 +162,13 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             # Run `delete_all_docs` asynchronously to avoid blocking the event loop
             logger.info(f"Deleting all documents for schema: {dataset_config['namespace']}")
             await asyncio.to_thread(delete_all_docs, sync_app, dataset_config)
+
+            if delete_only:
+                task_tracker.update_task(task_id, {
+                    "status": "completed",
+                    "end_time": time.time()
+                })
+                return
 
             all_responses = []
             for transformer_index, file_config in enumerate(dataset_config['files']):
@@ -185,7 +194,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         task_tracker.update_task(task_id, {"status": "failed", "error": str(e)})
 
 
-async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None) -> Task:
+async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None, delete_only = False) -> Task:
     """
     Starts the ingestion in a background task.
 
@@ -193,7 +202,7 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
     :param task_id: The task ID for tracking
     :param limit: Maximum number of items to ingest
     """
-    task = asyncio.create_task(background_ingestion(dataset_name, task_id, limit))
+    task = asyncio.create_task(background_ingestion(dataset_name, task_id, limit, delete_only))
 
     # Add the task to the task tracker (also triggers cleanup of expired tasks)
     task_tracker.add_task(task_id)
