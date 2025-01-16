@@ -243,7 +243,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                         schema="toponym",
                         data_id=toponym_id
                     )
-                    logger.info(f"Delete response: {response}")
+                    logger.info(f"Delete response: {response.json}")
                 else:
                     logger.info(f"Updating toponym: {toponym_id}")
                     response = sync_app.feed_data_point(
@@ -256,7 +256,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                             }
                         }
                     )
-                    logger.info(f"Update response: {response}")
+                    logger.info(f"Update response: {response.json}")
 
             toponym_start += pagination_limit  # Move to next page
 
