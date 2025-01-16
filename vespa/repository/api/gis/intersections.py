@@ -7,7 +7,7 @@ from shapely.geometry.geo import shape
 from shapely.validation import explain_validity
 
 from .utils import get_valid_geom, vespa_bbox
-from ..config import VespaClient
+from ..config import VespaClient, namespace
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class GeometryIntersect:
 
     """
 
-    def __init__(self, geometry=None, geom=None, bbox=None, schema=None, fields=None) -> None:
+    def __init__(self, geometry=None, geom=None, bbox=None, namespace=None, schema=None, fields=None) -> None:
         """
         Initializes the resolver with a geometry and bounding box.
 
@@ -38,6 +38,7 @@ class GeometryIntersect:
         self.bbox = bbox or (vespa_bbox(self.geom) if self.geom else None)
         self.vespa_client = VespaClient()
         self.schema = schema or "iso3166"
+        self.namespace = namespace or "iso3166"
         self.fields = fields or "code2"
 
     def resolve(self) -> list:
@@ -48,15 +49,17 @@ class GeometryIntersect:
             return []
 
         try:
-            candidates = BoxIntersect(self.bbox, schema=self.schema, fields=self.fields).box_intersect()
+            candidates = BoxIntersect(self.bbox, namespace=self.namespace, schema=self.schema, fields=self.fields).box_intersect()
 
             results = set()
             for candidate in candidates:
-                if 'geometry' in candidate:
-                    candidate_geom = shape(json.loads(candidate['geometry']))
+                # Loop through each candidate's locations
+                for location in candidate.get('locations', []):
+                    # Check if the location's geometry intersects with the input geometry
+                    candidate_geom = shape(json.loads(location['geometry']))
                     if self.geom.intersects(candidate_geom):
                         # Exclude the 'geometry' field and convert the candidate to a tuple of key-value pairs (hashable)
-                        results.add(frozenset({k: v for k, v in candidate.items() if k != 'geometry'}.items()))
+                        results.add(frozenset({k: v for k, v in candidate.items() if k != 'locations'}.items()))
 
             # Convert frozensets back to dictionaries and sort by the specified key
             return sorted([dict(frozenset_item) for frozenset_item in results],
@@ -73,7 +76,7 @@ class BoxIntersect:
     are for ISO 3166 country codes.
     """
 
-    def __init__(self, bbox, schema=None, fields=None) -> None:
+    def __init__(self, bbox, namespace=None, schema=None, fields=None) -> None:
         """
         Initializes the BoxIntersect with bounding box coordinates and optional schema/fields.
 
@@ -91,6 +94,7 @@ class BoxIntersect:
         self.ne_lat = bbox.get("bbox_ne_lat", 90)
         self.antimeridial = bbox.get("bbox_antimeridial", False)
         self.schema = schema or "iso3166"
+        self.namespace = namespace or "iso3166"
         self.fields = fields or "code2"
 
     def box_intersect(self) -> list:
@@ -104,7 +108,11 @@ class BoxIntersect:
             with VespaClient.sync_context("feed") as sync_app:
                 query = self._generate_bounding_box_query()
                 logger.info(f"Performing Vespa query: {query}")
-                response = sync_app.query(query).json
+                response = sync_app.query(
+                    query,
+                    namespace = self.namespace,
+                    schema = self.schema,
+                ).json
                 if "error" in response:
                     raise ValueError(f"Error during Vespa query: {response['error']}")
                 return [child.get("fields", {}) for child in response.get("root", {}).get("children", [])]
