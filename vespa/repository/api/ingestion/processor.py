@@ -241,7 +241,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                     sync_app.delete_data(
                         namespace="toponym",
                         schema="toponym",
-                        data_id=toponym_id
+                        data_id=f"id:toponym:toponym::{toponym_id}"
                     )
                 else:
                     logger.info(f"Updating toponym: {toponym_id}")
