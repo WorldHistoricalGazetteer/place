@@ -219,14 +219,12 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
 def delete_related_toponyms(sync_app, toponym_id, place_id):
     """Delete or update toponyms related to place IDs."""
     try:
-        toponym_query = {
-            "data_id": toponym_id,
-            "namespace": "toponym",
-            "schema": "toponym",
-            # "raise_on_not_found": True
-        }
-        logger.info(f"Toponym query: {toponym_query}")
-        toponym_response = sync_app.get_data(toponym_query).json
+        toponym_response = sync_app.get_data(
+            data_id=toponym_id,
+            namespace="toponym",
+            schema="toponym",
+            raise_on_not_found=True
+        ).json
         logger.info(f"Toponym response: {toponym_response}")
         toponym_hits = toponym_response.get("root", {}).get("children", [])
         toponym_hit = toponym_hits[0]
