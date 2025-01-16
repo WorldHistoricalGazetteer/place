@@ -218,7 +218,7 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
 
 def delete_related_toponyms(sync_app, toponym_id, place_id):
     """Delete or update toponyms related to place IDs."""
-    toponym_query = f"select * from toponym where id matches '-{toponym_id}$' limit 1"
+    toponym_query = f"select * from toponym where id matches ':{toponym_id}$' limit 1"
     toponym_response = sync_app.query({"yql": toponym_query}).json
     toponym_hits = toponym_response.get("root", {}).get("children", [])
     if not toponym_hits:
