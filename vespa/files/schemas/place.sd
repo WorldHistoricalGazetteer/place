@@ -214,7 +214,7 @@ schema place {
     }
 
     fieldset toponyms {
-        fields:names
+        fields: names
     }
 
 }
