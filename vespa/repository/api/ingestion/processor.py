@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor(max_workers=10)
 
 
-def feed_document(sync_app, schema, namespace, document_id, transformed_document):
+def feed_document(sync_app, namespace, schema, document_id, transformed_document):
     try:
         toponym_exists = False
         if schema == 'toponym':
@@ -28,11 +28,8 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
                     if transformed_document.get(f"bcp47_{field}"):
                         yql += f"and bcp47_{field} matches '^{transformed_document[f'bcp47_{field}']}$' "
                 yql += "limit 1"
-                query = {
-                    "yql": yql,
-                }
-                logger.info(f"Checking if toponym exists: {query}")
-                existing_response = sync_app.query(query).json
+                logger.info(f"Checking if toponym exists: {yql}")
+                existing_response = sync_app.query({'yql': yql}).json
                 logger.info(f"Existing toponym response: {existing_response}")
                 toponym_exists = existing_response.get("root", {}).get("totalCount", 0) > 0
 
@@ -56,24 +53,24 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
             )
         else:
             if schema == 'toponym':
-                logger.info(f"Feeding document {schema}:{namespace}:{document_id}: {transformed_document}")
+                logger.info(f"Feeding document {namespace}:{schema}::{document_id}: {transformed_document}")
             response = sync_app.feed_data_point(
-                schema=schema,
                 namespace=namespace,
+                schema=schema,
                 data_id=document_id,
                 fields=transformed_document,
             )
 
         if response.status_code == 200:
-            return {"success": True, "document_id": document_id, "schema": schema, "namespace": namespace}
+            return {"success": True, "namespace": namespace, "schema": schema, "document_id": document_id}
         else:
             logger.error(
-                f"Failed to feed document: {schema}:{namespace}:{document_id}, Status code: {response.status_code}, Response: {response.json() if response.headers.get('content-type') == 'application/json' else response.text}")
+                f"Failed to feed document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}, Response: {response.json() if response.headers.get('content-type') == 'application/json' else response.text}")
             return {
                 "success": False,
-                "document_id": document_id,
-                "schema": schema,
                 "namespace": namespace,
+                "schema": schema,
+                "document_id": document_id,
                 "status_code": response.status_code,
                 "message": response.json() if response.headers.get(
                     'content-type') == 'application/json' else response.text
@@ -82,9 +79,9 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
         logger.error(f"Error feeding document: {document_id}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
-            "document_id": document_id,
-            "schema": schema,
             "namespace": namespace,
+            "schema": schema,
+            "document_id": document_id,
             "error": str(e)
         }
 
@@ -100,7 +97,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
-            executor, feed_document, sync_app, dataset_config['vespa_schema'], dataset_config['namespace'], document_id,
+            executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'], document_id,
             transformed_document
         )
         success = response.get("success", False)
@@ -108,7 +105,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         if success and toponyms:
             toponym_responses = await asyncio.gather(*[
                 asyncio.get_event_loop().run_in_executor(
-                    executor, feed_document, sync_app, 'toponym', None, toponym['record_id'], {
+                    executor, feed_document, sync_app, None, 'toponym', toponym['record_id'], {
                         key: value for key, value in toponym.items() if key != 'record_id'
                     } # Remove record_id from toponym document
                 )
@@ -128,7 +125,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     except Exception as e:
         task_tracker.update_task(task_id, {"processed": 1, "failure": 1})
         return {"success": False,
-                "document": f"{dataset_config['vespa_schema']}:{dataset_config['namespace']}:{document_id}",
+                "document": f"{dataset_config['namespace']}:{dataset_config['vespa_schema']}:{document_id}",
                 "error": str(e)}
 
 
@@ -221,7 +218,7 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
 def delete_related_toponyms(sync_app, place_ids, schema):
     """Delete or update toponyms related to place IDs."""
     for place_id in place_ids:
-        toponym_query = f"select * from toponym where places contains '{place_id}' limit {pagination_limit}"
+        toponym_query = f"select * from toponym where places matches '^{place_id}$' limit {pagination_limit}"
         toponym_start = 0
         while True:
             toponym_query_paginated = {
@@ -257,7 +254,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
 def delete_related_links(sync_app, place_ids):
     """Delete links related to place IDs."""
     for place_id in place_ids:
-        link_query = f"select * from link where place_id contains '{place_id}' or object contains '{place_id}' limit {pagination_limit}"
+        link_query = f"select * from link where place_id matches '^{place_id}$' or object matches '^{place_id}$' limit {pagination_limit}"
         links_start = 0
         while True:
             link_query_paginated = {
@@ -313,8 +310,8 @@ def delete_all_docs(sync_app, dataset_config):
             start += pagination_limit  # Move to next page
 
     # Delete documents belonging to the given schema and namespace
-    sync_app.delete_all_docs(
-        schema=schema,
-        namespace=namespace,
-        content_cluster_name="content"
-    )
+    # sync_app.delete_all_docs(
+    #     schema=schema,
+    #     namespace=namespace,
+    #     content_cluster_name="content"
+    # )
