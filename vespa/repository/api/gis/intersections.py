@@ -211,7 +211,7 @@ class BoxIntersect:
 
         return {
             "yql": f"""
-                select {self.fields}, locations from sources places
+                select {self.fields}, locations from sources place
                 where
                 {longitude_conditions}
                 and
