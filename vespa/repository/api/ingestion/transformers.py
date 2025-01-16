@@ -3,6 +3,7 @@ import logging
 
 from ..gis.intersections import GeometryIntersect
 from ..gis.processor import GeometryProcessor
+from ..utils import get_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -78,16 +79,25 @@ class DocTransformer:
         "ISO3166": [ # Uses `place` schema
             lambda data: (
                 {
-                    "source": "",
-                    "names": [{"toponym_id": data.get("properties", {}).get("ADMIN", None)}], # TODO: how to get inserted toponym_id? Generate UUID here as walrus variable?
-                    **(geometry_etc if (
+                    "record_id": (document_id := get_uuid()),
+                    "names": [{"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018, "is_preferred": 1}],
+                    **({"locations": geometry_etc} if (
                         geometry_etc := GeometryProcessor(data.get("geometry"),
                                                           values=["bbox", "geometry"]).process()) else {}),
                     **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
-                    **({"ccodes": [code2]} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
-                    # **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
+                    "year_start": 2018, # Boundaries last updated: see https://github.com/datasets/geo-countries/tree/main/data
+                    "year_end": 2018,
+                    "ccodes": data.get("code2"),
+                    "classes": ["A"],
+                    "types": ["300232420"], # https://vocab.getty.edu/aat/300232420 'sovereign states'
                 },
                 [
+                    {
+                        "record_id": toponym_id,
+                        "name": data.get("properties", {}).get("ADMIN"),
+                        "places": [document_id],
+                        "bcp47_language": "en",
+                    }
                 ]
             )
         ],
