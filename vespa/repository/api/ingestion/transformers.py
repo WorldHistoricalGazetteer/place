@@ -290,9 +290,13 @@ class DocTransformer:
         "Terrarium": [
             lambda data: (
                 {
-                    **(geometry_etc if (
+                    **({"geometry": geometry_etc.get("locations")[0].get("geometry")} if (
                         geometry_etc := GeometryProcessor(data.get("geometry"),
                                                           values=["bbox", "geometry"]).process()) else {}),
+                    **({"bbox_sw_lat": geometry_etc.get("bbox_sw_lat")} if geometry_etc else {}),
+                    **({"bbox_sw_lng": geometry_etc.get("bbox_sw_lng")} if geometry_etc else {}),
+                    **({"bbox_ne_lat": geometry_etc.get("bbox_ne_lat")} if geometry_etc else {}),
+                    **({"bbox_ne_lng": geometry_etc.get("bbox_ne_lng")} if geometry_etc else {}),
                     **({"resolution": float(resolution)} if (resolution := data.get("properties", {}).get(
                         "resolution")) is not None else {}),
                     **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
