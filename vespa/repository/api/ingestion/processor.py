@@ -291,15 +291,13 @@ def delete_all_docs(sync_app, dataset_config):
             namespace=namespace,
             schema=schema,
             wantedDocumentCount=100,
-            kwargs={
-                "fieldset": "place:names"
-            },
+            fieldset="place:names"
         ):
             for response in slice:
                 for document in response.documents:
                     logger.info(f"Document: {document}")
                     # Delete related toponyms
-                    for name in document.fields.names:
+                    for name in document["fields"]["names"]:
                         delete_related_toponyms(sync_app, name["toponym_id"], document.id.split(":")[-1])
 
                     # Delete related links
