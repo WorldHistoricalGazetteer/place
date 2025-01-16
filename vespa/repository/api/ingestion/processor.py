@@ -296,14 +296,14 @@ def delete_all_docs(sync_app, dataset_config):
             },
         ):
             for response in slice:
-                document = response.document
-                logger.info(f"Document: {document}")
-                # Delete related toponyms
-                for name in document.names:
-                    delete_related_toponyms(sync_app, name["toponym_id"], document.id.split(":")[-1])
+                for document in response.documents:
+                    logger.info(f"Document: {document}")
+                    # Delete related toponyms
+                    for name in document.names:
+                        delete_related_toponyms(sync_app, name["toponym_id"], document.id.split(":")[-1])
 
-                # Delete related links
-                delete_related_links(sync_app, [document.id.split(":")[-1]])
+                    # Delete related links
+                    delete_related_links(sync_app, [document.id.split(":")[-1]])
 
     # Delete documents belonging to the given schema and namespace
     sync_app.delete_all_docs(
