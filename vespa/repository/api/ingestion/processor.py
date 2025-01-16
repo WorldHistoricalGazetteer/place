@@ -249,7 +249,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
 def delete_related_links(sync_app, place_ids):
     """Delete links related to place IDs."""
     for place_id in place_ids:
-        link_query = f"select * from link where place_id = '{place_id}' or object = '{place_id}' limit {pagination_limit}"
+        link_query = f"select * from link where place_id contains '{place_id}' or object contains '{place_id}' limit {pagination_limit}"
         links_start = 0
         while True:
             link_query_paginated = {
