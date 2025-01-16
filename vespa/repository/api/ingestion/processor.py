@@ -221,8 +221,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
     try:
         toponym_query = {
             "yql": f"select * from toponym where doc_id matches '::{toponym_id}$' limit 1",
-            # "namespace": "toponym",
-            "namespace": "iso3166",
+            "namespace": "toponym",
             "schema": "toponym",
             "raise_on_not_found": True
         }
@@ -244,7 +243,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
         else:
             logger.info(f"Updating toponym: {toponym_id}")
             response = sync_app.feed_data_point(
-                namespace="iso3166",
+                namespace="toponym",
                 schema="toponym",
                 data={
                     "update": toponym_id,
@@ -287,35 +286,33 @@ def delete_all_docs(sync_app, dataset_config):
     namespace = dataset_config.get("namespace")
 
     if schema == "place":
-        # Fetch all place documents with pagination
-        place_query = f"select * from place where true limit {pagination_limit}"
-        start = 0
-        while True:
-            place_query_paginated = {
-                "yql": place_query,
-                "namespace": namespace,
-                "offset": start
+        params = {
+                "wantedDocumentCount": 100,
+                "fieldset": "names",
+                "continuation": None
             }
-            logger.info(f"Paginated place query: {place_query_paginated}")
-            place_response = sync_app.query(place_query_paginated).json
-            places = place_response.get("root", {}).get("children", [])
+        while True:
+            place_response = sync_app.visit(
+                namespace=namespace,
+                schema=schema,
+                params=params
+            ).json
 
-            if not places:
+            # Process the retrieved documents
+            for document in place_response.documents:
+
+                # Delete related toponyms
+                for name in document.names:
+                    delete_related_toponyms(sync_app, name["toponym_id"], document.id.split(":")[-1])
+
+                # Delete related links
+                delete_related_links(sync_app, [document.id.split(":")[-1]])
+
+            # Check for continuation
+            if "continuation" in place_response.json:
+                params["continuation"] = place_response.json["continuation"]
+            else:
                 break
-
-            for place in places:
-                names = place.get("fields", {}).get("names", [])
-                for name in names:
-                    delete_related_toponyms(sync_app, name["toponym_id"], place["id"].split(":")[-1])
-
-            # Delete related links for place IDs
-            place_ids = [place["id"].split(":")[-1] for place in places]
-            delete_related_links(sync_app, place_ids)
-
-            if len(places) < pagination_limit:
-                break
-
-            start += pagination_limit  # Move to next page
 
     # Delete documents belonging to the given schema and namespace
     sync_app.delete_all_docs(
