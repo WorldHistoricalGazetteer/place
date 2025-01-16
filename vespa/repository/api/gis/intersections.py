@@ -38,7 +38,7 @@ class GeometryIntersect:
         self.vespa_client = VespaClient()
         self.schema = schema or "iso3166"
         self.namespace = namespace or "iso3166"
-        self.fields = fields or "code2"
+        self.fields = fields or "meta"
 
     def resolve(self) -> list:
         """
@@ -96,7 +96,7 @@ class BoxIntersect:
         self.antimeridial = bbox.get("bbox_antimeridial", False)
         self.schema = schema or "iso3166"
         self.namespace = namespace or "iso3166"
-        self.fields = fields or "code2"
+        self.fields = fields or "meta"
 
     def box_intersect(self) -> list:
         """
@@ -111,7 +111,7 @@ class BoxIntersect:
                 logger.info(f"Performing Vespa query: {query}")
                 response = sync_app.query(
                     query,
-                    # namespace=self.namespace,
+                    namespace=self.namespace,
                     # schema=self.schema,
                 ).json
                 if "error" in response:

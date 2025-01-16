@@ -111,6 +111,11 @@ schema place {
             attribute: fast-search
         }
 
+        field meta type string {
+            # A JSON string containing additional metadata about the place.
+            indexing: summary
+        }
+
         ########### Fields derived from geometries ###########
 
         struct location {

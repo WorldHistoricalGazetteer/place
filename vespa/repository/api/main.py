@@ -1,4 +1,5 @@
 # /main.py
+import json
 import logging
 
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Path
@@ -41,7 +42,11 @@ async def get_country_codes(
             "bbox_ne_lng": longitude + 0.01,
         }
         results = GeometryIntersect(geometry=geometry, bbox=bbox).resolve()
-        return JSONResponse(content={"country_codes": [result["code2"] for result in results if not result["code2"]=="-"]})
+        country_codes = [
+            meta["code2"] for result in results
+            if (meta := json.loads(result["meta"]))["code2"] != "-"
+        ]
+        return JSONResponse(content={"country_codes": country_codes})
     except Exception as e:
         logger.error(f"Error in /iso3166: {e}", exc_info=True)
         return JSONResponse(status_code=500, content={"error": "Failed to fetch country codes: {e}"})

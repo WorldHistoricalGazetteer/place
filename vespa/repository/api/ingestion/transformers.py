@@ -1,4 +1,5 @@
 # /ingestion/transformers.py
+import json
 import logging
 
 from ..gis.intersections import GeometryIntersect
@@ -80,7 +81,12 @@ class DocTransformer:
             lambda data: (
                 {
                     "record_id": (document_id := get_uuid()),
-                    "names": [{"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018, "is_preferred": 1}],
+                    "names": [
+                        {"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018, "is_preferred": 1},
+                    ],
+                    "meta": json.dumps({
+                        "ISO_A2": data.get("properties", {}).get("ISO_A2"),
+                    }),
                     **(geometry_etc if (
                         geometry_etc := GeometryProcessor(data.get("geometry"),
                                                           values=["bbox", "geometry"]).process()) else {}),
