@@ -35,7 +35,7 @@ def feed_document(sync_app, schema, namespace, document_id, transformed_document
             # Extend `places` list
             existing_toponym_id = existing_response.get("root", {}).get("children", [{}])[0].get("id")
 
-            logger.info(f"Extending places with {document_id} for toponym {existing_toponym_id}: {existing_response.get("root", {}).get("children", [{}])[0]}")
+            logger.info(f'Extending places with {document_id} for toponym {existing_toponym_id}: {existing_response.get("root", {}).get("children", [{}])[0]}')
 
             response = sync_app.feed_data_point(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
