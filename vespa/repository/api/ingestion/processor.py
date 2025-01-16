@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
-from ..config import VespaClient
+from ..config import VespaClient, pagination_limit
 from ..utils import get_uuid, task_tracker
 
 logger = logging.getLogger(__name__)
@@ -203,7 +203,7 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
 def delete_related_toponyms(sync_app, place_ids, schema):
     """Delete or update toponyms related to place IDs."""
     for place_id in place_ids:
-        toponym_query = f"select * from toponym where places contains '{place_id}' limit 1000"
+        toponym_query = f"select * from toponym where places contains '{place_id}' limit {pagination_limit}"
         toponym_start = 0
         while True:
             toponym_query_paginated = {
@@ -233,13 +233,13 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                         }
                     )
 
-            toponym_start += 1000  # Move to next page
+            toponym_start += pagination_limit  # Move to next page
 
 
 def delete_related_links(sync_app, place_ids):
     """Delete links related to place IDs."""
     for place_id in place_ids:
-        link_query = f"select * from link where place_id = '{place_id}' or object = '{place_id}' limit 1000"
+        link_query = f"select * from link where place_id = '{place_id}' or object = '{place_id}' limit {pagination_limit}"
         links_start = 0
         while True:
             link_query_paginated = {
@@ -256,7 +256,7 @@ def delete_related_links(sync_app, place_ids):
             for link in links:
                 sync_app.delete_data(schema="link", data_id=link["id"])
 
-            links_start += 1000  # Move to next page
+            links_start += pagination_limit  # Move to next page
 
 
 def delete_all_docs(sync_app, dataset_config):
@@ -266,7 +266,7 @@ def delete_all_docs(sync_app, dataset_config):
 
     if schema == "place":
         # Fetch all place documents with pagination
-        place_query = f"select * from place where true limit 1000"
+        place_query = f"select * from place where true limit {pagination_limit}"
         start = 0
         while True:
             place_query_paginated = {
@@ -289,11 +289,10 @@ def delete_all_docs(sync_app, dataset_config):
             # Step 2: Delete related links for place IDs
             delete_related_links(sync_app, place_ids)
 
-            # If fewer than 1000 documents were returned, we're done
-            if len(places) < 1000:
+            if len(places) < pagination_limit:
                 break
 
-            start += 1000  # Move to next page
+            start += pagination_limit  # Move to next page
 
     # Delete documents belonging to the given schema and namespace
     sync_app.delete_all_docs(

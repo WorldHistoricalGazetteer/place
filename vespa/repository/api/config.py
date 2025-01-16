@@ -5,6 +5,7 @@ import os
 from vespa.application import Vespa, VespaSync
 
 namespace = os.getenv("VESPA_NAMESPACE", "vespa")
+pagination_limit = 250
 
 host_mapping = {
     "query": os.getenv("VESPA_QUERY_HOST",
