@@ -4,10 +4,9 @@ import json
 import logging
 
 from shapely.geometry.geo import shape
-from shapely.validation import explain_validity
 
 from .utils import get_valid_geom, vespa_bbox
-from ..config import VespaClient, namespace
+from ..config import VespaClient
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +48,10 @@ class GeometryIntersect:
             return []
 
         try:
-            candidates = BoxIntersect(self.bbox, namespace=self.namespace, schema=self.schema, fields=self.fields).box_intersect()
+            candidates = BoxIntersect(self.bbox, namespace=self.namespace, schema=self.schema,
+                                      fields=self.fields).box_intersect()
 
+            logger.info(f"Found {len(candidates)} candidates for intersection: {candidates}")
             results = set()
             for candidate in candidates:
                 # Loop through each candidate's locations
@@ -63,7 +64,7 @@ class GeometryIntersect:
 
             # Convert frozensets back to dictionaries and sort by the specified key
             return sorted([dict(frozenset_item) for frozenset_item in results],
-                                    key=lambda x: x.get(self.fields.split(',')[0], ''))
+                          key=lambda x: x.get(self.fields.split(',')[0], ''))
         except Exception as e:
             logger.error(f"Error finding intersections: {e}", exc_info=True)
             return []
@@ -110,8 +111,8 @@ class BoxIntersect:
                 logger.info(f"Performing Vespa query: {query}")
                 response = sync_app.query(
                     query,
-                    namespace = self.namespace,
-                    schema = self.schema,
+                    namespace=self.namespace,
+                    schema=self.schema,
                 ).json
                 if "error" in response:
                     raise ValueError(f"Error during Vespa query: {response['error']}")
