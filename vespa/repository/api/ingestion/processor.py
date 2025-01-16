@@ -218,36 +218,43 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
 
 def delete_related_toponyms(sync_app, toponym_id, place_id):
     """Delete or update toponyms related to place IDs."""
-    toponym_query = f"select * from toponym where documentid matches '::{toponym_id}$' limit 1"
-    logger.info(f"Toponym query: {toponym_query}")
-    toponym_response = sync_app.query({"yql": toponym_query}).json
-    toponym_hits = toponym_response.get("root", {}).get("children", [])
-    if not toponym_hits:
-        return
-    toponym_hit = toponym_hits[0]
-    toponym_id = toponym_hit["id"].split(":")[-1]
-    if len(toponym_hit.get("fields", {}).get("places")) == 1:
-        # Delete toponym if only one place is associated
-        logger.info(f"Deleting toponym: {toponym_id}")
-        response = sync_app.delete_data(
-            namespace="toponym",
-            schema="toponym",
-            data_id=toponym_id
-        )
-        logger.info(f"Delete response: {response.json}")
-    else:
-        logger.info(f"Updating toponym: {toponym_id}")
-        response = sync_app.feed_data_point(
-            namespace="toponym",
-            schema="toponym",
-            data={
-                "update": toponym_id,
-                "fields": {
-                    "places": {"remove": [place_id]}
+    try:
+        toponym_query = {
+            "yql": f"select * from toponym where doc_id matches '::{toponym_id}$' limit 1",
+            "namespace": "toponym",
+            "schema": "toponym",
+            "raise_on_not_found": True
+        }
+        logger.info(f"Toponym query: {toponym_query}")
+        toponym_response = sync_app.get_data(toponym_query).json
+        logger.info(f"Toponym response: {toponym_response}")
+        toponym_hits = toponym_response.get("root", {}).get("children", [])
+        toponym_hit = toponym_hits[0]
+        toponym_id = toponym_hit["id"].split(":")[-1]
+        if len(toponym_hit.get("fields", {}).get("places")) == 1:
+            # Delete toponym if only one place is associated
+            logger.info(f"Deleting toponym: {toponym_id}")
+            response = sync_app.delete_data(
+                namespace="toponym",
+                schema="toponym",
+                data_id=toponym_id
+            )
+            logger.info(f"Delete response: {response.json}")
+        else:
+            logger.info(f"Updating toponym: {toponym_id}")
+            response = sync_app.feed_data_point(
+                namespace="toponym",
+                schema="toponym",
+                data={
+                    "update": toponym_id,
+                    "fields": {
+                        "places": {"remove": [place_id]}
+                    }
                 }
-            }
-        )
-        logger.info(f"Update response: {response.json}")
+            )
+            logger.info(f"Update response: {response.json}")
+    except Exception as e:
+        logger.error(f"Error deleting or updating toponyms: {str(e)}", exc_info=True)
 
 
 def delete_related_links(sync_app, place_ids):
