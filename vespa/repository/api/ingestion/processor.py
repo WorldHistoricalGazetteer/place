@@ -234,7 +234,7 @@ def delete_related_toponyms(sync_app, place_ids, schema):
                 break
 
             for toponym_hit in toponym_hits:
-                toponym_id = toponym_hit["id"]
+                toponym_id = toponym_hit["id"].split(":")[-1]
                 if len(toponym_hit.get("fields", {}).get("places")) == 1:
                     # Delete toponym if only one place is associated
                     logger.info(f"Deleting toponym: {toponym_id}")
