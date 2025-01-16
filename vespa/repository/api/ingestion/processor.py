@@ -221,7 +221,8 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
     try:
         toponym_query = {
             "yql": f"select * from toponym where doc_id matches '::{toponym_id}$' limit 1",
-            "namespace": "toponym",
+            # "namespace": "toponym",
+            "namespace": "iso3166",
             "schema": "toponym",
             "raise_on_not_found": True
         }
@@ -235,7 +236,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
             # Delete toponym if only one place is associated
             logger.info(f"Deleting toponym: {toponym_id}")
             response = sync_app.delete_data(
-                namespace="toponym",
+                namespace="iso3166",
                 schema="toponym",
                 data_id=toponym_id
             )
@@ -243,7 +244,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
         else:
             logger.info(f"Updating toponym: {toponym_id}")
             response = sync_app.feed_data_point(
-                namespace="toponym",
+                namespace="iso3166",
                 schema="toponym",
                 data={
                     "update": toponym_id,
