@@ -19,6 +19,10 @@ schema link {
             # A unique identifier for the link within the source.
             indexing: attribute | summary
             attribute: fast-search
+            match {
+                exact
+                exact-terminator: "@@"
+            }
         }
 
         ########### Core Link Data ###########
@@ -27,6 +31,10 @@ schema link {
             # The ID of the place this link relates to.
             indexing: attribute | summary
             attribute: fast-search
+            match {
+                exact
+                exact-terminator: "@@"
+            }
         }
 
         field predicate type string {
@@ -35,6 +43,10 @@ schema link {
             # places (e.g., "coextensive with" or "predecessor of").
             indexing: attribute | summary
             attribute: fast-search
+            match {
+                exact
+                exact-terminator: "@@"
+            }
         }
 
         field object type string {
@@ -42,6 +54,10 @@ schema link {
             # In the case of a `connection` to another place, this should be the WHG Vespa ID of the linked place.
             indexing: attribute | summary
             attribute: fast-search
+            match {
+                exact
+                exact-terminator: "@@"
+            }
         }
 
         ########### Temporal Fields ###########
