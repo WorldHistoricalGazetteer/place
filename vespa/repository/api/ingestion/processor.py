@@ -286,17 +286,17 @@ def delete_all_docs(sync_app, dataset_config):
     namespace = dataset_config.get("namespace")
 
     if schema == "place":
-        params = {
-                "wantedDocumentCount": 100,
+        for slice in sync_app.visit(
+            content_cluster_name="content",
+            namespace=namespace,
+            schema=schema,
+            wantedDocumentCount=100,
+            kwargs={
                 "fieldset": "names",
-            }
-        while True:
-            for document in sync_app.visit(
-                namespace=namespace,
-                schema=schema,
-                params=params,
-                content_cluster_name="content"
-            ):
+            },
+        ):
+            for response in slice:
+                document = response.document
                 logger.info(f"Document: {document}")
                 # Delete related toponyms
                 for name in document.names:
