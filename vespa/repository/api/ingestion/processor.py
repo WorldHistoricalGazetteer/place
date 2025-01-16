@@ -297,6 +297,7 @@ def delete_all_docs(sync_app, dataset_config):
                 params=params,
                 content_cluster_name="content"
             ):
+                logger.info(f"Document: {document}")
                 # Delete related toponyms
                 for name in document.names:
                     delete_related_toponyms(sync_app, name["toponym_id"], document.id.split(":")[-1])
