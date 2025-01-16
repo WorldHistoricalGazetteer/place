@@ -296,9 +296,9 @@ def delete_all_docs(sync_app, dataset_config):
                 break
 
             for place in places:
-                toponym_ids = place.get("fields", {}).get("names", [])
-                for toponym_id in toponym_ids:
-                    delete_related_toponyms(sync_app, toponym_id, place["id"].split(":")[-1])
+                names = place.get("fields", {}).get("names", [])
+                for name in names:
+                    delete_related_toponyms(sync_app, name["toponym_id"], place["id"].split(":")[-1])
 
             # Delete related links for place IDs
             place_ids = [place["id"].split(":")[-1] for place in places]
