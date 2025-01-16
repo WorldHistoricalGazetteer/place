@@ -266,11 +266,12 @@ def delete_all_docs(sync_app, dataset_config):
 
     if schema == "place":
         # Fetch all place documents with pagination
-        place_query = f"select * from place:{namespace} where true limit 1000"
+        place_query = f"select * from place where true limit 1000"
         start = 0
         while True:
             place_query_paginated = {
                 "yql": place_query,
+                "namespace": namespace,
                 "offset": start
             }
             logger.info(f"Paginated place query: {place_query_paginated}")
