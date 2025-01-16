@@ -93,7 +93,7 @@ class GeometryProcessor:
             locations = list(grouped_geometries.values())
 
         else:
-            locations = [{"geometry": self.geometry}]
+            locations = [{"geometry": json.dumps(self.geometry)}]
             largest_area = self.geom.area if "area" in self.values else None
             longest_length = self.geom.length if "length" in self.values else None
 
