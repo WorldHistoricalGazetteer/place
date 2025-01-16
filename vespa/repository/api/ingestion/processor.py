@@ -279,7 +279,7 @@ def delete_related_links(sync_app, place_ids):
                 break
 
             for link in links:
-                sync_app.delete_data(schema="link", data_id=link["id"])
+                sync_app.delete_data(schema="link", data_id=link["id"].split(":")[-1])
 
             links_start += pagination_limit  # Move to next page
 
@@ -320,8 +320,8 @@ def delete_all_docs(sync_app, dataset_config):
             start += pagination_limit  # Move to next page
 
     # Delete documents belonging to the given schema and namespace
-    # sync_app.delete_all_docs(
-    #     schema=schema,
-    #     namespace=namespace,
-    #     content_cluster_name="content"
-    # )
+    sync_app.delete_all_docs(
+        schema=schema,
+        namespace=namespace,
+        content_cluster_name="content"
+    )
