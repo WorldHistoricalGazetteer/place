@@ -289,31 +289,20 @@ def delete_all_docs(sync_app, dataset_config):
         params = {
                 "wantedDocumentCount": 100,
                 "fieldset": "names",
-                "continuation": None
             }
         while True:
-            place_response = sync_app.visit(
+            for document in sync_app.visit(
                 namespace=namespace,
                 schema=schema,
                 params=params,
                 content_cluster_name="content"
-            )
-
-            # Process the retrieved documents
-            for document in place_response.documents:
-
+            ):
                 # Delete related toponyms
                 for name in document.names:
                     delete_related_toponyms(sync_app, name["toponym_id"], document.id.split(":")[-1])
 
                 # Delete related links
                 delete_related_links(sync_app, [document.id.split(":")[-1]])
-
-            # Check for continuation
-            if "continuation" in place_response.json:
-                params["continuation"] = place_response.json["continuation"]
-            else:
-                break
 
     # Delete documents belonging to the given schema and namespace
     sync_app.delete_all_docs(
