@@ -51,11 +51,12 @@ def feed_document(sync_app, namespace, schema, transformed_document):
                 existing_toponym_ids = [doc.get("fields", {}).get("documentid").split("::")[-1] for doc in existing_response.get("root", {}).get("children", [])]
                 for toponym_id in existing_toponym_ids[1:]:
                     logger.info(f"Deleting duplicate toponym: {toponym_id}")
-                    sync_app.delete_data(
+                    delete_response = sync_app.delete_data(
                         namespace="toponym",
                         schema="toponym",
                         data_id=toponym_id
                     )
+                    logger.info(f"Toponym deletion response: {delete_response.json}")
 
             # Extend `places` list
             existing_toponym_fields = existing_response.get("root", {}).get("children", [{}])[0].get("fields", {})
