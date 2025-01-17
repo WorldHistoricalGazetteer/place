@@ -158,19 +158,26 @@ class StreamFetcher:
             self.logger.error(f"Unsupported format type: {format_type}")
             raise ValueError(f"Unsupported format type: {format_type}")
 
-    def _parse_json_stream(self, stream):
+    async def _parse_json_stream(self, stream):
         # Using ijson for efficient JSON parsing from stream
         async for item in asyncio.to_thread(ijson.items, stream, f"{self.item_path}.item"):
             yield item
 
-    def _parse_csv_stream(self, stream):
+    # def _parse_csv_stream(self, stream):
+    #     # Parse CSV from stream
+    #     wrapper = io.TextIOWrapper(stream, encoding='utf-8', errors='replace')
+    #     csv_reader = csv.DictReader(wrapper, delimiter=self.delimiter, fieldnames=self.fieldnames)
+    #     for row in csv_reader:
+    #         yield row
+
+    async def _parse_csv_stream(self, stream):
         # Parse CSV from stream
         wrapper = io.TextIOWrapper(stream, encoding='utf-8', errors='replace')
         csv_reader = csv.DictReader(wrapper, delimiter=self.delimiter, fieldnames=self.fieldnames)
-        for row in csv_reader:
+        for row in await asyncio.to_thread(list, csv_reader):
             yield row
 
-    def _parse_xml_stream(self, stream):
+    async def _parse_xml_stream(self, stream):
         # Parse XML incrementally from stream
         async for event, elem in asyncio.to_thread(xml.etree.ElementTree.iterparse, stream, events=('end',)):
             if elem.tag == 'place':  # Assuming the root element of interest is <place>
@@ -187,10 +194,9 @@ class StreamFetcher:
         subject, predicate, obj = parts
         return subject, predicate, obj
 
-    def _parse_nt_stream(self, stream):
+    async def _parse_nt_stream(self, stream):
         wrapper = io.TextIOWrapper(stream, encoding='utf-8', errors='replace')
-
-        for line in wrapper:
+        for line in await asyncio.to_thread(wrapper.readlines):
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
@@ -198,7 +204,7 @@ class StreamFetcher:
             try:
                 # Split N-Triple line into three components (subject, predicate, object)
                 subject, predicate, obj = self._split_triple(line)
-                if self.filter and not predicate in self.filter:
+                if self.filter and predicate not in self.filter:
                     continue
                 yield {
                     'subject': subject.strip('<>'),
