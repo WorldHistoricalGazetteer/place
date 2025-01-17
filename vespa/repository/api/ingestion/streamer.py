@@ -1,4 +1,5 @@
 # /ingestion/streamer.py
+import asyncio
 import csv
 import gzip
 import io
@@ -159,8 +160,7 @@ class StreamFetcher:
 
     def _parse_json_stream(self, stream):
         # Using ijson for efficient JSON parsing from stream
-        parser = ijson.items(stream, f"{self.item_path}.item")
-        for item in parser:
+        async for item in asyncio.to_thread(ijson.items, stream, f"{self.item_path}.item"):
             yield item
 
     def _parse_csv_stream(self, stream):
@@ -172,8 +172,8 @@ class StreamFetcher:
 
     def _parse_xml_stream(self, stream):
         # Parse XML incrementally from stream
-        for event, elem in xml.etree.ElementTree.iterparse(stream, events=('end',)):
-            if elem.tag == 'place':  # Assuming the root element of interest is <item>
+        async for event, elem in asyncio.to_thread(xml.etree.ElementTree.iterparse, stream, events=('end',)):
+            if elem.tag == 'place':  # Assuming the root element of interest is <place>
                 yield elem
                 elem.clear()  # Free memory
 
