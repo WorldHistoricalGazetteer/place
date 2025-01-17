@@ -63,7 +63,11 @@ spec:
           - mountPath: /code
             subPath: {{ .Values.api.git.sourceFolder }}
             name: repo-volume
+          - mountPath: /data/ingestion_cache
+            name: cache-volume
       volumes:
         - name: repo-volume
+          emptyDir: {}
+        - name: cache-volume
           emptyDir: {}
 
