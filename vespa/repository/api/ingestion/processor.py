@@ -52,13 +52,12 @@ def feed_document(sync_app, namespace, schema, transformed_document):
 
             response = sync_app.feed_data_point(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
+                namespace=namespace,
                 schema=schema,
-                data={
-                    "update": existing_toponym_id,
-                    "fields": {
-                        "places": {
-                            "add": [document_id]
-                        }
+                data_id=existing_toponym_id,
+                fields={
+                    "places": {
+                        "add": [document_id]
                     }
                 }
             )
