@@ -24,6 +24,6 @@ class YearsProcessor:
         )
 
         return {
-            **({"start_year": start_year} if start_year else {}),
-            **({"end_year": end_year} if end_year else {}),
+            **({"year_start": start_year} if start_year else {}),
+            **({"year_end": end_year} if end_year else {}),
         }
