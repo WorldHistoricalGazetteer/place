@@ -49,7 +49,7 @@ def feed_document(sync_app, namespace, schema, transformed_document):
             # If more than one matching toponym exists, delete all but the first
             if existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 1:
                 existing_toponym_ids = [doc.get("fields", {}).get("documentid").split("::")[-1] for doc in existing_response.get("root", {}).get("children", [])]
-                for toponym_id in existing_toponym_ids[1:]:
+                for toponym_id in existing_toponym_ids:
                     logger.info(f"Deleting duplicate toponym: {toponym_id}")
                     delete_response = sync_app.delete_data(
                         namespace="toponym",
