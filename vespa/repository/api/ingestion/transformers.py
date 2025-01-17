@@ -2,7 +2,10 @@
 import json
 import logging
 
-from .subtransformers.Pleiades.names import NamesProcessor as PleiadesNamesProcessor
+from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
+from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
+from .subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
+from .subtransformers.pleiades.years import YearsProcessor as PleiadesYearsProcessor
 from ..gis.intersections import GeometryIntersect
 from ..gis.processor import GeometryProcessor
 from ..utils import get_uuid
@@ -126,11 +129,20 @@ class DocTransformer:
                 {
                     "document_id": (document_id := get_uuid()),
                     "fields": {
+                        **({"record_id": record_id} if (record_id := data.get("id")) else {}),
+                        **({"record_url": f"https://pleiades.stoa.org/places/{record_id}"} if record_id else {}),
                         **({"names": names["names"]} if (
                             names := PleiadesNamesProcessor(document_id, data.get("names")).process()) else {}),
+                        **(type_classes if (  # Map Pleiades place types to GeoNames feature classes and AAT types
+                            type_classes := PleiadesTypesProcessor(data.get("placeTypeURIs")).process()) else {}),
+                        **(geometry_etc if (  # Includes abstracted geometry properties, iso country codes, and array of locations
+                            geometry_etc := PleiadesLocationsProcessor(data.get("locations")).process()) else {}),
+
+                        **(years if (years := PleiadesYearsProcessor(data.get("names"), data.get("locations")).process()) else {}),
                     }
                 },
-                names["toponyms"] if names else []
+                names["toponyms"] if names else [],
+                # TODO: Refactor ingestor to accept links between URLs
             )
         ],
         "Pleiades_DEPRECATED": [  # TODO
