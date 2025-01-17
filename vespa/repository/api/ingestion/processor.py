@@ -37,7 +37,7 @@ def feed_document(sync_app, namespace, schema, transformed_document):
                 for field in bcp47_fields:
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f"and bcp47_{field} matches '^{transformed_document['fields'][f'bcp47_{field}']}$' "
-                yql += "limit 1"
+                # yql += "limit 1"
                 logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
                 logger.info(f"Existing toponym response: {existing_response}")
