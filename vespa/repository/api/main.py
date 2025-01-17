@@ -105,7 +105,7 @@ async def visit_documents(
         JSONResponse: A JSON response with the total document count and the retrieved documents.
     """
     try:
-        results = visit(schema, namespace, limit, slices)
+        results = visit(schema, namespace, limit, slices, delete)
         return JSONResponse(status_code=200, content=results)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
