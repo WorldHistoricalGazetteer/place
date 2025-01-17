@@ -52,7 +52,7 @@ class GeometryIntersect:
             candidates = BoxIntersect(self.bbox, namespace=self.namespace, schema=self.schema,
                                       fields=self.fields).box_intersect()
 
-            logger.info(f"Found {len(candidates)} candidates for intersection: {candidates}")
+            logger.info(f"Found {len(candidates)} candidates for intersection")
             results = set()
             for candidate in candidates:
                 # Loop through each candidate's locations
