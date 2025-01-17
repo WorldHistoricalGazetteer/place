@@ -200,4 +200,3 @@ api:
     port: 8082
     servicePort: 30082
   batchFeedSize: 500
-  ingestionCachePath: "/data/ingestion_cache"

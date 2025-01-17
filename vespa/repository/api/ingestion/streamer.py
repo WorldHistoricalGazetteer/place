@@ -1,22 +1,18 @@
 # /ingestion/streamer.py
 import csv
 import gzip
-import hashlib
 import io
 import logging
 import os
 import tempfile
 import xml.etree.ElementTree
 import zipfile
-from datetime import timedelta, datetime
 
 import ijson
 import requests
 
 from ..utils import is_valid_url
 
-CACHE_DIR = os.getenv('INGESTION_CACHE_PATH')
-CACHE_LIFETIME = timedelta(days=30)  # Files older than 30 days will be refetched
 
 class StreamFetcher:
     """
@@ -71,58 +67,24 @@ class StreamFetcher:
         self.fieldnames = file.get('fieldnames', None)  # Fieldnames for CSV files
         self.delimiter = file.get('delimiter', '\t')  # Delimiter for CSV files
 
-    def ensure_cache_directory(self):
-        """Ensure the cache directory exists."""
-        if not os.path.exists(CACHE_DIR):
-            os.makedirs(CACHE_DIR)
-            self.logger.info(f"Cache directory created: {CACHE_DIR}")
-        else:
-            self.logger.info(f"Cache directory already exists: {CACHE_DIR}")
-
-    def get_cache_path(self):
-        """Generate a unique cache file path based on the URL."""
-        file_hash = hashlib.sha256(self.file_url.encode('utf-8')).hexdigest()
-        return os.path.join(CACHE_DIR, file_hash)
-
-    def is_cache_valid(self, cache_path):
-        """Check if the cache file is still valid (not older than CACHE_LIFETIME)."""
-        if os.path.exists(cache_path):
-            file_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(cache_path))
-            return file_age < CACHE_LIFETIME
-        return False
-
     def get_stream(self):
-        self.ensure_cache_directory()
-        cache_path = self.get_cache_path()
-
-        # Check if a valid cached file exists
-        if self.is_cache_valid(cache_path):
-            self.logger.info(f"Using cached file: {cache_path}")
-            return open(cache_path, 'rb')  # Return the cached file stream
-
-        # If no valid cache, fetch the file and save it
+        # First, validate the URL or file path
         if not is_valid_url(self.file_url) and not os.path.exists(self.file_url):
             self.logger.error(f"Invalid URL or file path: {self.file_url}")
             raise ValueError(f"Invalid URL or file path: {self.file_url}")
 
         self.logger.info(f"Fetching stream for file: {self.file_url}")
         if self.file_url.endswith('.gz'):
-            stream = self._get_gzip_stream()
+            return self._get_gzip_stream()
         elif self.file_url.endswith('.zip'):
-            stream = self._get_zip_stream()
+            return self._get_zip_stream()
         elif is_valid_url(self.file_url):  # Assume it's a regular file
-            stream = self._get_regular_file_stream()
+            return self._get_regular_file_stream()
         elif os.path.exists(self.file_url):
-            stream = self._get_local_file_stream()
+            return self._get_local_file_stream()
         else:
             self.logger.error("Unsupported file format")
             raise ValueError("Unsupported file format")
-
-        # Cache the fetched file
-        with open(cache_path, 'wb') as cache_file:
-            cache_file.write(stream.read())
-
-        return open(cache_path, 'rb')  # Return the cached stream
 
     def _get_gzip_stream(self):
         # Directly stream gzip file from URL
