@@ -2,6 +2,7 @@
 import json
 import logging
 
+from .subtransformers.Pleiades.names import NamesProcessor as PleiadesNamesProcessor
 from ..gis.intersections import GeometryIntersect
 from ..gis.processor import GeometryProcessor
 from ..utils import get_uuid
@@ -120,7 +121,19 @@ class DocTransformer:
                 ]
             )
         ],
-        "Pleiades": [  # TODO
+        "Pleiades": [
+            lambda data: (
+                {
+                    "document_id": (document_id := get_uuid()),
+                    "fields": {
+                        **({"names": names["names"]} if (
+                            names := PleiadesNamesProcessor(document_id, data.get("names")).process()) else {}),
+                    }
+                },
+                names["toponyms"] if names else []
+            )
+        ],
+        "Pleiades_DEPRECATED": [  # TODO
             lambda data: (
                 {
                     "source_id": data.get("id", ""),
