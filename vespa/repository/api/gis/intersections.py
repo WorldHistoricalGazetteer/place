@@ -39,6 +39,7 @@ class GeometryIntersect:
         self.schema = schema or "iso3166"
         self.namespace = namespace or "iso3166"
         self.fields = fields or "meta"
+        logger.info(f"Initialized GeometryIntersect: {self.__dict__}")
 
     def resolve(self) -> list:
         """
@@ -97,6 +98,7 @@ class BoxIntersect:
         self.schema = schema or "iso3166"
         self.namespace = namespace or "iso3166"
         self.fields = fields or "meta"
+        logger.info(f"Initialized BoxIntersect: {self.__dict__}")
 
     def box_intersect(self) -> list:
         """
