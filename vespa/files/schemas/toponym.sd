@@ -54,5 +54,13 @@ schema toponym {
             # Semantic embedding of the toponym.
             indexing: attribute
         }
+
+        ########### Metadata ###########
+
+        field created type long {
+            # Unix timestamp of when the toponym was created.
+            indexing: attribute | summary
+        }
+
     }
 }

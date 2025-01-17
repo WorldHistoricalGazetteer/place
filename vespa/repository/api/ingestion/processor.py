@@ -64,12 +64,14 @@ def feed_document(sync_app, namespace, schema, transformed_document):
             )
         else:
             if schema == 'toponym':
+                # Inject creation timestamp
+                transformed_document['fields']['created'] = int(time.time() * 1000)
                 logger.info(f"Feeding document {namespace}:{schema}::{document_id}: {transformed_document}")
             response = sync_app.feed_data_point(
                 namespace=namespace,
                 schema=schema,
                 data_id=document_id,
-                fields=transformed_document['fields'],
+                fields=transformed_document['fields']
             )
 
         if response.status_code == 200:
