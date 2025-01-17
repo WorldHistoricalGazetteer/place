@@ -41,11 +41,11 @@ def feed_document(sync_app, namespace, schema, transformed_document):
                 logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
                 logger.info(f"Existing toponym response: {existing_response}")
-                toponym_exists = existing_response.get("root", {}).get("totalCount", 0) > 0
+                toponym_exists = existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 0
 
         if toponym_exists:
             # Extend `places` list
-            existing_toponym_id = existing_response.get("root", {}).get("children", [{}])[0].get("id")
+            existing_toponym_id = existing_response.get("root", {}).get("children", [{}])[0].get("id").split(":")[-1]
 
             logger.info(
                 f'Extending places with {document_id} for toponym {existing_toponym_id}: {existing_response.get("root", {}).get("children", [{}])[0]}')
