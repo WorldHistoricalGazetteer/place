@@ -58,12 +58,14 @@ spec:
           value: "http://vespa-query.{{ .Values.namespace }}.svc.cluster.local:8080"
         - name: VESPA_FEED_HOST
           value: "http://vespa-feed.{{ .Values.namespace }}.svc.cluster.local:8080"
+        - name: INGESTION_CACHE_PATH
+          value: "{{ .Values.api.ingestionCachePath }}"
         resources: {{- toYaml .Values.resources.api | nindent 10 }}
         volumeMounts:
           - mountPath: /code
             subPath: {{ .Values.api.git.sourceFolder }}
             name: repo-volume
-          - mountPath: /data/ingestion_cache
+          - mountPath: {{ .Values.api.ingestionCachePath }}
             name: cache-volume
       volumes:
         - name: repo-volume

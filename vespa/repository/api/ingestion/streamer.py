@@ -15,7 +15,7 @@ import requests
 
 from ..utils import is_valid_url
 
-CACHE_DIR = '/data/ingestion_cache'  # Specify the directory where the cache will be stored
+CACHE_DIR = os.getenv('INGESTION_CACHE_PATH')
 CACHE_LIFETIME = timedelta(days=30)  # Files older than 30 days will be refetched
 
 class StreamFetcher:
