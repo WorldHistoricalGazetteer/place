@@ -230,8 +230,17 @@ class TypesProcessor:
         }
 
     def process(self) -> Dict[str, Any]:
-        types = [self.dictionary.get(pt, {}).get("AAT") for pt in self.place_types if pt]
-        classes = [self.dictionary.get(pt, {}).get("GeoNames") for pt in self.place_types if pt]
+
+        types = []
+        classes = []
+        for pt in self.place_types:
+            if pt:  # Check if pt is not None or empty
+                entry = self.dictionary.get(pt)
+                if entry:
+                    for key, target_list in [('AAT', types), ('GeoNames', classes)]:
+                        value = entry.get(key)
+                        if value:
+                            target_list.append(value)
 
         return {
             **({"types": types} if types else {}),

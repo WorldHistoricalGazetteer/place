@@ -142,7 +142,7 @@ class DocTransformer:
                     }
                 },
                 names["toponyms"] if names else [],
-                # TODO: Refactor ingestor to accept links between URLs
+                # TODO: Refactor ingestor to accept links between record URLs
             )
         ],
         "Pleiades_DEPRECATED": [  # TODO
