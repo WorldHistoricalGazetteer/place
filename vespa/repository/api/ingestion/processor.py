@@ -9,7 +9,7 @@ from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
 from ..config import VespaClient, pagination_limit
-from ..utils import get_uuid, task_tracker
+from ..utils import task_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,8 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
-            executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'], transformed_document
+            executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'],
+            transformed_document
         )
         success = response.get("success", False)
 
@@ -137,19 +138,42 @@ async def process_document(document, dataset_config, transformer_index, sync_app
                 "error": str(e)}
 
 
-async def process_documents(documents, dataset_config, transformer_index, sync_app, limit, task_id):
+async def process_documents(stream, dataset_config, transformer_index, sync_app, limit, task_id):
     semaphore = asyncio.Semaphore(5)  # Limit concurrent tasks
+    batch_size = 100  # Number of documents to process at a time
+    results = []  # Collect results from processed documents
 
     async def process_limited(document):
         async with semaphore:
             return await process_document(document, dataset_config, transformer_index, sync_app, task_id)
 
-    tasks = [
-        process_limited(document)
-        for count, document in enumerate(documents)
-        if limit is None or count < limit
-    ]
-    return await asyncio.gather(*tasks)
+    async def process_batch(batch):
+        tasks = [process_limited(document) for document in batch]
+        return await asyncio.gather(*tasks)
+
+    current_batch = []
+    count = 0
+
+    async for document in stream:
+        current_batch.append(document)
+        count += 1
+
+        # Process the batch when it reaches the batch_size or limit
+        if len(current_batch) >= batch_size or (limit is not None and count >= limit):
+            batch_results = await process_batch(current_batch)
+            results.extend(batch_results)  # Collect results
+            current_batch = []
+
+            # Stop processing if the limit is reached
+            if limit is not None and count >= limit:
+                break
+
+    # Process any remaining documents in the last batch
+    if current_batch:
+        batch_results = await process_batch(current_batch)
+        results.extend(batch_results)  # Collect results
+
+    return results  # Return aggregated results
 
 
 async def background_ingestion(dataset_name: str, task_id: str, limit: int = None, delete_only: bool = False) -> None:
@@ -187,8 +211,8 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             for transformer_index, file_config in enumerate(dataset_config['files']):
                 logger.info(f"Fetching items from stream: {file_config['url']}")
                 stream_fetcher = StreamFetcher(file_config)
-                documents = stream_fetcher.get_items()
-                responses = await process_documents(documents, dataset_config, transformer_index, sync_app, limit,
+                stream = stream_fetcher.get_items()
+                responses = await process_documents(stream, dataset_config, transformer_index, sync_app, limit,
                                                     task_id)
                 all_responses.extend(responses)
 
@@ -287,11 +311,11 @@ def delete_all_docs(sync_app, dataset_config):
 
     if schema == "place":
         for slice in sync_app.visit(
-            content_cluster_name="content",
-            namespace=namespace,
-            schema=schema,
-            wantedDocumentCount=100,
-            fieldSet="place:names"
+                content_cluster_name="content",
+                namespace=namespace,
+                schema=schema,
+                wantedDocumentCount=100,
+                fieldSet="place:names"
         ):
             for response in slice:
                 for document in response.documents:
