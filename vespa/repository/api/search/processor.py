@@ -14,6 +14,7 @@ def visit(
         namespace: str,
         limit: int,
         slices: int = 1,
+        delete: bool = False
 ) -> Dict[str, Any]:
     """
     Fetch documents of a specified type from a Vespa instance.
@@ -28,6 +29,7 @@ def visit(
         namespace (str): The Vespa namespace to query.
         limit (int): The maximum number of documents to return. A value of -1 means no limit.
         slices (int): Number of slices for parallel processing. Default is 1.
+        delete (bool): If True, delete existing data. Default is False.
 
     Returns:
         Dict[str, Any]: A dictionary containing:
@@ -38,6 +40,16 @@ def visit(
 
     try:
         with VespaClient.sync_context("feed") as sync_app:
+
+            if delete:
+                logger.info(f"Deleting existing documents from Vespa schema: {schema} on {VespaClient.get_url('feed')}")
+                # Delete documents belonging to the given schema and namespace
+                sync_app.delete_all_docs(
+                    namespace=namespace,
+                    schema=schema,
+                    content_cluster_name="content"
+                )
+
             logger.info(f"Visiting documents from Vespa schema: {schema} on {VespaClient.get_url('feed')}")
 
             all_docs = []
@@ -45,9 +57,9 @@ def visit(
 
             # Use VespaSync.visit to retrieve documents once
             for slice in sync_app.visit(
-                    content_cluster_name="content",
-                    schema=schema,
                     namespace=namespace,
+                    schema=schema,
+                    content_cluster_name="content",
                     slices=slices,
             ):
                 logger.info(f"Slice: {slice}")

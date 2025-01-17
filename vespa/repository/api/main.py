@@ -88,7 +88,8 @@ async def visit_documents(
         schema: str = Query(..., description="The document type to filter by"),
         namespace: str = Query(None, description="The Vespa namespace to query"),
         limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000); use -1 for no limit"),
-        slices: int = Query(1, ge=1, description="The number of slices for parallel processing")
+        slices: int = Query(1, ge=1, description="The number of slices for parallel processing"),
+        delete: bool = Query(False, description="Delete existing data")
 ):
     """
     Endpoint to search for documents of a given type with pagination.
@@ -98,6 +99,7 @@ async def visit_documents(
         namespace (str): The Vespa namespace to query.
         limit (int): The number of documents to retrieve; use -1 for no limit.
         slices (int): The number of slices for parallel processing.
+        delete (bool): If True, delete existing data.
 
     Returns:
         JSONResponse: A JSON response with the total document count and the retrieved documents.
