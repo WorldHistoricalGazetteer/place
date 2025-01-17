@@ -42,6 +42,7 @@ async def get_country_codes(
             "bbox_ne_lng": longitude + 0.01,
         }
         results = GeometryIntersect(geometry=geometry, bbox=bbox).resolve()
+        logger.info(f"Found country codes: {results}")
         country_codes = [
             meta["code2"] for result in results
             if (meta := json.loads(result["meta"]))["code2"] != "-"
