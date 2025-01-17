@@ -44,21 +44,34 @@ def feed_document(sync_app, namespace, schema, transformed_document):
                 toponym_exists = existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 0
 
         if toponym_exists:
+
+            # TODO: REMOVE THIS AFTER FIXING THE DUPLICATE TOPONYM ISSUE
+            # If more than one matching toponym exists, delete all but the first
+            if existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 1:
+                existing_toponym_ids = [doc.get("fields", {}).get("documentid").split("::")[-1] for doc in existing_response.get("root", {}).get("children", [])]
+                for toponym_id in existing_toponym_ids[1:]:
+                    logger.info(f"Deleting duplicate toponym: {toponym_id}")
+                    sync_app.delete_data(
+                        namespace="toponym",
+                        schema="toponym",
+                        data_id=toponym_id
+                    )
+
             # Extend `places` list
             existing_toponym_fields = existing_response.get("root", {}).get("children", [{}])[0].get("fields", {})
             existing_toponym_id = existing_toponym_fields.get("documentid").split("::")[-1]
             existing_places = existing_toponym_fields.get("places", [])
 
             logger.info(
-                f'Extending places with {document_id} for toponym {existing_toponym_id}: {existing_response.get("root", {}).get("children", [{}])[0]}')
+                f'Extending places with {document_id} for toponym {existing_toponym_id}')
 
-            response = sync_app.feed_data_point(
+            response = sync_app.update_data(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
                 namespace=namespace,
                 schema=schema,
                 data_id=existing_toponym_id,
                 fields={
-                    "places": {"add": [document_id]}
+                    "places": existing_places + [document_id]
                 }
             )
         else:
