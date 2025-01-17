@@ -11,6 +11,32 @@ class NamesProcessor:
         """
         self.document_id = document_id
         self.names = names
+        self.output = {
+            'names': [],
+            'toponyms': [],
+        }
+
+    def _process_name(self, toponym: str, toponym_language: str, years: Dict[str, int]) -> None:
+        """
+        Processes a single toponym and updates the output dictionary.
+
+        :param toponym: The name of the toponym (attested or romanized).
+        :param toponym_language: The language of the toponym in BCP 47 format.
+        :param years: A dictionary containing 'year_start' and/or 'year_end'.
+        """
+        toponym_id = get_uuid()
+        self.output['names'].append({
+            'toponym_id': toponym_id,
+            **years,
+        })
+        self.output['toponyms'].append({
+            'document_id': toponym_id,
+            'fields': {
+                'name': toponym,
+                'places': [self.document_id],
+                'bcp47_language': toponym_language,
+            }
+        })
 
     def process(self) -> dict:
         """
@@ -18,13 +44,11 @@ class NamesProcessor:
 
         :return: A dictionary with 'names' and 'toponyms' arrays.
         """
-        names = []
-        toponyms = []
         for name in self.names:
             # Pleiades sometimes has both 'attested' and 'romanized' names: use both if `language` is not "la"
             attested = name.get('attested')
             romanized = name.get('romanized')
-            language = name.get('language')
+            language = name.get('language', 'und')  # Default to 'und' if language is missing
 
             if not attested and not romanized:
                 continue
@@ -36,49 +60,10 @@ class NamesProcessor:
 
             is_latin = language == 'la' or attested == romanized
 
-            def process_name():
-                toponym_id = get_uuid()
-                names.append({
-                    'toponym_id': toponym_id,
-                    **years,
-                })
-                toponyms.append({
-                    'document_id': toponym_id,
-                    'fields': {
-                        'name': attested,
-                        'places': [self.document_id],
-                        **({'bcp47_language': language} if language else {}),
-                    }
-                })
-
             if attested:
-                toponym_id = get_uuid()
-                names.append({
-                    'toponym_id': toponym_id,
-                    **years,
-                })
-                toponyms.append({
-                    'document_id': toponym_id,
-                    'fields': {
-                        'name': attested,
-                        'places': [self.document_id],
-                        **({'bcp47_language': language} if language else {}),
-                    }
-                })
+                self._process_name(attested, language, years)
 
             if not is_latin and romanized:
-                toponym_id = get_uuid()
-                names.append({
-                    'toponym_id': toponym_id,
-                    **years,
-                })
-                toponyms.append({
-                    'document_id': toponym_id,
-                    'fields': {
-                        'name': romanized,
-                        'places': [self.document_id],
-                        'bcp47_language': 'la',
-                    }
-                })
+                self._process_name(romanized, 'la', years)
 
-        return {'names': names, 'toponyms': toponyms}
+        return self.output
