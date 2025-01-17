@@ -71,6 +71,14 @@ class StreamFetcher:
         self.fieldnames = file.get('fieldnames', None)  # Fieldnames for CSV files
         self.delimiter = file.get('delimiter', '\t')  # Delimiter for CSV files
 
+    def ensure_cache_directory(self):
+        """Ensure the cache directory exists."""
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
+            self.logger.info(f"Cache directory created: {CACHE_DIR}")
+        else:
+            self.logger.info(f"Cache directory already exists: {CACHE_DIR}")
+
     def get_cache_path(self):
         """Generate a unique cache file path based on the URL."""
         file_hash = hashlib.sha256(self.file_url.encode('utf-8')).hexdigest()
@@ -84,6 +92,7 @@ class StreamFetcher:
         return False
 
     def get_stream(self):
+        self.ensure_cache_directory()
         cache_path = self.get_cache_path()
 
         # Check if a valid cached file exists
