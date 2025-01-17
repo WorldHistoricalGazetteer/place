@@ -238,19 +238,19 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
             # Delete toponym if only one place is associated
             logger.info(f"Deleting toponym: {toponym_id}")
             response = sync_app.delete_data(
-                namespace="iso3166",
+                namespace="toponym",
                 schema="toponym",
                 data_id=toponym_id
             )
             logger.info(f"Delete response: {response.json}")
         else:
             logger.info(f"Updating toponym: {toponym_id}")
-            response = sync_app.feed_data_point(
+            response = sync_app.update_data(
                 namespace="toponym",
                 schema="toponym",
                 data_id=toponym_id,
                 fields={
-                    "places": {"remove": [place_id]}
+                    "places": [place for place in places if place != place_id]
                 }
             )
             logger.info(f"Update response: {response.json}")
