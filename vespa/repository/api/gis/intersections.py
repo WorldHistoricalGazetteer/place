@@ -116,7 +116,6 @@ class BoxIntersect:
                     namespace=self.namespace,
                     schema=self.schema,
                 ).json
-                logger.info(f"Vespa response: {response}")
                 if "error" in response:
                     raise ValueError(f"Error during Vespa query: {response['error']}")
                 return [child.get("fields", {}) for child in response.get("root", {}).get("children", [])]
