@@ -44,8 +44,8 @@ async def get_country_codes(
         results = GeometryIntersect(geometry=geometry, bbox=bbox).resolve()
         logger.info(f"Found country codes: {results}")
         country_codes = [
-            meta["code2"] for result in results
-            if (meta := json.loads(result["meta"]))["code2"] != "-"
+            meta["ISO_A2"] for result in results
+            if (meta := json.loads(result["meta"]))["ISO_A2"] != "-"
         ]
         return JSONResponse(content={"country_codes": country_codes})
     except Exception as e:
