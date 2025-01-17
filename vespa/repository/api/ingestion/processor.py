@@ -37,27 +37,13 @@ def feed_document(sync_app, namespace, schema, transformed_document):
                 for field in bcp47_fields:
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f"and bcp47_{field} matches '^{transformed_document['fields'][f'bcp47_{field}']}$' "
-                # yql += "limit 1"
+                yql += "limit 1"
                 logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
                 logger.info(f"Existing toponym response: {existing_response}")
                 toponym_exists = existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 0
 
         if toponym_exists:
-
-            # TODO: REMOVE THIS AFTER FIXING THE DUPLICATE TOPONYM ISSUE
-            # If more than one matching toponym exists, delete all but the first
-            if existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 1:
-                existing_toponym_ids = [doc.get("fields", {}).get("documentid").split("::")[-1] for doc in existing_response.get("root", {}).get("children", [])]
-                for toponym_id in existing_toponym_ids:
-                    logger.info(f"Deleting duplicate toponym: {toponym_id}")
-                    delete_response = sync_app.delete_data(
-                        namespace="toponym",
-                        schema="toponym",
-                        data_id=toponym_id
-                    )
-                    logger.info(f"Toponym deletion response: {delete_response.json}")
-
             # Extend `places` list
             existing_toponym_fields = existing_response.get("root", {}).get("children", [{}])[0].get("fields", {})
             existing_toponym_id = existing_toponym_fields.get("documentid").split("::")[-1]
