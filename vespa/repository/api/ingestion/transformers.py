@@ -61,29 +61,38 @@ class DocTransformer:
     """
 
     transformers = {
-        "LPF": [  # Linked Places Format: default transformer
+        "LPF": [  # Linked Places Format: default transformer for extended GeoJSON Feature
             lambda data: (
-                {  # NPR (Normalised Place Record)
-                    # "item_id": ,
-                    # "primary_name": ,
-                    # Add a `values` parameter to the GeometryProcessor to limit the extracted geometry fields
-                    # TODO: Convert any geometry `when` to start and end before sending for processing
-                    **(processed_geometry if (
-                        processed_geometry := GeometryProcessor(data.get("geometry")).process()) else {}),
-                    # "feature_classes": ,
-                    "lpf_feature": data,
+                {  # Feature and Locations
+                    "document_id": (document_id := get_uuid()),
+                    "fields": {
+                        "names": [
+                            # TODO: Code a general ToponymProcessor to produce names and attestations
+                            {"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018,
+                             "is_preferred": 1},
+                        ],
+                        **(geometry_etc if (  # Includes abstracted geometry properties and array of locations
+                            geometry_etc := GeometryProcessor(data.get("geometry")).process()) else {}),
+                        "lpf_feature": json.dumps(data),
+                    }
                 },
-                [  # Attestations and Toponyms
+                [  # Attestations and Toponyms # TODO
+                    {
+                        "document_id": toponym_id,
+                        "fields": {
+                        }
+                    }
                 ]
             )
         ],
-        "ISO3166": [ # Uses `place` schema
+        "ISO3166": [
             lambda data: (
                 {
                     "document_id": (document_id := get_uuid()),
                     "fields": {
                         "names": [
-                            {"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018, "is_preferred": 1},
+                            {"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018,
+                             "is_preferred": 1},
                         ],
                         "meta": json.dumps({
                             "ISO_A2": data.get("properties", {}).get("ISO_A2"),
@@ -91,11 +100,12 @@ class DocTransformer:
                         **(geometry_etc if (
                             geometry_etc := GeometryProcessor(data.get("geometry"),
                                                               values=["bbox", "geometry"]).process()) else {}),
-                        "year_start": 2018, # Boundaries last updated: see https://github.com/datasets/geo-countries/tree/main/data
+                        "year_start": 2018,
+                        # Boundaries last updated: see https://github.com/datasets/geo-countries/tree/main/data
                         "year_end": 2018,
                         "ccodes": data.get("code2"),
                         "classes": ["A"],
-                        "types": ["300232420"], # https://vocab.getty.edu/aat/300232420 'sovereign states'
+                        "types": ["300232420"],  # https://vocab.getty.edu/aat/300232420 'sovereign states'
                     }
                 },
                 [
@@ -110,7 +120,7 @@ class DocTransformer:
                 ]
             )
         ],
-        "Pleiades": [
+        "Pleiades": [  # TODO
             lambda data: (
                 {
                     "source_id": data.get("id", ""),
@@ -132,7 +142,7 @@ class DocTransformer:
                     "lpf_feature": {},  # TODO: Build LPF feature
                 },
                 [
-                    { # TODO: Merge with other toponyms if present there, but with "is_preferred": True
+                    {  # TODO: Merge with other toponyms if present there, but with "is_preferred": True
                         "toponym": data.get("title", ""),  # Add root title as toponym
                         "language": "",  # Language unknown for root title
                         # TODO: No time data for root toponym, but could be inferred from other attributes?
@@ -141,7 +151,8 @@ class DocTransformer:
                     {
                         "toponym": name.get("attested") or name.get("romanized", ""),
                         "language": name.get("language", ""),  # TODO: Use BCP 47 language tags
-                        "is_romanised": not name.get("attested"), # TODO: Use "bcp47_script": "Latn" for romanised toponyms
+                        "is_romanised": not name.get("attested"),
+                        # TODO: Use "bcp47_script": "Latn" for romanised toponyms
                         "start": name.get("start", None),
                         "end": name.get("end", None),
                     }
@@ -149,7 +160,7 @@ class DocTransformer:
                 ]
             )
         ],
-        "GeoNames": [
+        "GeoNames": [  # TODO
             lambda data: (  # Transform the primary record
                 {
                     "item_id": data.get("geonameid", ""),
@@ -191,7 +202,7 @@ class DocTransformer:
                 else None
             )
         ],
-        "TGN": [
+        "TGN": [  # TODO
             lambda data: (
                 {  # Subjects
                     "item_id": int(data.get("subject", "").split('/')[-1]),
@@ -251,7 +262,7 @@ class DocTransformer:
                 None
             ),
         ],
-        "Wikidata": [
+        "Wikidata": [  # TODO
             lambda data: (
                 {
                 },
@@ -259,7 +270,7 @@ class DocTransformer:
                 ]
             )
         ],
-        "OSM": [
+        "OSM": [  # TODO
             lambda data: (
                 {
                 },
@@ -267,7 +278,7 @@ class DocTransformer:
                 ]
             )
         ],
-        "LOC": [
+        "LOC": [  # TODO
             lambda data: (
                 {
                 },
@@ -275,7 +286,7 @@ class DocTransformer:
                 ]
             )
         ],
-        "GB1900": [
+        "GB1900": [  # TODO
             lambda data: (
                 {
                 },
@@ -283,21 +294,7 @@ class DocTransformer:
                 ]
             )
         ],
-        "ISO3166_DEPRECATED": [
-            lambda data: (
-                {
-                    **(geometry_etc if (
-                        geometry_etc := GeometryProcessor(data.get("geometry"),
-                                                          values=["bbox", "geometry"]).process()) else {}),
-                    **({"name": name} if (name := data.get("properties", {}).get("ADMIN", None)) else {}),
-                    **({"code2": code2} if (code2 := data.get("properties", {}).get("ISO_A2", None)) else {}),
-                    **({"code3": code3} if (code3 := data.get("properties", {}).get("ISO_A3", None)) else {}),
-                },
-                [
-                ]
-            )
-        ],
-        "Terrarium": [
+        "Terrarium": [  # GeoJSON detailing sources of DEM data
             lambda data: (
                 {
                     "document_id": get_uuid(),
@@ -321,7 +318,7 @@ class DocTransformer:
     }
 
     @staticmethod
-    def transform(data, dataset_name, transformer_index=0, id_field=None):
+    def transform(data, dataset_name, transformer_index=0):
         transformer = DocTransformer.transformers.get(dataset_name)[transformer_index]
         if not transformer:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
