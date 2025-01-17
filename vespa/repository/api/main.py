@@ -49,7 +49,7 @@ async def get_country_codes(
         return JSONResponse(content={"country_codes": country_codes})
     except Exception as e:
         logger.error(f"Error in /iso3166: {e}", exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Failed to fetch country codes: {e}"})
+        return JSONResponse(status_code=500, content={"error": f"Failed to fetch country codes: {e}"})
 
 
 @app.get("/terrarium/{latitude}/{longitude}")
