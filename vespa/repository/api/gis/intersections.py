@@ -23,7 +23,7 @@ class GeometryIntersect:
         Args:
             geometry (dict): The GeoJSON geometry to check against.
             bbox (dict): A bounding box dictionary with keys "bbox_sw_lat", "bbox_sw_lng", "bbox_ne_lat", "bbox_ne_lng", and "bbox_antimeridial".
-            schema (str, optional): Vespa schema to query. Defaults to "iso3166".
+            schema (str, optional): Vespa schema to query. Defaults to "place".
             fields (str, optional): Comma-separated list of fields to query. Defaults to "code2".
         """
 
@@ -36,7 +36,7 @@ class GeometryIntersect:
         # Derive bounding box if not provided
         self.bbox = bbox or (vespa_bbox(self.geom) if self.geom else None)
         self.vespa_client = VespaClient()
-        self.schema = schema or "iso3166"
+        self.schema = schema or "place"
         self.namespace = namespace or "iso3166"
         self.fields = fields or "meta"
         logger.info(f"Initialized GeometryIntersect: {self.__dict__}")
@@ -87,15 +87,15 @@ class BoxIntersect:
             min_lat (float): Minimum latitude of the bounding box.
             max_lng (float): Maximum longitude of the bounding box.
             max_lat (float): Maximum latitude of the bounding box.
-            schema (str, optional): Vespa schema to query. Defaults to "iso3166".
-            fields (str, optional): Fields to query. Defaults to "code2".
+            schema (str, optional): Vespa schema to query. Defaults to "place".
+            fields (str, optional): Fields to query. Defaults to "meta".
         """
         self.sw_lng = bbox.get("bbox_sw_lng", -180)
         self.sw_lat = bbox.get("bbox_sw_lat", -90)
         self.ne_lng = bbox.get("bbox_ne_lng", 180)
         self.ne_lat = bbox.get("bbox_ne_lat", 90)
         self.antimeridial = bbox.get("bbox_antimeridial", False)
-        self.schema = schema or "iso3166"
+        self.schema = schema or "place"
         self.namespace = namespace or "iso3166"
         self.fields = fields or "meta"
         logger.info(f"Initialized BoxIntersect: {self.__dict__}")
@@ -114,7 +114,7 @@ class BoxIntersect:
                 response = sync_app.query(
                     query,
                     namespace=self.namespace,
-                    # schema=self.schema,
+                    schema=self.schema,
                 ).json
                 if "error" in response:
                     raise ValueError(f"Error during Vespa query: {response['error']}")
