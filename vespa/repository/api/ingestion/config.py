@@ -12,7 +12,7 @@ REMOTE_DATASET_CONFIGS = [
             {
                 'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',
                 'file_type': 'json',
-                'item_path': '@graph.item',
+                'item_path': '@graph',
             }
         ],
     },
@@ -135,20 +135,6 @@ REMOTE_DATASET_CONFIGS = [
             {
                 'url': 'https://github.com/docuracy/IndexVillaris1680/raw/refs/heads/main/docs/data/IV-GB1900-OSM-WD.lp.json',
                 'file_type': 'json',
-            }
-        ],
-    },
-    { # ISO Countries DEPRECATED
-        'dataset_name': 'ISO3166_DEPRECATED',
-        'namespace': 'iso3166_DEPRECATED',
-        'vespa_schema': 'iso3166_DEPRECATED',
-        'api_item': '',
-        'citation': 'Natural Earth Data. Public domain. https://www.naturalearthdata.com/',
-        'files': [
-            {
-                'url': 'https://datahub.io/core/geo-countries/_r/-/data/countries.geojson',
-                'file_type': 'json',
-                'item_path': 'features',
             }
         ],
     },
