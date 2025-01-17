@@ -16,17 +16,27 @@ logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor(max_workers=10)
 
 
-def feed_document(sync_app, namespace, schema, document_id, transformed_document):
+def feed_document(sync_app, namespace, schema, transformed_document):
+    document_id = transformed_document.get("document_id")
+    if not document_id:
+        logger.error(f"Document ID not found: {transformed_document}")
+        return {
+            "success": False,
+            "namespace": namespace,
+            "schema": schema,
+            "document_id": document_id,
+            "error": "Document ID not found in transformed document"
+        }
     try:
         toponym_exists = False
         if schema == 'toponym':
             # Check if toponym already exists
             with VespaClient.sync_context("feed") as sync_app:
                 bcp47_fields = ["language", "script", "region", "variant"]
-                yql = f"select * from toponym where name matches '^{transformed_document['name']}$' "
+                yql = f"select * from toponym where name matches '^{transformed_document['fields']['name']}$' "
                 for field in bcp47_fields:
-                    if transformed_document.get(f"bcp47_{field}"):
-                        yql += f"and bcp47_{field} matches '^{transformed_document[f'bcp47_{field}']}$' "
+                    if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
+                        yql += f"and bcp47_{field} matches '^{transformed_document['fields'][f'bcp47_{field}']}$' "
                 yql += "limit 1"
                 logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
@@ -59,7 +69,7 @@ def feed_document(sync_app, namespace, schema, document_id, transformed_document
                 namespace=namespace,
                 schema=schema,
                 data_id=document_id,
-                fields=transformed_document,
+                fields=transformed_document['fields'],
             )
 
         if response.status_code == 200:
@@ -90,7 +100,6 @@ def feed_document(sync_app, namespace, schema, document_id, transformed_document
 async def process_document(document, dataset_config, transformer_index, sync_app, task_id):
     transformed_document, toponyms = DocTransformer.transform(document, dataset_config['dataset_name'],
                                                               transformer_index)
-    document_id = transformed_document.get(dataset_config['files'][transformer_index]['id_field']) or get_uuid()
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
@@ -98,8 +107,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
-            executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'], document_id,
-            transformed_document
+            executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'], transformed_document
         )
         success = response.get("success", False)
 
@@ -290,6 +298,7 @@ def delete_all_docs(sync_app, dataset_config):
                 for document in response.documents:
                     logger.info(f"Document: {document}")
                     document_id = document["id"].split(":")[-1]
+
                     # Delete related toponyms
                     for name in document["fields"]["names"]:
                         delete_related_toponyms(sync_app, name["toponym_id"], document_id)

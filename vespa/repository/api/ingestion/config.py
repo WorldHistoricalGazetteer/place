@@ -149,7 +149,6 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'https://datahub.io/core/geo-countries/_r/-/data/countries.geojson',
                 'file_type': 'json',
                 'item_path': 'features',
-                'id_field': None, # Code2 is not unique, as it has multiple "-" values
             }
         ],
     },
@@ -164,7 +163,6 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'https://datahub.io/core/geo-countries/_r/-/data/countries.geojson',
                 'file_type': 'json',
                 'item_path': 'features',
-                'id_field': 'record_id', # Code2 is not unique, as it has multiple "-" values
             }
         ],
     },
@@ -179,7 +177,6 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'https://s3.amazonaws.com/elevation-tiles-prod/docs/footprints.geojson.gz',
                 'file_type': 'json',
                 'item_path': 'features',
-                'id_field': None,
             }
         ],
     },

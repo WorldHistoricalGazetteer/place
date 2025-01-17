@@ -80,28 +80,32 @@ class DocTransformer:
         "ISO3166": [ # Uses `place` schema
             lambda data: (
                 {
-                    "record_id": (document_id := get_uuid()),
-                    "names": [
-                        {"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018, "is_preferred": 1},
-                    ],
-                    "meta": json.dumps({
-                        "ISO_A2": data.get("properties", {}).get("ISO_A2"),
-                    }),
-                    **(geometry_etc if (
-                        geometry_etc := GeometryProcessor(data.get("geometry"),
-                                                          values=["bbox", "geometry"]).process()) else {}),
-                    "year_start": 2018, # Boundaries last updated: see https://github.com/datasets/geo-countries/tree/main/data
-                    "year_end": 2018,
-                    "ccodes": data.get("code2"),
-                    "classes": ["A"],
-                    "types": ["300232420"], # https://vocab.getty.edu/aat/300232420 'sovereign states'
+                    "document_id": (document_id := get_uuid()),
+                    "fields": {
+                        "names": [
+                            {"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018, "is_preferred": 1},
+                        ],
+                        "meta": json.dumps({
+                            "ISO_A2": data.get("properties", {}).get("ISO_A2"),
+                        }),
+                        **(geometry_etc if (
+                            geometry_etc := GeometryProcessor(data.get("geometry"),
+                                                              values=["bbox", "geometry"]).process()) else {}),
+                        "year_start": 2018, # Boundaries last updated: see https://github.com/datasets/geo-countries/tree/main/data
+                        "year_end": 2018,
+                        "ccodes": data.get("code2"),
+                        "classes": ["A"],
+                        "types": ["300232420"], # https://vocab.getty.edu/aat/300232420 'sovereign states'
+                    }
                 },
                 [
                     {
-                        "record_id": toponym_id,
-                        "name": data.get("properties", {}).get("ADMIN"),
-                        "places": [document_id],
-                        "bcp47_language": "en",
+                        "document_id": toponym_id,
+                        "fields": {
+                            "name": data.get("properties", {}).get("ADMIN"),
+                            "places": [document_id],
+                            "bcp47_language": "en",
+                        }
                     }
                 ]
             )
@@ -314,7 +318,7 @@ class DocTransformer:
     }
 
     @staticmethod
-    def transform(data, dataset_name, transformer_index=0):
+    def transform(data, dataset_name, transformer_index=0, id_field=None):
         transformer = DocTransformer.transformers.get(dataset_name)[transformer_index]
         if not transformer:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
