@@ -18,11 +18,9 @@ class LocationsProcessor:
             "type": "GeometryCollection",
             "geometries": [
                 {
-                    "geometry": {
-                        **location["geometry"],
-                        "start": location.get("start"),
-                        "end": location.get("end"),
-                    },
+                    **location["geometry"],
+                    "start": location.get("start"),
+                    "end": location.get("end"),
                 }
                 for location in self.locations
             ],
