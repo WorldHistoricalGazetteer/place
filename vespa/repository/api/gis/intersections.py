@@ -39,7 +39,7 @@ class GeometryIntersect:
         self.schema = schema or "place"
         self.namespace = namespace or "iso3166"
         self.fields = fields or "meta"
-        logger.info(f"Initialized GeometryIntersect: {self.__dict__}")
+        # logger.info(f"Initialized GeometryIntersect: {self.__dict__}")
 
     def resolve(self) -> list:
         """
@@ -52,7 +52,7 @@ class GeometryIntersect:
             candidates = BoxIntersect(self.bbox, namespace=self.namespace, schema=self.schema,
                                       fields=self.fields).box_intersect()
 
-            logger.info(f"Found {len(candidates)} candidates for intersection")
+            # logger.info(f"Found {len(candidates)} candidates for intersection")
             results = set()
             for candidate in candidates:
                 # Loop through each candidate's locations
@@ -98,7 +98,7 @@ class BoxIntersect:
         self.schema = schema or "place"
         self.namespace = namespace or "iso3166"
         self.fields = fields or "meta"
-        logger.info(f"Initialized BoxIntersect: {self.__dict__}")
+        # logger.info(f"Initialized BoxIntersect: {self.__dict__}")
 
     def box_intersect(self) -> list:
         """
@@ -110,7 +110,7 @@ class BoxIntersect:
         try:
             with VespaClient.sync_context("feed") as sync_app:
                 query = self._generate_bounding_box_query()
-                logger.info(f"Performing Vespa query: {query}")
+                # logger.info(f"Performing Vespa query: {query}")
                 response = sync_app.query(
                     query,
                     namespace=self.namespace,

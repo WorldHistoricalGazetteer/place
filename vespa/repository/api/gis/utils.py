@@ -50,7 +50,7 @@ def get_valid_geom(geometry) -> tuple:
         dict: A dictionary containing the GeoJSON geometry object if the input is valid, None otherwise.
     """
 
-    logger.info(f"Converting geometry: {geometry}")
+    # logger.info(f"Converting geometry: {geometry}")
 
     if not (geometry_type := geometry.get('type')) or (
             geometry_type != 'GeometryCollection' and 'coordinates' not in geometry
@@ -61,7 +61,7 @@ def get_valid_geom(geometry) -> tuple:
         if geometry.get('type') == 'GeometryCollection':
             geometries = geometry.get('geometries', []) # Prevent KeyError if 'geometries' is missing
             geometry_tuples = [get_valid_geom(g) for g in geometries]
-            logger.info(f"geometry_tuples: {geometry_tuples}")
+            # logger.info(f"geometry_tuples: {geometry_tuples}")
             if all(g[0] for g in geometry_tuples) and all(g[1] for g in geometry_tuples):
                 return shape(geometry), {'type': 'GeometryCollection', 'geometries': [g[1] for g in geometry_tuples]}
             logger.warning("Invalid geometry collection.")
