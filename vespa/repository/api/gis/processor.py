@@ -57,7 +57,7 @@ class GeometryProcessor:
             if (meta := json.loads(result["meta"]))["ISO_A2"] != "-"
         ] or {}
         representative_point = (
-            {"lat": (rp := self.geom.representative_point()).y, "lon": rp.x}
+            {"lat": (rp := self.geom.representative_point()).y, "lng": rp.x}
             if "representative_point" in self.values
             else None
         )
