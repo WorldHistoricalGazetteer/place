@@ -1,7 +1,9 @@
+import logging
 from typing import List, Dict, Any
 
 from ....utils import get_uuid
 
+logger = logging.getLogger(__name__)
 
 class NamesProcessor:
     def __init__(self, document_id: str, names: List[Dict[str, Any]]):
@@ -9,6 +11,7 @@ class NamesProcessor:
         :param document_id: The unique ID of the document (place).
         :param names: List of name dictionaries containing (inter alia) 'attested', 'romanized', 'language', 'start', and 'end'.
         """
+        logger.info(f"Formatting names {names}")
         self.document_id = document_id
         self.names = names
         self.output = {
