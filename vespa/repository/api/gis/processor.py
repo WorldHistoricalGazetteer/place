@@ -56,7 +56,11 @@ class GeometryProcessor:
             meta["ISO_A2"] for result in iso_results
             if (meta := json.loads(result["meta"]))["ISO_A2"] != "-"
         ] or {}
-        representative_point = self.geom.representative_point() if "representative_point" in self.values else None
+        representative_point = (
+            {"lat": (rp := self.geom.representative_point()).y, "lon": rp.x}
+            if "representative_point" in self.values
+            else None
+        )
 
         # Group geometries by matching temporal attributes (start and end)
         if self.geometry["type"] == "GeometryCollection":
