@@ -344,7 +344,7 @@ def delete_related_links(sync_app, place_id):
             "yql": link_query,
             "offset": links_start
         }
-        # logger.info(f"Paginated link query: {link_query_paginated}")
+        logger.info(f"Paginated link query: {link_query_paginated}")
         links_response = sync_app.query(link_query_paginated).json
         links = links_response.get("root", {}).get("children", [])
 
