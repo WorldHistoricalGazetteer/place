@@ -96,6 +96,11 @@ class LinksProcessor:
         self.document_id = document_id
         self.record_id = record_id
         self.place_links = place_links
+        self.certainty_map = {
+            "certain": 1.0,
+            "less-certain": 0.667,
+            "uncertain": 0.333,
+        }
         logger.info(f"Processing Pleiades place links: {place_links}")
 
     def process(self) -> List[Dict[str, Any]]:
@@ -110,7 +115,7 @@ class LinksProcessor:
                 "object": f"pleiades:{link.get('connectsTo')}",
                 **({"year_start": link.get("start")} if "start" in link else {}),
                 **({"year_end": link.get("end")} if "end" in link else {}),
-                **({"confidence": link.get("associationCertainty")} if "associationCertainty" in link else {}),
+                **({"confidence": self.certainty_map.get(link.get("associationCertainty"))} if "associationCertainty" in link else {}),
                 **({"notes": link.get("description")} if "description" in link else {}),
             })
 
