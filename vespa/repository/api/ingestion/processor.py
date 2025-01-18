@@ -47,7 +47,7 @@ def feed_link(sync_app, link):
         }
 
 
-def feed_document(sync_app, namespace, schema, transformed_document, task_id):
+def feed_document(sync_app, namespace, schema, transformed_document, task_id, count):
     document_id = transformed_document.get("document_id")
     if not document_id:
         logger.error(f"Document ID not found: {transformed_document}")
@@ -118,7 +118,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id):
                     'content-type') == 'application/json' else response.text
             }
     except Exception as e:
-        task_tracker.update_task(task_id, {"error": str(e)})
+        task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
         logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
@@ -140,13 +140,13 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     try:
         response = await asyncio.get_event_loop().run_in_executor(
             executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'],
-            transformed_document, task_id
+            transformed_document, task_id, count
         )
         success = response.get("success", False)
 
         if success and toponyms:
             toponym_responses = await asyncio.gather(*[
-                asyncio.to_thread(feed_document, sync_app, 'toponym', 'toponym', toponym, task_id)
+                asyncio.to_thread(feed_document, sync_app, 'toponym', 'toponym', toponym, task_id, count)
                 for toponym in toponyms
             ])
 
@@ -181,7 +181,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         })
         return response
     except Exception as e:
-        task_tracker.update_task(task_id, {"processed": 1, "failure": 1, "error": str(e)})
+        task_tracker.update_task(task_id, {"processed": 1, "failure": 1, "error": f"#{count}: {str(e)}"})
         return {"success": False,
                 "document": f"{dataset_config['namespace']}:{dataset_config['vespa_schema']}:{document}",
                 "error": str(e)}
