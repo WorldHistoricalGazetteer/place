@@ -1,6 +1,9 @@
+import logging
 from typing import List, Dict, Any
 
 from ....gis.processor import GeometryProcessor
+
+logger = logging.getLogger(__name__)
 
 
 class LocationsProcessor:
@@ -14,6 +17,9 @@ class LocationsProcessor:
         """
         Processes the locations to generate a GeometryCollection with start and end years for each geometry.
         """
+
+        logger.info(f"Processing Pleiades locations: {self.locations}")
+
         geometry = {
             "type": "GeometryCollection",
             "geometries": [
