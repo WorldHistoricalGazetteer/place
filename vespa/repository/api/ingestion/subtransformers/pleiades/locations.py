@@ -29,6 +29,7 @@ class LocationsProcessor:
                     "end": location.get("end"),
                 }
                 for location in self.locations
+                if location.get("geometry") and isinstance(location["geometry"], dict)
             ],
         }
 
