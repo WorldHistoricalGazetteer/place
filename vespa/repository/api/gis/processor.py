@@ -107,5 +107,5 @@ class GeometryProcessor:
             **({"locations": locations} if locations else {}),
             **({"ccodes": iso_codes} if iso_codes else {}),
             **({"length": longest_length} if longest_length else {}),  # Omitted if zero or None
-            **({"representative_point": to_geojson(representative_point)} if representative_point else {}),
+            **({"representative_point": representative_point} if representative_point else {}), # Stored not as GeoJSON but as Vespa `position` type
         }

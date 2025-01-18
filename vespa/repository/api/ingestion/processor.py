@@ -104,7 +104,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    # logger.info(f"Feeding document: {document_id}: {transformed_document}")
+    # logger.info(f"Feeding document: {document}: {transformed_document}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -134,7 +134,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     except Exception as e:
         task_tracker.update_task(task_id, {"processed": 1, "failure": 1})
         return {"success": False,
-                "document": f"{dataset_config['namespace']}:{dataset_config['vespa_schema']}:{document_id}",
+                "document": f"{dataset_config['namespace']}:{dataset_config['vespa_schema']}:{document}",
                 "error": str(e)}
 
 
