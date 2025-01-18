@@ -1,4 +1,7 @@
+import logging
 from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 
 class TypesProcessor:
@@ -7,6 +10,7 @@ class TypesProcessor:
         :param place_types: List of Pleiades place types (see https://pleiades.stoa.org/vocabularies/place-types).
         """
         self.place_types = place_types
+        logger.info(f"Processing Pleiades place types: {place_types}")
 
         self.dictionary = {
             "https://pleiades.stoa.org/vocabularies/place-types/abbey": {'AAT': '"300000642"', 'GeoNames': None},
@@ -241,6 +245,9 @@ class TypesProcessor:
                         value = entry.get(key)
                         if value:
                             target_list.append(value)
+
+        logger.info(f"Found AAT types: {types}")
+        logger.info(f"Found GeoNames classes: {classes}")
 
         return {
             **({"types": types} if types else {}),
