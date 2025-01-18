@@ -64,10 +64,10 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
             # Check if toponym already exists
             with VespaClient.sync_context("feed") as sync_app:
                 bcp47_fields = ["language", "script", "region", "variant"]
-                yql = f'select documentid, places from toponym where name matches "^{re.escape(transformed_document["fields"]["name"])}$" '
+                yql = f'select documentid, places from toponym where name matches "^{transformed_document["fields"]["name"]}$" '
                 for field in bcp47_fields:
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
-                        yql += f'and bcp47_{field} matches "^{re.escape(transformed_document["fields"][f"bcp47_{field}"])}$" '
+                        yql += f'and bcp47_{field} matches "^{transformed_document["fields"][f"bcp47_{field}"]}$" '
                 yql += 'limit 1'
                 # logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
@@ -118,7 +118,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     'content-type') == 'application/json' else response.text
             }
     except Exception as e:
-        task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
+        task_tracker.update_task(task_id, {"error": f"#{count}: yql: >>>{yql}<<< {str(e)}"})
         logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
@@ -344,7 +344,7 @@ def delete_related_links(sync_app, place_id):
             "yql": link_query,
             "offset": links_start
         }
-        logger.info(f"Paginated link query: {link_query_paginated}")
+        # logger.info(f"Paginated link query: {link_query_paginated}")
         links_response = sync_app.query(link_query_paginated).json
         links = links_response.get("root", {}).get("children", [])
 
