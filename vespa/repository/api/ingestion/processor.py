@@ -183,10 +183,14 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     semaphore = asyncio.Semaphore(5)  # Limit concurrent tasks
     batch_size = 100  # Number of documents to process at a time
     results = []  # Collect results from processed documents
+    counter = 1
 
     async def process_limited(document):
+        nonlocal counter
         async with semaphore:
-            return await process_document(document, dataset_config, transformer_index, sync_app, task_id, count)
+            result = await process_document(document, dataset_config, transformer_index, sync_app, task_id, counter)
+            counter += 1
+            return result
 
     async def process_batch(batch):
         tasks = [process_limited(document) for document in batch]
