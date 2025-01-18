@@ -117,7 +117,7 @@ def feed_document(sync_app, namespace, schema, transformed_document):
                     'content-type') == 'application/json' else response.text
             }
     except Exception as e:
-        logger.error(f"Error feeding document: {document_id}, Error: {str(e)}", exc_info=True)
+        logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
             "namespace": namespace,
@@ -133,7 +133,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
+    # logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
