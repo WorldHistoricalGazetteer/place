@@ -50,9 +50,12 @@ class GeometryProcessor:
 
         bbox = vespa_bbox(self.geom) if "bbox" in self.values or "ccodes" in self.values else {}
         convex_hull = self.geom.convex_hull if "convex_hull" in self.values else None
-        iso_codes = GeometryIntersect(geom=self.geom, bbox=bbox).resolve() if "ccodes" in self.values and bbox else {}
+        iso_results = GeometryIntersect(geom=self.geom, bbox=bbox).resolve() if "ccodes" in self.values and bbox else {}
         # Remove "-" from the list of ISO codes if present
-        iso_codes = [code['code2'] for code in iso_codes if not code['code2'] == "-"] or {} if iso_codes else {}
+        iso_codes = [
+            meta["ISO_A2"] for result in iso_results
+            if (meta := json.loads(result["meta"]))["ISO_A2"] != "-"
+        ] or {}
         representative_point = self.geom.representative_point() if "representative_point" in self.values else None
 
         # Group geometries by matching temporal attributes (start and end)
