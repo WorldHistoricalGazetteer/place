@@ -18,7 +18,7 @@ class LocationsProcessor:
         Processes the locations to generate a GeometryCollection with start and end years for each geometry.
         """
 
-        logger.info(f"Processing Pleiades locations: {self.locations}")
+        # logger.info(f"Processing Pleiades locations: {self.locations}")
 
         geometry = {
             "type": "GeometryCollection",
