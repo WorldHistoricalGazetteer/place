@@ -306,7 +306,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
             namespace="toponym",
             schema="toponym",
             data_id=toponym_id,
-            raise_on_not_found=True
+            # raise_on_not_found=True # TODO: Uncomment and figure out why toponyms are not found
         ).json
         # logger.info(f"Toponym response: {toponym_response}")
         places = toponym_response.get("fields", {}).get("places", [])
