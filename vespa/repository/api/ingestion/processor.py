@@ -296,9 +296,9 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
     """Delete or update toponyms related to place IDs."""
     try:
         toponym_response = sync_app.get_data(
-            data_id=toponym_id,
             namespace="toponym",
             schema="toponym",
+            data_id=toponym_id,
             raise_on_not_found=True
         ).json
         # logger.info(f"Toponym response: {toponym_response}")
