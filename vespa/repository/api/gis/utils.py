@@ -52,8 +52,10 @@ def get_valid_geom(geometry) -> tuple:
 
     logger.info(f"Converting geometry: {geometry}")
 
-    if not geometry or 'type' not in geometry or ('coordinates' not in geometry and not geometry['type'] == 'GeometryCollection'):
-        logger.warning("Invalid geometry: missing type or coordinates.")
+    if not (geometry_type := geometry.get('type')) or (
+            geometry_type != 'GeometryCollection' and 'coordinates' not in geometry
+    ):
+        logger.warning("Invalid geometry: missing 'type' or 'coordinates'.")
         return None, None
     try:
         if geometry.get('type') == 'GeometryCollection':
