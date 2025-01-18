@@ -12,15 +12,13 @@ class YearsProcessor:
 
     def process(self) -> dict:
         start_year = min(
-            item["start"]
-            for item in self.names + self.locations
-            if "start" in item
+            (item["start"] for item in self.names + self.locations if "start" in item and item["start"] is not None),
+            default=None
         )
 
         end_year = max(
-            item["end"]
-            for item in self.names + self.locations
-            if "end" in item
+            (item["end"] for item in self.names + self.locations if "end" in item and item["end"] is not None),
+            default=None
         )
 
         return {
