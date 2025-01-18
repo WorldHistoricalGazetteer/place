@@ -46,7 +46,7 @@ def feed_link(sync_app, link):
         }
 
 
-def feed_document(sync_app, namespace, schema, transformed_document):
+def feed_document(sync_app, namespace, schema, transformed_document, task_id):
     document_id = transformed_document.get("document_id")
     if not document_id:
         logger.error(f"Document ID not found: {transformed_document}")
@@ -117,6 +117,7 @@ def feed_document(sync_app, namespace, schema, transformed_document):
                     'content-type') == 'application/json' else response.text
             }
     except Exception as e:
+        task_tracker.update_task(task_id, {"error": str(e)})
         logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
@@ -138,17 +139,23 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     try:
         response = await asyncio.get_event_loop().run_in_executor(
             executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'],
-            transformed_document
+            transformed_document, task_id
         )
         success = response.get("success", False)
 
         if success and toponyms:
             toponym_responses = await asyncio.gather(*[
-                asyncio.get_event_loop().run_in_executor(
-                    executor, feed_document, sync_app, 'toponym', 'toponym', toponym
-                )
+                asyncio.to_thread(feed_document, sync_app, 'toponym', 'toponym', toponym, task_id)
                 for toponym in toponyms
             ])
+
+        # if success and toponyms:
+        #     toponym_responses = await asyncio.gather(*[
+        #         asyncio.get_event_loop().run_in_executor(
+        #             executor, feed_document, sync_app, 'toponym', 'toponym', toponym, task_id
+        #         )
+        #         for toponym in toponyms
+        #     ])
 
             # Check if any toponym feed failed
             if any(not r.get("success") for r in toponym_responses):
@@ -164,7 +171,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
             # Check if any link feed failed
             if any(not r.get("success") for r in link_responses):
-                success
+                success = False
 
         task_tracker.update_task(task_id, {
             "processed": 1,
