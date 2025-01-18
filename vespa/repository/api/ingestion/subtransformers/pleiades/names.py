@@ -27,19 +27,23 @@ class NamesProcessor:
         :param toponym_language: The language of the toponym in BCP 47 format.
         :param years: A dictionary containing 'year_start' and/or 'year_end'.
         """
-        toponym_id = get_uuid()
-        self.output['names'].append({
-            'toponym_id': toponym_id,
-            **years,
-        })
-        self.output['toponyms'].append({
-            'document_id': toponym_id,
-            'fields': {
-                'name': toponym,
-                'places': [self.document_id],
-                'bcp47_language': toponym_language,
-            }
-        })
+        toponyms = toponym.split(", ")
+        # TODO: Query handling of Pleiades `names.attested` or `names.romanized` which may be a single CSV string like this:
+        # 'Madīnat aš-Šaʿb, Madinat ash-Sha'b, Medinat esh-Sha'b, Madinat ash-Shab, Medinat esh-Shab, Madinat ash-Shaab, Medinat esh-Shaab, Madinat al-Sha'b, Medinat el-Sha'b, Madinat al-Shab, Medinat el-Shab, Madinat al-Shaab, Medinat el-Shaab, Madinat al-Sha'ab, Medinat el-Sha'ab, Madinat ash-Sha'ab, Medinat esh-Sha'ab, Medīnat eš-Šaʿb'
+        for split_toponym in toponyms:
+            toponym_id = get_uuid()
+            self.output['names'].append({
+                'toponym_id': toponym_id,
+                **years,
+            })
+            self.output['toponyms'].append({
+                'document_id': toponym_id,
+                'fields': {
+                    'name': split_toponym,
+                    'places': [self.document_id],
+                    'bcp47_language': toponym_language,
+                }
+            })
 
     def process(self) -> dict:
         """
