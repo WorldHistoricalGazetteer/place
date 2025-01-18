@@ -49,6 +49,9 @@ def get_valid_geom(geometry) -> tuple:
         shapely.geometry.base.BaseGeometry: A Shapely geometry object if the input is valid, None otherwise.
         dict: A dictionary containing the GeoJSON geometry object if the input is valid, None otherwise.
     """
+
+    logger.info(f"Converting geometry: {geometry}")
+
     if not geometry or 'type' not in geometry or ('coordinates' not in geometry and geometry['type'] != 'GeometryCollection'):
         logger.warning("Invalid geometry: missing type or coordinates.")
         return None, None
