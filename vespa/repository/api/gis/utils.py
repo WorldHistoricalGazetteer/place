@@ -60,7 +60,7 @@ def get_valid_geom(geometry) -> tuple:
     try:
         if geometry.get('type') == 'GeometryCollection':
             geometries = geometry.get('geometries', []) # Prevent KeyError if 'geometries' is missing
-            geometry_tuples = [get_valid_geom(g.get('geometry', {})) for g in geometries]
+            geometry_tuples = [get_valid_geom(g) for g in geometries]
             logger.info(f"geometry_tuples: {geometry_tuples}")
             if all(g[0] for g in geometry_tuples) and all(g[1] for g in geometry_tuples):
                 return shape(geometry), {'type': 'GeometryCollection', 'geometries': [g[1] for g in geometry_tuples]}
