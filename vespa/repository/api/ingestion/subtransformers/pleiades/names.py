@@ -12,12 +12,12 @@ class NamesProcessor:
         :param names: List of name dictionaries containing (inter alia) 'attested', 'romanized', 'language', 'start', and 'end'.
         """
         self.document_id = document_id
-        self.names = names if len(names) > 0 else [title]
+        self.names = names if len(names) > 0 else [{"attested": title}]
         self.output = {
             'names': [],
             'toponyms': [],
         }
-        logger.info(f"Formatting names {names}")
+        logger.info(f"Formatting names {self.names}")
 
     def _process_name(self, toponym: str, toponym_language: str, years: Dict[str, int]) -> None:
         """
