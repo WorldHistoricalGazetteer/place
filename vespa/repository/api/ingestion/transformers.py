@@ -132,7 +132,7 @@ class DocTransformer:
                         **({"record_id": record_id} if (record_id := data.get("id")) else {}),
                         **({"record_url": f"https://pleiades.stoa.org/places/{record_id}"} if record_id else {}),
                         **({"names": names["names"]} if (
-                            names := PleiadesNamesProcessor(document_id, data.get("names")).process()) else {}),
+                            names := PleiadesNamesProcessor(document_id, data.get("names", [data.get("title")])).process()) else {}),
                         **(type_classes if (  # Map Pleiades place types to GeoNames feature classes and AAT types
                             type_classes := PleiadesTypesProcessor(data.get("placeTypeURIs")).process()) else {}),
                         **(geometry_etc if (  # Includes abstracted geometry properties, iso country codes, and array of locations
