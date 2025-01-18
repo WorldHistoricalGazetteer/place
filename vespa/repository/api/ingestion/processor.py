@@ -9,7 +9,7 @@ from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
 from ..config import VespaClient, pagination_limit
-from ..utils import task_tracker, get_uuid
+from ..utils import task_tracker, get_uuid, escape_yql
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +63,10 @@ def feed_document(sync_app, namespace, schema, transformed_document):
             # Check if toponym already exists
             with VespaClient.sync_context("feed") as sync_app:
                 bcp47_fields = ["language", "script", "region", "variant"]
-                yql = f"select documentid, places from toponym where name matches '^{transformed_document['fields']['name']}$' "
+                yql = f"select documentid, places from toponym where name matches '^{escape_yql(transformed_document['fields']['name'])}$' "
                 for field in bcp47_fields:
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
-                        yql += f"and bcp47_{field} matches '^{transformed_document['fields'][f'bcp47_{field}']}$' "
+                        yql += f"and bcp47_{field} matches '^{escape_yql(transformed_document['fields'][f'bcp47_{field}'])}$' "
                 yql += "limit 1"
                 # logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
@@ -301,19 +301,19 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
             schema="toponym",
             raise_on_not_found=True
         ).json
-        logger.info(f"Toponym response: {toponym_response}")
+        # logger.info(f"Toponym response: {toponym_response}")
         places = toponym_response.get("fields", {}).get("places", [])
         if len(places) == 1:
             # Delete toponym if only one place is associated
-            logger.info(f"Deleting toponym: {toponym_id}")
+            # logger.info(f"Deleting toponym: {toponym_id}")
             response = sync_app.delete_data(
                 namespace="toponym",
                 schema="toponym",
                 data_id=toponym_id
             )
-            logger.info(f"Delete response: {response.json}")
+            # logger.info(f"Delete response: {response.json}")
         else:
-            logger.info(f"Updating toponym: {toponym_id}")
+            # logger.info(f"Updating toponym: {toponym_id}")
             response = sync_app.update_data(
                 namespace="toponym",
                 schema="toponym",
@@ -322,7 +322,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
                     "places": [place for place in places if place != place_id]
                 }
             )
-            logger.info(f"Update response: {response.json}")
+            # logger.info(f"Update response: {response.json}")
     except Exception as e:
         logger.error(f"Error deleting or updating toponyms: {str(e)}", exc_info=True)
 
@@ -336,7 +336,7 @@ def delete_related_links(sync_app, place_id):
             "yql": link_query,
             "offset": links_start
         }
-        logger.info(f"Paginated link query: {link_query_paginated}")
+        # logger.info(f"Paginated link query: {link_query_paginated}")
         links_response = sync_app.query(link_query_paginated).json
         links = links_response.get("root", {}).get("children", [])
 
@@ -364,7 +364,7 @@ def delete_all_docs(sync_app, dataset_config):
         ):
             for response in slice:
                 for document in response.documents:
-                    logger.info(f"Document: {document}")
+                    # logger.info(f"Document: {document}")
                     document_id = document["id"].split(":")[-1]
 
                     # Delete related toponyms
