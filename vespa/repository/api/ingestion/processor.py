@@ -337,7 +337,7 @@ def delete_related_toponyms(sync_app, toponym_id, place_id):
 
 def delete_related_links(sync_app, place_id):
     """Delete links related to place IDs."""
-    link_query = f'select * from link where place_id matches "^{re.escape(place_id)}$" or object matches "^{re.escape(place_id)}$" limit {pagination_limit}'
+    link_query = f'select * from link where place_id matches "^{place_id}$" or object matches "^{place_id}$" limit {pagination_limit}'
     links_start = 0
     while True:
         link_query_paginated = {
