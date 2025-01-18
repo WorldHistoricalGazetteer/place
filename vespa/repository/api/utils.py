@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 class TaskTracker:
     def __init__(self):
         self.tasks: Dict[str, Dict[str, Any]] = {}
+        self.error_limit = 100
 
     def add_task(self, task_id: str, updates=None):
         self.tasks[task_id] = {
@@ -17,6 +18,7 @@ class TaskTracker:
             "processed": 0,
             "success": 0,
             "failure": 0,
+            "errors": [],
             "start_time": time.time()
         }
         if updates:
@@ -28,6 +30,10 @@ class TaskTracker:
             for key, value in updates.items():
                 if isinstance(value, int) and key in {"transformed", "processed", "success", "failure"}:
                     self.tasks[task_id][key] += value
+                elif key == "error":
+                    errors = self.tasks[task_id].setdefault("errors", [])
+                    if len(errors) < self.error_limit:
+                        errors.append(value)
                 else:
                     self.tasks[task_id][key] = value
                     if key == "end_time":
