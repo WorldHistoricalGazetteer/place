@@ -79,8 +79,7 @@ def feed_document(sync_app, namespace, schema, transformed_document):
             existing_toponym_id = existing_toponym_fields.get("documentid").split("::")[-1]
             existing_places = existing_toponym_fields.get("places", [])
 
-            logger.info(
-                f'Extending places with {document_id} for toponym {existing_toponym_id}')
+            # logger.info(f'Extending places with {document_id} for toponym {existing_toponym_id}')
 
             response = sync_app.update_data(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements

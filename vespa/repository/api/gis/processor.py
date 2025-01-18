@@ -54,7 +54,7 @@ class GeometryProcessor:
         # Remove "-" from the list of ISO codes if present
         iso_codes = [
             meta["ISO_A2"] for result in iso_results
-            if (meta := json.loads(result["meta"]))["ISO_A2"] != "-"
+            if "meta" in result and (meta := json.loads(result["meta"]))["ISO_A2"] != "-"
         ] or {}
         representative_point = (
             {"lat": (rp := self.geom.representative_point()).y, "lng": rp.x}
