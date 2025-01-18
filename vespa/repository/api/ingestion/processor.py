@@ -9,11 +9,41 @@ from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
 from ..config import VespaClient, pagination_limit
-from ..utils import task_tracker
+from ..utils import task_tracker, get_uuid
 
 logger = logging.getLogger(__name__)
 
 executor = ThreadPoolExecutor(max_workers=10)
+
+
+def feed_link(sync_app, link):
+    try:
+        response = sync_app.feed_data_point(
+            namespace="link",
+            schema="link",
+            data_id=get_uuid(),
+            fields=link
+        )
+
+        if response.status_code == 200:
+            return {"success": True, "link": link}
+        else:
+            logger.error(
+                f"Failed to feed link: {link}, Status code: {response.status_code}, Response: {response.json() if response.headers.get('content-type') == 'application/json' else response.text}")
+            return {
+                "success": False,
+                "link": link,
+                "status_code": response.status_code,
+                "message": response.json() if response.headers.get(
+                    'content-type') == 'application/json' else response.text
+            }
+    except Exception as e:
+        logger.error(f"Error feeding link: {link}, Error: {str(e)}", exc_info=True)
+        return {
+            "success": False,
+            "link": link,
+            "error": str(e)
+        }
 
 
 def feed_document(sync_app, namespace, schema, transformed_document):
@@ -99,8 +129,8 @@ def feed_document(sync_app, namespace, schema, transformed_document):
 
 
 async def process_document(document, dataset_config, transformer_index, sync_app, task_id):
-    transformed_document, toponyms = DocTransformer.transform(document, dataset_config['dataset_name'],
-                                                              transformer_index)
+    transformed_document, toponyms, links = DocTransformer.transform(document, dataset_config['dataset_name'],
+                                                                     transformer_index)
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
@@ -124,6 +154,18 @@ async def process_document(document, dataset_config, transformer_index, sync_app
             # Check if any toponym feed failed
             if any(not r.get("success") for r in toponym_responses):
                 success = False
+
+        if success and links:
+            link_responses = await asyncio.gather(*[
+                asyncio.get_event_loop().run_in_executor(
+                    executor, feed_link, sync_app, link
+                )
+                for link in links
+            ])
+
+            # Check if any link feed failed
+            if any(not r.get("success") for r in link_responses):
+                success
 
         task_tracker.update_task(task_id, {
             "processed": 1,

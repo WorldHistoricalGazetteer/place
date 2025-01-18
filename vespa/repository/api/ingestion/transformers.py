@@ -2,6 +2,7 @@
 import json
 import logging
 
+from .subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
 from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
 from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
 from .subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
@@ -86,6 +87,8 @@ class DocTransformer:
                         "fields": {
                         }
                     }
+                ],
+                [ # Links # TODO
                 ]
             )
         ],
@@ -121,6 +124,8 @@ class DocTransformer:
                             "bcp47_language": "en",
                         }
                     }
+                ],
+                [ # No links
                 ]
             )
         ],
@@ -142,47 +147,7 @@ class DocTransformer:
                     }
                 },
                 names["toponyms"] if names else [],
-                # TODO: Refactor ingestor to accept links between record URLs
-            )
-        ],
-        "Pleiades_DEPRECATED": [  # TODO
-            lambda data: (
-                {
-                    "source_id": data.get("id", ""),
-                    "primary_name": data.get("title", ""),
-                    "latitude": float(data["reprPoint"][0]) if isinstance(data.get("reprPoint"), list) and len(
-                        data["reprPoint"]) == 2 else None,
-                    "longitude": float(data["reprPoint"][1]) if isinstance(data.get("reprPoint"), list) and len(
-                        data["reprPoint"]) == 2 else None,
-                    # TODO: Inject location start and end into geometry before sending for processing
-                    "geometry_bbox": (
-                        [float(coord) for coord in data["bbox"]]
-                        if isinstance(data.get("bbox"), list) and len(data["bbox"]) == 4
-                        else None
-                    ),
-                    # TODO: Map to GeoNames feature classes from https://pleiades.stoa.org/vocabularies/place-types
-                    "feature_classes": data.get("placeTypes", []),
-                    "ccodes": GeometryIntersect(
-                        geometry={'type': 'Point', 'coordinates': data.get("reprPoint", None)}).resolve(),
-                    "lpf_feature": {},  # TODO: Build LPF feature
-                },
-                [
-                    {  # TODO: Merge with other toponyms if present there, but with "is_preferred": True
-                        "toponym": data.get("title", ""),  # Add root title as toponym
-                        "language": "",  # Language unknown for root title
-                        # TODO: No time data for root toponym, but could be inferred from other attributes?
-                    }
-                ] + [
-                    {
-                        "toponym": name.get("attested") or name.get("romanized", ""),
-                        "language": name.get("language", ""),  # TODO: Use BCP 47 language tags
-                        "is_romanised": not name.get("attested"),
-                        # TODO: Use "bcp47_script": "Latn" for romanised toponyms
-                        "start": name.get("start", None),
-                        "end": name.get("end", None),
-                    }
-                    for name in data.get("names", [])
-                ]
+                PleiadesLinksProcessor(document_id, record_id, data.get("connections")).process()
             )
         ],
         "GeoNames": [  # TODO
@@ -225,7 +190,9 @@ class DocTransformer:
                 if data.get("isolanguage") not in ["post", "iata", "icao", "faac", "abbr", "link",
                                                    "wkdt"]  # Skip non-language codes
                 else None
-            )
+            ),
+            [ # No links
+            ]
         ],
         "TGN": [  # TODO
             lambda data: (
@@ -286,12 +253,16 @@ class DocTransformer:
 
                 None
             ),
+            [ # No links
+            ]
         ],
         "Wikidata": [  # TODO
             lambda data: (
                 {
                 },
                 [
+                ],
+                [ # No links
                 ]
             )
         ],
@@ -300,6 +271,8 @@ class DocTransformer:
                 {
                 },
                 [
+                ],
+                [ # No links
                 ]
             )
         ],
@@ -308,6 +281,8 @@ class DocTransformer:
                 {
                 },
                 [
+                ],
+                [ # No links
                 ]
             )
         ],
@@ -316,6 +291,8 @@ class DocTransformer:
                 {
                 },
                 [
+                ],
+                [ # No links
                 ]
             )
         ],
@@ -336,7 +313,9 @@ class DocTransformer:
                         **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     }
                 },
-                [
+                [ # No names
+                ],
+                [ # No links
                 ]
             )
         ],

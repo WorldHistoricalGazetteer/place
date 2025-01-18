@@ -1,12 +1,17 @@
-# The Link model is designed to represent relationships between a Place and any other object, whether it is
-# another Place, an event, a concept, or any other relevant entity. It allows for the specification of a wide
-# range of predicates that describe the nature of the relationship. In addition to connections defined in the
-# connection schema, any custom predicate can be used to capture various types of associations, such as
-# "has_population" or "is_part_of". This schema also supports temporal validity, citation, confidence levels,
-# and additional context about each link.
+import logging
+from typing import List, Dict, Any
 
-schema link {
-    document link {
+logger = logging.getLogger(__name__)
+
+
+class LinksProcessor:
+    def __init__(self, document_id, record_id, place_links: List[Dict[str, Any]]):
+        """
+        :param document_id: The unique ID of the document (place).
+        :param record_id: The unique ID of the feature in the source.
+        :param place_links: List of Pleiades place connection types (see https://pleiades.stoa.org/vocabularies/relationship-types).
+
+
         ########### Source Metadata ###########
 
         field source type string {
@@ -26,16 +31,6 @@ schema link {
         }
 
         ########### Core Link Data ###########
-
-        field place_curie type string {
-            # The source:identifier CURIE for the place this link relates to.
-            indexing: attribute | summary
-            attribute: fast-search
-            match {
-                exact
-                exact-terminator: "@@"
-            }
-        }
 
         field place_id type string {
             # The ID of the place this link relates to.
@@ -96,9 +91,28 @@ schema link {
             # Additional information or context about the link.
             indexing: summary
         }
-    }
 
-    field last_modified type long {
-        indexing: now | attribute | summary
-    }
-}
+        """
+        self.document_id = document_id
+        self.record_id = record_id
+        self.place_links = place_links
+        logger.info(f"Processing Pleiades place links: {place_links}")
+
+    def process(self) -> List[Dict[str, Any]]:
+        links = []
+        for link in self.place_links:
+            links.append({
+                "source": "pleiades",
+                "record_id": link.get("id"), # Pleiades connection ID
+                "place_curie": f"pleiades:{self.record_id}",
+                "place_id": self.document_id,
+                "predicate": link.get("connectionTypeURI"),
+                "object": f"pleiades:{link.get('connectsTo')}",
+                **({"year_start": link.get("start")} if "start" in link else {}),
+                **({"year_end": link.get("end")} if "end" in link else {}),
+                **({"confidence": link.get("associationCertainty")} if "associationCertainty" in link else {}),
+                **({"notes": link.get("description")} if "description" in link else {}),
+            })
+
+        logger.info(f"Processed links: {links}")
+        return links
