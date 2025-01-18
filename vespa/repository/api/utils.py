@@ -70,12 +70,3 @@ def get_uuid() -> str:
     Generate a unique identifier.
     """
     return str(uuid.uuid4())
-
-
-def escape_yql(value: str) -> str:
-    """
-    Escapes special characters in YQL strings for both regex and YQL parsing.
-    - Escapes single quotes by doubling them (YQL-specific).
-    """
-    return value.replace("'", "\\\\'")
-    # return re.sub(r"([\\^$.|?*+()[\]{}'])", r"\\\1", value).replace("'", "''")
