@@ -127,13 +127,13 @@ def feed_document(sync_app, namespace, schema, transformed_document):
         }
 
 
-async def process_document(document, dataset_config, transformer_index, sync_app, task_id):
+async def process_document(document, dataset_config, transformer_index, sync_app, task_id, count):
     transformed_document, toponyms, links = DocTransformer.transform(document, dataset_config['dataset_name'],
                                                                      transformer_index)
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    # logger.info(f"Feeding document: {document}: {transformed_document}")
+    logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -186,7 +186,7 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
 
     async def process_limited(document):
         async with semaphore:
-            return await process_document(document, dataset_config, transformer_index, sync_app, task_id)
+            return await process_document(document, dataset_config, transformer_index, sync_app, task_id, count)
 
     async def process_batch(batch):
         tasks = [process_limited(document) for document in batch]
