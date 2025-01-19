@@ -70,9 +70,9 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f'and bcp47_{field} matches "^{transformed_document["fields"][f"bcp47_{field}"]}$" '
                 yql += 'limit 1'
-                # logger.info(f"Checking if toponym exists: {yql}")
+                logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
-                # logger.info(f"Existing toponym response: {existing_response}")
+                logger.info(f"Existing toponym response: {existing_response}")
                 toponym_exists = existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 0
 
         if toponym_exists:
@@ -306,3 +306,4 @@ def delete_document_namespace(sync_app, namespace, schema=None):
             schema=schema,
             content_cluster_name="content"
         )
+        logger.info(f"Deleted {namespace}:{schema} documents.")
