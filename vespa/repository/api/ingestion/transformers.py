@@ -1,4 +1,4 @@
-# /ingestion/transformers.py
+# /ingestion/transformers.py "Robots in Disguise"
 import json
 import logging
 
@@ -88,8 +88,7 @@ class DocTransformer:
                         }
                     }
                 ],
-                [ # Links # TODO
-                ]
+                None # Links # TODO
             )
         ],
         "ISO3166": [
@@ -125,8 +124,7 @@ class DocTransformer:
                         }
                     }
                 ],
-                [ # No links
-                ]
+                None # No links
             )
         ],
         "Pleiades": [
@@ -146,7 +144,7 @@ class DocTransformer:
                         **(years if (years := PleiadesYearsProcessor(data.get("names"), data.get("locations")).process()) else {}),
                     }
                 },
-                names["toponyms"] if names else [],
+                names["toponyms"] if names else None,
                 PleiadesLinksProcessor(document_id, record_id, data.get("connections")).process()
             )
         ],
@@ -170,7 +168,8 @@ class DocTransformer:
                     ),
                     "lpf_feature": {},
                 },
-                None
+                None,
+                None  # No links
             ),
             lambda data: (  # Transform the alternate names
                 {
@@ -189,10 +188,9 @@ class DocTransformer:
                 ]
                 if data.get("isolanguage") not in ["post", "iata", "icao", "faac", "abbr", "link",
                                                    "wkdt"]  # Skip non-language codes
-                else None
-            ),
-            [ # No links
-            ]
+                else None,
+                None # No links
+            )
         ],
         "TGN": [  # TODO
             lambda data: (

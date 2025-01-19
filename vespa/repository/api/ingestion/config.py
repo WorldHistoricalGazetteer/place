@@ -19,7 +19,7 @@ REMOTE_DATASET_CONFIGS = [
     { # 2024: 12m+ places
         'dataset_name': 'GeoNames',
         'namespace': 'gn',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': 'http://api.geonames.org/getJSON?formatted=true&geonameId=<id>&username=<username>&style=full',
         'citation': 'GeoNames geographical database. https://www.geonames.org/',
         'files': [
