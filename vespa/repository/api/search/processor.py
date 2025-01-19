@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 def visit(
         schema: str,
-        namespace: str,
         limit: int,
+        namespace: str = None,
         slices: int = 1,
         delete: bool = False
 ) -> Dict[str, Any]:
