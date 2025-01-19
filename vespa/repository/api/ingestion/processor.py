@@ -61,6 +61,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
         }
     try:
         toponym_exists = False
+        yql = None
         if schema == 'toponym':
             # Check if toponym already exists
             with VespaClient.sync_context("feed") as sync_app:
