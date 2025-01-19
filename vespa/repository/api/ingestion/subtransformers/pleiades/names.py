@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict, Any
 
-from ....utils import get_uuid
+from ....utils import get_uuid, debracket
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class NamesProcessor:
             self.output['toponyms'].append({
                 'document_id': toponym_id,
                 'fields': {
-                    'name': split_toponym,
+                    'name': debracket(split_toponym),
                     'places': [self.document_id],
                     'bcp47_language': toponym_language,
                 }

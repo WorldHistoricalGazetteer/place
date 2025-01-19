@@ -78,3 +78,17 @@ def escape_yql(value: str) -> str:
     See: https://docs.vespa.ai/en/reference/query-language-reference.html
     """
     return re.sub(r'(["\.\^\$\|\?\*\+\(\)\{\}\[\]\\])', r'\\\1', value)
+
+
+def debracket(text):
+    """
+    Removes round brackets and their contents from a string,
+    including nested brackets, using recursion.
+    Also trims the final string, reduces double spaces to single,
+    and removes spaces before periods.
+    """
+    subtext = re.sub(r"\([^()]*\)", "", text)
+    if subtext != text:
+        return debracket(subtext)
+    subtext = ' '.join(subtext.split())
+    return re.sub(r'\s+\.', '.', subtext)
