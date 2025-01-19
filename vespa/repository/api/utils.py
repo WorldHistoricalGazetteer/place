@@ -72,7 +72,7 @@ def get_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def escape_yql(value: str) -> str:
+def escape_yql(text: str) -> str:
     """
     Quote " and backslash \ characters in text values must be escaped by a backslash
     See: https://docs.vespa.ai/en/reference/query-language-reference.html
