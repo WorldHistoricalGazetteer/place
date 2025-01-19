@@ -77,7 +77,7 @@ def escape_yql(value: str) -> str:
     Quote " and backslash \ characters in text values must be escaped by a backslash
     See: https://docs.vespa.ai/en/reference/query-language-reference.html
     """
-    return re.sub(r'(["\.\^\$\|\?\*\+\(\)\{\}\[\]\\])', r'\\1', value)
+    return re.sub(r'(["\\])', r'\\\1', value)
 
 
 def debracket(text):
