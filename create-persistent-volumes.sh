@@ -48,6 +48,7 @@ declare -A DIRECTORIES=(
   [vespa_config_var_2]="/data/k8s/vespa-config/2/var:1000:755:LOCAL,PITT2"
   [vespa_config_logs_2]="/data/k8s/vespa-config/2/logs:1000:755:LOCAL,PITT2"
   [vespa_config_workspace_2]="/data/k8s/vespa-config/2/workspace:1000:755:LOCAL,PITT2"
+  [vespa_ingestion]="/data/k8s/vespa-ingestion:1000:755:LOCAL,PITT2"
 )
 
 # Remote directories for syncing

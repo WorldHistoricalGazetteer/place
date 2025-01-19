@@ -5,15 +5,11 @@
 # "has_population" or "is_part_of". This schema also supports temporal validity, citation, confidence levels,
 # and additional context about each link.
 
+# The document namespace identifies the original source of the link, e.g. "pleiades", "geonames", "whg-dataset-123", "whg-user-456".
+
 schema link {
     document link {
         ########### Source Metadata ###########
-
-        field source type string {
-            # Origin or authority for this link (e.g., a specific gazetteer, database, dataset, or WHG User).
-            indexing: attribute | summary
-            attribute: fast-search
-        }
 
         field record_id type string {
             # A unique identifier for the link within the source.

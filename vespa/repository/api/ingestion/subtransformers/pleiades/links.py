@@ -25,7 +25,6 @@ class LinksProcessor:
         links = []
         for link in self.place_links:
             links.append({
-                "source": "pleiades",
                 "record_id": link.get("id"),  # Pleiades connection ID
                 "place_curie": f"pleiades:{self.record_id}",
                 "place_id": self.document_id,

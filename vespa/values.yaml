@@ -182,6 +182,13 @@ ports:
   - containerPort: 19098
   - containerPort: 19097
 
+ingestion:
+  pv:
+    name: ingestion
+    storageSize: 50Gi
+    rootPath: "/data/k8s/vespa-ingestion"
+    mountPath: /ingestion
+
 api:
   image:
     repository: worldhistoricalgazetteer/vespa-api

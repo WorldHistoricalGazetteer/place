@@ -63,7 +63,12 @@ spec:
           - mountPath: /code
             subPath: {{ .Values.api.git.sourceFolder }}
             name: repo-volume
+          - mountPath: /ingestion
+            name: ingestion-volume
       volumes:
         - name: repo-volume
           emptyDir: {}
+        - name: ingestion-volume
+          persistentVolumeClaim:
+            claimName: vespa-ingestion-pvc
 

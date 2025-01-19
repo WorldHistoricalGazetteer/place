@@ -1,7 +1,6 @@
 # /ingestion/processor.py
 import asyncio
 import logging
-import re
 import time
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
@@ -17,11 +16,11 @@ logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor(max_workers=10)
 
 
-def feed_link(sync_app, link):
+def feed_link(sync_app, namespace, schema, link, task_id, count):
     try:
         response = sync_app.feed_data_point(
-            namespace="link",
-            schema="link",
+            namespace=namespace,  # source identifier
+            schema=schema,  # usually 'link'
             data_id=get_uuid(),
             fields=link
         )
@@ -29,16 +28,18 @@ def feed_link(sync_app, link):
         if response.status_code == 200:
             return {"success": True, "link": link}
         else:
+            msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
+            task_tracker.update_task(task_id, {"error": f"#{count}: link: >>>{link}<<< {msg}"})
             logger.error(
-                f"Failed to feed link: {link}, Status code: {response.status_code}, Response: {response.json() if response.headers.get('content-type') == 'application/json' else response.text}")
+                f"Failed to feed link: {link}, Status code: {response.status_code}, Response: {msg}")
             return {
                 "success": False,
                 "link": link,
                 "status_code": response.status_code,
-                "message": response.json() if response.headers.get(
-                    'content-type') == 'application/json' else response.text
+                "message": msg
             }
     except Exception as e:
+        task_tracker.update_task(task_id, {"error": f"#{count}: link: >>>{link}<<< {str(e)}"})
         logger.error(f"Error feeding link: {link}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
@@ -106,16 +107,17 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
         if response.status_code == 200:
             return {"success": True, "namespace": namespace, "schema": schema, "document_id": document_id}
         else:
+            msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
+            task_tracker.update_task(task_id, {"error": f"#{count}: {msg}"})
             logger.error(
-                f"Failed to feed document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}, Response: {response.json() if response.headers.get('content-type') == 'application/json' else response.text}")
+                f"Failed to feed document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}, Response: {msg}")
             return {
                 "success": False,
                 "namespace": namespace,
                 "schema": schema,
                 "document_id": document_id,
                 "status_code": response.status_code,
-                "message": response.json() if response.headers.get(
-                    'content-type') == 'application/json' else response.text
+                "message": msg
             }
     except Exception as e:
         task_tracker.update_task(task_id, {"error": f"#{count}: yql: >>>{yql}<<< {str(e)}"})
@@ -146,17 +148,10 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
         if success and toponyms:
             toponym_responses = await asyncio.gather(*[
-                asyncio.to_thread(feed_document, sync_app, 'toponym', 'toponym', toponym, task_id, count)
+                asyncio.to_thread(feed_document, sync_app, dataset_config['namespace'], 'toponym', toponym, task_id,
+                                  count)
                 for toponym in toponyms
             ])
-
-        # if success and toponyms:
-        #     toponym_responses = await asyncio.gather(*[
-        #         asyncio.get_event_loop().run_in_executor(
-        #             executor, feed_document, sync_app, 'toponym', 'toponym', toponym, task_id
-        #         )
-        #         for toponym in toponyms
-        #     ])
 
             # Check if any toponym feed failed
             if any(not r.get("success") for r in toponym_responses):
@@ -165,7 +160,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         if success and links:
             link_responses = await asyncio.gather(*[
                 asyncio.get_event_loop().run_in_executor(
-                    executor, feed_link, sync_app, link
+                    executor, feed_link, sync_app, dataset_config['namespace'], 'link', link, task_id, count
                 )
                 for link in links
             ])
@@ -251,7 +246,11 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
             # Run `delete_all_docs` asynchronously to avoid blocking the event loop
             logger.info(f"Deleting all documents for schema: {dataset_config['namespace']}")
-            await asyncio.to_thread(delete_all_docs, sync_app, dataset_config)
+
+            # TODO: Remove the following line
+            await asyncio.to_thread(delete_all_docs_DEPRECATED, sync_app, dataset_config)
+
+            await asyncio.to_thread(delete_document_namespace, sync_app, dataset_config['namespace'], None)
 
             if delete_only:
                 task_tracker.update_task(task_id, {
@@ -298,6 +297,55 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
     task_tracker.add_task(task_id)
 
     return task
+
+
+def delete_document_namespace(sync_app, namespace, schema=None):
+    """Delete all documents in the given namespace."""
+    # Delete documents belonging to the given namespace
+    if schema is None:
+        schema = ['place', 'toponym', 'link']
+    for schema in schema:
+        sync_app.delete_all_docs(
+            namespace=namespace,
+            schema=schema,
+            content_cluster_name="content"
+        )
+
+
+### DEPRECATED BELOW HERE ###
+
+
+def delete_all_docs_DEPRECATED(sync_app, dataset_config):
+    """Delete all documents in the given schema and namespace."""
+    schema = dataset_config.get("vespa_schema")
+    namespace = dataset_config.get("namespace")
+
+    if schema == "place":
+        for slice in sync_app.visit(
+                content_cluster_name="content",
+                namespace=namespace,
+                schema=schema,
+                wantedDocumentCount=100,
+                fieldSet="place:names"
+        ):
+            for response in slice:
+                for document in response.documents:
+                    # logger.info(f"Document: {document}")
+                    document_id = document["id"].split(":")[-1]
+
+                    # Delete related toponyms
+                    for name in document.get("fields", {}).get("names", []):
+                        delete_related_toponyms(sync_app, name["toponym_id"], document_id)
+
+                    # Delete related links
+                    delete_related_links(sync_app, document_id)
+
+    # Delete documents belonging to the given schema and namespace
+    sync_app.delete_all_docs(
+        namespace=namespace,
+        schema=schema,
+        content_cluster_name="content"
+    )
 
 
 def delete_related_toponyms(sync_app, toponym_id, place_id):
@@ -355,36 +403,3 @@ def delete_related_links(sync_app, place_id):
             sync_app.delete_data(schema="link", data_id=link["id"].split(":")[-1])
 
         links_start += pagination_limit  # Move to next page
-
-
-def delete_all_docs(sync_app, dataset_config):
-    """Delete all documents in the given schema and namespace."""
-    schema = dataset_config.get("vespa_schema")
-    namespace = dataset_config.get("namespace")
-
-    if schema == "place":
-        for slice in sync_app.visit(
-                content_cluster_name="content",
-                namespace=namespace,
-                schema=schema,
-                wantedDocumentCount=100,
-                fieldSet="place:names"
-        ):
-            for response in slice:
-                for document in response.documents:
-                    # logger.info(f"Document: {document}")
-                    document_id = document["id"].split(":")[-1]
-
-                    # Delete related toponyms
-                    for name in document.get("fields", {}).get("names", []):
-                        delete_related_toponyms(sync_app, name["toponym_id"], document_id)
-
-                    # Delete related links
-                    delete_related_links(sync_app, document_id)
-
-    # Delete documents belonging to the given schema and namespace
-    sync_app.delete_all_docs(
-        namespace=namespace,
-        schema=schema,
-        content_cluster_name="content"
-    )
