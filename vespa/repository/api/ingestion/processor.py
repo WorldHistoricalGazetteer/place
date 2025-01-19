@@ -70,9 +70,9 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f'and bcp47_{field} matches "^{transformed_document["fields"][f"bcp47_{field}"]}$" '
                 yql += 'limit 1'
-                logger.info(f"Checking if toponym exists: {yql}")
+                # logger.info(f"Checking if toponym exists: {yql}")
                 existing_response = sync_app.query({'yql': yql}).json
-                logger.info(f"Existing toponym response: {existing_response}")
+                # logger.info(f"Existing toponym response: {existing_response}")
                 toponym_exists = existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 0
 
         if toponym_exists:
@@ -81,7 +81,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
             existing_toponym_id = existing_toponym_fields.get("documentid").split("::")[-1]
             existing_places = existing_toponym_fields.get("places", [])
 
-            logger.info(f'Extending places with {document_id} for toponym {existing_toponym_id}')
+            # logger.info(f'Extending places with {document_id} for toponym {existing_toponym_id}')
 
             response = sync_app.update_data(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
@@ -96,7 +96,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
             if schema == 'toponym':
                 # Inject creation timestamp
                 transformed_document['fields']['created'] = int(time.time() * 1000)
-                logger.info(f"Feeding document {namespace}:{schema}::{document_id}: {transformed_document}")
+                # logger.info(f"Feeding document {namespace}:{schema}::{document_id}: {transformed_document}")
             response = sync_app.feed_data_point(
                 namespace=namespace,
                 schema=schema,
@@ -300,7 +300,6 @@ def delete_document_namespace(sync_app, namespace, schema=None):
     # Delete documents belonging to the given namespace
     if schema is None:
         schema = ['place', 'toponym', 'link']
-        schema = ['place', 'link'] # TODO: Remove this line
     for schema in schema:
         sync_app.delete_all_docs(
             namespace=namespace,
