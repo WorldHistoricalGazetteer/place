@@ -74,6 +74,7 @@ def get_uuid() -> str:
 
 def escape_yql(value: str) -> str:
     """
-    Escapes special characters in YQL strings for both regex and YQL parsing.
+    Quote " and backslash \ characters in text values must be escaped by a backslash
+    See: https://docs.vespa.ai/en/reference/query-language-reference.html
     """
-    return re.sub(r'([.\^$*+?{}[\]\\|()"])', r'\\\1', value)
+    return re.sub(r'(["\\])', r'\\\1', value)

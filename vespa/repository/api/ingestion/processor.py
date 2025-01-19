@@ -245,11 +245,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         with VespaClient.sync_context("feed") as sync_app:
 
             # Run `delete_all_docs` asynchronously to avoid blocking the event loop
-            logger.info(f"Deleting all documents for schema: {dataset_config['namespace']}")
-
-            # TODO: Remove the following line
-            await asyncio.to_thread(delete_all_docs_DEPRECATED, sync_app, dataset_config)
-
+            logger.info(f"Deleting all documents for namespace: {dataset_config['namespace']}")
             await asyncio.to_thread(delete_document_namespace, sync_app, dataset_config['namespace'], None)
 
             if delete_only:
@@ -310,96 +306,3 @@ def delete_document_namespace(sync_app, namespace, schema=None):
             schema=schema,
             content_cluster_name="content"
         )
-
-
-### DEPRECATED BELOW HERE ###
-
-
-def delete_all_docs_DEPRECATED(sync_app, dataset_config):
-    """Delete all documents in the given schema and namespace."""
-    schema = dataset_config.get("vespa_schema")
-    namespace = dataset_config.get("namespace")
-
-    if schema == "place":
-        for slice in sync_app.visit(
-                content_cluster_name="content",
-                namespace=namespace,
-                schema=schema,
-                wantedDocumentCount=100,
-                fieldSet="place:names"
-        ):
-            for response in slice:
-                for document in response.documents:
-                    # logger.info(f"Document: {document}")
-                    document_id = document["id"].split(":")[-1]
-
-                    # Delete related toponyms
-                    for name in document.get("fields", {}).get("names", []):
-                        delete_related_toponyms(sync_app, name["toponym_id"], document_id)
-
-                    # Delete related links
-                    delete_related_links(sync_app, document_id)
-
-    # Delete documents belonging to the given schema and namespace
-    sync_app.delete_all_docs(
-        namespace=namespace,
-        schema=schema,
-        content_cluster_name="content"
-    )
-
-
-def delete_related_toponyms(sync_app, toponym_id, place_id):
-    """Delete or update toponyms related to place IDs."""
-    try:
-        toponym_response = sync_app.get_data(
-            namespace="toponym",
-            schema="toponym",
-            data_id=toponym_id,
-            # raise_on_not_found=True # TODO: Uncomment and figure out why toponyms are not found
-        ).json
-        # logger.info(f"Toponym response: {toponym_response}")
-        places = toponym_response.get("fields", {}).get("places", [])
-        if len(places) == 1:
-            # Delete toponym if only one place is associated
-            # logger.info(f"Deleting toponym: {toponym_id}")
-            response = sync_app.delete_data(
-                namespace="toponym",
-                schema="toponym",
-                data_id=toponym_id
-            )
-            # logger.info(f"Delete response: {response.json}")
-        else:
-            # logger.info(f"Updating toponym: {toponym_id}")
-            response = sync_app.update_data(
-                namespace="toponym",
-                schema="toponym",
-                data_id=toponym_id,
-                fields={
-                    "places": [place for place in places if place != place_id]
-                }
-            )
-            # logger.info(f"Update response: {response.json}")
-    except Exception as e:
-        logger.error(f"Error deleting or updating toponyms: {str(e)}", exc_info=True)
-
-
-def delete_related_links(sync_app, place_id):
-    """Delete links related to place IDs."""
-    link_query = f'select * from link where place_id matches "^{place_id}$" or object matches "^{place_id}$" limit {pagination_limit}'
-    links_start = 0
-    while True:
-        link_query_paginated = {
-            "yql": link_query,
-            "offset": links_start
-        }
-        # logger.info(f"Paginated link query: {link_query_paginated}")
-        links_response = sync_app.query(link_query_paginated).json
-        links = links_response.get("root", {}).get("children", [])
-
-        if not links:
-            break
-
-        for link in links:
-            sync_app.delete_data(schema="link", data_id=link["id"].split(":")[-1])
-
-        links_start += pagination_limit  # Move to next page

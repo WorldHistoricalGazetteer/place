@@ -42,7 +42,7 @@ def visit(
         with VespaClient.sync_context("feed") as sync_app:
 
             if delete:
-                logger.info(f"Deleting existing documents from Vespa schema: {schema} on {VespaClient.get_url('feed')}")
+                logger.info(f"Deleting existing documents from Vespa schema: {namespace}:{schema} on {VespaClient.get_url('feed')}")
                 # Delete documents belonging to the given schema and namespace
                 sync_app.delete_all_docs(
                     namespace=namespace,
@@ -50,7 +50,7 @@ def visit(
                     content_cluster_name="content"
                 )
 
-            logger.info(f"Visiting documents from Vespa schema: {schema} on {VespaClient.get_url('feed')}")
+            logger.info(f"Visiting documents from Vespa schema: {namespace}:{schema} on {VespaClient.get_url('feed')}")
 
             all_docs = []
             total_count = 0
