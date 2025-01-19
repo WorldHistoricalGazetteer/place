@@ -90,5 +90,9 @@ def debracket(text):
     subtext = re.sub(r"\([^()]*\)", "", text)
     if subtext != text:
         return debracket(subtext)
+    # Remove extra spaces
     subtext = ' '.join(subtext.split())
-    return re.sub(r'\s+\.', '.', subtext)
+    # Remove spaces before periods
+    subtext = re.sub(r'\s+\.', '.', subtext)
+    # Remove any erroneous isolated brackets (as in "(पुरूषपुर" at https://pleiades.stoa.org/places/569531631/name.2018-07-24.9890884070)
+    return re.sub(r'[()]', '', subtext)
