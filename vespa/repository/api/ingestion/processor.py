@@ -42,11 +42,11 @@ def process_update(task):
         schema=schema,
         data_id=document_id
     )
-    logger.info(f"Response: {response.status_code}: {response.json}")
+    # logger.info(f"Response: {response.status_code}: {response.json}")
     if response.status_code == 200:
         existing_document = response.json
         existing_names = existing_document.get("fields", {}).get("names", [])
-        logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
+        # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
         response = sync_app.update_data(
             namespace=namespace,
             schema=schema,
@@ -55,7 +55,7 @@ def process_update(task):
                 "names": existing_names + transformed_document['fields']['names']
             }
         )
-        logger.info(f"Update response: {response.status_code}: {response.json}")
+        # logger.info(f"Update response: {response.status_code}: {response.json}")
     else:
         msg = f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}"
         task_tracker.update_task(task_id, {"error": f"#{count}: {msg}"})
@@ -95,7 +95,7 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
 
 
 def feed_document(sync_app, namespace, schema, transformed_document, task_id, count, update_place=False):
-    logger.info(f"feed_document {count} (update place = {update_place}): {transformed_document.get('document_id')}")
+    # logger.info(f"feed_document {count} (update place = {update_place}): {transformed_document.get('document_id')}")
     document_id = transformed_document.get("document_id")
     if not document_id:
         logger.error(f"Document ID not found: {transformed_document}")
@@ -185,13 +185,13 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
 
 
 async def process_document(document, dataset_config, transformer_index, sync_app, task_id, count, update_place=False):
-    logger.info(f"process_document {count} (update place = {update_place})")
+    # logger.info(f"process_document {count} (update place = {update_place})")
     transformed_document, toponyms, links = DocTransformer.transform(document, dataset_config['dataset_name'],
                                                                      transformer_index)
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
+    # logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -237,7 +237,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
 
 async def process_documents(stream, dataset_config, transformer_index, sync_app, limit, task_id, update_place=False):
-    logger.info(f"process_documents: (update place = {update_place})")
+    # logger.info(f"process_documents: (update place = {update_place})")
     semaphore = asyncio.Semaphore(10)  # Limit concurrent tasks
     batch_size = 25  # Number of documents to process at a time
     results = []  # Collect results from processed documents
