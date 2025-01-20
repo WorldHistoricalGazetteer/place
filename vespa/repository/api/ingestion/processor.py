@@ -99,24 +99,24 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 # Inject creation timestamp
                 transformed_document['fields']['created'] = int(time.time() * 1000)
                 # logger.info(f"Feeding document {namespace}:{schema}::{document_id}: {transformed_document}")
-            if update_place:  # (and schema == 'place')
-                # Get the existing document
-                response = sync_app.get_data(
-                    namespace=namespace,
-                    schema=schema,
-                    data_id=document_id
-                )
-                if existing_response.status_code == 200:
-                    existing_document = existing_response.json
-                    existing_names = existing_document.get("fields", {}).get("names", [])
-                    response = sync_app.update_data(
+                if update_place:  # (and schema == 'place')
+                    # Get the existing document
+                    response = sync_app.get_data(
                         namespace=namespace,
                         schema=schema,
-                        data_id=document_id,
-                        fields={
-                            "names": existing_names + [transformed_document['fields']['names']]
-                        }
+                        data_id=document_id
                     )
+                    if existing_response.status_code == 200:
+                        existing_document = existing_response.json
+                        existing_names = existing_document.get("fields", {}).get("names", [])
+                        response = sync_app.update_data(
+                            namespace=namespace,
+                            schema=schema,
+                            data_id=document_id,
+                            fields={
+                                "names": existing_names + [transformed_document['fields']['names']]
+                            }
+                        )
             else:
                 response = sync_app.feed_data_point(
                     namespace=namespace,
