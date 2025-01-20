@@ -28,19 +28,25 @@ class NamesProcessor:
 
         "[Dudjayl]" -> ["Dudjayl"]
         "Μο[υ]τίνη" -> ["Μοτίνη", "Μουτίνη"]
+        "[pr]-Sḫm-Rʿḫwj‑[tꜣwj]" -> ["Sḫm-rʿḫwj", "Pr-sḫm-rʿḫwj", "Sḫm-rʿḫwj‑tꜣwj", "Pr-sḫm-rʿḫwj‑tꜣwj"]
         """
-        # Remove enclosing square brackets if the entire toponym is enclosed
-        toponym = re.sub(r'^\[(.*?)\]$', r'\1', toponym)
-
-        # Return if no brackets remain
-        if '[' not in toponym:
-            return [toponym]
 
         results = []
-        # Add result with all brackets removed
-        results.append(re.sub(r'\[|\]', '', toponym))
-        # Add result with optional characters removed
-        results.append(re.sub(r'\[.*?\]', '', toponym))
+
+        # Find all bracketed sections
+        brackets = re.findall(r'\[(.*?)\]', toponym)
+
+        # Generate all possible combinations of including/excluding bracketed sections
+        for i in range(2**len(brackets)):
+            temp_toponym = toponym
+            for j, bracket in enumerate(brackets):
+                if i >> j & 1:  # Check if j-th bit in i is set
+                    temp_toponym = re.sub(rf'\[{re.escape(bracket)}\]', bracket, temp_toponym, 1)
+                else:
+                    temp_toponym = re.sub(rf'\[{re.escape(bracket)}\]', '', temp_toponym, 1)
+            temp_toponym = temp_toponym.strip('-').strip('‑').capitalize()
+            if temp_toponym:
+                results.append(temp_toponym)
 
         return results
 
@@ -61,6 +67,15 @@ class NamesProcessor:
             expanded_toponyms.extend(self._expand_bracket(split_toponym))
 
         for expanded_toponym in expanded_toponyms:
+
+            # Fix for #18454 https://pleiades.stoa.org/places/778409/86-hydreumata-pmoun-proper-name
+            if expanded_toponym == "86 Hydreumata: Pmoun + proper name":
+                expanded_toponym = "Hydreumata"
+
+            # Fix for #28346 https://pleiades.stoa.org/places/903012852
+            if expanded_toponym == "Ad Preto+ivm":
+                expanded_toponym = "Ad Pretorivm"
+
             toponym_id = get_uuid()
             self.output['names'].append({
                 'toponym_id': toponym_id,
