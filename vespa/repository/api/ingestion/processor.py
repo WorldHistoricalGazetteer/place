@@ -67,6 +67,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
             with VespaClient.sync_context("feed") as sync_app:
                 bcp47_fields = ["language", "script", "region", "variant"]
                 yql = f'select documentid, places from toponym where name matches "^{escape_yql(transformed_document["fields"]["name"])}$" '
+                # yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
                 for field in bcp47_fields:
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f'and bcp47_{field} matches "^{transformed_document["fields"][f"bcp47_{field}"]}$" '
