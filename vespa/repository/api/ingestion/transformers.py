@@ -185,7 +185,8 @@ class DocTransformer:
                     {
                         "document_id": toponym_id,
                         "fields": {
-                            "name": data.get("name", ""),
+                            "name_strict": (name:= data.get("name", "")),
+                            "name": name,
                             "places": [document_id],
                             "bcp47_language": "en",
                         }
