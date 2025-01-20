@@ -2,6 +2,7 @@
 import json
 import logging
 
+from .subtransformers.geonames.names import NamesProcessor as GeonamesNamesProcessor
 from .subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
 from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
 from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
@@ -88,7 +89,7 @@ class DocTransformer:
                         }
                     }
                 ],
-                None # Links # TODO
+                None  # Links # TODO
             )
         ],
         "ISO3166": [
@@ -124,7 +125,7 @@ class DocTransformer:
                         }
                     }
                 ],
-                None # No links
+                None  # No links
             )
         ],
         "Pleiades": [
@@ -136,13 +137,16 @@ class DocTransformer:
                         **({"record_id": record_id} if (record_id := data.get("id")) else {}),
                         **({"record_url": f"https://pleiades.stoa.org/places/{record_id}"} if record_id else {}),
                         **({"names": names["names"]} if (
-                            names := PleiadesNamesProcessor(document_id, data.get("names"), data.get("title")).process()) else {}),
+                            names := PleiadesNamesProcessor(document_id, data.get("names"),
+                                                            data.get("title")).process()) else {}),
                         **(type_classes if (  # Map Pleiades place types to GeoNames feature classes and AAT types
                             type_classes := PleiadesTypesProcessor(data.get("placeTypeURIs")).process()) else {}),
-                        **(geometry_etc if (  # Includes abstracted geometry properties, iso country codes, and array of locations
+                        **(geometry_etc if (
+                            # Includes abstracted geometry properties, iso country codes, and array of locations
                             geometry_etc := PleiadesLocationsProcessor(data.get("locations")).process()) else {}),
 
-                        **(years if (years := PleiadesYearsProcessor(data.get("names"), data.get("locations")).process()) else {}),
+                        **(years if (years := PleiadesYearsProcessor(data.get("names"),
+                                                                     data.get("locations")).process()) else {}),
                     }
                 },
                 names["toponyms"] if names else None,
@@ -152,46 +156,45 @@ class DocTransformer:
         "GeoNames": [  # TODO
             lambda data: (  # Transform the primary record
                 {
-                    "item_id": data.get("geonameid", ""),
-                    "primary_name": data.get("name", ""),
-                    "latitude": float(data.get("latitude")) if data.get("latitude") else None,
-                    "longitude": float(data.get("longitude")) if data.get("longitude") else None,
-                    "geometry_bbox": None,
-                    "feature_classes": [data.get("feature_class", "")],
-                    "ccodes": (
-                        data.get("cc2", "").split(",")
-                        if data.get("cc2") else
-                        [data.get("country_code")] or (
-                            GeometryIntersect(geometry={"type": "Point", "coordinates": [float(data["latitude"]), float(
-                                data["longitude"])]}).resolve()
-                            if data.get("latitude") and data.get("longitude") else None
-                        )
-                    ),
-                    "lpf_feature": {},
+                    "document_id": (document_id := data.get("geonameid", get_uuid())),
+                    "fields": {
+                        "names": [
+                            {"toponym_id": (toponym_id := get_uuid()), "year_start": 2025, "year_end": 2025},
+                        ],
+                        **(geometry_etc if (
+                            geometry_etc := GeometryProcessor({
+                                "type": "Point",
+                                "coordinates": [
+                                    float(data.get("longitude")) if data.get("longitude") else None,
+                                    float(data.get("latitude")) if data.get("latitude") else None
+                                ]
+                            }).process()) else {}),
+                        "feature_classes": [data.get("feature_class", "")],
+                    }
                 },
-                None,
+                [
+                    {
+                        "document_id": toponym_id,
+                        "fields": {
+                            "name": data.get("name", ""),
+                            "places": [document_id],
+                            "bcp47_language": "en",
+                        }
+                    }
+                ],
                 None  # No links
             ),
             lambda data: (  # Transform the alternate names
                 {
-                    "item_id": data.get("geonameid", ""),
-                },
-                [
-                    {
-                        "npr_item_id": data.get("geonameid", ""),
-                        "source_toponym_id": data.get("alternateNameId", ""),
-                        "toponym": data.get("alternate_name", ""),
-                        "language": data.get("isolanguage") or None,
-                        "is_preferred": bool(data.get("isPreferredName", False)),
-                        "start": data.get("from") or None,
-                        "end": data.get("to") or None,
+                    "document_id": (document_id := data.get("geonameid", get_uuid())),
+                    "fields": {
+                        **({"names": names["names"]} if (
+                            names := GeonamesNamesProcessor(document_id, data).process()) else {}),
                     }
-                ]
-                if data.get("isolanguage") not in ["post", "iata", "icao", "faac", "abbr", "link",
-                                                   "wkdt"]  # Skip non-language codes
-                else None,
-                None # No links
-            )
+                },
+                names["toponyms"] if names else None,
+                None  # No links
+            ),
         ],
         "TGN": [  # TODO
             lambda data: (
@@ -252,7 +255,7 @@ class DocTransformer:
 
                 None
             ),
-            [ # No links
+            [  # No links
             ]
         ],
         "Wikidata": [  # TODO
@@ -261,7 +264,7 @@ class DocTransformer:
                 },
                 [
                 ],
-                [ # No links
+                [  # No links
                 ]
             )
         ],
@@ -271,7 +274,7 @@ class DocTransformer:
                 },
                 [
                 ],
-                [ # No links
+                [  # No links
                 ]
             )
         ],
@@ -281,7 +284,7 @@ class DocTransformer:
                 },
                 [
                 ],
-                [ # No links
+                [  # No links
                 ]
             )
         ],
@@ -291,7 +294,7 @@ class DocTransformer:
                 },
                 [
                 ],
-                [ # No links
+                [  # No links
                 ]
             )
         ],
@@ -312,9 +315,9 @@ class DocTransformer:
                         **({"source": source} if (source := data.get("properties", {}).get("source")) else {}),
                     }
                 },
-                [ # No names
+                [  # No names
                 ],
-                [ # No links
+                [  # No links
                 ]
             )
         ],

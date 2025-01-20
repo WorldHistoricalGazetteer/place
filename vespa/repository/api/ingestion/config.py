@@ -36,6 +36,7 @@ REMOTE_DATASET_CONFIGS = [
             },
             {
                 'url': 'https://download.geonames.org/export/dump/alternateNamesV2.zip',
+                'update_place': True, # Update existing place with alternate names
                 'fieldnames': [
                     'alternateNameId', 'geonameid', 'isolanguage', 'alternate_name', 'isPreferredName',
                     'isShortName', 'isColloquial', 'isHistoric', 'from', 'to',

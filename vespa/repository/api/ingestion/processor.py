@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
-from ..config import VespaClient, pagination_limit
+from ..config import VespaClient
 from ..utils import task_tracker, get_uuid, escape_yql
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
         }
 
 
-def feed_document(sync_app, namespace, schema, transformed_document, task_id, count):
+def feed_document(sync_app, namespace, schema, transformed_document, task_id, count, update_place=False):
     document_id = transformed_document.get("document_id")
     if not document_id:
         logger.error(f"Document ID not found: {transformed_document}")
@@ -76,7 +76,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 # logger.info(f"Existing toponym response: {existing_response}")
                 toponym_exists = existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 0
 
-        if toponym_exists:
+        if toponym_exists:  # (and schema == 'toponym')
             # Extend `places` list
             existing_toponym_fields = existing_response.get("root", {}).get("children", [{}])[0].get("fields", {})
             existing_toponym_id = existing_toponym_fields.get("documentid").split("::")[-1]
@@ -98,12 +98,31 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 # Inject creation timestamp
                 transformed_document['fields']['created'] = int(time.time() * 1000)
                 # logger.info(f"Feeding document {namespace}:{schema}::{document_id}: {transformed_document}")
-            response = sync_app.feed_data_point(
-                namespace=namespace,
-                schema=schema,
-                data_id=document_id,
-                fields=transformed_document['fields']
-            )
+            if update_place:  # (and schema == 'place')
+                # Get the existing document
+                response = sync_app.get_data(
+                    namespace=namespace,
+                    schema=schema,
+                    data_id=document_id
+                )
+                if existing_response.status_code == 200:
+                    existing_document = existing_response.json
+                    existing_names = existing_document.get("fields", {}).get("names", [])
+                    response = sync_app.update_data(
+                        namespace=namespace,
+                        schema=schema,
+                        data_id=document_id,
+                        fields={
+                            "names": existing_names + [transformed_document['fields']['names']]
+                        }
+                    )
+            else:
+                response = sync_app.feed_data_point(
+                    namespace=namespace,
+                    schema=schema,
+                    data_id=document_id,
+                    fields=transformed_document['fields']
+                )
 
         if response.status_code == 200:
             return {"success": True, "namespace": namespace, "schema": schema, "document_id": document_id}
@@ -132,7 +151,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
         }
 
 
-async def process_document(document, dataset_config, transformer_index, sync_app, task_id, count):
+async def process_document(document, dataset_config, transformer_index, sync_app, task_id, count, update_place=False):
     transformed_document, toponyms, links = DocTransformer.transform(document, dataset_config['dataset_name'],
                                                                      transformer_index)
     task_tracker.update_task(task_id, {
@@ -143,14 +162,14 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     try:
         response = await asyncio.get_event_loop().run_in_executor(
             executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'],
-            transformed_document, task_id, count
+            transformed_document, task_id, count, update_place
         )
         success = response.get("success", False)
 
         if success and toponyms:
             toponym_responses = await asyncio.gather(*[
                 asyncio.to_thread(feed_document, sync_app, dataset_config['namespace'], 'toponym', toponym, task_id,
-                                  count)
+                                  count, False)
                 for toponym in toponyms
             ])
 
@@ -183,7 +202,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
                 "error": str(e)}
 
 
-async def process_documents(stream, dataset_config, transformer_index, sync_app, limit, task_id):
+async def process_documents(stream, dataset_config, transformer_index, sync_app, limit, task_id, update_place=False):
     semaphore = asyncio.Semaphore(10)  # Limit concurrent tasks
     batch_size = 25  # Number of documents to process at a time
     results = []  # Collect results from processed documents
@@ -199,7 +218,8 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
             #     return {
             #         "success": True,
             #     }
-            result = await process_document(document, dataset_config, transformer_index, sync_app, task_id, counter)
+            result = await process_document(document, dataset_config, transformer_index, sync_app, task_id, counter,
+                                            update_place=False)
             return result
 
     async def process_batch(batch):
@@ -265,10 +285,11 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             all_responses = []
             for transformer_index, file_config in enumerate(dataset_config['files']):
                 logger.info(f"Fetching items from stream: {file_config['url']}")
+                update_place = file_config.get("update_place", False)
                 stream_fetcher = StreamFetcher(file_config)
                 stream = stream_fetcher.get_items()
                 responses = await process_documents(stream, dataset_config, transformer_index, sync_app, limit,
-                                                    task_id)
+                                                    task_id, update_place)
                 all_responses.extend(responses)
 
             success_count = sum(1 for r in all_responses if r.get("success"))

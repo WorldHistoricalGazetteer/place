@@ -106,8 +106,8 @@ class NamesProcessor:
                 continue
 
             years = {
-                **({'year_start': name['start']} if 'start' in name else {}),
-                **({'year_end': name['end']} if 'end' in name else {}),
+                **({'year_start': year_start} if (year_start:= name.get('start')) else {}),
+                **({'year_end': year_end} if (year_end:= name.get('end')) else {}),
             }
 
             is_latin = language == 'la' or attested == romanized
