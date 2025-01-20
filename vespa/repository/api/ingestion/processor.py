@@ -105,6 +105,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     schema=schema,
                     data_id=document_id
                 )
+                logger.info(f"Response: {response.status_code}")
                 if existing_response.status_code == 200:
                     existing_document = existing_response.json
                     existing_names = existing_document.get("fields", {}).get("names", [])
@@ -116,6 +117,8 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                             "names": existing_names + [transformed_document['fields']['names']]
                         }
                     )
+                else:
+                    logger.error(f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}")
             else:
                 response = sync_app.feed_data_point(
                     namespace=namespace,
