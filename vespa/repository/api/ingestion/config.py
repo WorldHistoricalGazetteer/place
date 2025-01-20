@@ -10,7 +10,7 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'Pleiades: A community-built gazetteer and graph of ancient places. Copyright © Institute for the Study of the Ancient World. Sharing and remixing permitted under terms of the Creative Commons Attribution 3.0 License (cc-by). https://pleiades.stoa.org/',
         'files': [
             {
-                'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',
+                'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz', # 104MB
                 'file_type': 'json',
                 'item_path': '@graph',
             }
@@ -24,7 +24,7 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'GeoNames geographical database. https://www.geonames.org/',
         'files': [
             {
-                'url': 'https://download.geonames.org/export/dump/allCountries.zip',
+                'url': 'https://download.geonames.org/export/dump/allCountries.zip', # 405MB
                 'fieldnames': [
                     'geonameid', 'name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'feature_class',
                     'feature_code', 'country_code', 'cc2', 'admin1_code', 'admin2_code', 'admin3_code', 'admin4_code',
@@ -35,7 +35,7 @@ REMOTE_DATASET_CONFIGS = [
                 'delimiter': '\t',
             },
             {
-                'url': 'https://download.geonames.org/export/dump/alternateNamesV2.zip',
+                'url': 'https://download.geonames.org/export/dump/alternateNamesV2.zip', # 193MB
                 'update_place': True, # Update existing place with alternate names
                 'fieldnames': [
                     'alternateNameId', 'geonameid', 'isolanguage', 'alternate_name', 'isPreferredName',
@@ -80,7 +80,7 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'Wikidata is a free and open knowledge base that can be read and edited by both humans and machines. https://www.wikidata.org/',
         'files': [
             {
-                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz',
+                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz', # 133GB
                 'file_type': 'json',
                 'item_path': 'entities',
             },

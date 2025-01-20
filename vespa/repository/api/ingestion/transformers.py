@@ -118,7 +118,7 @@ class DocTransformer:
                     {
                         "document_id": toponym_id,
                         "fields": {
-                            "name_strict": (name:= data.get("properties", {}).get("ADMIN")),
+                            "name_strict": (name := data.get("properties", {}).get("ADMIN")),
                             "name": name,
                             "places": [document_id],
                             "bcp47_language": "en",
@@ -153,7 +153,8 @@ class DocTransformer:
                 PleiadesLinksProcessor(document_id, record_id, data.get("connections")).process()
             )
         ],
-        "GeoNames": [  # All geometries are points, so the following is much more efficient than using the GeometryProcessor
+        "GeoNames": [
+            # All geometries are points, so the following is much more efficient than using the GeometryProcessor
             lambda data: (  # Transform the primary record
                 {
                     "document_id": (document_id := data.get("geonameid", get_uuid())),
@@ -170,13 +171,11 @@ class DocTransformer:
                         "bbox_antimeridial": False,
                         **({"convex_hull": point} if (point := json.dumps({
                             "type": "Point",
-                            "coordinates": [
-                                bbox_sw_lng if bbox_sw_lng else None,
-                                bbox_sw_lat if bbox_sw_lat else None
-                            ]
+                            "coordinates": [bbox_sw_lng, bbox_sw_lat]
                         }) if bbox_sw_lng and bbox_sw_lat else None) else {}),
                         **({"locations": [{"geometry": point}]} if point else {}),
-                        **({"representative_point": {"lat": bbox_sw_lat, "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
+                        **({"representative_point": {"lat": bbox_sw_lat,
+                                                     "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
                         **({"classes": classes} if (classes := [data.get("feature_class", "")]) else {}),
                         **({"ccodes": [ccode]} if (ccode := data.get("country_code")) else {}),
                     }
@@ -185,7 +184,7 @@ class DocTransformer:
                     {
                         "document_id": toponym_id,
                         "fields": {
-                            "name_strict": (name:= data.get("name", "")),
+                            "name_strict": (name := data.get("name", "")),
                             "name": name,
                             "places": [document_id],
                             "bcp47_language": "en",
@@ -271,9 +270,20 @@ class DocTransformer:
         "Wikidata": [  # TODO
             lambda data: (
                 {
+                    "document_id": (document_id := data.get("id", get_uuid())),
+                    "fields": {
+                        "record_id": document_id,
+                        "record_url": f"https://www.wikidata.org/wiki/Special:EntityData/{document_id}.json",
+                        **({"names": names["names"]} if (
+                            names := WikidataNamesProcessor(document_id, data.get("labels")).process()) else {}),
+                        **(type_classes if (  # Map Wikidata place types to GeoNames feature classes and AAT types
+                            type_classes := WikidataTypesProcessor(data.get("claims", {}).get("P31", {}), data.get("claims", {}).get("P1566", {})).process()) else {}),
+                        **(geometry_etc if (
+                            # Includes abstracted geometry properties, iso country codes, and array of locations
+                            geometry_etc := WikidataLocationsProcessor(data.get("claims", {}).get("P625", {})).process()) else {}),
+                    }
                 },
-                [
-                ],
+                names["toponyms"] if names else None,
                 [  # No links
                 ]
             )
