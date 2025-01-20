@@ -1,6 +1,8 @@
 # /ingestion/processor.py
 import asyncio
 import logging
+import queue
+import threading
 import time
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
@@ -14,6 +16,50 @@ from ..utils import task_tracker, get_uuid, escape_yql
 logger = logging.getLogger(__name__)
 
 executor = ThreadPoolExecutor(max_workers=10)
+
+# Create a queue with a maximum size
+max_queue_size = 100  # Queue size for document update tasks
+update_queue = queue.Queue(maxsize=max_queue_size)
+
+
+def update_worker():
+    while True:
+        task = update_queue.get()
+        if task is None:  # Sentinel to terminate the worker thread
+            break
+        try:
+            process_update(task)
+        except Exception as e:
+            logger.error(f"Error processing update: {e}")
+        finally:
+            update_queue.task_done()
+
+
+def process_update(task):
+    sync_app, namespace, schema, document_id, transformed_document, task_id, count, task_tracker = task
+    response = sync_app.get_data(
+        namespace=namespace,
+        schema=schema,
+        data_id=document_id
+    )
+    logger.info(f"Response: {response.status_code}: {response.json}")
+    if response.status_code == 200:
+        existing_document = response.json
+        existing_names = existing_document.get("fields", {}).get("names", [])
+        logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
+        response = sync_app.update_data(
+            namespace=namespace,
+            schema=schema,
+            data_id=document_id,
+            fields={
+                "names": existing_names + transformed_document['fields']['names']
+            }
+        )
+        logger.info(f"Update response: {response.status_code}: {response.json}")
+    else:
+        msg = f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}"
+        task_tracker.update_task(task_id, {"error": f"#{count}: {msg}"})
+        logger.error(msg)
 
 
 def feed_link(sync_app, namespace, schema, link, task_id, count):
@@ -100,28 +146,9 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 # Inject creation timestamp
                 transformed_document['fields']['created'] = int(time.time() * 1000)
             if update_place:  # (only True when schema == 'place')
-                # Get the existing document
-                response = sync_app.get_data(
-                    namespace=namespace,
-                    schema=schema,
-                    data_id=document_id
-                )
-                logger.info(f"Response: {response.status_code}: {response.json}")
-                if response.status_code == 200:
-                    existing_document = response.json
-                    existing_names = existing_document.get("fields", {}).get("names", [])
-                    logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
-                    response = sync_app.update_data(
-                        namespace=namespace,
-                        schema=schema,
-                        data_id=document_id,
-                        fields={
-                            "names": existing_names + transformed_document['fields']['names']
-                        }
-                    )
-                    logger.info(f"Update response: {response.status_code}: {response.json}")
-                else:
-                    logger.error(f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}")
+                task = (sync_app, namespace, schema, document_id, transformed_document, task_id, count, task_tracker)
+                update_queue.put(task)
+                response = None
             else:
                 response = sync_app.feed_data_point(
                     namespace=namespace,
@@ -130,7 +157,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     fields=transformed_document['fields']
                 )
 
-        if response.status_code == 200:
+        if update_place or response.status_code == 200:
             return {"success": True, "namespace": namespace, "schema": schema, "document_id": document_id}
         else:
             msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
@@ -279,6 +306,11 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         "visit_url": f"/visit?schema={dataset_config['vespa_schema']}&namespace={dataset_config['namespace']}"})
 
     try:
+
+        # Start the document update worker thread
+        worker_thread = threading.Thread(target=update_worker, daemon=True)
+        worker_thread.start()
+
         with VespaClient.sync_context("feed") as sync_app:
 
             # Run `delete_all_docs` asynchronously to avoid blocking the event loop
