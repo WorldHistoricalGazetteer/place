@@ -169,7 +169,7 @@ class DocTransformer:
                                     float(data.get("latitude")) if data.get("latitude") else None
                                 ]
                             }).process()) else {}),
-                        "feature_classes": [data.get("feature_class", "")],
+                        "classes": [data.get("feature_class", "")],
                     }
                 },
                 [
