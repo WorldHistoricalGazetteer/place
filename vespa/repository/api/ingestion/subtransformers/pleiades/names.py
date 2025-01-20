@@ -84,7 +84,7 @@ class NamesProcessor:
             self.output['toponyms'].append({
                 'document_id': toponym_id,
                 'fields': {
-                    'name_exact': expanded_toponym,
+                    'name_strict': expanded_toponym,
                     'name': expanded_toponym,
                     'places': [self.document_id],
                     'bcp47_language': toponym_language,
