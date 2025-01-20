@@ -49,7 +49,7 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
 
 
 def feed_document(sync_app, namespace, schema, transformed_document, task_id, count, update_place=False):
-    logger.info(f"Feeding document {count} (update place = {update_place}): {transformed_document.get('document_id')}")
+    logger.info(f"feed_document {count} (update place = {update_place}): {transformed_document.get('document_id')}")
     document_id = transformed_document.get("document_id")
     if not document_id:
         logger.error(f"Document ID not found: {transformed_document}")
@@ -156,6 +156,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
 
 
 async def process_document(document, dataset_config, transformer_index, sync_app, task_id, count, update_place=False):
+    logger.info(f"process_document {count} (update place = {update_place})")
     transformed_document, toponyms, links = DocTransformer.transform(document, dataset_config['dataset_name'],
                                                                      transformer_index)
     task_tracker.update_task(task_id, {
@@ -207,6 +208,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
 
 async def process_documents(stream, dataset_config, transformer_index, sync_app, limit, task_id, update_place=False):
+    logger.info(f"process_documents: (update place = {update_place})")
     semaphore = asyncio.Semaphore(10)  # Limit concurrent tasks
     batch_size = 25  # Number of documents to process at a time
     results = []  # Collect results from processed documents
@@ -225,7 +227,7 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
             # logger.info(f"Processing document {counter}: {document}")
 
             result = await process_document(document, dataset_config, transformer_index, sync_app, task_id, counter,
-                                            update_place=False)
+                                            update_place=update_place)
             return result
 
     async def process_batch(batch):
