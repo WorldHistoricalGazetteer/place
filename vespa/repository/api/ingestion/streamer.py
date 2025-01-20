@@ -163,8 +163,12 @@ class StreamFetcher:
         # Parse CSV from stream
         wrapper = io.TextIOWrapper(stream, encoding='utf-8', errors='replace')
         csv_reader = csv.DictReader(wrapper, delimiter=self.delimiter, fieldnames=self.fieldnames)
-        for row in csv_reader:
-            yield row
+
+        async def async_generator():
+            for row in csv_reader:
+                yield row
+
+        return async_generator()
 
     def _parse_xml_stream(self, stream):
         # Parse XML incrementally from stream
