@@ -72,15 +72,22 @@ def get_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def escape_yql(text: str) -> str:
+def escape_match_yql(text: str) -> str:
     """
     Quote " and backslash \ characters in text values must be escaped by a backslash
     See: https://docs.vespa.ai/en/reference/query-language-reference.html
     """
     # return re.sub(r'[\\^$|()"]', r"\\\g<0>", text)  # NOT: {}[].*+?
     subtext = re.sub(r'[\\"]', r"\\\g<0>", text)
-    subtext = re.sub(r'[)(]', r"\\\\\\\g<0>", subtext)
     return re.sub(r'[*]', r"\\\\\g<0>", subtext)
+
+
+def escape_yql(text: str) -> str:
+    """
+    Quote " and backslash \ characters in text values must be escaped by a backslash
+    See: https://docs.vespa.ai/en/reference/query-language-reference.html
+    """
+    return re.sub(r'[\\"]', r"\\\g<0>", text)
 
 
 def debracket(text):

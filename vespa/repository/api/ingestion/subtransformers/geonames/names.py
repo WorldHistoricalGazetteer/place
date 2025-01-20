@@ -51,6 +51,7 @@ class NamesProcessor:
         self.output['toponyms'].append({
             'document_id': toponym_id,
             'fields': {
+                'name_exact': alternateName,
                 'name': alternateName,
                 'places': [self.document_id],
                 **({'bcp47_language': isolanguage} if isolanguage else {}),
