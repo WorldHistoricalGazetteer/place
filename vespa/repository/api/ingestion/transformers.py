@@ -128,6 +128,7 @@ class DocTransformer:
             )
         ],
         "Pleiades": [
+            # TODO: Before running this again, delete the cached data download and augment the types dictionary
             lambda data: (
                 {
                     "document_id": (document_id := get_uuid()),
