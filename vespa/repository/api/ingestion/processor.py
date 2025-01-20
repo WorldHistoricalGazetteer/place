@@ -106,9 +106,9 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     schema=schema,
                     data_id=document_id
                 )
-                logger.info(f"Response: {response.status_code}")
-                if existing_response.status_code == 200:
-                    existing_document = existing_response.json
+                logger.info(f"Response: {response.status_code}: {response.json}")
+                if response.status_code == 200:
+                    existing_document = response.json
                     existing_names = existing_document.get("fields", {}).get("names", [])
                     response = sync_app.update_data(
                         namespace=namespace,
