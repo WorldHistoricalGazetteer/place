@@ -27,7 +27,7 @@ class NamesProcessor:
         :return: A dictionary with 'names' and 'toponyms' arrays.
         """
 
-        logger.info(f"Processing names for document {self.document_id}: {len(self.name)} names found. {self.name}")
+        # logger.info(f"Processing names for document {self.document_id}: {len(self.name)} names found. {self.name}")
 
         alternateName = self.name.get("alternate_name")
         if not alternateName:
