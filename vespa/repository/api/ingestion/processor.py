@@ -119,6 +119,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                             "names": existing_names + transformed_document['fields']['names']
                         }
                     )
+                    logger.info(f"Update response: {response.status_code}: {response.json}")
                 else:
                     logger.error(f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}")
             else:
