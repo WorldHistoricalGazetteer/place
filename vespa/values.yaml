@@ -107,7 +107,7 @@ resources:
     requests:
       memory: "1G"
     limits:
-      memory: "1G"
+      memory: "4G"
 
 common:
   initContainer: |

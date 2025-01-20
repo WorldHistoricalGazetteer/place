@@ -79,6 +79,7 @@ def escape_yql(text: str) -> str:
     """
     # return re.sub(r'[\\^$|()"]', r"\\\g<0>", text)  # NOT: {}[].*+?
     subtext = re.sub(r'[\\"]', r"\\\g<0>", text)
+    subtext = re.sub(r'[)(]', r"\\\\\\\g<0>", subtext)
     return re.sub(r'[*]', r"\\\\\g<0>", subtext)
 
 

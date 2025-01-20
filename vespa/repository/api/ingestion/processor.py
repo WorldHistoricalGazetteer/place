@@ -213,11 +213,13 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
         async with semaphore:
             counter += 1
             # Uncomment to reprocess only specific documents (for debugging - disable deletion of other documents too if needed)
-            # if not counter in [3069, 4527]:
-            #     # Skip document
-            #     return {
-            #         "success": True,
-            #     }
+            if not counter in [92697, 206965, 208028]:
+                # Skip document
+                return {
+                    "success": True,
+                }
+            logger.info(f"Processing document {counter}: {document}")
+
             result = await process_document(document, dataset_config, transformer_index, sync_app, task_id, counter,
                                             update_place=False)
             return result
