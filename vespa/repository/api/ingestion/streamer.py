@@ -138,7 +138,7 @@ class StreamFetcher:
 
         if format_type in ['json', 'geojson']:
             return self._parse_json_stream(stream)
-        elif format_type == 'csv':
+        elif format_type in ['csv', 'tsv', 'txt']:
             return self._parse_csv_stream(stream)
         elif format_type == 'xml':
             return self._parse_xml_stream(stream)
