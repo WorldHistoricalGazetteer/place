@@ -110,12 +110,13 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 if response.status_code == 200:
                     existing_document = response.json
                     existing_names = existing_document.get("fields", {}).get("names", [])
+                    logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
                     response = sync_app.update_data(
                         namespace=namespace,
                         schema=schema,
                         data_id=document_id,
                         fields={
-                            "names": existing_names + [transformed_document['fields']['names']]
+                            "names": existing_names + transformed_document['fields']['names']
                         }
                     )
                 else:
