@@ -49,6 +49,7 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
 
 
 def feed_document(sync_app, namespace, schema, transformed_document, task_id, count, update_place=False):
+    logger.info(f"Feeding document {count} (update place = {update_place}): {transformed_document.get('document_id')}")
     document_id = transformed_document.get("document_id")
     if not document_id:
         logger.error(f"Document ID not found: {transformed_document}")
