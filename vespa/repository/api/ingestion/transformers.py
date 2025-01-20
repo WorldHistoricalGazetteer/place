@@ -8,7 +8,6 @@ from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLo
 from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
 from .subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
 from .subtransformers.pleiades.years import YearsProcessor as PleiadesYearsProcessor
-from ..gis.intersections import GeometryIntersect
 from ..gis.processor import GeometryProcessor
 from ..utils import get_uuid
 
@@ -153,23 +152,32 @@ class DocTransformer:
                 PleiadesLinksProcessor(document_id, record_id, data.get("connections")).process()
             )
         ],
-        "GeoNames": [  # TODO
+        "GeoNames": [  # All geometries are points, so the following is much more efficient than using the GeometryProcessor
             lambda data: (  # Transform the primary record
                 {
                     "document_id": (document_id := data.get("geonameid", get_uuid())),
                     "fields": {
+                        **({"record_id": record_id} if (record_id := data.get("geonameid")) else {}),
+                        **({"record_url": f"https://www.geonames.org/{record_id}"} if record_id else {}),
                         "names": [
                             {"toponym_id": (toponym_id := get_uuid()), "year_start": 2025, "year_end": 2025},
                         ],
-                        **(geometry_etc if (
-                            geometry_etc := GeometryProcessor({
-                                "type": "Point",
-                                "coordinates": [
-                                    float(data.get("longitude")) if data.get("longitude") else None,
-                                    float(data.get("latitude")) if data.get("latitude") else None
-                                ]
-                            }).process()) else {}),
-                        "classes": [data.get("feature_class", "")],
+                        **({"bbox_sw_lat": bbox_sw_lat} if (bbox_sw_lat := float(data.get("latitude"))) else {}),
+                        **({"bbox_sw_lng": bbox_sw_lng} if (bbox_sw_lng := float(data.get("longitude"))) else {}),
+                        **({"bbox_ne_lat": bbox_sw_lat} if bbox_sw_lat else {}),
+                        **({"bbox_ne_lng": bbox_sw_lng} if bbox_sw_lng else {}),
+                        "bbox_antimeridial": False,
+                        **({"convex_hull": point} if (point := json.dumps({
+                            "type": "Point",
+                            "coordinates": [
+                                bbox_sw_lng if bbox_sw_lng else None,
+                                bbox_sw_lat if bbox_sw_lat else None
+                            ]
+                        }) if bbox_sw_lng and bbox_sw_lat else None) else {}),
+                        **({"locations": [{"geometry": point}]} if point else {}),
+                        **({"representative_point": {"lat": bbox_sw_lat, "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
+                        **({"classes": classes} if (classes := [data.get("feature_class", "")]) else {}),
+                        **({"ccodes": [ccode]} if (ccode := data.get("country_code")) else {}),
                     }
                 },
                 [

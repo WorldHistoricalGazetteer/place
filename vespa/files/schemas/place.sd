@@ -14,12 +14,6 @@ schema place {
 
         ########### Source Metadata ###########
 
-        field source type string { # TODO: May be redundant, as this is incorporated as the document namespace.
-            # Indicates the origin or authority of the record (e.g., a specific gazetteer, database, or contributed dataset).
-            indexing: attribute | summary
-            attribute: fast-search
-        }
-
         field record_id type string {
             # A unique identifier for the place within the source.
             indexing: attribute | summary
