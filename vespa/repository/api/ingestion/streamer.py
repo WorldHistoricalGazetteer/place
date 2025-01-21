@@ -65,6 +65,7 @@ class StreamFetcher:
         self.item_path = file.get('item_path', None)  # Path to the items in a JSON file
         self.fieldnames = file.get('fieldnames', None)  # Fieldnames for CSV files
         self.delimiter = file.get('delimiter', '\t')  # Delimiter for CSV files
+        self.local_name = file.get('local_name', None)  # Local name for the downloaded file
         self.ingestion_path = "/ingestion"  # Path to the ingestion folder
 
     def _is_local_file(self, file_url):
@@ -73,7 +74,11 @@ class StreamFetcher:
         return not parsed.scheme or parsed.scheme == "file"
 
     def _get_file_path(self):
-        file_name = os.path.basename(self.file_url)
+        """
+        Construct the file path where the file will be stored locally.
+        Use `local_name` if provided; otherwise, default to the basename of the file URL.
+        """
+        file_name = self.local_name if self.local_name else os.path.basename(self.file_url)
         return os.path.join(self.ingestion_path, file_name)
 
     def _download_file(self):
