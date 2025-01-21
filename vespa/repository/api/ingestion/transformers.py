@@ -5,6 +5,9 @@ import logging
 from .subtransformers.geonames.names import NamesProcessor as GeonamesNamesProcessor
 from .subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
 from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
+from .subtransformers.wikidata.names import NamesProcessor as WikidataNamesProcessor
+from .subtransformers.wikidata.types import TypesProcessor as WikidataTypesProcessor
+from .subtransformers.wikidata.locations import LocationsProcessor as WikidataLocationsProcessor
 from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
 from .subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
 from .subtransformers.pleiades.years import YearsProcessor as PleiadesYearsProcessor
@@ -267,7 +270,7 @@ class DocTransformer:
             [  # No links
             ]
         ],
-        "Wikidata": [  # TODO
+        "Wikidata": [  # Depends on GeoNames having been already processed
             lambda data: (
                 {
                     "document_id": (document_id := data.get("id", get_uuid())),
@@ -276,11 +279,11 @@ class DocTransformer:
                         "record_url": f"https://www.wikidata.org/wiki/Special:EntityData/{document_id}.json",
                         **({"names": names["names"]} if (
                             names := WikidataNamesProcessor(document_id, data.get("labels")).process()) else {}),
-                        **(type_classes if (  # Map Wikidata place types to GeoNames feature classes and AAT types
+                        **(type_classes if (  # Map Wikidata place types to GeoNames feature classes and AAT types: TODO: Currently maps types to wd: QIDs
                             type_classes := WikidataTypesProcessor(data.get("claims", {}).get("P31", {}), data.get("claims", {}).get("P1566", {})).process()) else {}),
                         **(geometry_etc if (
                             # Includes abstracted geometry properties, iso country codes, and array of locations
-                            geometry_etc := WikidataLocationsProcessor(data.get("claims", {}).get("P625", {})).process()) else {}),
+                            geometry_etc := WikidataLocationsProcessor(data.get("claims", {}).get("P625", [])).process()) else {}),
                     }
                 },
                 names["toponyms"] if names else None,

@@ -17,13 +17,13 @@ schema place {
         field record_id type string {
             # A unique identifier for the place within the source.
             indexing: attribute | summary
-            attribute: fast-search
+            match { exact }
         }
 
         field record_url type string {
             # A URL pointing to the source record, preferably an API endpoint.
             indexing: attribute | summary
-            attribute: fast-search
+            match { exact }
         }
 
         ########### Toponymic Attestations ###########
@@ -49,7 +49,7 @@ schema place {
             indexing: summary
             struct-field toponym_id {
                 indexing: attribute | summary
-                attribute: fast-search
+                match { exact }
             }
             struct-field year_start {
                 indexing: attribute | summary
@@ -88,21 +88,21 @@ schema place {
             # for complex GIS filtering when country codes form part of a query.
             # Example: ["FR", "DE", "LU"]
             indexing: attribute | summary
-            attribute: fast-search
+            match { exact }
         }
 
         field types type array<string> {
             # An array of AAT (Getty Art & Architecture Thesaurus) types associated with the place.
             # e.g. ["300008375", "300008347"] (for "cities" and "towns")
             indexing: attribute | summary
-            attribute: fast-search
+            match { exact }
         }
 
         field classes type array<string> {
             # An array of single-character GeoNames feature classes associated with the place.
             # e.g. ["P", "A"] (for "populated places" and "administrative areas")
             indexing: attribute | summary
-            attribute: fast-search
+            match { exact }
         }
 
         field meta type string {
