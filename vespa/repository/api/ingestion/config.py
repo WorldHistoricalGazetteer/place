@@ -113,6 +113,44 @@ REMOTE_DATASET_CONFIGS = [
         ],
     },
     {
+        'dataset_name': 'NativeLand',
+        'namespace': 'nl',
+        'vespa_schema': 'npr',
+        'api_item': '',
+        'citation': 'Native Land Digital. https://native-land.ca/',
+        'files': [
+            {
+                'url': f'https://native-land.ca/api/polygons/geojson/territories?key={NATIVE_LAND_API_KEY}',
+                'file_type': 'json',
+                'item_path': 'features',
+            },
+            {
+                'url': f'https://native-land.ca/api/polygons/geojson/languages?key={NATIVE_LAND_API_KEY}',
+                'file_type': 'json',
+                'item_path': 'features',
+            },
+            {
+                'url': f'https://native-land.ca/api/polygons/geojson/treaties?key={NATIVE_LAND_API_KEY}',
+                'file_type': 'json',
+                'item_path': 'features',
+            }
+        ],
+    },
+    {
+        'dataset_name': 'DPlace',
+        'namespace': 'dplace',
+        'vespa_schema': 'npr',
+        'api_item': '',
+        'citation': 'D-PLACE: A Global Database of Cultural, Linguistic and Environmental Diversity. https://d-place.org/',
+        'files': [
+            {
+                'url': f'https://d-place.org/languages.geojson',
+                'file_type': 'json',
+                'item_path': 'features',
+            },
+        ],
+    },
+    {
         'dataset_name': 'GB1900',
         'namespace': 'GB1900',
         'vespa_schema': 'npr',
