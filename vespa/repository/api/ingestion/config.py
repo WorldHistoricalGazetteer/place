@@ -58,16 +58,17 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'http://tgndownloads.getty.edu/VocabData/full.zip',
                 'file_name': 'TGNOut_Full.nt',
                 'file_type': 'nt',
-                'filter': [ # Filter to only include records with these predicates (examples of each given below)
-                    '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
-                    '<http://vocab.getty.edu/ontology#prefLabelGVP>', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
-                    '<http://www.w3.org/2008/05/skos-xl#prefLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
-                    '<http://www.w3.org/2008/05/skos-xl#altLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
-                    '<http://vocab.getty.edu/ontology#term>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
-                    '<http://vocab.getty.edu/ontology#estStart>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
-                    '<http://schema.org/longitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
-                    '<http://schema.org/latitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
-                    '<http://vocab.getty.edu/ontology#placeType>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
+                'filters': [ # Filter to only include records with these predicates
+                    lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
+                    lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#prefLabelGVP>', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
+                    lambda triple: triple['predicate'] == '<http://www.w3.org/2008/05/skos-xl#prefLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
+                    lambda triple: triple['predicate'] == '<http://www.w3.org/2008/05/skos-xl#altLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
+                    lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#term>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
+                    lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#estStart>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+                    lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#estEnd>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estEnd> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+                    lambda triple: triple['predicate'] == '<http://schema.org/longitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    lambda triple: triple['predicate'] == '<http://schema.org/latitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#placeType>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
                 ],
             },
         ],
@@ -80,9 +81,13 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'Wikidata is a free and open knowledge base that can be read and edited by both humans and machines. https://www.wikidata.org/',
         'files': [
             {
-                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz', # 133GB
+                # 'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz', # 133GB
+                'url': '/data/k8s/vespa-ingestion/wikidata.json.gz', # 133GB
                 'file_type': 'json',
                 'item_path': 'entities',
+                'filters': [
+                    lambda doc: 'claims' in doc and 'P625' in doc['claims'], # Filter to only include items with coordinates
+                ]
             },
         ],
     },
