@@ -274,13 +274,16 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
         return await asyncio.gather(*tasks)
 
     current_batch = []
+    skipcount = 0
     count = 0
+    filters = dataset_config.get('files')[transformer_index].get('filters')
 
     async for document in stream:
 
         # Apply filters (if any)
-        filters = dataset_config.get('files')[transformer_index].get('filters')
         if filters and not any(f(document) for f in filters):
+            skipcount += 1
+            logger.info(f"Skipping document {skipcount}: {document.get()}")
             continue
 
         current_batch.append(document)
