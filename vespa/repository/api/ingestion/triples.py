@@ -28,7 +28,7 @@ def feed_triple(sync_app, namespace, transformed_document, task_id, count):
     except Exception as e:
         task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
         logger.error(
-            f"Error feeding document: {namespace}:{schema}::{transformed_document.get("document_id")}, Error: {str(e)}",
+            f'Error feeding document: {namespace}:{schema}::{transformed_document.get("document_id")}, Error: {str(e)}',
             exc_info=True)
         return {
             "success": False,
