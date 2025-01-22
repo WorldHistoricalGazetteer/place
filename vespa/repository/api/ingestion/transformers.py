@@ -211,7 +211,7 @@ class DocTransformer:
         ],
         "TGN": [
             lambda data: (
-                TGNTriplesProcessor(data) or None,
+                TGNTriplesProcessor(data).processed or None,
                 None,  # Ignored for triples
                 None  # Ignored for triples
             )
