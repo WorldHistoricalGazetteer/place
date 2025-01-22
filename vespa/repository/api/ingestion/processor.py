@@ -283,7 +283,7 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
         # Apply filters (if any)
         if filters and not any(f(document) for f in filters):
             skipcount += 1
-            logger.info(f"Skipping document {skipcount}: {document.get()}")
+            logger.info(f"Skipping document {skipcount}: {document.predicate}")
             continue
 
         current_batch.append(document)
