@@ -65,6 +65,8 @@ class TriplesProcessor:
                     }
                 case "estStart":
                     match = re.match(r'"(-?\d+)', self.object)
+                    if not match:  # Catch rogue values, such as '"######"^^<http://www.w3.org/2001/XMLSchema#gYear'
+                        return {}
                     return {
                         'variant': {
                             'document_id': self.subject_id,
@@ -76,6 +78,8 @@ class TriplesProcessor:
                     }
                 case "estEnd":
                     match = re.match(r'"(-?\d+)', self.object)
+                    if not match:  # Catch rogue values, such as '"######"^^<http://www.w3.org/2001/XMLSchema#gYear'
+                        return {}
                     return {
                         'variant': {
                             'document_id': self.subject_id,
