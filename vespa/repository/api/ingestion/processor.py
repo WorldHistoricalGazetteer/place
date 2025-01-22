@@ -201,7 +201,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
+    logger.info(f"Feeding document {count}: {transformed_document}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(

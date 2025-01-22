@@ -40,7 +40,7 @@ class TriplesProcessor:
                     'schema': 'toponym',
                     'document_id': self.subject_id,
                     'fields': {
-                        'name_strict': toponym,
+                        'name_strict': (toponym := toponym.strip('"')),
                         'name': toponym,
                         **({'bcp47_language': language} if language else {}),
                     }
