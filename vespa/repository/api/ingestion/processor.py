@@ -279,7 +279,8 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     async for document in stream:
 
         # Apply filters (if any)
-        if dataset_config.get('filters') and not any(f(document) for f in dataset_config['filters']):
+        filters = dataset_config.get('files')[transformer_index].get('filters')
+        if filters and not any(f(document) for f in filters):
             continue
 
         current_batch.append(document)
