@@ -23,7 +23,7 @@ class TriplesProcessor:
                     'schema': 'place',
                     'document_id': self.subject_id,
                     'fields': {
-                        'bbox_sw_lng': float(self.object.split('^^')[0]),
+                        'bbox_sw_lng': float(self.object.split('^^')[0].strip('"')),
                     }
                 }
             case "latitude":
@@ -31,7 +31,7 @@ class TriplesProcessor:
                     'schema': 'place',
                     'document_id': self.subject_id,
                     'fields': {
-                        'bbox_sw_lat': float(self.object.split('^^')[0]),
+                        'bbox_sw_lat': float(self.object.split('^^')[0].strip('"')),
                     }
                 }
             case "term":
