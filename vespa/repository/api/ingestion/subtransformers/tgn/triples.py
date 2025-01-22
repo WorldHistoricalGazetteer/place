@@ -16,102 +16,106 @@ class TriplesProcessor:
 
         logger.info(f"TRIPLE: {self.subject_id} *** {self.predicate} *** {self.object}")
 
-    def process(self) -> list[dict]:
+    def process(self) -> dict:
         match self.predicate:
             case "placeType":
-                return [{
-                    'schema': 'place',
-                    'document_id': self.subject_id,
-                    'fields': {
-                        'types': [self.object.split('/')[-1]],
+                return {
+                    'place': {
+                        'document_id': self.subject_id,
+                        'fields': {
+                            'types': [self.object.split('/')[-1]],
+                        }
                     }
-                }]
+                }
             case "longitude":
-                return [{
-                    'schema': 'place',
-                    'document_id': self.subject_id,
-                    'fields': {
-                        'bbox_sw_lng': float(self.object.split('^^')[0].strip('"')),
+                return {
+                    'place': {
+                        'document_id': self.subject_id,
+                        'fields': {
+                            'bbox_sw_lng': float(self.object.split('^^')[0].strip('"')),
+                        }
                     }
-                }]
+                }
             case "latitude":
-                return [{
-                    'schema': 'place',
-                    'document_id': self.subject_id,
-                    'fields': {
-                        'bbox_sw_lat': float(self.object.split('^^')[0].strip('"')),
+                return {
+                    'place': {
+                        'document_id': self.subject_id,
+                        'fields': {
+                            'bbox_sw_lat': float(self.object.split('^^')[0].strip('"')),
+                        }
                     }
-                }]
+                }
             case "term":
                 toponym, _, language = self.object.partition("@")
-                return [{
-                    'schema': 'toponym',
-                    'document_id': self.subject_id,
-                    'fields': {
-                        'name_strict': (toponym := toponym.strip('"')),
-                        'name': toponym,
-                        **({'bcp47_language': language} if language else {}),
+                return {
+                    'toponym': {
+                        'document_id': self.subject_id,
+                        'fields': {
+                            'name_strict': (toponym := toponym.strip('"')),
+                            'name': toponym,
+                            **({'bcp47_language': language} if language else {}),
+                        }
                     }
-                }]
+                }
             case "estStart":
-                return [{
-                    'schema': 'variant',
-                    'document_id': self.subject_id,
-                    'fields': {
-                        'year_start': int(self.object.split('^^')[0]),
+                return {
+                    'variant': {
+                        'document_id': self.subject_id,
+                        'fields': {
+                            'year_start': int(self.object.split('^^')[0]),
+                        }
                     }
-                }]
+                }
             case "estEnd":
-                return [{
-                    'schema': 'variant',
-                    'document_id': self.subject_id,
-                    'fields': {
-                        'year_end': int(self.object.split('^^')[0]),
+                return {
+                    'variant': {
+                        'document_id': self.subject_id,
+                        'fields': {
+                            'year_end': int(self.object.split('^^')[0]),
+                        }
                     }
-                }]
+                }
             case "altLabel":
-                return [
-                    {
-                        'schema': 'place',
+                toponym_id = self.object.split('/')[-1]
+                return {
+                    'place': {
                         'document_id': self.subject_id,
                         'fields': {
                             'names': [
                                 {
-                                    'toponym_id': (toponym_id := self.object.split('/')[-1])
+                                    'toponym_id': toponym_id,
                                 }
                             ],
                         }
                     },
-                    {
-                        'schema': 'variant',
+                    'variant': {
                         'document_id': toponym_id,
                         'fields': {
                             'place': self.subject_id,
                         }
                     }
-                ]
+                }
             case _:  # prefLabel, prefLabelGVP
-                return [
-                    {
-                        'schema': 'place',
+                toponym_id = self.object.split('/')[-1]
+                return {
+                    'place': {
                         'document_id': self.subject_id,
                         'fields': {
                             'names': [
                                 {
-                                    'toponym_id': (toponym_id := self.object.split('/')[-1]),
+                                    'toponym_id': toponym_id,
                                     'is_preferred': 2 if self.predicate == "prefLabelGVP" else 1,
                                 }
                             ],
                         }
                     },
-                    {
-                        'schema': 'variant',
-                        'document_id': self.object.split('/')[-1],
+                    'variant': {
+                        'document_id': toponym_id,
                         'fields': {
                             'place': self.subject_id,
                         }
                     }
-                ]
+                }
 
     def get(self, key, default=None):
         """

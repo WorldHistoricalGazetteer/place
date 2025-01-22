@@ -9,11 +9,9 @@ def update_triple(task):
     sync_app, namespace, schema, document_id, transformed_document, task_id, count, task_tracker = task
 
 
-
 def feed_triple(sync_app, namespace, transformed_document, task_id, count):
     try:
-        for document in transformed_document:
-            schema = document.get("schema")
+        for schema, document in transformed_document.items():
             if not schema:
                 return {
                     "success": False,
@@ -22,7 +20,8 @@ def feed_triple(sync_app, namespace, transformed_document, task_id, count):
                     "document_id": document.get("document_id"),
                     "error": "No schema found"
                 }
-            logger.info(f"Feeding document #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
+            logger.info(
+                f"Feeding document #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
 
     except Exception as e:
         task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
