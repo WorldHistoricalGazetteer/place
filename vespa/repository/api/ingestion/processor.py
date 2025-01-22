@@ -362,7 +362,8 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                         while True:
                             response = sync_app.query(
                                 {
-                                    "yql": f'select * from place where id.namespace == "{dataset_name}"',
+                                    "yql": f'select * from place where true',
+                                    "namespace": dataset_name,
                                     "offset": page * page_size,
                                     "hits": page_size
                                 }
