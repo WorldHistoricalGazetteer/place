@@ -377,7 +377,10 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                                     count += 1
                                     # Fetch all variants for the place
                                     response = sync_app.query(
-                                        f'select * from variant where places contains "{document_id}"'
+                                        {
+                                            "yql": f'select * from variant where places contains "{document_id}"',
+                                            "namespace": dataset_name,
+                                        }
                                     ).json
                                     # Add each variant to the place (using `update_triple`), prioritising prefLabelGVP above prefLabel
                                     for variant in response.get("root", {}).get("children", []):
