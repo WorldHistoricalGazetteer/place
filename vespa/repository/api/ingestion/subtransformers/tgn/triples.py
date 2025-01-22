@@ -47,7 +47,7 @@ class TriplesProcessor:
                     'schema': 'variant',
                     'document_id': self.subject_id,
                     'fields': {
-                        'start': int(self.object.split('^^')[0]),
+                        'year_start': int(self.object.split('^^')[0]),
                     }
                 }
             case "estEnd":
@@ -55,7 +55,7 @@ class TriplesProcessor:
                     'schema': 'variant',
                     'document_id': self.subject_id,
                     'fields': {
-                        'end': int(self.object.split('^^')[0]),
+                        'year_end': int(self.object.split('^^')[0]),
                     }
                 }
             case "altLabel":

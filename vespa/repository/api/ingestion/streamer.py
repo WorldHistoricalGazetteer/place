@@ -192,10 +192,12 @@ class StreamFetcher:
         subject, predicate, obj = parts
         return subject, predicate, obj
 
-    def _parse_nt_stream(self, stream):
+    async def _parse_nt_stream(self, stream):
         wrapper = io.TextIOWrapper(stream, encoding='utf-8', errors='replace')
 
         for line in wrapper:
+            # Simulate asynchronous I/O
+            await asyncio.sleep(0)
             line = line.strip()
             if not line or line.startswith('#'):
                 continue

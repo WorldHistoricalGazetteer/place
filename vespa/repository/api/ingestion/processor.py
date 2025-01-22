@@ -357,7 +357,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                         count = 0
                         while True:
                             response = sync_app.query(
-                                f'select * from place where documentid matches "{dataset_name}" limit {page * page_size}, {page_size}'
+                                f'select * from place where documentid matches "^id:{dataset_name}:.*$" limit {page * page_size}, {page_size}'
                             ).json
                             if not response.get("root", {}).get("children", []):
                                 break

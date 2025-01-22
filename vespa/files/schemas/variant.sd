@@ -1,0 +1,27 @@
+schema variant {
+    document variant {
+
+        field place type string {
+            # The ID of the place associated with the variant.
+            indexing: attribute | summary
+            match { exact }
+        }
+
+        field year_start type int {
+            # Start date of the attestation.
+            indexing: summary
+        }
+
+        field year_end type int {
+            # End date of the attestation.
+            indexing: summary
+        }
+
+        field is_preferred type int {
+            # 0, 1, or 2: altLabel | prefLabel | prefLabelGVP
+            # Boolean type is not supported for indexing in Vespa structs.
+            indexing: summary
+        }
+
+    }
+}
