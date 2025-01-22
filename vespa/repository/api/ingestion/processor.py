@@ -201,7 +201,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    logger.info(f"Feeding document {count}: {transformed_document}")
+    logger.info(f"Feeding document {count}: {transformed_document.get("schema")} {transformed_document.get("document_id")} {transformed_document.get("fields")}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -357,7 +357,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                     # Loop through all tgn documents by fetching them from Vespa (use pagination)
                     with VespaClient.sync_context("feed") as sync_app:
                         page = 0
-                        page_size = 1000
+                        page_size = 250
                         count = 0
                         while True:
                             response = sync_app.query(
