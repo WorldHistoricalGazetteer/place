@@ -358,7 +358,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                         while True:
                             response = sync_app.query(
                                 {
-                                    "yql": f'select * from sources place where documentid matches "^id:{dataset_name}:.*$"',
+                                    "yql": f'select * from sources place where documentid contains "id:{dataset_name}:place::"',
                                     "offset": page * page_size,
                                     "hits": page_size
                                 }
