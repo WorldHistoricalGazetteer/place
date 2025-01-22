@@ -10,6 +10,12 @@ def update_triple(task):
 
 
 def feed_triple(sync_app, namespace, transformed_document, task_id, count):
+    if not transformed_document:
+        return {
+            "success": False,
+            "namespace": namespace,
+            "error": "No transformed document #{count} found"
+        }
     try:
         for schema, document in transformed_document.items():
             if not schema:
