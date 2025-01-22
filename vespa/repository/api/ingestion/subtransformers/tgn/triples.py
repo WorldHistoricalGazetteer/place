@@ -83,7 +83,7 @@ class TriplesProcessor:
                         'fields': {
                             'names': [
                                 {
-                                    'toponym_id': toponym_id,
+                                    'toponym_id': f'variant:{toponym_id}',
                                 }
                             ],
                         }
@@ -103,7 +103,7 @@ class TriplesProcessor:
                         'fields': {
                             'names': [
                                 {
-                                    'toponym_id': toponym_id,
+                                    'toponym_id': f'variant:{toponym_id}',
                                     'is_preferred': 2 if self.predicate == "prefLabelGVP" else 1,
                                 }
                             ],
