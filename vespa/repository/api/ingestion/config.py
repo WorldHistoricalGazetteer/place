@@ -1,5 +1,7 @@
 # /ingestion/config.py
 
+NATIVE_LAND_API_KEY = '' # Use Native Land API Key from https://native-land.ca/dashboard
+
 # Remote Dataset Configurations
 REMOTE_DATASET_CONFIGS = [
     { # 2024: 37k+ places
@@ -60,7 +62,7 @@ REMOTE_DATASET_CONFIGS = [
                 'file_name': 'TGNOut_Full.nt',
                 'file_type': 'nt',
                 'filters': [ # Filter to only include records with these predicates
-                    lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
+                    # lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
                     lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#prefLabelGVP>', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
                     lambda triple: triple['predicate'] == '<http://www.w3.org/2008/05/skos-xl#prefLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
                     lambda triple: triple['predicate'] == '<http://www.w3.org/2008/05/skos-xl#altLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>

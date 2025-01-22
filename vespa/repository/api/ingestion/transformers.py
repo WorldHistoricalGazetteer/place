@@ -5,12 +5,13 @@ import logging
 from .subtransformers.geonames.names import NamesProcessor as GeonamesNamesProcessor
 from .subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
 from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
-from .subtransformers.wikidata.names import NamesProcessor as WikidataNamesProcessor
-from .subtransformers.wikidata.types import TypesProcessor as WikidataTypesProcessor
-from .subtransformers.wikidata.locations import LocationsProcessor as WikidataLocationsProcessor
 from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
 from .subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
 from .subtransformers.pleiades.years import YearsProcessor as PleiadesYearsProcessor
+from .subtransformers.tgn.triples import TriplesProcessor as TGNTriplesProcessor
+from .subtransformers.wikidata.locations import LocationsProcessor as WikidataLocationsProcessor
+from .subtransformers.wikidata.names import NamesProcessor as WikidataNamesProcessor
+from .subtransformers.wikidata.types import TypesProcessor as WikidataTypesProcessor
 from ..gis.processor import GeometryProcessor
 from ..utils import get_uuid
 
@@ -208,67 +209,12 @@ class DocTransformer:
                 None  # No links
             ),
         ],
-        "TGN": [  # TODO
+        "TGN": [
             lambda data: (
-                {  # Subjects
-                    "item_id": int(data.get("subject", "").split('/')[-1]),
-                    "primary_name": data.get("object", "").strip('"').encode('utf-8').decode('unicode_escape'),
-                } if data.get("predicate") == "http://vocab.getty.edu/ontology#parentString" else
-
-                # TODO: Map to GeoNames feature classes from aat:
-                {  # PlaceTypes
-                    "item_id": int(data.get("subject", "").split('/')[-1]),
-                    "feature_classes": [data.get("object", "").split('/')[-1]],
-                } if data.get("predicate") == "http://vocab.getty.edu/ontology#placeType" else
-
-                {  # Coordinates
-                    "item_id": int(data.get("subject", "").split('/')[-1].split('-')[0]),
-                    **({"longitude": float(data.get("object", "").split("^^")[0].strip('"'))} if data.get("predicate",
-                                                                                                          "") == "http://schema.org/longitude" else {}),
-                    **({"latitude": float(data.get("object", "").split("^^")[0].strip('"'))} if data.get("predicate",
-                                                                                                         "") == "http://schema.org/latitude" else {}),
-                } if data.get("predicate") in ["http://schema.org/longitude", "http://schema.org/latitude"] else
-
-                # Terms
-                {"item_id": data.get("subject", "").split('/')[-1]} if data.get("predicate") in [
-                    "http://vocab.getty.edu/ontology#prefLabelGVP",
-                    "http://www.w3.org/2008/05/skos-xl#prefLabel",
-                    "http://www.w3.org/2008/05/skos-xl#altLabel"] else
-
-                None,
-                [
-                    {  # Terms
-                        **({"npr_item_id": data.get("subject", "").split('/')[-1]} if data.get("predicate") in [
-                            "http://vocab.getty.edu/ontology#prefLabelGVP",
-                            "http://www.w3.org/2008/05/skos-xl#prefLabel",
-                            "http://www.w3.org/2008/05/skos-xl#altLabel"] else {}
-                           ),
-                        "source_toponym_id": data.get("subject", "").split('/')[-1] if data.get("predicate") in [
-                            "http://vocab.getty.edu/ontology#term",
-                            "http://vocab.getty.edu/ontology#estStart"] else
-                        data.get("object", "").split('/')[-1],
-                        **({"toponym": data.get("object", "").encode('utf-8').decode('unicode_escape').split("@")[
-                            0].strip('"')} if data.get(
-                            "predicate") == "http://vocab.getty.edu/ontology#term" else {}),
-                        **({"language": data.get("object", "").encode('utf-8').decode('unicode_escape').split("@")[
-                            -1]} if len(
-                            data.get("object", "").split("@")) == 2 and data.get(
-                            "predicate") == "http://vocab.getty.edu/ontology#term" else {}),
-                        **({"is_preferred": True} if data.get(
-                            "predicate") == "http://vocab.getty.edu/ontology#prefLabelGVP" else {}),
-                        **({"start": int(data.get("object", "").split("^^")[0].strip('"'))} if data.get(
-                            "predicate") == "http://vocab.getty.edu/ontology#estStart" else {}),
-                    }
-                ] if data.get("predicate") in ["http://vocab.getty.edu/ontology#prefLabelGVP",
-                                               "http://www.w3.org/2008/05/skos-xl#prefLabel",
-                                               "http://www.w3.org/2008/05/skos-xl#altLabel",
-                                               "http://vocab.getty.edu/ontology#term",
-                                               "http://vocab.getty.edu/ontology#estStart"] else
-
-                None
-            ),
-            [  # No links
-            ]
+                TGNTriplesProcessor(data) or None,
+                None,  # Ignored for triples
+                None  # Ignored for triples
+            )
         ],
         "Wikidata": [  # Depends on GeoNames having been already processed
             lambda data: (
@@ -279,11 +225,15 @@ class DocTransformer:
                         "record_url": f"https://www.wikidata.org/wiki/Special:EntityData/{document_id}.json",
                         **({"names": names["names"]} if (
                             names := WikidataNamesProcessor(document_id, data.get("labels")).process()) else {}),
-                        **(type_classes if (  # Map Wikidata place types to GeoNames feature classes and AAT types: TODO: Currently maps types to wd: QIDs
-                            type_classes := WikidataTypesProcessor(data.get("claims", {}).get("P31", {}), data.get("claims", {}).get("P1566", {})).process()) else {}),
+                        **(type_classes if (
+                            # Map Wikidata place types to GeoNames feature classes and AAT types: TODO: Currently maps types to wd: QIDs
+                            type_classes := WikidataTypesProcessor(data.get("claims", {}).get("P31", {}),
+                                                                   data.get("claims", {}).get("P1566",
+                                                                                              {})).process()) else {}),
                         **(geometry_etc if (
                             # Includes abstracted geometry properties, iso country codes, and array of locations
-                            geometry_etc := WikidataLocationsProcessor(data.get("claims", {}).get("P625", [])).process()) else {}),
+                            geometry_etc := WikidataLocationsProcessor(
+                                data.get("claims", {}).get("P625", [])).process()) else {}),
                     }
                 },
                 names["toponyms"] if names else None,

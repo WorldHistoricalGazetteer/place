@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
+from .triples import feed_triple, update_triple
 from ..config import VespaClient
 from ..utils import task_tracker, get_uuid, escape_yql
 
@@ -22,20 +23,24 @@ max_queue_size = 100  # Queue size for document update tasks
 update_queue = queue.Queue(maxsize=max_queue_size)
 
 
-def update_worker():
+def queue_worker():
     while True:
         task = update_queue.get()
         if task is None:  # Sentinel to terminate the worker thread
             break
         try:
-            process_update(task)
+            _, namespace, _, _, _, _, _, _ = task
+            if namespace == 'tgn':
+                update_triple(task)
+            else:
+                update_existing_place(task)
         except Exception as e:
             logger.error(f"Error processing update: {e}")
         finally:
             update_queue.task_done()
 
 
-def process_update(task):
+def update_existing_place(task):
     sync_app, namespace, schema, document_id, transformed_document, task_id, count, task_tracker = task
     response = sync_app.get_data(
         namespace=namespace,
@@ -96,6 +101,12 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
 
 def feed_document(sync_app, namespace, schema, transformed_document, task_id, count, update_place=False):
     # logger.info(f"feed_document {count} (update place = {update_place}): {transformed_document.get('document_id')}")
+
+    if namespace == 'tgn':
+        # Handle triples differently
+        feed_triple(sync_app, namespace, transformed_document, task_id, count)
+        return
+
     document_id = transformed_document.get("document_id")
     if not document_id:
         logger.error(f"Document ID not found: {transformed_document}")
@@ -113,7 +124,6 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
             # Check if toponym already exists
             with VespaClient.sync_context("feed") as sync_app:
                 bcp47_fields = ["language", "script", "region", "variant"]
-                # yql = f'select documentid, places from toponym where name matches "^{escape_regex_yql(transformed_document["fields"]["name"])}$" '
                 yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
                 for field in bcp47_fields:
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
@@ -313,7 +323,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
     try:
 
         # Start the document update worker thread
-        worker_thread = threading.Thread(target=update_worker, daemon=True)
+        worker_thread = threading.Thread(target=queue_worker, daemon=True)
         worker_thread.start()
 
         with VespaClient.sync_context("feed") as sync_app:
@@ -337,6 +347,47 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                 responses = await process_documents(stream, dataset_config, transformer_index, sync_app, limit,
                                                     task_id, update_place)
                 # Responses could be parsed to check for errors, but avoid accumulating them in memory
+
+                # If filetype is 'nt', postprocess sequentially using `update_triple`
+                if file_config['file_type'] == 'nt':
+                    # Loop through all tgn documents by fetching them from Vespa (use pagination)
+                    with VespaClient.sync_context("feed") as sync_app:
+                        page = 0
+                        page_size = 1000
+                        count = 0
+                        while True:
+                            response = sync_app.query(
+                                f'select * from place where documentid matches "{dataset_name}" limit {page * page_size}, {page_size}'
+                            ).json
+                            if not response.get("root", {}).get("children", []):
+                                break
+                            # Loop through all places
+                            for place in response.get("root", {}).get("children", []):
+                                document_id = place.get("fields", {}).get("documentid", "")
+                                if document_id:
+                                    count += 1
+                                    # Fetch all variants for the place
+                                    response = sync_app.query(
+                                        f'select * from variant where places contains "{document_id}"'
+                                    ).json
+                                    # Add each variant to the place (using `update_triple`), prioritising prefLabelGVP above prefLabel
+                                    for variant in response.get("root", {}).get("children", []):
+                                        task = (
+                                            sync_app, dataset_config['namespace'], 'place', document_id, variant,
+                                            task_id,
+                                            count, task_tracker)
+                                        update_queue.put(task)
+                                        # Add place to the toponym (using `update_triple`)
+                                        task = (sync_app, dataset_config['namespace'], 'toponym',
+                                                variant.get("fields", {}).get("toponym", ""),
+                                                {"document_id": variant.get("fields", {}).get("toponym", ""),
+                                                 "places": [document_id]}, task_id, count, task_tracker)
+                                        update_queue.put(task)
+                            page += 1
+                    # Wait for all tasks to complete
+                    update_queue.join()
+                    # Delete all variant documents
+                    delete_document_namespace(sync_app, dataset_config['namespace'], ['variant'])
 
             logger.info(f"Completed.")
 
