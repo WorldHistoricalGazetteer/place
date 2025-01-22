@@ -429,6 +429,10 @@ async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: 
 def delete_document_namespace(sync_app, namespace, schema=None):
     """Delete all documents in the given namespace."""
     # Delete documents belonging to the given namespace
+
+    logger.info("*********************** Bypassing deletion of variant documents.")
+    return
+
     if schema is None:
         schema = ['place', 'toponym', 'link']
     for schema in schema:
