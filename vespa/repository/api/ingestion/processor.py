@@ -201,7 +201,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    # logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
+    logger.info(f"Feeding document {count}: {transformed_document.get('document_id')}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -357,7 +357,11 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                         count = 0
                         while True:
                             response = sync_app.query(
-                                f'select * from place where documentid matches "^id:{dataset_name}:.*$" limit {page * page_size}, {page_size}'
+                                {
+                                    "yql": f'select * from sources place where documentid matches "^id:{dataset_name}:.*$"',
+                                    "offset": page * page_size,
+                                    "hits": page_size
+                                }
                             ).json
                             if not response.get("root", {}).get("children", []):
                                 break
