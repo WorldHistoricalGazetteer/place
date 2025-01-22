@@ -62,7 +62,8 @@ class TriplesProcessor:
                     'variant': {
                         'document_id': self.subject_id,
                         'fields': {
-                            'year_start': int(self.object.split('^^')[0]),
+                            # Sometimes month and day are included, e.g. '"2015-08-28"'
+                            'year_start': int(self.object.split('^^')[0].strip('"').split('-')[0]),
                         }
                     }
                 }
@@ -71,7 +72,8 @@ class TriplesProcessor:
                     'variant': {
                         'document_id': self.subject_id,
                         'fields': {
-                            'year_end': int(self.object.split('^^')[0]),
+                            # Sometimes month and day are included, e.g. '"2015-08-28"'
+                            'year_end': int(self.object.split('^^')[0].strip('"').split('-')[0]),
                         }
                     }
                 }
