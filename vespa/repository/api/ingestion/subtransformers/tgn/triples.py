@@ -12,6 +12,7 @@ class TriplesProcessor:
         self.subject_id = data.get("subject", "").split('/')[-1].removesuffix("-geometry")
         self.predicate = data.get("predicate", "").split('/')[-1].split('#')[-1]
         self.object = data.get("object", "")
+        self.processed = self.process()
 
     def process(self) -> dict:
         match self.predicate:
@@ -75,3 +76,9 @@ class TriplesProcessor:
                         'is_preferred': True,
                     }
                 }
+
+    def get(self, key, default=None):
+        """
+        Mimics dictionary .get() behaviour for the processed result.
+        """
+        return self.processed.get(key, default)
