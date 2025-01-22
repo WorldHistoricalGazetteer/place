@@ -10,6 +10,7 @@ class TriplesProcessor:
         :param data: A dictionary containing 'subject', 'predicate', and 'object' keys.
         """
         try:
+            self.data = data
             self.subject_id = data.get("subject", "").split('/')[-1].removesuffix("-geometry")
             self.predicate = data.get("predicate", "").split('/')[-1].split('#')[-1]
             self.object = data.get("object", "")
@@ -123,7 +124,7 @@ class TriplesProcessor:
                         }
                     }
         except Exception as e:
-            logger.exception(f"Exception during triple processing: {str(e)}", exc_info=True)
+            logger.exception(f"Exception during triple processing {self.data}: {str(e)}", exc_info=True)
 
     def get(self, key, default=None):
         """
