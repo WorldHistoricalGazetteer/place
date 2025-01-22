@@ -18,6 +18,14 @@ class TriplesProcessor:
 
     def process(self) -> dict:
         match self.predicate:
+            case "placeType":
+                return {
+                    'schema': 'place',
+                    'document_id': self.subject_id,
+                    'fields': {
+                        'types': [self.object.split('/')[-1]],
+                    }
+                }
             case "longitude":
                 return {
                     'schema': 'place',
@@ -75,7 +83,7 @@ class TriplesProcessor:
                     'document_id': self.object.split('/')[-1],
                     'fields': {
                         'place': self.subject_id,
-                        'is_preferred': True,
+                        'is_preferred': 2 if self.predicate == "prefLabelGVP" else 1,
                     }
                 }
 
