@@ -1,4 +1,5 @@
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -63,22 +64,24 @@ class TriplesProcessor:
                         }
                     }
                 case "estStart":
+                    match = re.match(r'"(-?\d+)', self.object)
                     return {
                         'variant': {
                             'document_id': self.subject_id,
                             'fields': {
                                 # Sometimes month and day are included, e.g. '"2015-08-28"'
-                                'year_start': int(self.object.split('^^')[0].strip('"').split('-')[0]),
+                                'year_start': int(match.group(1)),
                             }
                         }
                     }
                 case "estEnd":
+                    match = re.match(r'"(-?\d+)', self.object)
                     return {
                         'variant': {
                             'document_id': self.subject_id,
                             'fields': {
                                 # Sometimes month and day are included, e.g. '"2015-08-28"'
-                                'year_end': int(self.object.split('^^')[0].strip('"').split('-')[0]),
+                                'year_end': int(match.group(1)),
                             }
                         }
                     }
