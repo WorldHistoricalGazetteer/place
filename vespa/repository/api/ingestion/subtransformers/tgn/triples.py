@@ -14,7 +14,7 @@ class TriplesProcessor:
         self.object = data.get("object", "")
         self.processed = self.process()
 
-        logger.info(f"{data} -> {self.subject_id} *** {self.predicate} *** {self.object}")
+        logger.info(f"{self.subject_id} *** {self.predicate} *** {self.object}")
 
     def process(self) -> dict:
         match self.predicate:
