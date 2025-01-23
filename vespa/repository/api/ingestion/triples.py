@@ -110,6 +110,7 @@ def feed_triple(task):
                 schema=schema,
                 data_id=document.get("document_id"),
                 fields=document.get("fields"),
+                create=True  # Create if not exists
             )
             # Report any errors
             if not response.is_successful():
