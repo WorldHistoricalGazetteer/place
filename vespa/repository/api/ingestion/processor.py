@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
-from .triples import feed_triple
+from .triples import feed_triple, process_variants
 from ..bcp_47.bcp_47 import bcp47_fields
 from ..config import VespaClient
 from ..utils import task_tracker, get_uuid, escape_yql
@@ -353,56 +353,9 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                                                     task_id, update_place)
                 # Responses could be parsed to check for errors, but avoid accumulating them in memory
 
-                # If filetype is 'nt', postprocess sequentially using `update_triple`
-                # if file_config['file_type'] == 'nt':
-                #     # Loop through all tgn documents by fetching them from Vespa (use pagination)
-                #     with VespaClient.sync_context("feed") as sync_app:
-                #         page = 0
-                #         page_size = 250
-                #         count = 0
-                #         while True:
-                #             response = sync_app.query(
-                #                 {
-                #                     "yql": f'select * from place where true',
-                #                     "namespace": dataset_name,
-                #                     "offset": page * page_size,
-                #                     "hits": page_size
-                #                 }
-                #             ).json
-                #             if not response.get("root", {}).get("children", []):
-                #                 break
-                #             # Loop through all places
-                #             for place in response.get("root", {}).get("children", []):
-                #                 document_id = place.get("fields", {}).get("documentid", "")
-                #                 if document_id:
-                #                     count += 1
-                #                     # Fetch all variants for the place
-                #                     response = sync_app.query(
-                #                         {
-                #                             "yql": f'select * from variant where places contains "{document_id}"',
-                #                             "namespace": dataset_name,
-                #                         }
-                #                     ).json
-                #                     # Add each variant to the place (using `update_triple`), prioritising prefLabelGVP above prefLabel
-                #                     for variant in response.get("root", {}).get("children", []):
-                #                         task = (
-                #                             sync_app, dataset_config['namespace'], 'place', document_id, variant,
-                #                             task_id,
-                #                             count, task_tracker)
-                #                         update_queue.put(task)
-                #                         # Add place to the toponym (using `update_triple`)
-                #                         task = (sync_app, dataset_config['namespace'], 'toponym',
-                #                                 variant.get("fields", {}).get("toponym", ""),
-                #                                 {
-                #                                     "document_id": variant.get("fields", {}).get("toponym", ""),
-                #                                     "places": [document_id]
-                #                                 }, task_id, count, task_tracker)
-                #                         update_queue.put(task)
-                #             page += 1
-                #     # Wait for all tasks to complete
-                #     update_queue.join()
-                #     # Delete all variant documents
-                #     delete_document_namespace(sync_app, dataset_config['namespace'], ['variant'])
+                if file_config['file_type'] == 'nt':
+                    # Process the temporary `variants` after all triples have been processed
+                    process_variants()
 
             logger.info(f"Completed.")
 

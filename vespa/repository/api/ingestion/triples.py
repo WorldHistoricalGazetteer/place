@@ -18,14 +18,56 @@ from ..utils import get_uuid
 logger = logging.getLogger(__name__)
 
 
-def existing_document(query_response_root):
-    if query_response_root.get("fields", {}).get("totalCount", 0) == 0:
-        return None
-    document = query_response_root.get("children", [{}])[0].get("fields", {})
-    return {
-        'document_id': document.get("documentid").split("::")[-1],
-        'fields': document,
-    }
+def process_variants():
+    #     # Loop through all tgn documents by fetching them from Vespa (use pagination)
+    #     with VespaClient.sync_context("feed") as sync_app:
+    #         page = 0
+    #         page_size = 250
+    #         count = 0
+    #         while True:
+    #             response = sync_app.query(
+    #                 {
+    #                     "yql": f'select * from place where true',
+    #                     "namespace": dataset_name,
+    #                     "offset": page * page_size,
+    #                     "hits": page_size
+    #                 }
+    #             ).json
+    #             if not response.get("root", {}).get("children", []):
+    #                 break
+    #             # Loop through all places
+    #             for place in response.get("root", {}).get("children", []):
+    #                 document_id = place.get("fields", {}).get("documentid", "")
+    #                 if document_id:
+    #                     count += 1
+    #                     # Fetch all variants for the place
+    #                     response = sync_app.query(
+    #                         {
+    #                             "yql": f'select * from variant where places contains "{document_id}"',
+    #                             "namespace": dataset_name,
+    #                         }
+    #                     ).json
+    #                     # Add each variant to the place (using `update_triple`), prioritising prefLabelGVP above prefLabel
+    #                     for variant in response.get("root", {}).get("children", []):
+    #                         task = (
+    #                             sync_app, dataset_config['namespace'], 'place', document_id, variant,
+    #                             task_id,
+    #                             count, task_tracker)
+    #                         update_queue.put(task)
+    #                         # Add place to the toponym (using `update_triple`)
+    #                         task = (sync_app, dataset_config['namespace'], 'toponym',
+    #                                 variant.get("fields", {}).get("toponym", ""),
+    #                                 {
+    #                                     "document_id": variant.get("fields", {}).get("toponym", ""),
+    #                                     "places": [document_id]
+    #                                 }, task_id, count, task_tracker)
+    #                         update_queue.put(task)
+    #             page += 1
+    #     # Wait for all tasks to complete
+    #     update_queue.join()
+    #     # Delete all variant documents
+    #     delete_document_namespace(sync_app, dataset_config['namespace'], ['variant'])
+    pass
 
 
 def feed_triple(task):
@@ -57,24 +99,24 @@ def feed_triple(task):
                     if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f'and bcp47_{field} contains "{document.get("fields").get(f"bcp47_{field}")}" '
                 yql += 'limit 1'
-                query_response_root = sync_app.query(
-                    # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespaqueryresponse
-                    {'yql': yql},
-                    # Do not set namespace
-                    schema=schema,
-                ).get_json().get("root", {})
-                # logger.info(f"Existing {schema} query_response_root: {query_response_root}")
-                if query_response_root.get("errors"):
-                    task_tracker.update_task(task_id, {"error": f"#{count}: {query_response_root.get('errors')}"})
-                    logger.error(
-                        f'#{count}: Error querying {schema} document: {query_response_root.get("errors")}',
-                        exc_info=True)
-                    return {"success": False, "error": query_response_root.get("errors")}
-                preexisting = existing_document(query_response_root)
-                document["document_id"] = preexisting.get("document_id") if preexisting else get_uuid()
+
+                if (preexisting := sync_app.query_existing(
+                        {'yql': yql},
+                        # Do not set namespace
+                        schema=schema,
+                )):
+                    if preexisting_errors := preexisting.get("errors"):
+                        msg = f"#{count}: Error querying {schema} document: {preexisting_errors}"
+                        task_tracker.update_task(task_id, {"error": msg})
+                        logger.error(msg, exc_info=True)
+                        return {"success": False, "error": preexisting_errors}
+                    else:
+                        document["document_id"] = preexisting.get("document_id")
+                else:
+                    document["document_id"] = get_uuid()
                 # No other toponym fields to be adjusted for subsequent toponym update
                 # Store toponym id in variant
-                response = sync_app.update_data(
+                response = sync_app.update_existing(
                     # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                     namespace=namespace,
                     schema='variant',
@@ -86,35 +128,23 @@ def feed_triple(task):
                 )
                 # logger.info(f"Variant update response: {response.get_json()}")
                 if not response.is_successful():
-                    task_tracker.update_task(task_id, {"error": f"#{count}: {response.get_json()}"})
-                    logger.error(
-                        f'#{count}: Error storing toponym id in variant: {response.get_json()}', exc_info=True)
+                    msg = f"#{count}: Error storing toponym id in variant: {response.get_json()}"
+                    task_tracker.update_task(task_id, {"error": msg})
+                    logger.error(msg, exc_info=True)
 
             else:
-                response = sync_app.get_data(
-                    # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
+                preexisting = sync_app.get_existing(
+                    data_id=document.get("document_id"),
                     namespace=namespace,
                     schema=schema,
-                    data_id=document.get("document_id"),
                 )
-                # if not response.is_successful():
-                #     logger.info(
-                #         f'Failed to find {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}',
-                #         exc_info=True)
-                # else:
-                #     logger.info(f"Found {namespace}:{schema} document: {response.get_json()}")
-                # logger.info(f"Existing {schema} response: {response.get_json()}")
-                preexisting = {
-                    'document_id': document.get("document_id"),
-                    'fields': response.get_json().get("fields", {})
-                } if response.is_successful() else None
                 if preexisting and schema == "place":
                     document["fields"]["types"] = preexisting.get("fields").get("types", []) + document.get(
                         "fields").get("types", [])
 
             # logger.info(f"Updating {schema} {preexisting} with {document}")
 
-            response = sync_app.update_data(
+            response = sync_app.update_existing(
                 # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                 namespace=namespace,
                 schema=schema,
@@ -124,14 +154,12 @@ def feed_triple(task):
             )
             # Report any errors
             if not response.is_successful():
-                task_tracker.update_task(task_id, {
-                    "error": f"#{count}: Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}"})
-                logger.error(
-                    f'#{count}: Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}',
-                    exc_info=True)
+                msg = f"#{count}: Error updating {namespace}:{schema} document: {response.get_status_code()}] {response.get_json()}"
+                task_tracker.update_task(task_id, {"error": msg})
+                logger.error(msg, exc_info=True)
 
     except Exception as e:
-        task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
-        logger.error(
-            f'#{count}: Error feeding document: {str(e)}', exc_info=True)
+        msg = f"#{count}: Error feeding document: {str(e)}"
+        task_tracker.update_task(task_id, {"error": msg})
+        logger.error(msg, exc_info=True)
         return

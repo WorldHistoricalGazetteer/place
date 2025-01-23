@@ -107,3 +107,13 @@ def debracket(text):
     # Remove any erroneous isolated brackets, for example:
     # "(पुरूषपुर" https://pleiades.stoa.org/places/569531631/name.2018-07-24.9890884070
     return re.sub(r'[()]', '', subtext)
+
+
+def existing_document(query_response_root):
+    if query_response_root.get("fields", {}).get("totalCount", 0) == 0:
+        return None
+    document = query_response_root.get("children", [{}])[0].get("fields", {})
+    return {
+        'document_id': document.get("documentid").split("::")[-1],
+        'fields': document,
+    }
