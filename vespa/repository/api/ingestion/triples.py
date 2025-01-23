@@ -74,7 +74,7 @@ def feed_triple(task):
                     create=True  # Create if not exists
                 )
                 # Report any errors
-                if response.get("error"):
+                if response.status_code != 200:
                     task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
                     logger.error(
                         f'Error storing toponym id in variant: {response.get("error")}', exc_info=True)
@@ -99,7 +99,7 @@ def feed_triple(task):
                 fields=document.get("fields"),
             )
             # Report any errors
-            if response.get("error"):
+            if response.status_code != 200:
                 task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
                 logger.error(
                     f'Error updating {schema} document: {response.get("error")}', exc_info=True)
