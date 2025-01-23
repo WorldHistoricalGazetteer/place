@@ -17,10 +17,10 @@ from ..utils import get_uuid
 logger = logging.getLogger(__name__)
 
 
-def existing_document(response):
-    if response.get("root", {}).get("fields", {}).get("totalCount", 0) == 0:
+def existing_document(query_response_root):
+    if query_response_root.get("fields", {}).get("totalCount", 0) == 0:
         return None
-    document = response.get("root", {}).get("children", [{}])[0].get("fields", {})
+    document = query_response_root.get("children", [{}])[0].get("fields", {})
     return {
         'document_id': document.get("documentid").split("::")[-1],
         'fields': document,
@@ -54,18 +54,24 @@ def feed_triple(task):
                 yql = f'select documentid, places from toponym where name_strict contains "{document.get("fields").get("name_strict")}" '
                 yql += f'and bcp47_language contains "{document.get("fields").get("bcp47_language")}" '
                 yql += 'limit 1'
-                response = sync_app.query(
+                query_response_root = sync_app.query(
+                    # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespaqueryresponse
                     {'yql': yql},
                     # Do not set namespace
                     schema=schema,
-                )
-                logger.info(f"Existing {schema} response.get_json: {response.get_json()}")
-                logger.info(f"Existing {schema} response.json: {response.json}")
-                preexisting = existing_document(response.get_json())
+                ).get_json().get("root", {})
+                logger.info(f"Existing {schema} query_response_root: {query_response_root}")
+                if query_response_root.get("errors"):
+                    task_tracker.update_task(task_id, {"error": f"#{count}: {query_response_root.get('errors')}"})
+                    logger.error(
+                        f'Error querying {schema} document: {query_response_root.get("errors")}', exc_info=True)
+                    return {"success": False, "error": query_response_root.get("errors")}
+                preexisting = existing_document(query_response_root)
                 document["document_id"] = preexisting.get("document_id") if preexisting else get_uuid()
                 # No other toponym fields to be adjusted for subsequent toponym update
                 # Store toponym id in variant
                 response = sync_app.update_data(
+                    # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                     namespace=namespace,
                     schema='variant',
                     data_id=document.get("variant_id"),
@@ -73,7 +79,7 @@ def feed_triple(task):
                         'toponym': document["document_id"]
                     },
                     create=True  # Create if not exists
-                )  # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
+                )
                 logger.info(f"Variant update response: {response.get_json()}")
                 if not response.is_successful():
                     task_tracker.update_task(task_id, {"error": f"#{count}: {response.get_json()}"})
@@ -82,15 +88,14 @@ def feed_triple(task):
 
             else:
                 response = sync_app.get_data(
+                    # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                     namespace=namespace,
                     schema=schema,
                     data_id=document.get("document_id"),
-                )  # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
+                )
                 if not response.is_successful():
-                    task_tracker.update_task(task_id, {"error": f"#{count}: {response.get_json()}"})
-                    logger.error(
-                        f'Error getting {schema} document: {response.get_json()}', exc_info=True)
-                    return
+                    logger.info(
+                        f'Failed to find {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}', exc_info=True)
                 logger.info(f"Existing {schema} response: {response.get_json()}")
                 preexisting = existing_document(response.get_json())
                 if preexisting and schema == "place":
@@ -100,16 +105,17 @@ def feed_triple(task):
             logger.info(f"Updating {schema} {preexisting} with {document}")
 
             response = sync_app.update_data(
+                # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                 namespace=namespace,
                 schema=schema,
                 data_id=document.get("document_id"),
                 fields=document.get("fields"),
-            )  # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
+            )
             # Report any errors
             if not response.is_successful():
-                task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
+                task_tracker.update_task(task_id, {"error": f"#{count}: Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}"})
                 logger.error(
-                    f'Error updating {schema} document: {response.get("error")}', exc_info=True)
+                    f'Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}', exc_info=True)
 
     except Exception as e:
         task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
