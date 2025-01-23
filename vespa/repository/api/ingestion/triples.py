@@ -65,8 +65,7 @@ def feed_triple(sync_app, namespace, transformed_document, task_id, count):
                 preexisting = existing_document(response)
                 document["document_id"] = preexisting.get("document_id") if preexisting else get_uuid()
             else:
-                response = sync_app.query(
-                    {'yql': f'select * from {schema} where true limit 1'},
+                response = sync_app.get_data(
                     namespace=namespace,
                     schema=schema,
                     data_id=document.get("document_id"),
