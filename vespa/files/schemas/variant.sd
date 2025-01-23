@@ -21,9 +21,13 @@ schema variant {
             indexing: summary
         }
 
-        field is_preferred type int {
-            # 0, 1, or 2: altLabel | prefLabel | prefLabelGVP
-            # Boolean type is not supported for indexing in Vespa structs.
+        field is_preferred type bool {
+            # 1 if prefLabel
+            indexing: summary
+        }
+
+        field is_preferred_GVP type bool {
+            # 1 if prefLabelGVP
             indexing: summary
         }
 

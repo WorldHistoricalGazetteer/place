@@ -90,24 +90,15 @@ class TriplesProcessor:
                             }
                         }
                     }
-                case "altLabel":
+                case _:  # altLabel, prefLabel, prefLabelGVP
                     variant_id = self.object.split('/')[-1]
                     return {
                         'variant': {
                             'document_id': variant_id,
                             'fields': {
                                 'place': self.subject_id,
-                            }
-                        }
-                    }
-                case _:  # prefLabel, prefLabelGVP
-                    variant_id = self.object.split('/')[-1]
-                    return {
-                        'variant': {
-                            'document_id': variant_id,
-                            'fields': {
-                                'place': self.subject_id,
-                                'is_preferred': 2 if self.predicate == "prefLabelGVP" else 1,
+                                **({'is_preferred': 1} if self.predicate == "prefLabel" else {}),
+                                **({'is_preferred_GVP': 1} if self.predicate == "prefLabelGVP" else {}),
                             }
                         }
                     }
