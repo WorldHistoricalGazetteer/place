@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
-from .triples import feed_triple, update_triple
+from .triples import feed_triple
 from ..config import VespaClient
 from ..utils import task_tracker, get_uuid, escape_yql
 
@@ -31,7 +31,7 @@ def queue_worker():
         try:
             _, namespace, _, _, _, _, _, _ = task
             if namespace == 'tgn':
-                update_triple(task)
+                feed_triple(task)
             else:
                 update_existing_place(task)
         except Exception as e:
@@ -104,7 +104,8 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
 
     if namespace == 'tgn':
         # Handle triples differently
-        feed_triple(sync_app, namespace, transformed_document, task_id, count)
+        task = (sync_app, namespace, None, None, transformed_document, task_id, count, task_tracker)
+        update_queue.put(task)
         return
 
     document_id = transformed_document.get("document_id")

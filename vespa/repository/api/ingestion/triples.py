@@ -12,7 +12,7 @@ Loop variants
 
 import logging
 
-from ..utils import task_tracker, get_uuid
+from ..utils import get_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,9 @@ def existing_document(response):
     }
 
 
-def update_triple(task):
-    sync_app, namespace, schema, document_id, transformed_document, task_id, count, task_tracker = task
+def feed_triple(task):
+    sync_app, namespace, _, _, transformed_document, task_id, count, task_tracker = task
 
-
-def feed_triple(sync_app, namespace, transformed_document, task_id, count):
     if not transformed_document:
         return {
             "success": False,
@@ -64,6 +62,22 @@ def feed_triple(sync_app, namespace, transformed_document, task_id, count):
                 logger.info(f"Existing {schema} response: {response}")
                 preexisting = existing_document(response)
                 document["document_id"] = preexisting.get("document_id") if preexisting else get_uuid()
+                # Store toponym id in variant
+                # response = sync_app.update_data(
+                #     namespace=namespace,
+                #     schema='variant',
+                #     data_id=document.get("variant_id"),
+                #     fields={
+                #         'toponym': document["document_id"]
+                #     },
+                #     create=True  # Create if not exists
+                # )
+                # # Report any errors
+                # if response.get("error"):
+                #     task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
+                #     logger.error(
+                #         f'Error storing toponym id in variant: {response.get("error")}', exc_info=True)
+
             else:
                 response = sync_app.get_data(
                     namespace=namespace,
