@@ -63,7 +63,7 @@ def update_existing_place(task):
         # logger.info(f"Update response: {response.status_code}: {response.json}")
     else:
         msg = f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}"
-        task_tracker.update_task(task_id, {"error": f"#{count}: {msg}"})
+        task_tracker.update_task(task_id, {"error (D)": f"#{count}: {msg}"})
         logger.error(msg)
 
 
@@ -80,7 +80,7 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
             return {"success": True, "link": link}
         else:
             msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
-            task_tracker.update_task(task_id, {"error": f"#{count}: link: >>>{link}<<< {msg}"})
+            task_tracker.update_task(task_id, {"error (C)": f"#{count}: link: >>>{link}<<< {msg}"})
             logger.error(
                 f"Failed to feed link: {link}, Status code: {response.status_code}, Response: {msg}")
             return {
@@ -90,7 +90,7 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
                 "message": msg
             }
     except Exception as e:
-        task_tracker.update_task(task_id, {"error": f"#{count}: link: >>>{link}<<< {str(e)}"})
+        task_tracker.update_task(task_id, {"error (B)": f"#{count}: link: >>>{link}<<< {str(e)}"})
         logger.error(f"Error feeding link: {link}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
@@ -171,7 +171,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
             return {"success": True, "namespace": namespace, "schema": schema, "document_id": document_id}
         else:
             msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
-            task_tracker.update_task(task_id, {"error": f"#{count}: {msg}"})
+            task_tracker.update_task(task_id, {"error (A)": f"#{count}: {msg}"})
             logger.error(
                 f"Failed to feed document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}, Response: {msg}")
             return {
@@ -183,7 +183,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 "message": msg
             }
     except Exception as e:
-        task_tracker.update_task(task_id, {"error": f"#{count}: yql: >>>{yql}<<< {str(e)}"})
+        task_tracker.update_task(task_id, {"error (E)": f"#{count}: yql: >>>{yql}<<< {str(e)}"})
         logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
         return {
             "success": False,
@@ -207,7 +207,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         response = await asyncio.get_event_loop().run_in_executor(
             executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'],
             transformed_document, task_id, count, update_place
-        )
+        ) or {}
         success = response.get("success", False)
 
         if success and toponyms:
@@ -353,53 +353,55 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                 # Responses could be parsed to check for errors, but avoid accumulating them in memory
 
                 # If filetype is 'nt', postprocess sequentially using `update_triple`
-                if file_config['file_type'] == 'nt':
-                    # Loop through all tgn documents by fetching them from Vespa (use pagination)
-                    with VespaClient.sync_context("feed") as sync_app:
-                        page = 0
-                        page_size = 250
-                        count = 0
-                        while True:
-                            response = sync_app.query(
-                                {
-                                    "yql": f'select * from place where true',
-                                    "namespace": dataset_name,
-                                    "offset": page * page_size,
-                                    "hits": page_size
-                                }
-                            ).json
-                            if not response.get("root", {}).get("children", []):
-                                break
-                            # Loop through all places
-                            for place in response.get("root", {}).get("children", []):
-                                document_id = place.get("fields", {}).get("documentid", "")
-                                if document_id:
-                                    count += 1
-                                    # Fetch all variants for the place
-                                    response = sync_app.query(
-                                        {
-                                            "yql": f'select * from variant where places contains "{document_id}"',
-                                            "namespace": dataset_name,
-                                        }
-                                    ).json
-                                    # Add each variant to the place (using `update_triple`), prioritising prefLabelGVP above prefLabel
-                                    for variant in response.get("root", {}).get("children", []):
-                                        task = (
-                                            sync_app, dataset_config['namespace'], 'place', document_id, variant,
-                                            task_id,
-                                            count, task_tracker)
-                                        update_queue.put(task)
-                                        # Add place to the toponym (using `update_triple`)
-                                        task = (sync_app, dataset_config['namespace'], 'toponym',
-                                                variant.get("fields", {}).get("toponym", ""),
-                                                {"document_id": variant.get("fields", {}).get("toponym", ""),
-                                                 "places": [document_id]}, task_id, count, task_tracker)
-                                        update_queue.put(task)
-                            page += 1
-                    # Wait for all tasks to complete
-                    update_queue.join()
-                    # Delete all variant documents
-                    delete_document_namespace(sync_app, dataset_config['namespace'], ['variant'])
+                # if file_config['file_type'] == 'nt':
+                #     # Loop through all tgn documents by fetching them from Vespa (use pagination)
+                #     with VespaClient.sync_context("feed") as sync_app:
+                #         page = 0
+                #         page_size = 250
+                #         count = 0
+                #         while True:
+                #             response = sync_app.query(
+                #                 {
+                #                     "yql": f'select * from place where true',
+                #                     "namespace": dataset_name,
+                #                     "offset": page * page_size,
+                #                     "hits": page_size
+                #                 }
+                #             ).json
+                #             if not response.get("root", {}).get("children", []):
+                #                 break
+                #             # Loop through all places
+                #             for place in response.get("root", {}).get("children", []):
+                #                 document_id = place.get("fields", {}).get("documentid", "")
+                #                 if document_id:
+                #                     count += 1
+                #                     # Fetch all variants for the place
+                #                     response = sync_app.query(
+                #                         {
+                #                             "yql": f'select * from variant where places contains "{document_id}"',
+                #                             "namespace": dataset_name,
+                #                         }
+                #                     ).json
+                #                     # Add each variant to the place (using `update_triple`), prioritising prefLabelGVP above prefLabel
+                #                     for variant in response.get("root", {}).get("children", []):
+                #                         task = (
+                #                             sync_app, dataset_config['namespace'], 'place', document_id, variant,
+                #                             task_id,
+                #                             count, task_tracker)
+                #                         update_queue.put(task)
+                #                         # Add place to the toponym (using `update_triple`)
+                #                         task = (sync_app, dataset_config['namespace'], 'toponym',
+                #                                 variant.get("fields", {}).get("toponym", ""),
+                #                                 {
+                #                                     "document_id": variant.get("fields", {}).get("toponym", ""),
+                #                                     "places": [document_id]
+                #                                 }, task_id, count, task_tracker)
+                #                         update_queue.put(task)
+                #             page += 1
+                #     # Wait for all tasks to complete
+                #     update_queue.join()
+                #     # Delete all variant documents
+                #     delete_document_namespace(sync_app, dataset_config['namespace'], ['variant'])
 
             logger.info(f"Completed.")
 
