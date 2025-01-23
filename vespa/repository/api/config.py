@@ -96,6 +96,26 @@ class VespaExtended(Vespa):
             'fields': response.get_json().get("fields", {})
         } if response.is_successful() else response.get_status_code()
 
+    @retry(
+        # See https://tenacity.readthedocs.io/en/latest/
+        stop=stop_after_attempt(5),  # Max 5 attempts
+        wait=wait_exponential(multiplier=1, min=1, max=16),
+        retry_error_callback=return_none,
+        retry=retry_if_result(is_500_error)
+    )
+    def feed_existing(self, data_id: str = None, namespace: str = None, schema: str = None, fields: dict = None, create: bool = False) -> dict:
+        response = self.feed_data_point(
+            data_id=data_id,
+            namespace=namespace,
+            schema=schema,
+            fields=fields,
+            create=create
+        )
+        return {
+            'document_id': data_id,
+            'fields': response.get_json().get("fields", {})
+        } if response.is_successful() else response.get_status_code()
+
 
 class VespaClient:
     _instances = {}

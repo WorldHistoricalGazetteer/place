@@ -101,9 +101,9 @@ def feed_triple(task):
                 yql += 'limit 1'
 
                 if (preexisting := sync_app.query_existing(
-                        {'yql': yql},
-                        # Do not set namespace
-                        schema=schema,
+                    {'yql': yql},
+                    # Do not set namespace
+                    schema=schema,
                 )):
                     if preexisting_errors := preexisting.get("errors"):
                         msg = f"#{count}: Error querying {schema} document: {preexisting_errors}"

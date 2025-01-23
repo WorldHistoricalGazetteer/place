@@ -43,7 +43,7 @@ def queue_worker():
 
 def update_existing_place(task):
     sync_app, namespace, schema, document_id, transformed_document, task_id, count, task_tracker = task
-    response = sync_app.get_data(
+    response = sync_app.get_existing(
         namespace=namespace,
         schema=schema,
         data_id=document_id
@@ -53,7 +53,7 @@ def update_existing_place(task):
         existing_document = response.json
         existing_names = existing_document.get("fields", {}).get("names", [])
         # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
-        response = sync_app.update_data(
+        response = sync_app.update_existing(
             namespace=namespace,
             schema=schema,
             data_id=document_id,
@@ -70,7 +70,7 @@ def update_existing_place(task):
 
 def feed_link(sync_app, namespace, schema, link, task_id, count):
     try:
-        response = sync_app.feed_data_point(
+        response = sync_app.feed_existing(
             namespace=namespace,  # source identifier
             schema=schema,  # usually 'link'
             data_id=get_uuid(),
@@ -120,30 +120,27 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
             "error": "Document ID not found in transformed document"
         }
     try:
-        toponym_exists = False
+        preexisting = None
         yql = None
         if schema == 'toponym':
             # Check if toponym already exists
-            with VespaClient.sync_context("feed") as sync_app:
-                yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
-                for field in bcp47_fields:
-                    if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
-                        yql += f'and bcp47_{field} matches "^{transformed_document["fields"][f"bcp47_{field}"]}$" '
-                yql += 'limit 1'
-                # logger.info(f"Checking if toponym exists: {yql}")
-                existing_response = sync_app.query({'yql': yql}).json
-                # logger.info(f"Existing toponym response: {existing_response}")
-                toponym_exists = existing_response.get("root", {}).get("fields", {}).get("totalCount", 0) > 0
+            yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
+            for field in bcp47_fields:
+                if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
+                    yql += f'and bcp47_{field} contains "{transformed_document["fields"][f"bcp47_{field}"]}" '
+            yql += 'limit 1'
+            preexisting = sync_app.query_existing(
+                {'yql': yql},
+                # Do not set namespace
+                schema=schema,
+            )
 
-        if toponym_exists:  # (and schema == 'toponym')
+        if preexisting:  # (and schema == 'toponym')
             # Extend `places` list
-            existing_toponym_fields = existing_response.get("root", {}).get("children", [{}])[0].get("fields", {})
-            existing_toponym_id = existing_toponym_fields.get("documentid").split("::")[-1]
-            existing_places = existing_toponym_fields.get("places", [])
+            existing_toponym_id = preexisting.get("document_id")
+            existing_places = preexisting.get("fields", {}).get("places", [])
 
-            # logger.info(f'Extending places with {document_id} for toponym {existing_toponym_id}')
-
-            response = sync_app.update_data(
+            response = sync_app.update_existing(
                 # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
                 namespace=namespace,
                 schema=schema,
@@ -161,7 +158,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 update_queue.put(task)
                 response = None
             else:
-                response = sync_app.feed_data_point(
+                response = sync_app.feed_existing(
                     namespace=namespace,
                     schema=schema,
                     data_id=document_id,
