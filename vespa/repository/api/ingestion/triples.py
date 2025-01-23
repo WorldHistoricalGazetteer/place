@@ -60,11 +60,12 @@ def feed_triple(task):
                     # Do not set namespace
                     schema=schema,
                 ).get_json().get("root", {})
-                logger.info(f"Existing {schema} query_response_root: {query_response_root}")
+                # logger.info(f"Existing {schema} query_response_root: {query_response_root}")
                 if query_response_root.get("errors"):
                     task_tracker.update_task(task_id, {"error": f"#{count}: {query_response_root.get('errors')}"})
                     logger.error(
-                        f'Error querying {schema} document: {query_response_root.get("errors")}', exc_info=True)
+                        f'#{count}: Error querying {schema} document: {query_response_root.get("errors")}',
+                        exc_info=True)
                     return {"success": False, "error": query_response_root.get("errors")}
                 preexisting = existing_document(query_response_root)
                 document["document_id"] = preexisting.get("document_id") if preexisting else get_uuid()
@@ -80,11 +81,11 @@ def feed_triple(task):
                     },
                     create=True  # Create if not exists
                 )
-                logger.info(f"Variant update response: {response.get_json()}")
+                # logger.info(f"Variant update response: {response.get_json()}")
                 if not response.is_successful():
                     task_tracker.update_task(task_id, {"error": f"#{count}: {response.get_json()}"})
                     logger.error(
-                        f'Error storing toponym id in variant: {response.get_json()}', exc_info=True)
+                        f'#{count}: Error storing toponym id in variant: {response.get_json()}', exc_info=True)
 
             else:
                 response = sync_app.get_data(
@@ -93,12 +94,13 @@ def feed_triple(task):
                     schema=schema,
                     data_id=document.get("document_id"),
                 )
-                if not response.is_successful():
-                    logger.info(
-                        f'Failed to find {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}', exc_info=True)
-                else:
-                    logger.info(f"*** Found {namespace}:{schema} document: {response.get_json()}")
-                logger.info(f"Existing {schema} response: {response.get_json()}")
+                # if not response.is_successful():
+                #     logger.info(
+                #         f'Failed to find {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}',
+                #         exc_info=True)
+                # else:
+                #     logger.info(f"Found {namespace}:{schema} document: {response.get_json()}")
+                # logger.info(f"Existing {schema} response: {response.get_json()}")
                 preexisting = {
                     'document_id': document.get("document_id"),
                     'fields': response.get_json().get("fields", {})
@@ -107,7 +109,7 @@ def feed_triple(task):
                     document["fields"]["types"] = preexisting.get("fields").get("types", []) + document.get(
                         "fields").get("types", [])
 
-            logger.info(f"Updating {schema} {preexisting} with {document}")
+            # logger.info(f"Updating {schema} {preexisting} with {document}")
 
             response = sync_app.update_data(
                 # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
@@ -119,12 +121,14 @@ def feed_triple(task):
             )
             # Report any errors
             if not response.is_successful():
-                task_tracker.update_task(task_id, {"error": f"#{count}: Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}"})
+                task_tracker.update_task(task_id, {
+                    "error": f"#{count}: Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}"})
                 logger.error(
-                    f'Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}', exc_info=True)
+                    f'#{count}: Failed to update {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}',
+                    exc_info=True)
 
     except Exception as e:
         task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
         logger.error(
-            f'Error feeding document: {str(e)}', exc_info=True)
+            f'#{count}: Error feeding document: {str(e)}', exc_info=True)
         return
