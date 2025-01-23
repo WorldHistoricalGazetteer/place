@@ -73,12 +73,12 @@ def feed_triple(sync_app, namespace, transformed_document, task_id, count):
                 logger.info(f"Existing {schema} response: {response}")
                 preexisting = existing_document(response)
 
-            logger.info(f"Preexisting document: {preexisting}")
+            logger.info(f"Updating {preexisting} with {document}")
 
             # response = sync_app.update_data(
             #     namespace=namespace,
             #     schema=schema,
-            #     data_id=document.get("document_id") or get_uuid(),
+            #     data_id=document.get("document_id"),
             #     fields=document.get("fields"),
             # )
 

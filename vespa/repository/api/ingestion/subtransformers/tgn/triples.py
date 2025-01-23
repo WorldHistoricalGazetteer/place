@@ -17,7 +17,7 @@ class TriplesProcessor:
             self.object = data.get("object", "")
             self.processed = self.process()
 
-            logger.info(f"TRIPLE: {self.subject_id} *** {self.predicate} *** {self.object}")
+            # logger.info(f"TRIPLE: {self.subject_id} *** {self.predicate} *** {self.object}")
         except Exception as e:
             logger.exception(f"Exception during triple processing: {str(e)}", exc_info=True)
 
