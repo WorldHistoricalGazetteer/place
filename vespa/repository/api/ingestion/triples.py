@@ -96,8 +96,13 @@ def feed_triple(task):
                 if not response.is_successful():
                     logger.info(
                         f'Failed to find {namespace}:{schema} document: [code: {response.get_status_code()}] {response.get_json()}', exc_info=True)
+                else:
+                    logger.info(f"*** Found {namespace}:{schema} document: {response.get_json()}")
                 logger.info(f"Existing {schema} response: {response.get_json()}")
-                preexisting = existing_document(response.get_json())
+                preexisting = {
+                    'document_id': document.get("document_id"),
+                    'fields': response.get_json().get("fields", {})
+                } if response.is_successful() else None
                 if preexisting and schema == "place":
                     document["fields"]["types"] = preexisting.get("fields").get("types", []) + document.get(
                         "fields").get("types", [])
