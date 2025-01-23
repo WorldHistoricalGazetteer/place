@@ -12,6 +12,7 @@ Loop variants
 
 import logging
 
+from ..bcp_47.bcp_47 import bcp47_fields
 from ..utils import get_uuid
 
 logger = logging.getLogger(__name__)
@@ -47,12 +48,14 @@ def feed_triple(task):
                     "error": "No schema found"
                 }
             logger.info(
-                f"Feeding document #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
+                f"Feeding triple #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
 
             # Check if document already exists
             if schema == "toponym":
                 yql = f'select documentid, places from toponym where name_strict contains "{document.get("fields").get("name_strict")}" '
-                yql += f'and bcp47_language contains "{document.get("fields").get("bcp47_language")}" '
+                for field in bcp47_fields:
+                    if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
+                        yql += f'and bcp47_{field} contains "{document.get("fields").get(f"bcp47_{field}")}" '
                 yql += 'limit 1'
                 query_response_root = sync_app.query(
                     # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespaqueryresponse

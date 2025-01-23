@@ -1,6 +1,8 @@
 import logging
 import re
 
+from ....bcp_47.bcp_47 import parse_bcp47_fields
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,7 +62,7 @@ class TriplesProcessor:
                             'fields': {
                                 'name_strict': (toponym := toponym.strip('"')),
                                 'name': toponym,
-                                **({'bcp47_language': language} if language else {}),
+                                **(parse_bcp47_fields(language) if language else {}),
                             }
                         }
                     }
