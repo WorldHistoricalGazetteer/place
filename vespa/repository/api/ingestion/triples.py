@@ -59,7 +59,8 @@ def feed_triple(task):
                     # Do not set namespace
                     schema=schema,
                 )
-                logger.info(f"Existing {schema} response: {response.get_json()}")
+                logger.info(f"Existing {schema} response.get_json: {response.get_json()}")
+                logger.info(f"Existing {schema} response.json: {response.json}")
                 preexisting = existing_document(response.get_json())
                 document["document_id"] = preexisting.get("document_id") if preexisting else get_uuid()
                 # No other toponym fields to be adjusted for subsequent toponym update
