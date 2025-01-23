@@ -55,7 +55,8 @@ class TriplesProcessor:
                     toponym, _, language = self.object.partition("@")
                     return {
                         'toponym': {
-                            'document_id': self.subject_id,
+                            'document_id': None,  # Generate UUID on first insertion
+                            'variant_id': self.subject_id,  # Add toponym UUID to this variant
                             'fields': {
                                 'name_strict': (toponym := toponym.strip('"')),
                                 'name': toponym,
@@ -90,43 +91,23 @@ class TriplesProcessor:
                         }
                     }
                 case "altLabel":
-                    toponym_id = self.object.split('/')[-1]
+                    variant_id = self.object.split('/')[-1]
                     return {
-                        'place': {
-                            'document_id': self.subject_id,
-                            'fields': {
-                                'names': [
-                                    {
-                                        'toponym_id': f'variant:{toponym_id}',
-                                    }
-                                ],
-                            }
-                        },
                         'variant': {
-                            'document_id': toponym_id,
+                            'document_id': variant_id,
                             'fields': {
                                 'place': self.subject_id,
                             }
                         }
                     }
                 case _:  # prefLabel, prefLabelGVP
-                    toponym_id = self.object.split('/')[-1]
+                    variant_id = self.object.split('/')[-1]
                     return {
-                        'place': {
-                            'document_id': self.subject_id,
-                            'fields': {
-                                'names': [
-                                    {
-                                        'toponym_id': f'variant:{toponym_id}',
-                                        'is_preferred': 2 if self.predicate == "prefLabelGVP" else 1,
-                                    }
-                                ],
-                            }
-                        },
                         'variant': {
-                            'document_id': toponym_id,
+                            'document_id': variant_id,
                             'fields': {
                                 'place': self.subject_id,
+                                'is_preferred': 2 if self.predicate == "prefLabelGVP" else 1,
                             }
                         }
                     }

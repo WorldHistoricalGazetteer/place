@@ -1,3 +1,15 @@
+"""
+
+Loop toponyms (`term`) creating if not exists, using uuid
+Store found or created uuid in variant
+
+Loop variants
+- Add place to toponym [places]
+- Add variant (excluding place id) to place [names]
+
+
+"""
+
 import logging
 
 from ..utils import task_tracker
