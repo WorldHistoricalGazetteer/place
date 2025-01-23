@@ -62,21 +62,22 @@ def feed_triple(task):
                 logger.info(f"Existing {schema} response: {response}")
                 preexisting = existing_document(response)
                 document["document_id"] = preexisting.get("document_id") if preexisting else get_uuid()
+                # No other toponym fields to be adjusted for subsequent toponym update
                 # Store toponym id in variant
-                # response = sync_app.update_data(
-                #     namespace=namespace,
-                #     schema='variant',
-                #     data_id=document.get("variant_id"),
-                #     fields={
-                #         'toponym': document["document_id"]
-                #     },
-                #     create=True  # Create if not exists
-                # )
-                # # Report any errors
-                # if response.get("error"):
-                #     task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
-                #     logger.error(
-                #         f'Error storing toponym id in variant: {response.get("error")}', exc_info=True)
+                response = sync_app.update_data(
+                    namespace=namespace,
+                    schema='variant',
+                    data_id=document.get("variant_id"),
+                    fields={
+                        'toponym': document["document_id"]
+                    },
+                    create=True  # Create if not exists
+                )
+                # Report any errors
+                if response.get("error"):
+                    task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
+                    logger.error(
+                        f'Error storing toponym id in variant: {response.get("error")}', exc_info=True)
 
             else:
                 response = sync_app.get_data(
@@ -86,15 +87,22 @@ def feed_triple(task):
                 ).json
                 logger.info(f"Existing {schema} response: {response}")
                 preexisting = existing_document(response)
+                if preexisting and schema == "place":
+                    document["fields"]["types"] = preexisting.get("fields").get("types", []) + document.get("fields").get("types", [])
 
-            logger.info(f"Updating {preexisting} with {document}")
+            logger.info(f"Updating {schema} {preexisting} with {document}")
 
-            # response = sync_app.update_data(
-            #     namespace=namespace,
-            #     schema=schema,
-            #     data_id=document.get("document_id"),
-            #     fields=document.get("fields"),
-            # )
+            response = sync_app.update_data(
+                namespace=namespace,
+                schema=schema,
+                data_id=document.get("document_id"),
+                fields=document.get("fields"),
+            )
+            # Report any errors
+            if response.get("error"):
+                task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
+                logger.error(
+                    f'Error updating {schema} document: {response.get("error")}', exc_info=True)
 
     except Exception as e:
         task_tracker.update_task(task_id, {"error": f"#{count}: {str(e)}"})
