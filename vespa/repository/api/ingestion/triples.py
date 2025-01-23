@@ -75,9 +75,9 @@ def feed_triple(task):
                 )  # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                 logger.info(f"Variant update response: {response.get_json()}")
                 if not response.is_successful():
-                    task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
+                    task_tracker.update_task(task_id, {"error": f"#{count}: {response.get_json()}"})
                     logger.error(
-                        f'Error storing toponym id in variant: {response.get("error")}', exc_info=True)
+                        f'Error storing toponym id in variant: {response.get_json()}', exc_info=True)
 
             else:
                 response = sync_app.get_data(
@@ -86,9 +86,9 @@ def feed_triple(task):
                     data_id=document.get("document_id"),
                 )  # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                 if not response.is_successful():
-                    task_tracker.update_task(task_id, {"error": f"#{count}: {response.get('error')}"})
+                    task_tracker.update_task(task_id, {"error": f"#{count}: {response.get_json()}"})
                     logger.error(
-                        f'Error getting {schema} document: {response.get("error")}', exc_info=True)
+                        f'Error getting {schema} document: {response.get_json()}', exc_info=True)
                     return
                 logger.info(f"Existing {schema} response: {response.get_json()}")
                 preexisting = existing_document(response.get_json())
