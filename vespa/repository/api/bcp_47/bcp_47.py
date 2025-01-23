@@ -38,4 +38,8 @@ def parse_bcp47_fields(bcp47: str) -> dict:
         dict: A dictionary of BCP 47 language tag parts.
     """
     parts = bcp47.split("-")
-    return {f'bcp47_{field}': parts[i] if i < len(parts) else None for i, field in enumerate(bcp47_fields)}
+    return {
+        f'bcp47_{field}': parts[i]
+        for i, field in enumerate(bcp47_fields)
+        if i < len(parts) and parts[i]
+    }
