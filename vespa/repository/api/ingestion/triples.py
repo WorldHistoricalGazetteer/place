@@ -89,9 +89,11 @@ def feed_triple(task):
                     "document_id": document.get("document_id"),
                     "error": "No schema found"
                 }
-            logger.info(
-                f"Feeding triple #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
-
+            # logger.info(
+            #     # f"Feeding triple #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
+            if count % 5000 == 0:
+                logger.info(f"Feeding triple #{count:,}")
+                
             # Check if document already exists
             if schema == "toponym":
                 yql = f'select documentid, places from toponym where name_strict contains "{document.get("fields").get("name_strict")}" '
