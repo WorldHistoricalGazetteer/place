@@ -117,7 +117,6 @@ def feed_triple(task):
                 # No other toponym fields to be adjusted for subsequent toponym update
                 # Store toponym id in variant
                 response = sync_app.update_existing(
-                    # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                     namespace=namespace,
                     schema='variant',
                     data_id=document.get("variant_id"),
@@ -127,7 +126,7 @@ def feed_triple(task):
                     create=True  # Create if not exists
                 )
                 # logger.info(f"Variant update response: {response.get_json()}")
-                if not response.is_successful():
+                if not response.get('status_code') < 500:
                     msg = f"#{count}: Error storing toponym id in variant: {response.get_json()}"
                     task_tracker.update_task(task_id, {"error": msg})
                     logger.error(msg, exc_info=True)
@@ -145,7 +144,6 @@ def feed_triple(task):
             # logger.info(f"Updating {schema} {preexisting} with {document}")
 
             response = sync_app.update_existing(
-                # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.io.VespaResponse
                 namespace=namespace,
                 schema=schema,
                 data_id=document.get("document_id"),
@@ -153,7 +151,7 @@ def feed_triple(task):
                 create=True  # Create if not exists
             )
             # Report any errors
-            if not response.is_successful():
+            if not response.get('status_code') < 500:
                 msg = f"#{count}: Error updating {namespace}:{schema} document: {response.get_status_code()}] {response.get_json()}"
                 task_tracker.update_task(task_id, {"error": msg})
                 logger.error(msg, exc_info=True)
