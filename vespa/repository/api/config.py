@@ -94,10 +94,10 @@ class VespaExtended(Vespa):
         )
         return {
             'document_id': data_id,
-            'fields': response.get_json().get("fields", {})
-            'status_code': response.get_status_code()
+            'fields': response.get_json().get("fields", {}),
+            'status_code': response.get_status_code(),
         } if response.is_successful() else {
-            'status_code': response.get_status_code()
+            'status_code': response.get_status_code(),
         }
 
     @retry(
@@ -117,10 +117,10 @@ class VespaExtended(Vespa):
         )
         return {
             'document_id': data_id,
-            'fields': response.get_json().get("fields", {})
-            'status_code': response.get_status_code()
+            'fields': response.get_json().get("fields", {}),
+            'status_code': response.get_status_code(),
         } if response.is_successful() else {
-            'status_code': response.get_status_code()
+            'status_code': response.get_status_code(),
         }
 
     @retry(
@@ -140,10 +140,10 @@ class VespaExtended(Vespa):
         )
         return {
             'document_id': data_id,
-            'fields': response.get_json().get("fields", {})
-            'status_code': response.get_status_code()
+            'fields': response.get_json().get("fields", {}),
+            'status_code': response.get_status_code(),
         } if response.is_successful() else {
-            'status_code': response.get_status_code()
+            'status_code': response.get_status_code(),
         }
 
 
