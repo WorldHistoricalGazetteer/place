@@ -65,8 +65,8 @@ def update_existing_place(task):
         schema=schema,
         data_id=document_id
     )
-    # logger.info(f"Response: {response.status_code}: {response.json}")
-    if response.status_code == 200:
+    # logger.info(f"Response: {response.get('status_code')}: {response.json}")
+    if response.get('status_code') == 200:
         existing_document = response.json
         existing_names = existing_document.get("fields", {}).get("names", [])
         # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
@@ -78,9 +78,9 @@ def update_existing_place(task):
                 "names": existing_names + transformed_document['fields']['names']
             }
         )
-        # logger.info(f"Update response: {response.status_code}: {response.json}")
+        # logger.info(f"Update response: {response.get('status_code')}: {response.json}")
     else:
-        msg = f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}"
+        msg = f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.get('status_code')}"
         task_tracker.update_task(task_id, {"error (D)": f"#{count}: {msg}"})
         logger.error(msg)
 
@@ -94,17 +94,17 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
             fields=link
         )
 
-        if response.status_code == 200:
+        if response.get('status_code') == 200:
             return {"success": True, "link": link}
         else:
             msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
             task_tracker.update_task(task_id, {"error (C)": f"#{count}: link: >>>{link}<<< {msg}"})
             logger.error(
-                f"Failed to feed link: {link}, Status code: {response.status_code}, Response: {msg}")
+                f"Failed to feed link: {link}, Status code: {response.get('status_code')}, Response: {msg}")
             return {
                 "success": False,
                 "link": link,
-                "status_code": response.status_code,
+                "status_code": response.get('status_code'),
                 "message": msg
             }
     except Exception as e:
@@ -182,19 +182,19 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     fields=transformed_document['fields']
                 )
 
-        if update_place or response.status_code == 200:
+        if update_place or response.get('status_code') == 200:
             return {"success": True, "namespace": namespace, "schema": schema, "document_id": document_id}
         else:
             msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
             task_tracker.update_task(task_id, {"error (A)": f"#{count}: {msg}"})
             logger.error(
-                f"Failed to feed document: {namespace}:{schema}::{document_id}, Status code: {response.status_code}, Response: {msg}")
+                f"Failed to feed document: {namespace}:{schema}::{document_id}, Status code: {response.get('status_code')}, Response: {msg}")
             return {
                 "success": False,
                 "namespace": namespace,
                 "schema": schema,
                 "document_id": document_id,
-                "status_code": response.status_code,
+                "status_code": response.get('status_code'),
                 "message": msg
             }
     except Exception as e:

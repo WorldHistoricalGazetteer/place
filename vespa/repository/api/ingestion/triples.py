@@ -1,15 +1,3 @@
-"""
-
-When processing toponyms (`term`) create if not exists, using uuid
-Store found or created uuid in variant
-
-Loop variants
-- Add place to toponym [places]
-- Add variant (excluding place id) to place [names], assigning 0, 1, or 2 to the is_preferred flag
-
-
-"""
-
 import logging
 
 from ..bcp_47.bcp_47 import bcp47_fields
@@ -19,6 +7,10 @@ logger = logging.getLogger(__name__)
 
 
 def process_variants():
+    """
+    Rewrite this function. It should loop over variants, deduplicate lists, store them in the correct documents,
+    and finally delete the variant documents.
+    """
     #     # Loop through all tgn documents by fetching them from Vespa (use pagination)
     #     with VespaClient.sync_context("feed") as sync_app:
     #         page = 0
