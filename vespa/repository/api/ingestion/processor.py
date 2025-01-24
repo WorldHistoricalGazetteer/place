@@ -404,8 +404,8 @@ def delete_document_namespace(sync_app, namespace, schema=None):
     """Delete all documents in the given namespace."""
     # Delete documents belonging to the given namespace
 
-    logger.info("*********************** Bypassing deletion of variant documents.")
-    return
+    # logger.info("*********************** Bypassing deletion of variant documents.")
+    # return
 
     if schema is None:
         schema = ['place', 'toponym', 'link']
@@ -416,3 +416,4 @@ def delete_document_namespace(sync_app, namespace, schema=None):
             content_cluster_name="content"
         )
         logger.info(f"Deleted {namespace}:{schema} documents.")
+        exit(0)
