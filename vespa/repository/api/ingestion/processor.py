@@ -31,10 +31,16 @@ def queue_worker():
             break
 
         try:
-            _, namespace, _, _, _, _, count, _ = task
+            _, namespace, _, _, _, task_id, count, task_tracker = task
 
             if namespace == 'tgn':
-                feed_triple(task)
+                response = feed_triple(task)
+                if not response.get("success", False):
+                    task_tracker.update_task(task_id, {
+                        "success": -1,
+                        "failure": 1
+                    })
+
             else:
                 update_existing_place(task)
 
@@ -118,7 +124,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
         # Handle triples differently
         task = (sync_app, namespace, None, None, transformed_document, task_id, count, task_tracker)
         update_queue.put(task)
-        return
+        return {"success": True} # Pending processing in the worker thread
 
     document_id = transformed_document.get("document_id")
     if not document_id:
