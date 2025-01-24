@@ -80,9 +80,9 @@ certManager:
 resources:
   configserver:
     requests:
-      memory: "4G"
+      memory: "2G"
     limits:
-      memory: "4G"
+      memory: "2G"
   admin:
     requests:
       memory: "1G"
@@ -97,7 +97,7 @@ resources:
     requests:
       memory: "2G"
     limits:
-      memory: "8G"
+      memory: "6G"
   query:
     requests:
       memory: "2G"
