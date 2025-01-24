@@ -51,11 +51,6 @@ class VespaExtended(Vespa):
     def status_code_ok(result):
         return (status_code := result.get('status_code')) and status_code < 500
 
-    def is_500_error(result):
-        # Log status code and typeof status code (string or integer)
-        logger.info(f"Checking for 500 error: {result.get('status_code')} [{type(result.get('status_code'))}]")
-        return (status_code := result.get('status_code')) and status_code >= 500
-
     @retry(
         # See https://tenacity.readthedocs.io/en/latest/
         stop=stop_after_attempt(5),  # Max 5 attempts
