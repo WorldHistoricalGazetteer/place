@@ -25,18 +25,31 @@ update_queue = queue.Queue(maxsize=max_queue_size)
 
 
 def queue_worker():
+    iteration_count = 0  # Track the number of processed tasks
+
     while True:
         task = update_queue.get()
         if task is None:  # Sentinel to terminate the worker thread
             break
+
         try:
             _, namespace, _, _, _, _, _, _ = task
             if namespace == 'tgn':
                 feed_triple(task)
             else:
                 update_existing_place(task)
+
+            iteration_count += 1  # Increment the iteration count
+
+            # Pause after every 100,000 iterations
+            # This helps reduce GC pressure or system resource exhaustion during heavy processing
+            if iteration_count % 100_000 == 0:
+                logger.info(f"Processed 100,000 tasks. Pausing for 3 minutes...")
+                time.sleep(3 * 60)  # 3 minutes in seconds
+
         except Exception as e:
             logger.error(f"Error processing update: {e}")
+
         finally:
             update_queue.task_done()
 
