@@ -66,7 +66,7 @@ def update_existing_place(task):
         data_id=document_id
     )
     # logger.info(f"Response: {response.get('status_code')}: {response.json}")
-    if response.get('status_code') == 200:
+    if response.get('status_code') < 500:
         existing_document = response.json
         existing_names = existing_document.get("fields", {}).get("names", [])
         # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
@@ -94,10 +94,10 @@ def feed_link(sync_app, namespace, schema, link, task_id, count):
             fields=link
         )
 
-        if response.get('status_code') == 200:
+        if response.get('status_code') < 500:
             return {"success": True, "link": link}
         else:
-            msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
+            msg = response if response.headers.get('content-type') == 'application/json' else response.text
             task_tracker.update_task(task_id, {"error (C)": f"#{count}: link: >>>{link}<<< {msg}"})
             logger.error(
                 f"Failed to feed link: {link}, Status code: {response.get('status_code')}, Response: {msg}")
@@ -182,10 +182,10 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                     fields=transformed_document['fields']
                 )
 
-        if update_place or response.get('status_code') == 200:
+        if update_place or response.get('status_code') < 500:
             return {"success": True, "namespace": namespace, "schema": schema, "document_id": document_id}
         else:
-            msg = response.json() if response.headers.get('content-type') == 'application/json' else response.text
+            msg = response if response.headers.get('content-type') == 'application/json' else response.text
             task_tracker.update_task(task_id, {"error (A)": f"#{count}: {msg}"})
             logger.error(
                 f"Failed to feed document: {namespace}:{schema}::{document_id}, Status code: {response.get('status_code')}, Response: {msg}")
