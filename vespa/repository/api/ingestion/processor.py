@@ -416,3 +416,5 @@ def delete_document_namespace(sync_app, namespace, schema=None):
             content_cluster_name="content"
         )
         logger.info(f"Deleted {namespace}:{schema} documents.")
+
+    exit(0)
