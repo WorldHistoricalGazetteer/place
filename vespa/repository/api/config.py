@@ -49,8 +49,9 @@ class VespaExtended(Vespa):
         return bool(result.get("error"))
 
     def is_500_error(result):
-        logger.info(f"Checking for 500 error: {result}")
-        return result >= 500
+        # Log status code and typeof status code (string or integer)
+        logger.info(f"Checking for 500 error: {result.get_status_code()} [{type(result.get_status_code())}]")
+        return result.get_status_code() >= 500
 
     @retry(
         # See https://tenacity.readthedocs.io/en/latest/
@@ -94,7 +95,7 @@ class VespaExtended(Vespa):
         return {
             'document_id': data_id,
             'fields': response.get_json().get("fields", {})
-        } if response.is_successful() else response.get_status_code()
+        } if response.is_successful() else response
 
     @retry(
         # See https://tenacity.readthedocs.io/en/latest/
@@ -114,7 +115,7 @@ class VespaExtended(Vespa):
         return {
             'document_id': data_id,
             'fields': response.get_json().get("fields", {})
-        } if response.is_successful() else response.get_status_code()
+        } if response.is_successful() else response
 
     @retry(
         # See https://tenacity.readthedocs.io/en/latest/
@@ -134,7 +135,7 @@ class VespaExtended(Vespa):
         return {
             'document_id': data_id,
             'fields': response.get_json().get("fields", {})
-        } if response.is_successful() else response.get_status_code()
+        } if response.is_successful() else response
 
 
 class VespaClient:
