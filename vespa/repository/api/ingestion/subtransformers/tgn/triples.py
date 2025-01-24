@@ -2,6 +2,7 @@ import logging
 import re
 
 from ....bcp_47.bcp_47 import parse_bcp47_fields
+from ....utils import escape_yql
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class TriplesProcessor:
                             'document_id': None,  # Generate UUID on first insertion
                             'variant_id': self.subject_id,  # Add toponym UUID to this variant
                             'fields': {
-                                'name_strict': (toponym := toponym.strip('"')),
+                                'name_strict': (toponym := escape_yql(toponym.strip('"').encode('utf-8').decode('unicode_escape'))),
                                 'name': toponym,
                                 **(parse_bcp47_fields(language) if language else {}),
                             }
