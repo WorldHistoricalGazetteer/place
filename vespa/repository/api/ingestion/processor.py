@@ -65,9 +65,9 @@ def update_existing_place(task):
         schema=schema,
         data_id=document_id
     )
-    # logger.info(f"Response: {response.get('status_code')}: {response.json}")
+    # logger.info(f"Response: {response.get('status_code')}: {response}")
     if response.get('status_code') < 500:
-        existing_document = response.json
+        existing_document = response
         existing_names = existing_document.get("fields", {}).get("names", [])
         # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
         response = sync_app.update_existing(
@@ -78,7 +78,7 @@ def update_existing_place(task):
                 "names": existing_names + transformed_document['fields']['names']
             }
         )
-        # logger.info(f"Update response: {response.get('status_code')}: {response.json}")
+        # logger.info(f"Update response: {response.get('status_code')}: {response}")
     else:
         msg = f"Failed to get existing document: {namespace}:{schema}::{document_id}, Status code: {response.get('status_code')}"
         task_tracker.update_task(task_id, {"error (D)": f"#{count}: {msg}"})
