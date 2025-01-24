@@ -14,6 +14,23 @@ host_mapping = {
     "feed": os.getenv("VESPA_FEED_HOST", "http://vespa-feed.vespa.svc.cluster.local:8080"),
 }
 
+class VespaSyncExtended(VespaSync):
+    """
+    A subclass of VespaSync that adds the methods from VespaExtended.
+    """
+
+    def get_existing(self, data_id: str = None, namespace: str = None, schema: str = None) -> dict:
+        return self.app.get_existing(data_id=data_id, namespace=namespace, schema=schema)
+
+    def update_existing(self, *args, **kwargs) -> dict:
+        return self.app.update_existing(*args, **kwargs)
+
+    def feed_existing(self, *args, **kwargs) -> dict:
+        return self.app.feed_existing(*args, **kwargs)
+
+    def query_existing(self, *args, **kwargs) -> dict:
+        return self.app.query_existing(*args, **kwargs)
+
 
 class VespaExtended(Vespa):
     """
@@ -152,4 +169,4 @@ class VespaClient:
         Provide a context manager for VespaSync.
         """
         app = cls.get_instance(client_type)
-        return VespaSync(app)
+        return VespaSyncExtended(app)
