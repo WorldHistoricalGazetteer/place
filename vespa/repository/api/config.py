@@ -2,7 +2,7 @@
 import logging
 import os
 
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_result
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_result, retry_if_not_result
 from vespa.application import Vespa, VespaSync
 
 logger = logging.getLogger(__name__)
@@ -48,6 +48,9 @@ class VespaExtended(Vespa):
     def has_errors(result):
         return bool(result.get("error"))
 
+    def status_code_ok(result):
+        return (status_code := result.get('status_code')) and status_code < 500
+
     def is_500_error(result):
         # Log status code and typeof status code (string or integer)
         logger.info(f"Checking for 500 error: {result.get('status_code')} [{type(result.get('status_code'))}]")
@@ -84,7 +87,7 @@ class VespaExtended(Vespa):
         stop=stop_after_attempt(5),  # Max 5 attempts
         wait=wait_exponential(multiplier=1, min=1, max=16),
         retry_error_callback=return_none,
-        retry=retry_if_result(is_500_error)
+        retry=retry_if_not_result(status_code_ok)
     )
     def get_existing(self, data_id: str = None, namespace: str = None, schema: str = None) -> dict:
         response = self.get_data(
@@ -105,7 +108,7 @@ class VespaExtended(Vespa):
         stop=stop_after_attempt(5),  # Max 5 attempts
         wait=wait_exponential(multiplier=1, min=1, max=16),
         retry_error_callback=return_none,
-        retry=retry_if_result(is_500_error)
+        retry=retry_if_not_result(status_code_ok)
     )
     def update_existing(self, data_id: str = None, namespace: str = None, schema: str = None, fields: dict = None, create: bool = False) -> dict:
         response = self.update_data(
@@ -128,7 +131,7 @@ class VespaExtended(Vespa):
         stop=stop_after_attempt(5),  # Max 5 attempts
         wait=wait_exponential(multiplier=1, min=1, max=16),
         retry_error_callback=return_none,
-        retry=retry_if_result(is_500_error)
+        retry=retry_if_not_result(status_code_ok)
     )
     def feed_existing(self, data_id: str = None, namespace: str = None, schema: str = None, fields: dict = None, create: bool = False) -> dict:
         response = self.feed_data_point(
