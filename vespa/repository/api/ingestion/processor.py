@@ -408,7 +408,7 @@ def delete_document_namespace(sync_app, namespace, schema=None):
     # return
 
     if schema is None:
-        schema = ['place', 'toponym', 'link']
+        schema = ['place', 'toponym', 'link', 'variant']
     for schema in schema:
         sync_app.delete_all_docs(
             namespace=namespace,
