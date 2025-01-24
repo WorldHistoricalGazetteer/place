@@ -25,8 +25,6 @@ update_queue = queue.Queue(maxsize=max_queue_size)
 
 
 def queue_worker():
-    iteration_count = 0  # Track the number of processed tasks
-
     while True:
         task = update_queue.get()
         if task is None:  # Sentinel to terminate the worker thread
@@ -34,21 +32,18 @@ def queue_worker():
 
         try:
             _, namespace, _, _, _, _, count, _ = task
-            if count % 5000 == 0:
-                logger.info(f"Feeding document #{count:,}")
 
             if namespace == 'tgn':
                 feed_triple(task)
             else:
                 update_existing_place(task)
 
-            iteration_count += 1  # Increment the iteration count
-
-            # Pause after every 100,000 iterations
-            # This helps reduce GC pressure or system resource exhaustion during heavy processing
-            if iteration_count % 100_000 == 0:
-                logger.info(f"Processed 100,000 tasks. Pausing for 3 minutes...")
-                time.sleep(3 * 60)  # 3 minutes in seconds
+            if count % 1000 == 0:
+                logger.info(f"{count:,} documents sent for indexing")
+            # Pausing helps reduce GC pressure or system resource exhaustion during heavy processing
+            if count % 100_000 == 0:
+                logger.info(f"Pausing for 3 minutes to reduce system pressure ...")
+                time.sleep(3 * 60)
 
         except Exception as e:
             logger.error(f"Error processing update: {e}")
@@ -361,6 +356,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                 update_place = file_config.get("update_place", False)
                 stream_fetcher = StreamFetcher(file_config)
                 stream = stream_fetcher.get_items()
+                logger.info(f"Starting ingestion...")
                 responses = await process_documents(stream, dataset_config, transformer_index, sync_app, limit,
                                                     task_id, update_place)
                 # Responses could be parsed to check for errors, but avoid accumulating them in memory
