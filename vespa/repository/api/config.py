@@ -1,9 +1,11 @@
 # /config.py
-
+import logging
 import os
 
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_result
 from vespa.application import Vespa, VespaSync
+
+logger = logging.getLogger(__name__)
 
 namespace = os.getenv("VESPA_NAMESPACE", "vespa")
 pagination_limit = 250
@@ -47,6 +49,7 @@ class VespaExtended(Vespa):
         return bool(result.get("error"))
 
     def is_500_error(result):
+        logger.info(f"Checking for 500 error: {result}")
         return result >= 500
 
     @retry(
