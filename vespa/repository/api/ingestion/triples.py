@@ -91,7 +91,7 @@ def feed_triple(task):
                 }
             # logger.info(
             #     # f"Feeding triple #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
-                
+
             # Check if document already exists
             if schema == "toponym":
                 yql = f'select documentid, places from toponym where name_strict contains "{document.get("fields").get("name_strict")}" '
@@ -101,9 +101,9 @@ def feed_triple(task):
                 yql += 'limit 1'
 
                 if (preexisting := sync_app.query_existing(
-                    {'yql': yql},
-                    # Do not set namespace
-                    schema=schema,
+                        {'yql': yql},
+                        # Do not set namespace
+                        schema=schema,
                 )):
                     if preexisting_errors := preexisting.get("errors"):
                         msg = f"#{count}: Error querying {schema} document: {preexisting_errors}"
@@ -130,6 +130,7 @@ def feed_triple(task):
                     msg = f"#{count}: Error storing toponym id in variant: {response.get_json()}"
                     task_tracker.update_task(task_id, {"error": msg})
                     logger.error(msg, exc_info=True)
+                    return {"success": False, "error": response.get_json()}
 
             else:
                 preexisting = sync_app.get_existing(
@@ -155,6 +156,9 @@ def feed_triple(task):
                 msg = f"#{count}: Error updating {namespace}:{schema} document: {response.get_status_code()}] {response.get_json()}"
                 task_tracker.update_task(task_id, {"error": msg})
                 logger.error(msg, exc_info=True)
+                return {"success": False, "error": response.get_json()}
+
+            return {"success": True}
 
     except Exception as e:
         msg = f"#{count}: Error feeding document: {str(e)}"
