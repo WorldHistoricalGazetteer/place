@@ -86,7 +86,7 @@ class VespaExtended(Vespa):
         # See https://tenacity.readthedocs.io/en/latest/
         stop=stop_after_attempt(5),  # Max 5 attempts
         wait=wait_exponential(multiplier=1, min=1, max=16),
-        retry_error_callback=return_none,
+        # retry_error_callback=return_none,
         retry=retry_if_not_result(status_code_ok)
     )
     def get_existing(self, data_id: str = None, namespace: str = None, schema: str = None) -> dict:
@@ -107,7 +107,7 @@ class VespaExtended(Vespa):
         # See https://tenacity.readthedocs.io/en/latest/
         stop=stop_after_attempt(5),  # Max 5 attempts
         wait=wait_exponential(multiplier=1, min=1, max=16),
-        retry_error_callback=return_none,
+        # retry_error_callback=return_none,
         retry=retry_if_not_result(status_code_ok)
     )
     def update_existing(self, data_id: str = None, namespace: str = None, schema: str = None, fields: dict = None, create: bool = False) -> dict:
@@ -130,7 +130,7 @@ class VespaExtended(Vespa):
         # See https://tenacity.readthedocs.io/en/latest/
         stop=stop_after_attempt(5),  # Max 5 attempts
         wait=wait_exponential(multiplier=1, min=1, max=16),
-        retry_error_callback=return_none,
+        # retry_error_callback=return_none,
         retry=retry_if_not_result(status_code_ok)
     )
     def feed_existing(self, data_id: str = None, namespace: str = None, schema: str = None, fields: dict = None, create: bool = False) -> dict:
