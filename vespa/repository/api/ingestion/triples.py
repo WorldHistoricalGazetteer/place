@@ -91,8 +91,6 @@ def feed_triple(task):
                 }
             # logger.info(
             #     # f"Feeding triple #{count}: {namespace}:{schema}::{document.get('document_id')} {document.get('fields')}")
-            if count % 5000 == 0:
-                logger.info(f"Feeding triple #{count:,}")
                 
             # Check if document already exists
             if schema == "toponym":

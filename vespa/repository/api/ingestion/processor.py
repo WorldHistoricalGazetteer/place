@@ -33,7 +33,10 @@ def queue_worker():
             break
 
         try:
-            _, namespace, _, _, _, _, _, _ = task
+            _, namespace, _, _, _, _, count, _ = task
+            if count % 5000 == 0:
+                logger.info(f"Feeding document #{count:,}")
+
             if namespace == 'tgn':
                 feed_triple(task)
             else:
@@ -212,7 +215,6 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
-    logger.info(f'Feeding document {count}')
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
