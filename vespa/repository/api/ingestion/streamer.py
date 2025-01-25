@@ -198,8 +198,11 @@ class StreamFetcher:
                 self.logger.error(f"Failed to parse XML stream. Error: {e}")
                 raise
 
-        # Run parsing in a separate thread to avoid blocking the event loop
-        async for item in asyncio.to_thread(parse):
+        # Use asyncio.to_thread to run the synchronous parsing function in a separate thread
+        parse_gen = await asyncio.to_thread(parse)
+
+        # Convert the parse generator to an asynchronous iterator
+        async for item in parse_gen:
             yield item
 
     def _split_triple(self, line):
