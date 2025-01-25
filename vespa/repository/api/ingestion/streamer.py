@@ -185,11 +185,11 @@ class StreamFetcher:
 
         return async_generator()
 
-    async def _parse_xml_stream(self, stream):
+    def _parse_xml_stream(self, stream):
         """
         Asynchronous parser for XML streams.
         """
-        def parse():
+        async def async_generator():
             # Use xmltodict's streaming mode to process XML elements one by one
             try:
                 for doc in xmltodict.parse(stream, items=("item", self.item_path), stream=True):
@@ -198,16 +198,8 @@ class StreamFetcher:
                 self.logger.error(f"Failed to parse XML stream. Error: {e}")
                 raise
 
-        # Run parse() in a separate thread using asyncio.to_thread
-        parse_gen = await asyncio.to_thread(parse)
-
-        # Wrap the generator into an async iterator
-        async def async_gen():
-            for item in parse_gen:
-                yield item
-
         # Return the async iterator
-        return async_gen()
+        return async_generator()
 
     def _split_triple(self, line):
         parts = line.rstrip(' .').split(' ', 2)
