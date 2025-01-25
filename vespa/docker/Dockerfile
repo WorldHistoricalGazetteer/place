@@ -9,7 +9,6 @@ RUN set -eux; \
         build-essential \
         python3-gdal \
         libpq-dev \
-        aria2 \
         curl \
         rsync \
         file \
@@ -23,7 +22,8 @@ RUN set -eux; \
         psmisc \
         git \
         unzip \
-        tar && \
+        tar \
+        aria2 && \
     # Install vespa-cli
     mkdir -p /usr/local/vespa && \
     curl -L -o /usr/local/vespa/vespa-cli.tar.gz https://github.com/vespa-engine/vespa/releases/download/v8.460.16/vespa-cli_8.460.16_linux_amd64.tar.gz && \
@@ -59,5 +59,5 @@ CMD ["sh", "-c", "fastapi run api/main.py --port ${PORT}"]
 ## In the project root, build the Docker image:
 #sudo systemctl restart docker
 #docker login
-#docker build -t worldhistoricalgazetteer/vespa-api:0.0.10 ./vespa/docker
-#docker push worldhistoricalgazetteer/vespa-api:0.0.10
+#docker build -t worldhistoricalgazetteer/vespa-api:0.0.11 ./vespa/docker
+#docker push worldhistoricalgazetteer/vespa-api:0.0.11
