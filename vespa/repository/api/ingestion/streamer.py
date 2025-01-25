@@ -124,7 +124,7 @@ class StreamFetcher:
                 return gzip.open(file_path, 'rb')
             elif is_bz2:
                 self.logger.info(f"Detected bz2 compression for file {file_path}")
-                return bz2.open(file_path, 'rt')
+                return bz2.open(file_path, 'rb')
             elif file_path.endswith('.zip'):
                 self.logger.info(f"Opening zip archive {file_path}")
                 return self._get_zip_stream(file_path)
