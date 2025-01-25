@@ -13,7 +13,7 @@ from .transformers import DocTransformer
 from .triples import feed_triple, process_variants
 from ..bcp_47.bcp_47 import bcp47_fields
 from ..config import VespaClient
-from ..utils import task_tracker, get_uuid, escape_yql
+from ..utils import task_tracker, get_uuid, escape_yql, distinct_dicts
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def queue_worker():
                 time.sleep(3 * 60)
 
         except Exception as e:
-            logger.error(f"Error processing update: {e}")
+            logger.error(f"Error processing update: {e}", exc_info=True)
 
         finally:
             update_queue.task_done()
@@ -75,7 +75,7 @@ def update_existing_place(task):
             schema=schema,
             data_id=document_id,
             fields={
-                "names": list(set(existing_names + transformed_document['fields']['names']))
+                "names": distinct_dicts(existing_names, transformed_document['fields']['names'])
             }
         )
         # logger.info(f"Update response: {response.get('status_code')}: {response}")

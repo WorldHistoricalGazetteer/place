@@ -117,3 +117,43 @@ def existing_document(query_response_root):
         'document_id': document.get("documentid").split("::")[-1],
         'fields': document,
     }
+
+def distinct_dicts(existing_dicts, new_dicts):
+    """
+    Deduplicates two lists of dictionaries based on all fields.
+
+    Args:
+        existing_dicts (list or dict): List of existing dictionaries or a single dictionary.
+        new_dicts (list or dict): List of new dictionaries or a single dictionary to be merged.
+
+    Returns:
+        list: A list of unique dictionaries, with duplicates removed based on all fields.
+    """
+    # Ensure both inputs are lists (wrap single dicts as lists)
+    if isinstance(existing_dicts, dict):
+        existing_dicts = [existing_dicts]
+    if isinstance(new_dicts, dict):
+        new_dicts = [new_dicts]
+
+    # Ensure both inputs are lists now
+    if not isinstance(existing_dicts, list) or not isinstance(new_dicts, list):
+        raise ValueError("Both existing_dicts and new_dicts must be lists or single dictionaries.")
+
+    # Combine the existing and new dictionaries
+    combined_dicts = existing_dicts + new_dicts
+
+    # Set to track unique dictionaries (converted to frozensets for hashing)
+    seen = set()
+    unique_dicts = []
+
+    for dictionary in combined_dicts:
+        # Convert each dictionary to a frozenset of its items (making it hashable)
+        dict_frozenset = frozenset(dictionary.items())
+
+        # If the frozenset has not been seen, add to the result
+        if dict_frozenset not in seen:
+            unique_dicts.append(dictionary)
+            seen.add(dict_frozenset)
+
+    return unique_dicts
+
