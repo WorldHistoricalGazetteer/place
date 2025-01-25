@@ -293,6 +293,8 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     filters = dataset_config.get('files')[transformer_index].get('filters')
 
     async for document in stream:
+        logger.info(document)
+        continue
 
         # Apply filters (if any)
         if filters and not any(f(document) for f in filters):
