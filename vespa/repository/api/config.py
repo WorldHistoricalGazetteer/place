@@ -20,6 +20,9 @@ class VespaSyncExtended(VespaSync):
     """
     A subclass of VespaSync that adds the methods from VespaExtended.
     """
+    def __init__(self, app, pool_maxsize=20, **kwargs):
+        # Increase the pool size to 20 (see https://pyvespa.readthedocs.io/en/stable/reference-api.html#vespasync)
+        super().__init__(app, pool_maxsize=pool_maxsize, **kwargs)
 
     def get_existing(self, data_id: str = None, namespace: str = None, schema: str = None) -> dict:
         return self.app.get_existing(data_id=data_id, namespace=namespace, schema=schema)

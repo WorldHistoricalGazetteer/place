@@ -131,8 +131,9 @@ def feed_triple(task):
                     schema=schema,
                 )
                 if preexisting and schema == "place":
-                    document["fields"]["types"] = preexisting.get("fields").get("types", []) + document.get(
-                        "fields").get("types", [])
+                    document["fields"]["types"] = list(
+                        set(preexisting.get("fields", {}).get("types", []) + document.get("fields", {}).get("types",
+                                                                                                            [])))
 
             # logger.info(f"Updating {schema} {preexisting} with {document}")
 

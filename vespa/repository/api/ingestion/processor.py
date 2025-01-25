@@ -75,7 +75,7 @@ def update_existing_place(task):
             schema=schema,
             data_id=document_id,
             fields={
-                "names": existing_names + transformed_document['fields']['names']
+                "names": list(set(existing_names + transformed_document['fields']['names']))
             }
         )
         # logger.info(f"Update response: {response.get('status_code')}: {response}")
@@ -163,7 +163,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
                 schema=schema,
                 data_id=existing_toponym_id,
                 fields={
-                    "places": existing_places + [document_id]
+                    "places": list(set(existing_places + [document_id]))
                 }
             )
         else:
