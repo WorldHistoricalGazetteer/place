@@ -6,12 +6,14 @@ import gzip
 import io
 import logging
 import os
+import subprocess
 import urllib.parse
 import zipfile
 
 import ijson
 import lxml
 import requests
+import xmltodict
 from lxml.etree import iterparse
 
 
@@ -95,12 +97,14 @@ class StreamFetcher:
         file_path = self._get_file_path()
         if not os.path.exists(file_path):
             self.logger.info(f"Downloading file from {self.file_url} to {file_path}")
-            with requests.get(self.file_url, stream=True) as response:
-                response.raise_for_status()
-                with open(file_path, "wb") as file:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        file.write(chunk)
-            self.logger.info(f"File downloaded successfully to {file_path}")
+            result = subprocess.run([
+                "aria2c", "--dir", os.path.dirname(file_path), "--out", os.path.basename(file_path), self.file_url
+            ], check=True)
+            if result.returncode == 0:
+                self.logger.info(f"File downloaded successfully to {file_path}")
+            else:
+                self.logger.error(f"Failed to download file from {self.file_url}")
+                raise Exception("File download failed")
         else:
             self.logger.info(f"File already exists at {file_path}, skipping download.")
         return file_path
@@ -185,31 +189,18 @@ class StreamFetcher:
         """
         Asynchronous parser for XML streams.
         """
-        # Ensure stream is wrapped in a thread-safe async operation
         def parse():
+            for line in stream:
+                try:
+                    # Parse XML into a dictionary
+                    doc = xmltodict.parse(line)
+                    yield doc
+                except Exception as e:
+                    self.logger.error(f"Failed to parse XML line: {line}. Error: {e}")
+                    continue
 
-            count = 0
-
-            for event, elem in lxml.etree.iterparse(stream, events=("end",)):
-
-                count += 1
-                if count > 100:
-                    break
-
-
-                if elem.tag == "node":
-                    # Create a dictionary from element attributes
-                    elem_data = dict(elem.attrib)
-
-                    # Add child tag attributes (k, v) to the dictionary
-                    for tag in elem.findall("tag"):
-                        key = tag.attrib.get("k")
-                        value = tag.attrib.get("v")
-                        if key and value:
-                            elem_data[key] = value
-
-                    yield elem_data
-                    elem.clear()  # Free memory
+        for item in await asyncio.to_thread(parse):
+            yield item
 
         # Run synchronous parsing in a thread and asynchronously yield results
         for elem_data in await asyncio.to_thread(parse):
