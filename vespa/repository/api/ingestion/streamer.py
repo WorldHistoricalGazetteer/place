@@ -178,8 +178,18 @@ class StreamFetcher:
     def _parse_xml_stream(self, stream):
         # Parse XML incrementally from stream
         for event, elem in xml.etree.ElementTree.iterparse(stream, events=('end',)):
-            if elem.tag == 'place':  # Assuming the root element of interest is <item>
-                yield elem
+            if elem.tag == 'node':
+                # Create a dictionary from element attributes
+                elem_data = dict(elem.attrib)
+
+                # Add child tag attributes (k, v) to the dictionary
+                for tag in elem.findall('tag'):
+                    key = tag.attrib.get('k')
+                    value = tag.attrib.get('v')
+                    if key and value:
+                        elem_data[key] = value
+
+                yield elem_data
                 elem.clear()  # Free memory
 
     def _split_triple(self, line):

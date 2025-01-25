@@ -305,6 +305,11 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
 
         # Process the batch when it reaches the batch_size or limit
         if len(current_batch) >= batch_size or (limit is not None and count >= limit):
+
+            # Temporarily skip processing TODO: REMOVE
+            logger.info(document)
+            continue
+
             batch_results = await process_batch(current_batch)
             results.extend(batch_results)  # Collect results
             current_batch = []

@@ -107,6 +107,9 @@ REMOTE_DATASET_CONFIGS = [
             {
                 'url': 'https://planet.openstreetmap.org/planet/planet-latest.osm.bz2',
                 'file_type': 'xml',
+                'filters': [
+                    lambda node: 'place' in node, # Filter to only include nodes tagged as places
+                ]
             }
         ],
     },
