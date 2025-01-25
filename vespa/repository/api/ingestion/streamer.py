@@ -1,5 +1,6 @@
 # /ingestion/streamer.py
 import asyncio
+import bz2
 import csv
 import gzip
 import io
@@ -112,10 +113,14 @@ class StreamFetcher:
             with open(file_path, 'rb') as file:
                 magic_bytes = file.read(2)
                 is_gzip = magic_bytes == b'\x1f\x8b'
+                is_bz2 = magic_bytes == b'\x42\x5a'
 
             if is_gzip:
                 self.logger.info(f"Detected gzip compression for file {file_path}")
                 return gzip.open(file_path, 'rb')
+            elif is_bz2:
+                self.logger.info(f"Detected bz2 compression for file {file_path}")
+                return bz2.open(file_path, 'rb')
             elif file_path.endswith('.zip'):
                 self.logger.info(f"Opening zip archive {file_path}")
                 return self._get_zip_stream(file_path)
