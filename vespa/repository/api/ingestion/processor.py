@@ -294,11 +294,11 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
 
 
 
-
-    async for document in stream:
-        while count < limit:
-            logger.info(document)
-            continue
+    # TESTING FOR XML INGESTION
+    # async for document in stream:
+    #     while count < limit or 3:
+    #         logger.info(document)
+    #         continue
 
 
 
