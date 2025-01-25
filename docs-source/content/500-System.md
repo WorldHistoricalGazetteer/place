@@ -39,6 +39,13 @@ The repository includes configuration files for deploying the following componen
   > An ingress controller for Kubernetes that uses the Envoy Proxy to manage incoming HTTP and HTTPS requests, acting as
   a reverse proxy and load balancer.
 
+- ##### Longhorn
+
+  > A distributed block storage system for Kubernetes. Longhorn ensures that data is replicated and available across
+  multiple nodes in the cluster, providing high availability and fault tolerance for persistent volumes. It simplifies
+  storage management by enabling dynamic provisioning, snapshots, and backups of Kubernetes persistent storage. This
+  is particularly important for applications like Vespa, where data integrity and accessibility are critical.
+
 ### Application Components
 
 - **Django**
