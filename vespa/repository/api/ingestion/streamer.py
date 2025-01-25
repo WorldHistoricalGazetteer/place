@@ -192,7 +192,7 @@ class StreamFetcher:
         async def async_generator():
             # Use xmltodict's streaming mode to process XML elements one by one
             try:
-                for doc in xmltodict.parse(stream, stream=True):
+                for doc in xmltodict.parse(stream):
                     yield doc
             except Exception as e:
                 self.logger.error(f"Failed to parse XML stream. Error: {e}")
