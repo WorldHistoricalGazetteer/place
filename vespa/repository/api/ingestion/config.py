@@ -105,7 +105,7 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'OpenStreetMap is open data, licensed under the Open Data Commons Open Database License (ODbL). https://www.openstreetmap.org/',
         'files': [
             {
-                'url': 'https://planet.openstreetmap.org/planet/planet-latest.osm.bz2',
+                'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',
                 'file_type': 'xml',
                 'filters': [
                     lambda node: 'place' in node, # Filter to only include nodes tagged as places
