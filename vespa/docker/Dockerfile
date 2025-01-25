@@ -9,6 +9,7 @@ RUN set -eux; \
         build-essential \
         python3-gdal \
         libpq-dev \
+        aria2 \
         curl \
         rsync \
         file \
@@ -58,5 +59,5 @@ CMD ["sh", "-c", "fastapi run api/main.py --port ${PORT}"]
 ## In the project root, build the Docker image:
 #sudo systemctl restart docker
 #docker login
-#docker build -t worldhistoricalgazetteer/vespa-api:0.0.1 ./vespa/docker
-#docker push worldhistoricalgazetteer/vespa-api:0.0.1
+#docker build -t worldhistoricalgazetteer/vespa-api:0.0.10 ./vespa/docker
+#docker push worldhistoricalgazetteer/vespa-api:0.0.10
