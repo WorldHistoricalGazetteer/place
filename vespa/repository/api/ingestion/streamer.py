@@ -12,6 +12,7 @@ import zipfile
 
 import ijson
 import requests
+from lxml.etree import iterparse
 
 
 class StreamFetcher:
@@ -180,15 +181,13 @@ class StreamFetcher:
 
         return async_generator()
 
-    def _parse_xml_stream(self, stream):
+    async def parse_xml_stream(stream):
         """
         Asynchronous parser for XML streams.
         """
-        loop = asyncio.get_event_loop()
-        wrapper = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
-
-        async def async_generator():
-            for event, elem in xml.etree.ElementTree.iterparse(wrapper, events=("end",)):
+        # Ensure the stream is read synchronously
+        with io.TextIOWrapper(stream, encoding="utf-8", errors="replace") as wrapper:
+            for event, elem in iterparse(wrapper, events=("end",)):
                 if elem.tag == "node":
                     # Create a dictionary from element attributes
                     elem_data = dict(elem.attrib)
@@ -202,8 +201,6 @@ class StreamFetcher:
 
                     yield elem_data
                     elem.clear()  # Free memory
-
-        return async_generator()
 
     def _split_triple(self, line):
         parts = line.rstrip(' .').split(' ', 2)
