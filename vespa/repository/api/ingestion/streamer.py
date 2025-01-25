@@ -11,10 +11,9 @@ import urllib.parse
 import zipfile
 
 import ijson
-import lxml
-import requests
 import xmltodict
-from lxml.etree import iterparse
+
+logger = logging.getLogger(__name__)
 
 
 class StreamFetcher:
@@ -125,7 +124,7 @@ class StreamFetcher:
                 return gzip.open(file_path, 'rb')
             elif is_bz2:
                 self.logger.info(f"Detected bz2 compression for file {file_path}")
-                return bz2.open(file_path, 'rb')
+                return bz2.open(file_path, 'rt')
             elif file_path.endswith('.zip'):
                 self.logger.info(f"Opening zip archive {file_path}")
                 return self._get_zip_stream(file_path)
@@ -189,10 +188,12 @@ class StreamFetcher:
         """
         Parse XML from stream.
         """
+
         async def async_generator():
             # Use xmltodict's streaming mode to process XML elements one by one
             try:
-                for doc in xmltodict.parse(stream):
+                for doc in xmltodict.parse(stream, item_depth=2):
+                    logger.info(f"Yielding XML document: {doc}")
                     yield doc
             except Exception as e:
                 self.logger.error(f"Failed to parse XML stream. Error: {e}")
