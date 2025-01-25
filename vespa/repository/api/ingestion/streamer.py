@@ -185,20 +185,35 @@ class StreamFetcher:
         """
         Asynchronous parser for XML streams.
         """
-        for event, elem in lxml.etree.iterparse(stream, events=("end",)):
-            if elem.tag == "node":
-                # Create a dictionary from element attributes
-                elem_data = dict(elem.attrib)
+        # Ensure stream is wrapped in a thread-safe async operation
+        def parse():
 
-                # Add child tag attributes (k, v) to the dictionary
-                for tag in elem.findall("tag"):
-                    key = tag.attrib.get("k")
-                    value = tag.attrib.get("v")
-                    if key and value:
-                        elem_data[key] = value
+            count = 0
 
-                yield elem_data
-                elem.clear()  # Free memory
+            for event, elem in lxml.etree.iterparse(stream, events=("end",)):
+
+                count += 1
+                if count > 100:
+                    break
+
+
+                if elem.tag == "node":
+                    # Create a dictionary from element attributes
+                    elem_data = dict(elem.attrib)
+
+                    # Add child tag attributes (k, v) to the dictionary
+                    for tag in elem.findall("tag"):
+                        key = tag.attrib.get("k")
+                        value = tag.attrib.get("v")
+                        if key and value:
+                            elem_data[key] = value
+
+                    yield elem_data
+                    elem.clear()  # Free memory
+
+        # Run synchronous parsing in a thread and asynchronously yield results
+        for elem_data in await asyncio.to_thread(parse):
+            yield elem_data
 
     def _split_triple(self, line):
         parts = line.rstrip(' .').split(' ', 2)
