@@ -118,7 +118,8 @@ async def ingest_dataset(
         dataset_name: str,
         background_tasks: BackgroundTasks,
         limit: int = Query(None, ge=1, description="Optional limit for the number of items to ingest"),
-        delete_only: bool = Query(False, description="Delete existing data without ingestion")
+        delete_only: bool = Query(False, description="Delete existing data without ingestion"),
+        no_delete: bool = Query(False, description="Do not delete existing data"),
 ):
     """
     Ingest a dataset by name with an optional limit parameter.
@@ -128,11 +129,12 @@ async def ingest_dataset(
         dataset_name: The name of the dataset to ingest.
         background_tasks (object): BackgroundTasks instance to run tasks in the background.
         delete_only: If True, delete existing data without ingestion.
+        no_delete: If True, do not delete existing data.
     """
     task_id = get_uuid()  # Generate a unique task ID
 
     # Start the ingestion in the background
-    background_tasks.add_task(start_ingestion_in_background, dataset_name, task_id, limit, delete_only)
+    background_tasks.add_task(start_ingestion_in_background, dataset_name, task_id, limit, delete_only, no_delete)
 
     return JSONResponse(
         status_code=202,

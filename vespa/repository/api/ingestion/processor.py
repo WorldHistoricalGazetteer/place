@@ -321,7 +321,7 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     return results  # Return aggregated results
 
 
-async def background_ingestion(dataset_name: str, task_id: str, limit: int = None, delete_only: bool = False) -> None:
+async def background_ingestion(dataset_name: str, task_id: str, limit: int = None, delete_only: bool = False, no_delete: bool = False) -> None:
     """
     The main logic of dataset ingestion that will run in the background.
     """
@@ -346,9 +346,12 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
         with VespaClient.sync_context("feed") as sync_app:
 
-            # Run `delete_all_docs` asynchronously to avoid blocking the event loop
-            logger.info(f"Deleting all documents for namespace: {dataset_config['namespace']}")
-            await asyncio.to_thread(delete_document_namespace, sync_app, dataset_config['namespace'], None)
+            if no_delete:
+                logger.info(f"Bypassing deletion of existing data for namespace: {dataset_config['namespace']}")
+            else:
+                # Run `delete_all_docs` asynchronously to avoid blocking the event loop
+                logger.info(f"Deleting all documents for namespace: {dataset_config['namespace']}")
+                await asyncio.to_thread(delete_document_namespace, sync_app, dataset_config['namespace'], None)
 
             if delete_only:
                 task_tracker.update_task(task_id, {
@@ -384,15 +387,17 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         task_tracker.update_task(task_id, {"status": "failed", "error": str(e)})
 
 
-async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None, delete_only=False) -> Task:
+async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None, delete_only=False, no_delete=False) -> Task:
     """
     Starts the ingestion in a background task.
 
     :param dataset_name: The name of the dataset
     :param task_id: The task ID for tracking
     :param limit: Maximum number of items to ingest
+    :param delete_only: If True, delete existing data without ingestion
+    :param no_delete: If True, do not delete existing data
     """
-    task = asyncio.create_task(background_ingestion(dataset_name, task_id, limit, delete_only))
+    task = asyncio.create_task(background_ingestion(dataset_name, task_id, limit, delete_only, no_delete))
 
     # Add the task to the task tracker (also triggers cleanup of expired tasks)
     task_tracker.add_task(task_id)
@@ -404,9 +409,6 @@ def delete_document_namespace(sync_app, namespace, schema=None):
     """Delete all documents in the given namespace."""
     # Delete documents belonging to the given namespace
 
-    # logger.info("*********************** Bypassing deletion of variant documents.")
-    # return
-
     if schema is None:
         schema = ['place', 'toponym', 'link', 'variant']
     for schema in schema:
@@ -416,5 +418,3 @@ def delete_document_namespace(sync_app, namespace, schema=None):
             content_cluster_name="content"
         )
         logger.info(f"Deleted {namespace}:{schema} documents.")
-
-    exit(0)
