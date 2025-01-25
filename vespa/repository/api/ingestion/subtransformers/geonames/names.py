@@ -48,11 +48,9 @@ class NamesProcessor:
         if isolanguage == 'wkdt':
             self.output['links'].append({
                 'record_id': self.document_id,
-                'fields': {
-                    'place_curie': f'gn:{self.document_id}',
-                    'predicate': 'owl:sameAs',
-                    'object': f'wd:{alternateName}',
-                }
+                'place_curie': f'gn:{self.document_id}',
+                'predicate': 'owl:sameAs',
+                'object': f'wd:{alternateName}',
             })
             return self.output
 
