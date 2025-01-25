@@ -176,21 +176,29 @@ class StreamFetcher:
         return async_generator()
 
     def _parse_xml_stream(self, stream):
-        # Parse XML incrementally from stream
-        for event, elem in xml.etree.ElementTree.iterparse(stream, events=('end',)):
-            if elem.tag == 'node':
-                # Create a dictionary from element attributes
-                elem_data = dict(elem.attrib)
+        """
+        Asynchronous parser for XML streams.
+        """
+        loop = asyncio.get_event_loop()
+        wrapper = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
 
-                # Add child tag attributes (k, v) to the dictionary
-                for tag in elem.findall('tag'):
-                    key = tag.attrib.get('k')
-                    value = tag.attrib.get('v')
-                    if key and value:
-                        elem_data[key] = value
+        async def async_generator():
+            for event, elem in xml.etree.ElementTree.iterparse(wrapper, events=("end",)):
+                if elem.tag == "node":
+                    # Create a dictionary from element attributes
+                    elem_data = dict(elem.attrib)
 
-                yield elem_data
-                elem.clear()  # Free memory
+                    # Add child tag attributes (k, v) to the dictionary
+                    for tag in elem.findall("tag"):
+                        key = tag.attrib.get("k")
+                        value = tag.attrib.get("v")
+                        if key and value:
+                            elem_data[key] = value
+
+                    yield elem_data
+                    elem.clear()  # Free memory
+
+        return async_generator()
 
     def _split_triple(self, line):
         parts = line.rstrip(' .').split(' ', 2)
