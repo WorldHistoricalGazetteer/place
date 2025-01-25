@@ -187,7 +187,7 @@ class StreamFetcher:
 
     def _parse_xml_stream(self, stream):
         """
-        Asynchronous parser for XML streams.
+        Parse XML from stream.
         """
         async def async_generator():
             # Use xmltodict's streaming mode to process XML elements one by one
