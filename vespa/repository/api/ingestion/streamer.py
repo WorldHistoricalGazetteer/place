@@ -181,7 +181,7 @@ class StreamFetcher:
 
         return async_generator()
 
-    async def parse_xml_stream(stream):
+    async def _parse_xml_stream(stream):
         """
         Asynchronous parser for XML streams.
         """
