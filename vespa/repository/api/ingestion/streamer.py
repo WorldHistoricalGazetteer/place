@@ -190,21 +190,17 @@ class StreamFetcher:
         Asynchronous parser for XML streams.
         """
         def parse():
-            for line in stream:
-                try:
-                    # Parse XML into a dictionary
-                    doc = xmltodict.parse(line)
+            # Use xmltodict's streaming mode to process XML elements one by one
+            try:
+                for doc in xmltodict.parse(stream, items=("item", self.item_path), stream=True):
                     yield doc
-                except Exception as e:
-                    self.logger.error(f"Failed to parse XML line: {line}. Error: {e}")
-                    continue
+            except Exception as e:
+                self.logger.error(f"Failed to parse XML stream. Error: {e}")
+                raise
 
-        for item in await asyncio.to_thread(parse):
+        # Run parsing in a separate thread to avoid blocking the event loop
+        async for item in asyncio.to_thread(parse):
             yield item
-
-        # Run synchronous parsing in a thread and asynchronously yield results
-        for elem_data in await asyncio.to_thread(parse):
-            yield elem_data
 
     def _split_triple(self, line):
         parts = line.rstrip(' .').split(' ', 2)

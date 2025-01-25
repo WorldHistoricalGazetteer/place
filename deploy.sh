@@ -356,6 +356,12 @@ if ! kubectl apply -f "$SCRIPT_DIR/system/metallb-config.yaml"; then
 fi
 echo "MetalLB installation and configuration complete."
 
+# Install Longhorn
+echo "Installing Longhorn..."
+helm install longhorn longhorn/longhorn --namespace longhorn-system --create-namespace --set persistence.defaultClass=true
+echo "Waiting for Longhorn pods to be ready..."
+kubectl rollout status deployment/longhorn-manager -n longhorn-system
+
 # Install Contour Ingress controller (used for routing external traffic to services)
 if [ "$K8S_CONTROLLER" == 1 ]; then
   echo "Installing Contour Ingress controller..."

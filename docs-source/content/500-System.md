@@ -164,7 +164,7 @@ source ~/.bashrc
 ```bash
 cd ~ # Change to the home directory
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl git unzip htop ufw aria2
+sudo apt install -y curl git unzip htop ufw aria2 open-iscsi
 git clone https://github.com/WorldHistoricalGazetteer/place.git
 ```
 

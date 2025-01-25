@@ -105,9 +105,9 @@ resources:
       memory: "4G"
   api:
     requests:
-      memory: "4G"
+      memory: "1G"
     limits:
-      memory: "8G"
+      memory: "4G"
 
 common:
   initContainer: |
