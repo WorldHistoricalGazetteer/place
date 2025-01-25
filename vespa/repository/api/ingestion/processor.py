@@ -292,9 +292,17 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     count = 0
     filters = dataset_config.get('files')[transformer_index].get('filters')
 
+
+
+
     async for document in stream:
-        logger.info(document)
-        continue
+        while count < limit:
+            logger.info(document)
+            continue
+
+
+
+    async for document in stream:
 
         # Apply filters (if any)
         if filters and not any(f(document) for f in filters):
@@ -307,10 +315,6 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
 
         # Process the batch when it reaches the batch_size or limit
         if len(current_batch) >= batch_size or (limit is not None and count >= limit):
-
-            # Temporarily skip processing TODO: REMOVE
-            logger.info(document)
-            continue
 
             batch_results = await process_batch(current_batch)
             results.extend(batch_results)  # Collect results
