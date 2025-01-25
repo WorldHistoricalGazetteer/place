@@ -45,7 +45,7 @@ schema link {
 
         field predicate type string {
             # The nature of the link (e.g., "has_population", "was_capital_of").
-            # Ideally a URL, but may be a `label` from the `connection` schema, a controlled vocabulary for linking
+            # Ideally a URI, but may be a `label` from the `connection` schema, a controlled vocabulary for linking
             # places (e.g., "coextensive with" or "predecessor of").
             indexing: attribute | summary
             attribute: fast-search

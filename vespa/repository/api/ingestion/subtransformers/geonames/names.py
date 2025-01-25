@@ -1,6 +1,7 @@
 import logging
-from typing import List, Dict, Any
+from typing import Dict, Any
 
+from ....bcp_47.bcp_47 import parse_bcp47_fields
 from ....utils import get_uuid
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ class NamesProcessor:
         self.output = {
             'names': [],
             'toponyms': [],
+            'links': [],
         }
 
     def process(self) -> dict:
@@ -34,8 +36,24 @@ class NamesProcessor:
             return self.output
 
         isolanguage = self.name.get('isolanguage')
-        if isolanguage and isolanguage in ["post", "iata", "icao", "faac", "abbr", "link", "wkdt"]:
-            # Skip non-language codes, move on to next name
+        match isolanguage:
+            case "phon":
+                isolanguage = "en-fonipa"
+            case "piny":
+                isolanguage = "zh-Latn-pinyin"
+            case "fr_1793":
+                isolanguage = "fr"
+                self.name["from"] = self.name.get('from', '1793')  # Such names persisted for different periods
+
+        if isolanguage == 'wkdt':
+            self.output['links'].append({
+                'document_id': self.document_id,
+                'fields': {
+                    'place_curie': f'gn:{self.document_id}',
+                    'predicate': 'owl:sameAs',
+                    'object': f'wd:{alternateName}',
+                }
+            })
             return self.output
 
         years = {
@@ -54,7 +72,7 @@ class NamesProcessor:
                 'name_strict': alternateName,
                 'name': alternateName,
                 'places': [self.document_id],
-                **({'bcp47_language': isolanguage} if isolanguage else {}),
+                **(parse_bcp47_fields(isolanguage) if isolanguage else {}),
             }
         })
 

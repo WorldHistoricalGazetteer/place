@@ -206,7 +206,7 @@ class DocTransformer:
                     }
                 },
                 names["toponyms"] if names else None,
-                None  # No links
+                names["links"] if names else None
             ),
         ],
         "TGN": [

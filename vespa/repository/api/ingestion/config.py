@@ -46,17 +46,8 @@ REMOTE_DATASET_CONFIGS = [
                 'file_name': 'alternateNamesV2.txt',  # Zip file also includes iso-languagecodes.txt
                 'file_type': 'csv',
                 'delimiter': '\t',
-                'filters': [  # TODO: Filter out non-toponymic data:
-                    # Pseudo codes: [https://www.geonames.org/manual.html]
-                    #
-                    # ‘post‘ for postal codes
-                    # ‘link‘ for a link to a website, in particular links to the English wikipedia article, but also links to other languages in wikipedia or to other websites about the toponym.
-                    # ‘iata‘, ‘icao‘ ,‘faac‘ ,‘tcid‘ and ‘unlc‘ for the respective airport codes
-                    # ‘abbr‘ for an abbreviation
-                    # ‘wkdt‘ wikidata id  TODO - add as a link?
-                    # ‘phon‘ phonetics TODO - investigate?
-                    # ‘piny‘ pinyin
-                    # ‘fr_1793‘ for names used during the French Revolution # TODO - useful temporal data?
+                'filters': [
+                    lambda row: row.get('isolanguage') not in ['post', 'link', 'iata', 'icao', 'faac', 'tcid', 'unlc', 'abbr'],
                 ]
             },
         ],

@@ -22,7 +22,7 @@ schema connection {
 
         field predicate type string {
             # A URI for the connection, preferably from a recognised authority.
-            # Example: "https://vocab.getty.edu/ontology#tgn3411_successor_of".
+            # Examples: "https://vocab.getty.edu/ontology#tgn3411_successor_of", "owl:sameAs".
             indexing: attribute | summary
             attribute: fast-search
         }
