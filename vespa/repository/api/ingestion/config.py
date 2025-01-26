@@ -117,7 +117,7 @@ REMOTE_DATASET_CONFIGS = [
         'files': [
             {
                 'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',  # 84.7GB
-                'local_name': '/data/k8s/vespa-ingestion/osm.geojsonseq',  # 4.1GB
+                'local_name': 'osm.geojsonseq',  # 4.1GB
                 'file_type': 'geojsonseq',
                 'filters': [
                     lambda feature: 'name' in (properties := feature['properties']) and
