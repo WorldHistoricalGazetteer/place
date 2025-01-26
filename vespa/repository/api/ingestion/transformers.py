@@ -251,8 +251,9 @@ class DocTransformer:
                         **({"names": names["names"]} if (
                             names := OSMNamesProcessor(document_id,
                                                        (properties := data.get("properties"))).process()) else {}),
-                        **(geometry_etc if (  # Includes abstracted geometry properties and array of locations
-                            geometry_etc := GeometryProcessor(data.get("geometry")).process()) else {}),
+                        # **(geometry_etc if (  # Includes abstracted geometry properties and array of locations
+                        #     geometry_etc := GeometryProcessor(data.get("geometry")).process()) else {}),
+                        # TODO: Build dictionary of OSM types to GeoNames feature classes and AAT types
                         **(type_classes if (  # Map OSM place type to GeoNames feature classes and AAT types
                             type_classes := OSMTypesProcessor(
                                 next(

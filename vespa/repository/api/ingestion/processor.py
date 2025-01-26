@@ -23,6 +23,8 @@ executor = ThreadPoolExecutor(max_workers=10)
 max_queue_size = 100  # Queue size for document update tasks
 update_queue = queue.Queue(maxsize=max_queue_size)
 
+types = []
+
 
 def queue_worker():
     while True:
@@ -216,6 +218,9 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     task_tracker.update_task(task_id, {
         "transformed": 1,
     })
+
+    logger.info(transformed_document)
+    return {"success": True}
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
