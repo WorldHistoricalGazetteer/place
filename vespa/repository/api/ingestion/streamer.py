@@ -177,9 +177,9 @@ class StreamFetcher:
         return iterator()
 
     def _parse_geojsonseq_stream(self, stream):
-
         async def iterator():
-            async for line in stream:
+            # Offload file reading to a separate thread using asyncio.to_thread
+            async for line in await asyncio.to_thread(self._read_line, stream):
                 line = line.decode("utf-8").strip()
                 if line:
                     try:
@@ -189,6 +189,14 @@ class StreamFetcher:
                         raise
 
         return iterator()
+
+    async def _read_line(self, stream):
+        """Synchronous line reader that is offloaded to a separate thread."""
+        while True:
+            line = stream.readline()
+            if not line:
+                break
+            yield line
 
     def _parse_csv_stream(self, stream):
         # Parse CSV from stream
