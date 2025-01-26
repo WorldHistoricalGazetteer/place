@@ -177,36 +177,32 @@ class StreamFetcher:
         return iterator()
 
     def _parse_geojsonseq_stream(self, stream):
+
+        def _parse_geojsonseq(self, stream):
+            """Synchronous generator for parsing GeoJSON sequences."""
+            for line in stream:
+                line = line.decode("utf-8").strip()
+                if not line:
+                    continue
+                try:
+                    yield json.loads(line)
+                except json.JSONDecodeError as e:
+                    self.logger.error(
+                        f"Error parsing line: {line}. Error: {e}"
+                    )
+                    raise
+
         async def iterator():
             try:
                 # Use asyncio.to_thread to process the synchronous parsing logic
-                result = await asyncio.to_thread(self._parse_geojsonseq, stream)
-                for item in result:
+                result = await asyncio.to_thread(self._parse_geojsonseq, stream)  # This is correct
+                async for item in result:  # <-- This is where the fix is needed
                     yield item
             except Exception as e:
                 self.logger.error(f"Error parsing GeoJSON sequence: {e}")
                 raise
 
         return iterator()
-
-    def _parse_geojsonseq(self, stream):
-        """Synchronous generator for parsing GeoJSON sequences."""
-        for line in stream:
-            if isinstance(line, bytes):
-                line = line.decode("utf-8").strip()
-            else:
-                line = line.strip()
-
-            if not line:
-                continue
-
-            try:
-                yield json.loads(line)
-            except json.JSONDecodeError as e:
-                self.logger.error(
-                    f"Error parsing line: {line}. Error: {e}"
-                )
-                raise
 
     def _parse_csv_stream(self, stream):
         # Parse CSV from stream
