@@ -194,6 +194,7 @@ class StreamFetcher:
         for line in stream:
             line = line.strip()
             if line:  # Skip empty lines
+                logger.info(f"Yielding GeoJSON line: {line}")
                 yield json.loads(line)
 
     def _parse_csv_stream(self, stream):
