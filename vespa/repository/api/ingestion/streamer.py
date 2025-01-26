@@ -131,10 +131,21 @@ class StreamFetcher:
                 return self._get_zip_stream(file_path)
             else:
                 self.logger.info(f"Opening regular file stream for {file_path}")
-                return open(file_path, 'rb')
+                return self._get_regular_file_stream(file_path)
         except Exception as e:
             self.logger.error(f"Failed to open stream for {self.file_url}. Error: {e}")
             raise
+
+    def _get_regular_file_stream(self, file_path):
+        """Return an asynchronous file stream."""
+        async def async_file_stream():
+            with open(file_path, 'rb') as file:
+                while True:
+                    line = await asyncio.to_thread(file.readline)
+                    if not line:  # EOF
+                        break
+                    yield line
+        return async_file_stream()
 
     def _get_zip_stream(self, zip_path):
         with zipfile.ZipFile(zip_path, 'r') as zip_file:
@@ -179,13 +190,7 @@ class StreamFetcher:
     def _parse_geojsonseq_stream(self, stream):
         async def iterator():
             # Ensure we properly read each line asynchronously
-            while True:
-                # Read one line at a time asynchronously
-                line = await asyncio.to_thread(stream.readline)  # offload synchronous readline to a separate thread
-
-                if not line:
-                    break  # End of stream
-
+            async for line in stream:  # Directly use the async stream
                 line = line.decode("utf-8").strip()
                 if line:
                     try:
