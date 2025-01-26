@@ -177,13 +177,11 @@ class StreamFetcher:
         return iterator()
 
     def _parse_geojsonseq_stream(self, stream):
-        # Use asyncio.to_thread to offload synchronous parsing to a separate thread
-        parser = asyncio.to_thread(self._parse_geojsonseq, stream)
-
         async def iterator():
             try:
-                # Await the result from asyncio.to_thread and yield each parsed object
-                async for item in await parser:
+                # Use asyncio.to_thread to process the synchronous parsing logic
+                result = await asyncio.to_thread(self._parse_geojsonseq, stream)
+                for item in result:
                     yield item
             except Exception as e:
                 self.logger.error(f"Error parsing GeoJSON sequence: {e}")
