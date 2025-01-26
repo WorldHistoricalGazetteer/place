@@ -1,10 +1,10 @@
 # /ingestion/config.py
 
-NATIVE_LAND_API_KEY = '' # Use Native Land API Key from https://native-land.ca/dashboard
+NATIVE_LAND_API_KEY = ''  # Use Native Land API Key from https://native-land.ca/dashboard
 
 # Remote Dataset Configurations
 REMOTE_DATASET_CONFIGS = [
-    { # 2024: 37k+ places
+    {  # 2024: 37k+ places
         'dataset_name': 'Pleiades',
         'namespace': 'pleiades',
         'vespa_schema': 'place',
@@ -12,13 +12,13 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'Pleiades: A community-built gazetteer and graph of ancient places. Copyright © Institute for the Study of the Ancient World. Sharing and remixing permitted under terms of the Creative Commons Attribution 3.0 License (cc-by). https://pleiades.stoa.org/',
         'files': [
             {
-                'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz', # 104MB
+                'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',  # 104MB
                 'file_type': 'json',
                 'item_path': '@graph',
             }
         ],
     },
-    { # 2024: 12m+ places
+    {  # 2024: 12m+ places
         'dataset_name': 'GeoNames',
         'namespace': 'gn',
         'vespa_schema': 'place',
@@ -26,7 +26,7 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'GeoNames geographical database. https://www.geonames.org/',
         'files': [
             {
-                'url': 'https://download.geonames.org/export/dump/allCountries.zip', # 405MB
+                'url': 'https://download.geonames.org/export/dump/allCountries.zip',  # 405MB
                 'fieldnames': [
                     'geonameid', 'name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'feature_class',
                     'feature_code', 'country_code', 'cc2', 'admin1_code', 'admin2_code', 'admin3_code', 'admin4_code',
@@ -37,8 +37,8 @@ REMOTE_DATASET_CONFIGS = [
                 'delimiter': '\t',
             },
             {
-                'url': 'https://download.geonames.org/export/dump/alternateNamesV2.zip', # 193MB
-                'update_place': True, # Update existing place with alternate names
+                'url': 'https://download.geonames.org/export/dump/alternateNamesV2.zip',  # 193MB
+                'update_place': True,  # Update existing place with alternate names
                 'fieldnames': [
                     'alternateNameId', 'geonameid', 'isolanguage', 'alternate_name', 'isPreferredName',
                     'isShortName', 'isColloquial', 'isHistoric', 'from', 'to',
@@ -47,12 +47,13 @@ REMOTE_DATASET_CONFIGS = [
                 'file_type': 'csv',
                 'delimiter': '\t',
                 'filters': [
-                    lambda row: row.get('isolanguage') not in ['post', 'link', 'iata', 'icao', 'faac', 'tcid', 'unlc', 'abbr'],
+                    lambda row: row.get('isolanguage') not in ['post', 'link', 'iata', 'icao', 'faac', 'tcid', 'unlc',
+                                                               'abbr'],
                 ]
             },
         ],
     },
-    { # 2024: 3m+ places
+    {  # 2024: 3m+ places
         'dataset_name': 'TGN',
         'namespace': 'tgn',
         'vespa_schema': 'npr',
@@ -61,25 +62,34 @@ REMOTE_DATASET_CONFIGS = [
         'files': [
             {
                 'url': 'http://tgndownloads.getty.edu/VocabData/full.zip',
-                'local_name': 'tgn_full.zip',
+                'local_name': 'tgn_full.zip',  # 1.98GB
                 'file_name': 'TGNOut_Full.nt',
                 'file_type': 'nt',
-                'filters': [ # Filter to only include records with these predicates
+                'filters': [  # Filter to only include records with these predicates
                     # lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
-                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#prefLabelGVP', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
-                    lambda triple: triple.get('predicate') == 'http://www.w3.org/2008/05/skos-xl#prefLabel', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
-                    lambda triple: triple.get('predicate') == 'http://www.w3.org/2008/05/skos-xl#altLabel', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
-                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#term', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
-                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#estStart', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
-                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#estEnd', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estEnd> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
-                    lambda triple: triple.get('predicate') == 'http://schema.org/longitude', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
-                    lambda triple: triple.get('predicate') == 'http://schema.org/latitude', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
-                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#placeType', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
+                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#prefLabelGVP',
+                    # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
+                    lambda triple: triple.get('predicate') == 'http://www.w3.org/2008/05/skos-xl#prefLabel',
+                    # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
+                    lambda triple: triple.get('predicate') == 'http://www.w3.org/2008/05/skos-xl#altLabel',
+                    # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
+                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#term',
+                    # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
+                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#estStart',
+                    # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#estEnd',
+                    # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estEnd> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+                    lambda triple: triple.get('predicate') == 'http://schema.org/longitude',
+                    # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    lambda triple: triple.get('predicate') == 'http://schema.org/latitude',
+                    # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    lambda triple: triple.get('predicate') == 'http://vocab.getty.edu/ontology#placeType',
+                    # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
                 ],
             },
         ],
     },
-    { # 2024: 8m+ items classified as places
+    {  # 2024: 8m+ items classified as places
         'dataset_name': 'Wikidata',
         'namespace': 'wd',
         'vespa_schema': 'npr',
@@ -87,17 +97,18 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'Wikidata is a free and open knowledge base that can be read and edited by both humans and machines. https://www.wikidata.org/',
         'files': [
             {
-                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz', # 133GB
-                'local_name': '/data/k8s/vespa-ingestion/wikidata.json.gz', # 133GB
+                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz',  # 133GB
+                'local_name': '/data/k8s/vespa-ingestion/wikidata.json.gz',  # 133GB
                 'file_type': 'json',
                 'item_path': 'entities',
                 'filters': [
-                    lambda doc: 'claims' in doc and 'P625' in doc['claims'], # Filter to only include items with coordinates
+                    lambda doc: 'claims' in doc and 'P625' in doc['claims'],
+                    # Filter to only include items with coordinates
                 ]
             },
         ],
     },
-    { # 2024: 6m+ nodes tagged as places
+    {  # 2024: <22m named places with multiple toponyms (file includes some unnamed features)
         'dataset_name': 'OSM',
         'namespace': 'osm',
         'vespa_schema': 'npr',
@@ -105,10 +116,14 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'OpenStreetMap is open data, licensed under the Open Data Commons Open Database License (ODbL). https://www.openstreetmap.org/',
         'files': [
             {
-                'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',
-                'file_type': 'xml',
+                'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',  # 84.7GB
+                'local_name': '/data/k8s/vespa-ingestion/osm.geojsonseq',  # 4.1GB
+                'file_type': 'geojsonseq',
                 'filters': [
-                    lambda node: 'place' in node, # Filter to only include nodes tagged as places
+                    lambda feature: 'name' in (properties := feature['properties']) and
+                                    any(key in properties for key in
+                                        ['geological', 'historic', 'place', 'water', 'waterway']),
+                    # Filter to only include named features
                 ]
             }
         ],
@@ -178,7 +193,7 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
-    { #  24,000 place names
+    {  # 24,000 place names
         'dataset_name': 'IndexVillaris',
         'namespace': 'IV1680',
         'vespa_schema': 'npr',
@@ -191,7 +206,7 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
-    { # ISO Countries
+    {  # ISO Countries
         'dataset_name': 'ISO3166',
         'namespace': 'iso3166',
         'vespa_schema': 'place',
@@ -205,7 +220,7 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
-    { # Terrarium Sources
+    {  # Terrarium Sources
         'dataset_name': 'Terrarium',
         'namespace': 'terrarium',
         'vespa_schema': 'terrarium',

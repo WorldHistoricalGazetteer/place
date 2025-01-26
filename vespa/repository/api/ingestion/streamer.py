@@ -4,6 +4,7 @@ import bz2
 import csv
 import gzip
 import io
+import json
 import logging
 import os
 import subprocess
@@ -152,6 +153,8 @@ class StreamFetcher:
 
         if format_type in ['json', 'geojson']:
             return self._parse_json_stream(stream)
+        elif format_type == ['geojsonseq']:
+            return self._parse_geojsonseq_stream(stream)
         elif format_type in ['csv', 'tsv', 'txt']:
             return self._parse_csv_stream(stream)
         elif format_type == 'xml':
@@ -170,6 +173,19 @@ class StreamFetcher:
             # Await the result from asyncio.to_thread and process items in a normal loop
             for item in await parser:
                 yield item
+
+        return iterator()
+
+    def _parse_geojsonseq_stream(self, stream):
+        async def iterator():
+            try:
+                async for line in stream:
+                    line = line.strip()
+                    if line:  # Skip empty lines
+                        yield json.loads(line)
+            except Exception as e:
+                self.logger.error(f"Error parsing GeoJSON sequence: {e}")
+                raise
 
         return iterator()
 

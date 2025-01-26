@@ -3,6 +3,8 @@ import json
 import logging
 
 from .subtransformers.geonames.names import NamesProcessor as GeonamesNamesProcessor
+from .subtransformers.osm.names import NamesProcessor as OSMNamesProcessor
+from .subtransformers.osm.types import TypesProcessor as OSMTypesProcessor
 from .subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
 from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
 from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
@@ -241,14 +243,35 @@ class DocTransformer:
                 ]
             )
         ],
-        "OSM": [  # TODO
+        "OSM": [
             lambda data: (
-                {
+                {  # Feature and Locations
+                    "document_id": (document_id := get_uuid()),
+                    "fields": {
+                        **({"names": names["names"]} if (
+                            names := OSMNamesProcessor(document_id,
+                                                       (properties := data.get("properties"))).process()) else {}),
+                        **(geometry_etc if (  # Includes abstracted geometry properties and array of locations
+                            geometry_etc := GeometryProcessor(data.get("geometry")).process()) else {}),
+                        **(type_classes if (  # Map OSM place type to GeoNames feature classes and AAT types
+                            type_classes := OSMTypesProcessor(
+                                next(
+                                    (properties[key] for key in ['geological', 'historic', 'place', 'water', 'waterway']
+                                     if key in properties and properties[key]),
+                                    None
+                                ),
+                                int(admin_level) if (admin_level := properties.get("admin_level")) else None
+                            ).process()) else {}),
+                    }
                 },
-                [
-                ],
-                [  # No links
-                ]
+                names["toponyms"] if names else None,
+                [  # Links
+                    {
+                        "place_id": document_id,
+                        "predicate": "owl:sameAs",
+                        "object": f"wd:{wikidata}",
+                    }
+                ] if (wikidata := properties.get("wikidata")) else []
             )
         ],
         "LOC": [  # TODO
