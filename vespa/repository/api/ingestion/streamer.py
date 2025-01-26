@@ -200,7 +200,6 @@ class StreamFetcher:
             if not line:
                 continue
 
-            self.logger.info(f"Yielding GeoJSON line: {line}")
             try:
                 yield json.loads(line)
             except json.JSONDecodeError as e:
