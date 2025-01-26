@@ -189,15 +189,30 @@ class StreamFetcher:
 
     def _parse_geojsonseq_stream(self, stream):
         async def iterator():
-            # Ensure we properly read each line asynchronously
-            async for line in stream:  # Directly use the async stream
-                line = line.decode("utf-8").strip()
-                if line:
-                    try:
-                        yield json.loads(line)
-                    except json.JSONDecodeError as e:
-                        self.logger.error(f"Error parsing line: {line}. Error: {e}")
-                        raise
+            # Process each record one-by-one
+            buffer = b""
+
+            async for chunk in stream:
+                buffer += chunk
+
+                # Only process when we have enough data to complete a record
+                while True:
+                    # Find the position of the Record Separator (RS) in the buffer
+                    rs_pos = buffer.find(b'\x1e')  # Record Separator is 0x1e (RS)
+                    if rs_pos == -1:
+                        break  # No more complete records yet, wait for more data
+
+                    # Process the record up to the RS
+                    record = buffer[:rs_pos].decode("utf-8").strip()
+                    if record:
+                        try:
+                            yield json.loads(record)  # Yield the parsed JSON object
+                        except json.JSONDecodeError as e:
+                            self.logger.error(f"Error parsing line: {record}. Error: {e}")
+                            raise
+
+                    # Move the buffer past the processed record and RS
+                    buffer = buffer[rs_pos + 1:]
 
         return iterator()
 
