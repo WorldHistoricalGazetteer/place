@@ -192,10 +192,22 @@ class StreamFetcher:
     def _parse_geojsonseq(self, stream):
         """Synchronous generator for parsing GeoJSON sequences."""
         for line in stream:
-            line = line.strip()
-            if line:  # Skip empty lines
-                logger.info(f"Yielding GeoJSON line: {line}")
+            if isinstance(line, bytes):
+                line = line.decode("utf-8").strip()
+            else:
+                line = line.strip()
+
+            if not line:
+                continue
+
+            self.logger.info(f"Yielding GeoJSON line: {line}")
+            try:
                 yield json.loads(line)
+            except json.JSONDecodeError as e:
+                self.logger.error(
+                    f"Error parsing line: {line}. Error: {e}"
+                )
+                raise
 
     def _parse_csv_stream(self, stream):
         # Parse CSV from stream
