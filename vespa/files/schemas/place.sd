@@ -42,6 +42,9 @@ schema place {
                 # 0 or 1: Indicates if this toponym is the preferred one for the place.
                 # Boolean type is not supported for indexing in Vespa structs.
             }
+            field ipa type string {
+                # An International Phonetic Alphabet transcription of the toponym, as pronounced locally.
+            }
         }
 
         field names type array<name> {
@@ -62,6 +65,9 @@ schema place {
             struct-field is_preferred {
                 indexing: attribute | summary
                 attribute: fast-search
+            }
+            struct-field ipa {
+                indexing: summary
             }
         }
 

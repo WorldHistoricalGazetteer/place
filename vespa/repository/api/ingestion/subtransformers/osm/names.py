@@ -54,8 +54,6 @@ class NamesProcessor:
         years = self._parse_dates(parts[2]) if len(parts) > 2 else years
 
         ipa = next((self.properties[f"{type}{phonetic}"] for phonetic in self.phonetics if f"{type}{phonetic}" in self.properties), None)
-        if ipa:
-            logger.info(f'IPA: {ipa}')
 
         self.output['names'].append({
             'toponym_id': (toponym_id := get_uuid()),
