@@ -134,7 +134,7 @@ class NamesProcessor:
             if key.__contains__('name') and not key.startswith('source:') and not key.startswith(
                     'website:') and not key.startswith(
                 'note:') and not key.startswith('name:etymology:') and not key.__contains__(
-                ':word_stress') and not key.startswith('name:prefix:') and not key.startswith('name:suffix:'):
+                ':word_stress') and not key.__contains__(':prefix') and not key.__contains__(':suffix'):
                 self._process_name(key, self.properties[key], years)
 
         return self.output
