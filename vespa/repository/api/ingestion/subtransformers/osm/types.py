@@ -215,6 +215,11 @@ class TypesProcessor:
 
     def process(self) -> Dict[str, Any]:
 
+        # TODO: REMOVE THIS BLOCK
+        return {
+            "types": [self.place_type],
+        }
+
         types = []
         classes = []
         entry = self.dictionary.get(self.place_type)
