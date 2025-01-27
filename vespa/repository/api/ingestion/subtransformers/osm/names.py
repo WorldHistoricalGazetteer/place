@@ -29,10 +29,14 @@ class NamesProcessor:
         :param years: The years dictionary.
         """
 
-        logger.info(f'Processing {type} {name} {years}')
+        # logger.info(f'Processing {type} {name} {years}')
 
         parts = type.split(':')
         name_type = parts[0]  # First part is the name type
+        # TODO: Handle values like "name:fr:1893-1925", and trap others
+        if len(parts) > 1:
+            logger.warning(f'Unexpected language: {type}')
+        # TODO: Validate values in parse_bcp47_fields
         isolanguage = ':'.join(parts[1:]) if len(parts) > 1 else None
 
         self.output['names'].append({
