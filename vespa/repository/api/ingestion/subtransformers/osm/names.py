@@ -34,7 +34,7 @@ class NamesProcessor:
         else:
             return self._get_years(complex_dates[0], complex_dates[1])
 
-    def _process_pronunciation(self, type: str, pronunciation: str):
+    def _process_pronunciation(self, type: str, pronunciation: str, match: str):
         """
         Process a pronunciation property and add it to the output.
 
@@ -44,7 +44,7 @@ class NamesProcessor:
         See: https://wiki.openstreetmap.org/wiki/Names
         """
 
-        logger.info(f'Processing {type} {pronunciation}')
+        logger.info(f'Processing {type} {pronunciation} {match}')
 
     def _process_name(self, type: str, name: str, years: dict):
         """
@@ -103,7 +103,7 @@ class NamesProcessor:
 
         # Add pronunciation to the output
         for key in self.properties:
-            if any(substring in key for substring in phonetics) and not key.startswith('source:'):
-                self._process_pronunciation(key, self.properties[key])
+            if any(match := substring in key for substring in phonetics) and not key.startswith('source:'):
+                self._process_pronunciation(key, self.properties[key], match)
 
         return self.output
