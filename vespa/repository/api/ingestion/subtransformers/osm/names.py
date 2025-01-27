@@ -128,7 +128,7 @@ class NamesProcessor:
         }
 
         for key in self.properties:
-            if key.__contains__('name'):
+            if key.__contains__('name') and not key.startswith('source:'):
                 self._process_name(key, self.properties[key], years)
 
         return self.output
