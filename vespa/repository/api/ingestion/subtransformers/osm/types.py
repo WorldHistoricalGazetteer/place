@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 class TypesProcessor:
-    def __init__(self, place_type: str, admin_level: int):
+    def __init__(self, place_type: str, admin_level: str):
         """
         :param place_type: OSM-derived place type.
         """
