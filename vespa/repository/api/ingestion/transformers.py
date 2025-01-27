@@ -248,12 +248,13 @@ class DocTransformer:
                 {  # Feature and Locations
                     "document_id": (document_id := get_uuid()),
                     "fields": {
-                        **({"names": names["names"]} if (
-                            names := OSMNamesProcessor(document_id,
-                                                       (properties := data.get("properties"))).process()) else {}),
+                        # **({"names": names["names"]} if (
+                        #     names := OSMNamesProcessor(document_id,
+                        #                                (properties := data.get("properties"))).process()) else {}),
                         # **(geometry_etc if (  # Includes abstracted geometry properties and array of locations
                         #     geometry_etc := GeometryProcessor(data.get("geometry")).process()) else {}),
                         # TODO: Build dictionary of OSM types to GeoNames feature classes and AAT types
+                        **({} if (properties := data.get("properties")) else {}), # TODO: REMOVE
                         **(type_classes if (  # Map OSM place type to GeoNames feature classes and AAT types
                             type_classes := OSMTypesProcessor(
                                 next(
@@ -265,14 +266,16 @@ class DocTransformer:
                             ).process()) else {}),
                     }
                 },
-                names["toponyms"] if names else None,
-                [  # Links
-                    {
-                        "place_id": document_id,
-                        "predicate": "owl:sameAs",
-                        "object": f"wd:{wikidata}",
-                    }
-                ] if (wikidata := properties.get("wikidata")) else []
+                [],
+                []
+                # names["toponyms"] if names else None,
+                # [  # Links
+                #     {
+                #         "place_id": document_id,
+                #         "predicate": "owl:sameAs",
+                #         "object": f"wd:{wikidata}",
+                #     }
+                # ] if (wikidata := properties.get("wikidata")) else []
             )
         ],
         "LOC": [  # TODO
