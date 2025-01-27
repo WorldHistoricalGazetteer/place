@@ -389,7 +389,10 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             logger.info(f"Completed.")
 
             global types
-            types = dict(sorted(types.items(), key=lambda item: str(item[0])))
+            types = {
+                k: {"count": v, "AAT": None, "GeoNames": None}
+                for k, v in sorted(types.items(), key=lambda item: str(item[0]))
+            }
             logger.info(f"Type counts: {types}")
 
             # Final update to the task tracker
