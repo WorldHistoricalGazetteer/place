@@ -224,7 +224,8 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     # logger.info(f"Links: {links}")
     global types
     for t in transformed_document.get("fields", {}).get("types", []):
-        types[t] = types.get(t, 0) + 1
+        if t:
+            types[t] = types.get(t, 0) + 1
     return {"success": True}
 
     try:
@@ -388,6 +389,7 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
             logger.info(f"Completed.")
 
             global types
+            types = dict(sorted(types.items(), key=lambda item: str(item[0])))
             logger.info(f"Type counts: {types}")
 
             # Final update to the task tracker
