@@ -15,6 +15,7 @@ class NamesProcessor:
         """
         self.document_id = document_id
         self.properties = properties
+        self.phonetics = [':pronunciation', ':ipa', ':iso15919']
         self.output = {
             'names': [],
             'toponyms': [],
@@ -34,18 +35,6 @@ class NamesProcessor:
         else:
             return self._get_years(complex_dates[0], complex_dates[1])
 
-    def _process_pronunciation(self, type: str, pronunciation: str, match: str):
-        """
-        Process a pronunciation property and add it to the output.
-
-        :param type: The pronunciation property key.
-        :param pronunciation: The pronunciation property value.
-
-        See: https://wiki.openstreetmap.org/wiki/Names
-        """
-
-        logger.info(f'Processing {type} {pronunciation} {match}')
-
     def _process_name(self, type: str, name: str, years: dict):
         """
         Process a name property and add it to the output.
@@ -64,10 +53,15 @@ class NamesProcessor:
         isolanguage = parts[1] if len(parts) > 1 else None
         years = self._parse_dates(parts[2]) if len(parts) > 2 else years
 
+        ipa = next((self.properties[f"{type}{phonetic}"] for phonetic in self.phonetics if f"{type}{phonetic}" in self.properties), None)
+        if ipa:
+            logger.info(f'IPA: {ipa}')
+
         self.output['names'].append({
             'toponym_id': (toponym_id := get_uuid()),
             **years,
             **({'is_preferred': is_preferred} if (is_preferred := name_type == 'name') else {}),
+            **({'ipa': ipa} if ipa else {}),
         })
         self.output['toponyms'].append({
             'document_id': toponym_id,
@@ -85,7 +79,6 @@ class NamesProcessor:
 
         exclude_startswith = ['source:', 'website:', 'note:', 'name:etymology:', 'start_date:', 'end_date:']
         exclude_contains = [':word_stress', ':prefix', ':suffix']
-        phonetics = [':pronunciation', ':ipa', ':iso15919']
         replacements = {
             'seamark:landmark:': '',
             ':UN:': ':',
@@ -97,13 +90,8 @@ class NamesProcessor:
             if (
                     'name' in key
                     and not any(key.startswith(prefix) for prefix in exclude_startswith)
-                    and not any(substring in key for substring in exclude_contains + phonetics)
+                    and not any(substring in key for substring in exclude_contains + self.phonetics)
             ):
                 self._process_name(key, self.properties[key], years)
-
-        # Add pronunciation to the output
-        for key in self.properties:
-            if any(match := substring in key for substring in phonetics) and not key.startswith('source:'):
-                self._process_pronunciation(key, self.properties[key], match)
 
         return self.output
