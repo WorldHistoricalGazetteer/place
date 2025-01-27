@@ -27,6 +27,8 @@ class NamesProcessor:
         :param type: The name property key.
         :param name: The name property value.
         :param years: The years dictionary.
+
+        See: https://wiki.openstreetmap.org/wiki/Names
         """
 
         # logger.info(f'Processing {type} {name} {years}')
@@ -131,7 +133,8 @@ class NamesProcessor:
             key = key.replace('seamark:landmark:', '').replace(':UN:', ':')
             if key.__contains__('name') and not key.startswith('source:') and not key.startswith(
                     'website:') and not key.startswith(
-                    'note:') and not key.startswith('name:etymology:') and not key.__contains__(':word_stress'):
+                'note:') and not key.startswith('name:etymology:') and not key.__contains__(
+                ':word_stress') and not key.startswith('name:prefix:') and not key.startswith('name:suffix:'):
                 self._process_name(key, self.properties[key], years)
 
         return self.output
