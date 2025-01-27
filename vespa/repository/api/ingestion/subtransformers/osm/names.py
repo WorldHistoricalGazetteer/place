@@ -29,7 +29,10 @@ class NamesProcessor:
         :param years: The years dictionary.
         """
 
-        name_type, isolanguage = type.split(':')
+        if ':' in type:
+            name_type, isolanguage = type.split(':')
+        else:
+            name_type, isolanguage = type, None
 
         self.output['names'].append({
             'toponym_id': (toponym_id := get_uuid()),
