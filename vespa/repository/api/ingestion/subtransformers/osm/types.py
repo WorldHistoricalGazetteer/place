@@ -217,7 +217,7 @@ class TypesProcessor:
 
         # TODO: REMOVE THIS BLOCK
         return {
-            "types": [self.place_type],
+            "types": [self.place_type, self.admin_level],
         }
 
         types = []

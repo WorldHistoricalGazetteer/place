@@ -23,7 +23,7 @@ executor = ThreadPoolExecutor(max_workers=10)
 max_queue_size = 100  # Queue size for document update tasks
 update_queue = queue.Queue(maxsize=max_queue_size)
 
-types = []
+types = {}  # TODO: REMOVE
 
 
 def queue_worker():
@@ -222,6 +222,9 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     logger.info(f"Transformed document {transformed_document}")
     logger.info(f"Toponyms: {toponyms}")
     logger.info(f"Links: {links}")
+    global types
+    for t in transformed_document.get("fields", {}).get("types", []):
+        types[t] = types.get(t, 0) + 1
     return {"success": True}
 
     try:
@@ -383,6 +386,9 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                     process_variants()
 
             logger.info(f"Completed.")
+
+            global types
+            logger.info(f"Type counts: {types}")
 
             # Final update to the task tracker
             task_tracker.update_task(task_id, {
