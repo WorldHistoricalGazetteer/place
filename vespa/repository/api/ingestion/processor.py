@@ -219,7 +219,9 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         "transformed": 1,
     })
 
-    logger.info(transformed_document, toponyms, links)
+    logger.info(f"Transformed document {transformed_document}")
+    logger.info(f"Toponyms: {toponyms}")
+    logger.info(f"Links: {links}")
     return {"success": True}
 
     try:
