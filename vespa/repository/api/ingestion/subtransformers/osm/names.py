@@ -20,6 +20,20 @@ class NamesProcessor:
             'toponyms': [],
         }
 
+    def _get_years(self, start_date: str = None, end_date: str = None) -> dict:
+        return {
+            **({'year_start': year_start} if (year_start := start_date.split('-')[0]) else {}),
+            **({'year_end': year_end} if (year_end := end_date.split('-')[0]) else {}),
+        }
+
+    def _parse_dates(self, dates: str) -> dict:
+        complex_dates = dates.split('--')
+        if len(complex_dates) == 1:
+            simple_dates = dates.split('-')
+            return self._get_years(simple_dates[0], simple_dates[1] if len(simple_dates) > 1 else None)
+        else:
+            return self._get_years(complex_dates[0], complex_dates[1])
+
     def _process_name(self, type: str, name: str, years: dict):
         """
         Process a name property and add it to the output.
@@ -35,77 +49,12 @@ class NamesProcessor:
 
         parts = type.split(':')
         name_type = parts[0]  # First part is the name type
+        isolanguage = parts[1] if len(parts) > 1 else None
+        years = self._parse_dates(parts[2]) if len(parts) > 2 else years
         # TODO: Handle values like "name:fr:1893-1925", and trap others
-        """
-
-2025-01-27 08:55:24,244 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:ru:word_stress
-2025-01-27 08:55:24,245 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:fr:1893-1925
-2025-01-27 08:55:24,245 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:ang:597-886
-2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:ang:886-1066
-2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:en:886-1066
-2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:la:47-500
-2025-01-27 08:55:24,247 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikidata
-2025-01-27 08:55:24,248 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:24,312 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:24,327 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:24,350 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:24,350 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:24,943 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:24,944 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:alt_name:xdk
-2025-01-27 08:55:24,944 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:24,944 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:xdk
-2025-01-27 08:55:26,158 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikidata
-2025-01-27 08:55:26,158 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikipedia
-2025-01-27 08:55:26,540 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikidata
-2025-01-27 08:55:26,540 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:27,270 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:27,270 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:old_name:oc
-2025-01-27 08:55:29,205 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: seamark:landmark:name
-2025-01-27 08:55:30,142 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:30,177 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:30,190 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:30,191 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:en:pronunciation
-2025-01-27 08:55:30,191 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:fr:pronunciation
-2025-01-27 08:55:30,191 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:30,822 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:en:ipa
-2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:30,875 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:30,884 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:30,890 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:30,902 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:30,909 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:30,985 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:31,179 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:31,179 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:31,180 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:31,180 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:32,150 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:33,022 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:33,285 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:33,286 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:34,066 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:34,066 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:34,485 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:35,662 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:35,662 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:35,681 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:35,733 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:35,746 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:en:pronunciation
-2025-01-27 08:55:35,747 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:35,747 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:35,768 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
-2025-01-27 08:55:40,917 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
-2025-01-27 08:55:42,588 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br   
-        
-        """
         if len(parts) > 2:
-            logger.warning(f'Unexpected language: {type} {name}')
+            logger.warning(f'Unexpected language: {type} {name} {years}')
         # TODO: Validate values in parse_bcp47_fields
-        isolanguage = ':'.join(parts[1:]) if len(parts) > 1 else None
 
         self.output['names'].append({
             'toponym_id': (toponym_id := get_uuid()),
@@ -124,12 +73,9 @@ class NamesProcessor:
 
     def process(self) -> dict:
 
-        years = {
-            **({'year_start': year_start} if (year_start := self.properties.get('start_date')) else {}),
-            **({'year_end': year_end} if (year_end := self.properties.get('end_date')) else {}),
-        }
+        years = self._get_years(self.properties.get('start_date'), self.properties.get('end_date'))
 
-        exclude_startswith = ['source:', 'website:', 'note:', 'name:etymology:']
+        exclude_startswith = ['source:', 'website:', 'note:', 'name:etymology:', 'start_date:', 'end_date:']
         exclude_contains = [':word_stress', ':prefix', ':suffix']
         phonetics = [':pronunciation', ':ipa', ':iso15919']
         replacements = {
@@ -141,9 +87,9 @@ class NamesProcessor:
             for old, new in replacements.items():
                 key = key.replace(old, new)
             if (
-                'name' in key
-                and not any(key.startswith(prefix) for prefix in exclude_startswith)
-                and not any(substring in key for substring in exclude_contains + phonetics)
+                    'name' in key
+                    and not any(key.startswith(prefix) for prefix in exclude_startswith)
+                    and not any(substring in key for substring in exclude_contains + phonetics)
             ):
                 self._process_name(key, self.properties[key], years)
 
