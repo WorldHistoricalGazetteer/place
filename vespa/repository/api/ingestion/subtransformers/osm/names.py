@@ -128,7 +128,9 @@ class NamesProcessor:
         }
 
         for key in self.properties:
-            if key.__contains__('name') and not key.startswith('source:'):
+            key = key.replace('seamark:landmark:', '')
+            if (key.__contains__('name') and not key.startswith('source:')) and not key.startswith(
+                    'name:etymology:') and not key.__contains__(':word_stress'):
                 self._process_name(key, self.properties[key], years)
 
         return self.output
