@@ -30,10 +30,10 @@ class NamesProcessor:
         """
 
         logger.info(f'Processing {type} {name} {years}')
-        if ':' in type:
-            name_type, isolanguage = type.split(':')
-        else:
-            name_type, isolanguage = type, None
+
+        parts = type.split(':')
+        name_type = parts[0]  # First part is the name type
+        isolanguage = ':'.join(parts[1:]) if len(parts) > 1 else None
 
         self.output['names'].append({
             'toponym_id': (toponym_id := get_uuid()),
