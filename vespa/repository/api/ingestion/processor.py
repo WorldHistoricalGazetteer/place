@@ -24,6 +24,7 @@ max_queue_size = 100  # Queue size for document update tasks
 update_queue = queue.Queue(maxsize=max_queue_size)
 
 types = {}  # TODO: REMOVE
+doc_count = 0  # TODO: REMOVE
 
 
 def queue_worker():
@@ -222,6 +223,10 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     # logger.info(f"Transformed document {transformed_document}")
     # logger.info(f"Toponyms: {toponyms}")
     # logger.info(f"Links: {links}")
+    global doc_count
+    doc_count += 1
+    if doc_count % 5000 == 0:
+        logger.info(f"{doc_count:,} documents processed")
     global types
     for t in transformed_document.get("fields", {}).get("types", []):
         if t:
