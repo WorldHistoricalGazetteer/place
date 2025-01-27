@@ -22,8 +22,8 @@ class NamesProcessor:
 
     def _get_years(self, start_date: str = None, end_date: str = None) -> dict:
         return {
-            **({'year_start': year_start} if (year_start := start_date.split('-')[0]) else {}),
-            **({'year_end': year_end} if (year_end := end_date.split('-')[0]) else {}),
+            **({'year_start': year_start} if start_date and (year_start := start_date.split('-')[0]) else {}),
+            **({'year_end': year_end} if end_date and (year_end := end_date.split('-')[0]) else {}),
         }
 
     def _parse_dates(self, dates: str) -> dict:
