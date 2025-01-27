@@ -29,6 +29,7 @@ class NamesProcessor:
         :param years: The years dictionary.
         """
 
+        logger.info(f'Processing {type} {name} {years}')
         if ':' in type:
             name_type, isolanguage = type.split(':')
         else:
