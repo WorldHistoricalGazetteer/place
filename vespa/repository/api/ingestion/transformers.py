@@ -262,7 +262,7 @@ class DocTransformer:
                                      if key in properties and properties[key]),
                                     None
                                 ),
-                                int(admin_level) if (admin_level := properties.get("admin_level")) else None
+                                admin_level if (admin_level := properties.get("admin_level")) else None
                             ).process()) else {}),
                     }
                 },
