@@ -34,6 +34,18 @@ class NamesProcessor:
         else:
             return self._get_years(complex_dates[0], complex_dates[1])
 
+    def _process_pronunciation(self, type: str, pronunciation: str):
+        """
+        Process a pronunciation property and add it to the output.
+
+        :param type: The pronunciation property key.
+        :param pronunciation: The pronunciation property value.
+
+        See: https://wiki.openstreetmap.org/wiki/Names
+        """
+
+        logger.info(f'Processing {type} {pronunciation}')
+
     def _process_name(self, type: str, name: str, years: dict):
         """
         Process a name property and add it to the output.
@@ -51,10 +63,6 @@ class NamesProcessor:
         name_type = parts[0]  # First part is the name type
         isolanguage = parts[1] if len(parts) > 1 else None
         years = self._parse_dates(parts[2]) if len(parts) > 2 else years
-        # TODO: Handle values like "name:fr:1893-1925", and trap others
-        if len(parts) > 2:
-            logger.warning(f'Unexpected language: {type} {name} {years}')
-        # TODO: Validate values in parse_bcp47_fields
 
         self.output['names'].append({
             'toponym_id': (toponym_id := get_uuid()),
@@ -94,8 +102,8 @@ class NamesProcessor:
                 self._process_name(key, self.properties[key], years)
 
         # Add pronunciation to the output
-        # for key in self.properties:
-        #     if any(substring in key for substring in phonetics) and not key.startswith('source:'):
-        #         self._process_pronunciation(key, self.properties[key])
+        for key in self.properties:
+            if any(substring in key for substring in phonetics) and not key.startswith('source:'):
+                self._process_pronunciation(key, self.properties[key])
 
         return self.output
