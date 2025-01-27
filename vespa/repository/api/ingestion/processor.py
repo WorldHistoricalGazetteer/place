@@ -393,6 +393,8 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
             logger.info(f"Completed.")
 
+            global doc_count
+            logger.info(f"Total documents processed: {doc_count}")
             global types
             types = {
                 k: {"count": v, "AAT": None, "GeoNames": None}
