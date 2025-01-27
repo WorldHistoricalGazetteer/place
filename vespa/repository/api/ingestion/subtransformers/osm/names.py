@@ -34,8 +34,74 @@ class NamesProcessor:
         parts = type.split(':')
         name_type = parts[0]  # First part is the name type
         # TODO: Handle values like "name:fr:1893-1925", and trap others
+        """
+
+2025-01-27 08:55:24,244 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:ru:word_stress
+2025-01-27 08:55:24,245 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:fr:1893-1925
+2025-01-27 08:55:24,245 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:ang:597-886
+2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:ang:886-1066
+2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:en:886-1066
+2025-01-27 08:55:24,246 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: old_name:la:47-500
+2025-01-27 08:55:24,247 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikidata
+2025-01-27 08:55:24,248 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:24,312 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:24,327 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:24,350 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:24,350 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:24,943 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:24,944 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:alt_name:xdk
+2025-01-27 08:55:24,944 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:24,944 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:xdk
+2025-01-27 08:55:26,158 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikidata
+2025-01-27 08:55:26,158 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikipedia
+2025-01-27 08:55:26,540 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:etymology:wikidata
+2025-01-27 08:55:26,540 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:27,270 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:27,270 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:old_name:oc
+2025-01-27 08:55:29,205 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: seamark:landmark:name
+2025-01-27 08:55:30,142 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:30,177 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:30,190 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:30,191 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:en:pronunciation
+2025-01-27 08:55:30,191 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:fr:pronunciation
+2025-01-27 08:55:30,191 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:30,822 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:en:ipa
+2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:30,823 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:30,875 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:30,884 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:30,890 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:30,902 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:30,909 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:30,985 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:31,179 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:31,179 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:31,180 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:31,180 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:32,150 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:33,022 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:33,285 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:33,286 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:34,066 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:34,066 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:34,485 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:35,662 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:35,662 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:35,681 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:35,733 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:35,746 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: name:en:pronunciation
+2025-01-27 08:55:35,747 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:35,747 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:35,768 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:oc
+2025-01-27 08:55:40,917 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br
+2025-01-27 08:55:42,588 - api.ingestion.subtransformers.osm.names - WARNING - Unexpected language: source:name:br   
+        
+        """
         if len(parts) > 2:
-            logger.warning(f'Unexpected language: {type}')
+            logger.warning(f'Unexpected language: {type} {name}')
         # TODO: Validate values in parse_bcp47_fields
         isolanguage = ':'.join(parts[1:]) if len(parts) > 1 else None
 
