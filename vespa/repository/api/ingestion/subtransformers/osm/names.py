@@ -129,12 +129,27 @@ class NamesProcessor:
             **({'year_end': year_end} if (year_end := self.properties.get('end_date')) else {}),
         }
 
+        exclude_startswith = ['source:', 'website:', 'note:', 'name:etymology:']
+        exclude_contains = [':word_stress', ':prefix', ':suffix']
+        phonetics = [':pronunciation', ':ipa', ':iso15919']
+        replacements = {
+            'seamark:landmark:': '',
+            ':UN:': ':',
+        }
+
         for key in self.properties:
-            key = key.replace('seamark:landmark:', '').replace(':UN:', ':')
-            if key.__contains__('name') and not key.startswith('source:') and not key.startswith(
-                    'website:') and not key.startswith(
-                'note:') and not key.startswith('name:etymology:') and not key.__contains__(
-                ':word_stress') and not key.__contains__(':prefix') and not key.__contains__(':suffix'):
+            for old, new in replacements.items():
+                key = key.replace(old, new)
+            if (
+                'name' in key
+                and not any(key.startswith(prefix) for prefix in exclude_startswith)
+                and not any(substring in key for substring in exclude_contains + phonetics)
+            ):
                 self._process_name(key, self.properties[key], years)
+
+        # Add pronunciation to the output
+        # for key in self.properties:
+        #     if any(substring in key for substring in phonetics) and not key.startswith('source:'):
+        #         self._process_pronunciation(key, self.properties[key])
 
         return self.output
