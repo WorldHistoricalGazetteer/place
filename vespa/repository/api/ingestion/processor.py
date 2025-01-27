@@ -297,16 +297,6 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     count = 0
     filters = dataset_config.get('files')[transformer_index].get('filters')
 
-
-
-    # TESTING FOR XML INGESTION
-    async for document in stream:
-        while count < limit or 3:
-            logger.info(document)
-            continue
-
-
-
     async for document in stream:
 
         # Apply filters (if any)
