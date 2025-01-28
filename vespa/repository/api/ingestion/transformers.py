@@ -3,6 +3,7 @@ import json
 import logging
 
 from .subtransformers.geonames.names import NamesProcessor as GeonamesNamesProcessor
+from .subtransformers.loc.links import LinksProcessor as LOCLinksProcessor
 from .subtransformers.osm.names import NamesProcessor as OSMNamesProcessor
 from .subtransformers.osm.types import TypesProcessor as OSMTypesProcessor
 from .subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
@@ -279,8 +280,7 @@ class DocTransformer:
                 },
                 [
                 ],
-                [  # No links
-                ]
+                LOCLinksProcessor(data.get("@graph")).process()
             )
         ],
         "GB1900": [  # TODO

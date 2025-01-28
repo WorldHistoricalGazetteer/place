@@ -143,6 +143,8 @@ REMOTE_DATASET_CONFIGS = [
                         "madsrdf:GeographicElement" in graph_item.get("@type", [])
                         for graph_item in record.get("@graph", [])
                     ) and any(
+                        "madsrdf:identifiesRWO" in graph_item
+                        or
                         "madsrdf:hasCloseExternalAuthority" in graph_item
                         or
                         (

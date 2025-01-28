@@ -219,7 +219,9 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
     # logger.info(f"Transformed document {transformed_document}")
     # logger.info(f"Toponyms: {toponyms}")
-    # logger.info(f"Links: {links}")
+    logger.info(f"Links: {links}")
+    # terminate
+    return {"success": True}
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -305,13 +307,13 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
             continue
 
         ## Examine the first 3 documents and then terminate
-        if count < 50:
-            logger.info(f"Document {count}: {document}")
-            count += 1
-            # Get next document
-            continue
-        else: # Terminate
-            break
+        # if count < 3:
+        #     logger.info(f"Document {count}: {document}")
+        #     count += 1
+        #     # Get next document
+        #     continue
+        # else: # Terminate
+        #     break
 
         current_batch.append(document)
         count += 1
