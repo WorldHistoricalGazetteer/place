@@ -17,12 +17,18 @@ class LinksProcessor:
             "http://musicbrainz.org/",
         ]
         self.url_transformers = {
-            "http://dbpedia.org/resource/": lambda url: f"dbp:{url.split('/')[-1]}",
-            "http://sws.geonames.org/": lambda url: f"gn:{url.split('/')[-1]}",
-            "http://id.loc.gov/rwo/agents/": lambda url: f"loc:{url.split('/')[-1]}",
-            "http://vocab.getty.edu/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}",
-            "http://www.viaf.org/viaf/": lambda url: f"viaf:{url.split('/')[-1]}",
-            "http://www.wikidata.org/entity/": lambda url: f"wd:{url.split('/')[-1]}",
+            "/dbpedia.org/": lambda url: f"dbp:{url.split('/')[-1]}",
+            "/www.bbc.co.uk/things/": lambda url: f"bbc:{url.split('/')[-1]}",
+            "/sws.geonames.org/": lambda url: f"gn:{url.split('/')[-1]}",
+            "/id.loc.gov/rwo/agents/": lambda url: f"loc:{url.split('/')[-1]}",
+            "/vocab.getty.edu/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}",
+            "/metadata.un.org/thesaurus/": lambda url: f"un:{url.split('/')[-1]}",
+            "/vocabularies.unesco.org/thesaurus/": lambda url: f"unesco:{url.split('/')[-1]}",
+            "viaf.org/viaf/": lambda url: f"viaf:{url.split('/')[-1]}",
+            "/www.wikidata.org/": lambda url: f"wd:{url.split('/')[-1]}",
+            "/id.worldcat.org/fast/": lambda url: f"fast:{url.split('/')[-1]}",
+            "zbw.eu/stw/descriptor/": lambda url: f"stw:{url.split('/')[-1]}",
+            "/id.nlm.nih.gov/mesh/": lambda url: f"mesh:{url.split('/')[-1]}",
         }
         self.uris = set()
         self.links = []
@@ -32,8 +38,8 @@ class LinksProcessor:
             # logger.info(f"Ignoring URL: {url}")
             return
 
-        for prefix, transformer in self.url_transformers.items():
-            if url.startswith(prefix):
+        for test_string, transformer in self.url_transformers.items():
+            if url.__contains__(test_string):
                 # logger.info(f"Matched URL: {url}")
                 self.uris.add(transformer(url))
                 break
@@ -69,6 +75,6 @@ class LinksProcessor:
             if x != y and (x, y) not in seen_pairs and not seen_pairs.add((x, y))
         ])
 
-        if self.links:
-            logger.info(f"Processed links: {self.links}")
+        # if self.links:
+        #     logger.info(f"Processed links: {self.links}")
         return self.links
