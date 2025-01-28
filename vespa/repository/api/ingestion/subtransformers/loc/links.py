@@ -57,10 +57,12 @@ class LinksProcessor:
             for facet in self.linkfacets:
                 # Check if the facet exists in the item and extract the URIs
                 if facet in item:
+                    logger.info(f"Processing facet: {facet}")
                     facet_value = item[facet]
                     if isinstance(facet_value, dict):
                         facet_value = [facet_value]
                     for value in facet_value:
+                        logger.info(f"Processing value: {value}")
                         if isinstance(value, dict) and "@id" in value:
                             self._check_url(value["@id"])
 
@@ -77,5 +79,6 @@ class LinksProcessor:
             if x != y and (x, y) not in seen_pairs and not seen_pairs.add((x, y))
         ])
 
-        # logger.info(f"Processed links: {self.links}")
+        if self.links:
+            logger.info(f"Processed links: {self.links}")
         return self.links
