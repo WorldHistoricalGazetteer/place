@@ -118,7 +118,7 @@ REMOTE_DATASET_CONFIGS = [
             {
                 'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',  # 84.7GB
                 'local_name': 'osm.geojsonseq',  # 4.1GB
-                'file_type': 'geojsonseq',
+                'file_type': 'geojsonseq', # GeoJSON Sequence with Record Separators
                 'filters': [
                     lambda feature: 'name' in (properties := feature['properties']) and
                                     any(key in properties for key in
@@ -137,7 +137,13 @@ REMOTE_DATASET_CONFIGS = [
         'files': [
             {
                 'url': 'http://id.loc.gov/download/authorities/names.madsrdf.jsonld.gz',
-                'file_type': 'json',
+                'file_type': 'ndjson', # Newline-delimited JSON
+                'filters': [
+                    lambda record: any(
+                        "@type" in graph_item and "madsrdf:GeographicElement" in graph_item["@type"]
+                        for graph_item in record.get("@graph", [])
+                    )
+                ]
             }
         ],
     },
