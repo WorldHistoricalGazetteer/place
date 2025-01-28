@@ -145,8 +145,15 @@ REMOTE_DATASET_CONFIGS = [
                     ) and any(
                         ("madsrdf:hasCloseExternalAuthority" in graph_item or
                          ("madsrdf:hasExactExternalAuthority" in graph_item and
-                         # Exclude VIAF links which are typically invalid, and essentially the same as the LOC ID
-                          not graph_item["madsrdf:hasExactExternalAuthority"].get("@id", "").startswith("http://viaf.org/")))
+                          # Exclude VIAF links which are typically invalid, and essentially the same as the LOC ID
+                          isinstance(graph_item, dict) and # Allow if there is a list of more than one external authorities
+                          (
+                              # Check if madsrdf:hasExactExternalAuthority is an object
+                                  isinstance(graph_item.get("madsrdf:hasExactExternalAuthority", {}), dict) and
+                                  not graph_item["madsrdf:hasExactExternalAuthority"].get("@id", "").startswith(
+                                      "http://viaf.org/")
+                          )
+                          ))
                         for graph_item in record.get("@graph", [])
                     )
                 ]
