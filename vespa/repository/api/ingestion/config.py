@@ -146,7 +146,7 @@ REMOTE_DATASET_CONFIGS = [
                         ("madsrdf:hasCloseExternalAuthority" in graph_item or
                          ("madsrdf:hasExactExternalAuthority" in graph_item and
                          # Exclude VIAF links which are typically invalid, and essentially the same as the LOC ID
-                          not graph_item.get("@id", "").startswith("http://viaf.org/")))
+                          not graph_item.get("madsrdf:hasExactExternalAuthority", {}).get("@id", "").startswith("http://viaf.org/")))
                         for graph_item in record.get("@graph", [])
                     )
                 ]
