@@ -53,7 +53,7 @@ namespaces = {
     },
     "gn": {
         "url": lambda curie: f"http://sws.geonames.org/{curie.split(':', 1)[-1]}/",
-        "match": r"^https?://(www\.|sws\.)?.geonames\.org/(?P<id>\d+)(?:/.*)?$"
+        "match": r"^https?://(www\.|sws\.)?geonames\.org/(?P<id>\d+)(?:/.*)?$"
     },
     "gnd": {
         "url": lambda curie: f"http://d-nb.info/gnd/{curie.split(':', 1)[-1]}",
@@ -145,7 +145,7 @@ namespaces = {
     },
     "wd": {
         "url": lambda curie: f"http://wikidata.org/entity/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?wikidata\.org/entity/(?P<id>.*)$",
+        "match": r"^https?://(www\.)?wikidata\.org/(entit*y|wiki)/(?P<id>.*)$",
     },
     "worldcat": {
         "url": lambda curie: f"http://id.oclc.org/worldcat/entity/{curie.split(':', 1)[-1]}",
