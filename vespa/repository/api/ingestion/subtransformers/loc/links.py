@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import List, Dict, Any
 
 from ...namespace import namespaces
@@ -39,8 +40,10 @@ class LinksProcessor:
             return
 
         for namespace, transformer in namespaces.items():
-            if url.__contains__(transformer["match"]):
-                self.uris.add(transformer["url"](url))
+            match = re.search(transformer["match"], url)
+            if match:
+                logger.info(f"{url} -> {namespace}:{match.group('id')}")
+                self.uris.add(f"{namespace}:{match.group('id')}")
                 break
         else:
             logger.warning(f"Unmatched URL: {url}")
