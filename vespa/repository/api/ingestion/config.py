@@ -56,7 +56,7 @@ REMOTE_DATASET_CONFIGS = [
     {  # 2024: 3m+ places
         'dataset_name': 'TGN',
         'namespace': 'tgn',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': 'https://vocab.getty.edu/tgn/<id>.jsonld',
         'citation': 'The Getty Thesaurus of Geographic Names® (TGN) is provided by the J. Paul Getty Trust under the Open Data Commons Attribution License (ODC-By) 1.0. https://www.getty.edu/research/tools/vocabularies/tgn/',
         'files': [
@@ -92,7 +92,7 @@ REMOTE_DATASET_CONFIGS = [
     {  # 2024: 8m+ items classified as places
         'dataset_name': 'Wikidata',
         'namespace': 'wd',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': 'https://www.wikidata.org/wiki/Special:EntityData/<id>.json',
         'citation': 'Wikidata is a free and open knowledge base that can be read and edited by both humans and machines. https://www.wikidata.org/',
         'files': [
@@ -111,7 +111,7 @@ REMOTE_DATASET_CONFIGS = [
     {  # 2024: >14.8m named places with multiple toponyms (file includes some unnamed features)
         'dataset_name': 'OSM',
         'namespace': 'osm',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': 'https://nominatim.openstreetmap.org/details.php?osmtype=R&osmid=<id>&format=json',
         'citation': 'OpenStreetMap is open data, licensed under the Open Data Commons Open Database License (ODbL). https://www.openstreetmap.org/',
         'files': [
@@ -131,7 +131,7 @@ REMOTE_DATASET_CONFIGS = [
     {
         'dataset_name': 'LOC',
         'namespace': 'loc',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': 'https://www.loc.gov/item/<id>/',
         'citation': 'Library of Congress. https://www.loc.gov/',
         'files': [
@@ -144,7 +144,7 @@ REMOTE_DATASET_CONFIGS = [
     {
         'dataset_name': 'NativeLand',
         'namespace': 'nl',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': '',
         'citation': 'Native Land Digital. https://native-land.ca/',
         'files': [
@@ -168,7 +168,7 @@ REMOTE_DATASET_CONFIGS = [
     {
         'dataset_name': 'DPlace',
         'namespace': 'dplace',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': '',
         'citation': 'D-PLACE: A Global Database of Cultural, Linguistic and Environmental Diversity. https://d-place.org/',
         'files': [
@@ -182,7 +182,7 @@ REMOTE_DATASET_CONFIGS = [
     {
         'dataset_name': 'GB1900',
         'namespace': 'GB1900',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': '',
         'citation': 'GB1900 Gazetteer: British place names, 1888-1914. https://www.pastplace.org/data/#tabgb1900',
         'files': [
@@ -196,7 +196,7 @@ REMOTE_DATASET_CONFIGS = [
     {  # 24,000 place names
         'dataset_name': 'IndexVillaris',
         'namespace': 'IV1680',
-        'vespa_schema': 'npr',
+        'vespa_schema': 'place',
         'api_item': '',
         'citation': 'Index Villaris, 1680',
         'files': [
