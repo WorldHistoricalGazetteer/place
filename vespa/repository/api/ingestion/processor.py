@@ -217,9 +217,9 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         "transformed": 1,
     })
 
-    logger.info(f"Transformed document {transformed_document}")
-    logger.info(f"Toponyms: {toponyms}")
-    logger.info(f"Links: {links}")
+    # logger.info(f"Transformed document {transformed_document}")
+    # logger.info(f"Toponyms: {toponyms}")
+    # logger.info(f"Links: {links}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -297,6 +297,21 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     filters = dataset_config.get('files')[transformer_index].get('filters')
 
     async for document in stream:
+
+        count += 1
+        if count < 3:
+            logger.info(f"Document {count}: {document}")
+            # Get next document
+            continue
+        else: # Terminate
+            break
+
+
+
+
+
+
+
 
         # Apply filters (if any)
         if filters and not any(f(document) for f in filters):
