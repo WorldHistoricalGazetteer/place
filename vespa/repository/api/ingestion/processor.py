@@ -219,8 +219,8 @@ async def process_document(document, dataset_config, transformer_index, sync_app
 
     # logger.info(f"Transformed document {transformed_document}")
     # logger.info(f"Toponyms: {toponyms}")
-    if links:
-        logger.info(f"Links: {links}")
+    # if links:
+    #     logger.info(f"Links: {links}")
     # terminate
     return {"success": True}
 

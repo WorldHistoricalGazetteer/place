@@ -29,6 +29,15 @@ class LinksProcessor:
             "/id.worldcat.org/fast/": lambda url: f"fast:{url.split('/')[-1]}",
             "zbw.eu/stw/descriptor/": lambda url: f"stw:{url.split('/')[-1]}",
             "/id.nlm.nih.gov/mesh/": lambda url: f"mesh:{url.split('/')[-1]}",
+            "/aims.fao.org/aos/agrovoc/": lambda url: f"agrovoc:{url.split('/')[-1]}",
+            "/d-nb.info/gnd/": lambda url: f"gnd:{url.split('/')[-1]}",
+            "/eurovoc.europa.eu/": lambda url: f"eurovoc:{url.split('/')[-1]}",
+            "/id.cabi.org/cabt/": lambda url: f"cabi:{url.split('/')[-1]}",
+            "/id.ndl.go.jp/auth/ndlna/": lambda url: f"ndl:{url.split('/')[-1]}",
+            "/lod.nal.usda.gov/nalt/": lambda url: f"nalt:{url.split('/')[-1]}",
+            "/www.yso.fi/onto/yso/": lambda url: f"yso:{url.split('/')[-1]}",
+            "/isni.org/isni/": lambda url: f"isni:{url.split('/')[-1]}",
+            "/gazetteer.linz.govt.nz/place/": lambda url: f"linz:{url.split('/')[-1]}",
         }
         self.uris = set()
         self.links = []
