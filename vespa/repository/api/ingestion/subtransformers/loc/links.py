@@ -17,24 +17,12 @@ class LinksProcessor:
             "http://musicbrainz.org/",
         ]
         self.url_transformers = {
-            "http://dbpedia.org/resource/": {
-                "uri": lambda url: f"dbp:{url.split('/')[-1]}",
-            },
-            "http://sws.geonames.org/": {
-                "uri": lambda url: f"gn:{url.split('/')[-1]}",
-            },
-            "http://id.loc.gov/rwo/agents/": {
-                "uri": lambda url: f"loc:{url.split('/')[-1]}",
-            },
-            "http://vocab.getty.edu/tgn/": {
-                "uri": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}",
-            },
-            "http://www.viaf.org/viaf/": {
-                "uri": lambda url: f"viaf:{url.split('/')[-1]}",
-            },
-            "http://www.wikidata.org/entity/": {
-                "uri": lambda url: f"wd:{url.split('/')[-1]}",
-            },
+            "http://dbpedia.org/resource/": lambda url: f"dbp:{url.split('/')[-1]}",
+            "http://sws.geonames.org/": lambda url: f"gn:{url.split('/')[-1]}",
+            "http://id.loc.gov/rwo/agents/": lambda url: f"loc:{url.split('/')[-1]}",
+            "http://vocab.getty.edu/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}",
+            "http://www.viaf.org/viaf/": lambda url: f"viaf:{url.split('/')[-1]}",
+            "http://www.wikidata.org/entity/": lambda url: f"wd:{url.split('/')[-1]}",
         }
         self.uris = set()
         self.links = []
@@ -43,9 +31,9 @@ class LinksProcessor:
         if any(url.startswith(prefix) for prefix in self.ignore_urls):
             return
 
-        for prefix, transformers in self.url_transformers.items():
+        for prefix, transformer in self.url_transformers.items():
             if url.startswith(prefix):
-                self.uris.add(transformers["uri"](url))
+                self.uris.add(transformer(url))
                 break
         else:
             logger.warning(f"Unmatched URL: {url}")
