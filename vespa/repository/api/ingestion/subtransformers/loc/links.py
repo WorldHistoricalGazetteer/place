@@ -19,7 +19,14 @@ class LinksProcessor:
             "http://id.loc.gov/authorities/",
             "http://id.agrisemantics.org/gacs/", # Seems defunct as of 2025-01-28
             "http://data.ordnancesurvey.co.uk/id/", # Defunct as of 2025-01-28
-            "https://orcid.org/"  # These are not place URIs
+            "http://linked-web-apis.fit.cvut.cz/", # Defunct as of 2025-01-28
+            "https://orcid.org/",  # These are not place URIs
+            "https://data.cerl.org/thesaurus/",  # These are not place URIs
+            "http://thesaurus.cerl.org/",  # These are not place URIs
+            "http://vocab.getty.edu/ulan",
+            "http://www.omegawiki.org",  # Seems defunct as of 2025-01-28
+            "http://gadm.geovocab.org/",  # Seems defunct as of 2025-01-28
+            "http://data.cervantesvirtual.com/person/",  # These are not place URIs
         ]
         self.url_transformers = {
             "/pleiades.stoa.org/places/": lambda url: f"pleiades:{url.split('/')[-1]}",
@@ -28,6 +35,8 @@ class LinksProcessor:
             "geonames.org/": lambda url: f"gn:{split[-1]}" if (split := url.split('/'))[-1].isnumeric() else split[-2],
             "/id.loc.gov/rwo/agents/": lambda url: f"loc:{url.split('/')[-1]}",
             "/vocab.getty.edu/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}",
+            "/vocab.getty.edu//tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}", # Some malformed URLS present in data
+            "/vocab.getty.edu/page/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}", # Some malformed URLS present in data
             "/metadata.un.org/thesaurus/": lambda url: f"un:{url.split('/')[-1]}",
             "/vocabularies.unesco.org/thesaurus/": lambda url: f"unesco:{url.split('/')[-1]}",
             "viaf.org/viaf/": lambda url: f"viaf:{url.split('/')[-1]}",
@@ -54,6 +63,12 @@ class LinksProcessor:
             "logainm.ie/": lambda url: f"logainm:{url.split('/')[-1]}",
             "/emlo.bodleian.ox.ac.uk/profile/location/": lambda url: f"emlo:{url.split('/')[-1]}",
             "/metadata.ilo.org/thesaurus/": lambda url: f"ilo:{url.split('/')[-1]}",
+            "imperium.ahlfeldt.se/places/": lambda url: f"imperium:{url.split('/')[-1]}",
+            "linkedgeodata.org/triplify/": lambda url: f"lgd:{url.split('/')[-1]}",
+            "cantic.bnc.cat/registres/CUCId/": lambda url: f"cantic:{url.split('/')[-1]}",
+            "eionet.europa.eu/gemet/en/concept/": lambda url: f"gemet:{url.split('/')[-1]}",
+            "/permid.org/": lambda url: f"permid:{url.split('/')[-1]}",
+            "/www.mindat.org/": lambda url: f"mindat:{url.split('/')[-1]}",
         }
         self.uris = set()
         self.links = []
