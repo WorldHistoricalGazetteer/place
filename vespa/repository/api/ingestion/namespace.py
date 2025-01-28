@@ -17,7 +17,7 @@ namespaces = {
     },
     "bnf": {
         "url": lambda curie: f"http://catalogue.bnf.fr/ark:/12148/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?catalogue\.bnf\.fr/ark:/12148/(?P<id>.*)$",
+        "match": r"^https?://(www\.)?(ark|catalogue)\.bnf\.fr/ark:/12148/(?P<id>.*)$",
     },
     "cabi": {
         "url": lambda curie: f"http://id.cabi.org/cabt/{curie.split(':', 1)[-1]}",
@@ -29,7 +29,7 @@ namespaces = {
     },
     "dbp": {
         "url": lambda curie: f"http://dbpedia.org/resource/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?dbpedia\.org/resource/(?P<id>.*)$",
+        "match": r"^https?://(www\.)?dbpedia\.org/(resource|page)/(?P<id>.*)$",
     },
     "eionet": {
         "url": lambda curie: f"http://eionet.europa.eu/gemet/{curie.split(':', 1)[-1]}",
@@ -53,7 +53,7 @@ namespaces = {
     },
     "gn": {
         "url": lambda curie: f"http://sws.geonames.org/{curie.split(':', 1)[-1]}/",
-        "match": r"^https?://(www\.)?sws\.geonames\.org/(?P<id>\d+)(?:/.*)?$"
+        "match": r"^https?://(www\.|sws\.)?.geonames\.org/(?P<id>\d+)(?:/.*)?$"
     },
     "gnd": {
         "url": lambda curie: f"http://d-nb.info/gnd/{curie.split(':', 1)[-1]}",
@@ -141,11 +141,11 @@ namespaces = {
     },
     "viaf": {
         "url": lambda curie: f"http://viaf.org/viaf/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?viaf\.org/viaf/(?P<id>.*)$",
+        "match": r"^https?://(www\.)?viaf\.org(/viaf)?/(?P<id>.*)$",
     },
     "wd": {
         "url": lambda curie: f"http://wikidata.org/entity/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?www\.wikidata\.org/entity/(?P<id>.*)$",
+        "match": r"^https?://(www\.)?wikidata\.org/entity/(?P<id>.*)$",
     },
     "worldcat": {
         "url": lambda curie: f"http://id.oclc.org/worldcat/entity/{curie.split(':', 1)[-1]}",
