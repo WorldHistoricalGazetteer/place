@@ -15,11 +15,14 @@ class LinksProcessor:
         self.ignore_urls = [
             "http://viaf.org/viaf/sourceID/",
             "http://musicbrainz.org/",
+            "http://id.loc.gov/authorities/",
+            "http://id.agrisemantics.org/gacs/", # Seems defunct as of 2025-01-28
+            "http://data.ordnancesurvey.co.uk/id/", # Defunct as of 2025-01-28
         ]
         self.url_transformers = {
             "/dbpedia.org/": lambda url: f"dbp:{url.split('/')[-1]}",
             "/www.bbc.co.uk/things/": lambda url: f"bbc:{url.split('/')[-1]}",
-            "/sws.geonames.org/": lambda url: f"gn:{url.split('/')[-1]}",
+            "geonames.org/": lambda url: f"gn:{split[-1]}" if (split := url.split('/'))[-1].isnumeric() else split[-2],
             "/id.loc.gov/rwo/agents/": lambda url: f"loc:{url.split('/')[-1]}",
             "/vocab.getty.edu/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}",
             "/metadata.un.org/thesaurus/": lambda url: f"un:{url.split('/')[-1]}",
@@ -38,6 +41,12 @@ class LinksProcessor:
             "/www.yso.fi/onto/yso/": lambda url: f"yso:{url.split('/')[-1]}",
             "/isni.org/isni/": lambda url: f"isni:{url.split('/')[-1]}",
             "/gazetteer.linz.govt.nz/place/": lambda url: f"linz:{url.split('/')[-1]}",
+            "/catalogue.bnf.fr/ark:/12148/": lambda url: f"bnf:{url.split('/')[-1]}",
+            "/www.idref.fr/": lambda url: f"idref:{url.split('/')[-1]}",
+            "/lod.gesis.org/thesoz/": lambda url: f"gesis:{url.split('/')[-1]}",
+            "/yago-knowledge.org/resource/": lambda url: f"yago:{url.split('/')[-1]}",
+            "/datos.bne.es/resource/": lambda url: f"bne:{url.split('/')[-1]}",
+            "/edits.nationalmap.gov/apps/gaz-domestic/public/search/names/": lambda url: f"usgs:{url.split('/')[-1]}",
         }
         self.uris = set()
         self.links = []
