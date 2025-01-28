@@ -40,9 +40,9 @@ class LinksProcessor:
         self.links = []
 
     def _check_url(self, url: str) -> None:
-        for prefix in self.ignore_urls:
-            if url.startswith(prefix):
-                break
+        if any(url.startswith(prefix) for prefix in self.ignore_urls):
+            return
+
         for prefix, transformers in self.url_transformers.items():
             if url.startswith(prefix):
                 self.uris.add(transformers["uri"](url))
