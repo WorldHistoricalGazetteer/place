@@ -54,7 +54,7 @@ class LinksProcessor:
                         if isinstance(value, dict) and "@id" in value:
                             self._check_url(value["@id"])
 
-        logger.info(f"Processed URIs: {self.uris}")
+        # logger.info(f"Processed URIs: {self.uris}")
 
         # Generate a link for every unique combination of self.uris (no symmetrical links)
         seen_pairs = set()  # Track pairs to avoid duplicates
