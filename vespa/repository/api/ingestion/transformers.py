@@ -274,7 +274,7 @@ class DocTransformer:
                 ] if (wikidata := properties.get("wikidata")) else []
             )
         ],
-        "LOC": [  # TODO
+        "LOC": [
             lambda data: (
                 {
                 },

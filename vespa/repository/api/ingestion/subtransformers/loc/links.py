@@ -1,6 +1,8 @@
 import logging
 from typing import List, Dict, Any
 
+from ...namespace import namespaces
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,48 +30,6 @@ class LinksProcessor:
             "http://gadm.geovocab.org/",  # Seems defunct as of 2025-01-28
             "http://data.cervantesvirtual.com/person/",  # These are not place URIs
         ]
-        self.url_transformers = {
-            "/pleiades.stoa.org/places/": lambda url: f"pleiades:{url.split('/')[-1]}",
-            "/dbpedia.org/": lambda url: f"dbp:{url.split('/')[-1]}",
-            "/www.bbc.co.uk/things/": lambda url: f"bbc:{url.split('/')[-1]}",
-            "geonames.org/": lambda url: f"gn:{split[-1]}" if (split := url.split('/'))[-1].isnumeric() else split[-2],
-            "/id.loc.gov/rwo/agents/": lambda url: f"loc:{url.split('/')[-1]}",
-            "/vocab.getty.edu/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}",
-            "/vocab.getty.edu//tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}", # Some malformed URLS present in data
-            "/vocab.getty.edu/page/tgn/": lambda url: f"tgn:{url.split('/')[-1].removesuffix('-place')}", # Some malformed URLS present in data
-            "/metadata.un.org/thesaurus/": lambda url: f"un:{url.split('/')[-1]}",
-            "/vocabularies.unesco.org/thesaurus/": lambda url: f"unesco:{url.split('/')[-1]}",
-            "viaf.org/viaf/": lambda url: f"viaf:{url.split('/')[-1]}",
-            "wikidata.org/": lambda url: f"wd:{url.split('/')[-1]}",
-            "/id.worldcat.org/fast/": lambda url: f"fast:{url.split('/')[-1]}",
-            "zbw.eu/stw/descriptor/": lambda url: f"stw:{url.split('/')[-1]}",
-            "/id.nlm.nih.gov/mesh/": lambda url: f"mesh:{url.split('/')[-1]}",
-            "/aims.fao.org/aos/agrovoc/": lambda url: f"agrovoc:{url.split('/')[-1]}",
-            "/d-nb.info/gnd/": lambda url: f"gnd:{url.split('/')[-1]}",
-            "/eurovoc.europa.eu/": lambda url: f"eurovoc:{url.split('/')[-1]}",
-            "/id.cabi.org/cabt/": lambda url: f"cabi:{url.split('/')[-1]}",
-            "/id.ndl.go.jp/auth/ndlna/": lambda url: f"ndl:{url.split('/')[-1]}",
-            "/lod.nal.usda.gov/nalt/": lambda url: f"nalt:{url.split('/')[-1]}",
-            "/www.yso.fi/onto/yso/": lambda url: f"yso:{url.split('/')[-1]}",
-            "/isni.org/isni/": lambda url: f"isni:{url.split('/')[-1]}",
-            "/gazetteer.linz.govt.nz/place/": lambda url: f"linz:{url.split('/')[-1]}",
-            ".bnf.fr/ark:/12148/": lambda url: f"bnf:{url.split('/')[-1]}",
-            "/www.idref.fr/": lambda url: f"idref:{url.split('/')[-1]}",
-            "/lod.gesis.org/thesoz/": lambda url: f"gesis:{url.split('/')[-1]}",
-            "/yago-knowledge.org/resource/": lambda url: f"yago:{url.split('/')[-1]}",
-            "/datos.bne.es/resource/": lambda url: f"bne:{url.split('/')[-1]}",
-            "/edits.nationalmap.gov/apps/gaz-domestic/public/": lambda url: f"usgs:{url.split('/')[-1]}",
-            "/id.oclc.org/worldcat/entity/": lambda url: f"worldcat:{url.split('/')[-1]}",
-            "logainm.ie/": lambda url: f"logainm:{url.split('/')[-1]}",
-            "/emlo.bodleian.ox.ac.uk/profile/location/": lambda url: f"emlo:{url.split('/')[-1]}",
-            "/metadata.ilo.org/thesaurus/": lambda url: f"ilo:{url.split('/')[-1]}",
-            "imperium.ahlfeldt.se/places/": lambda url: f"imperium:{url.split('/')[-1]}",
-            "linkedgeodata.org/triplify/": lambda url: f"lgd:{url.split('/')[-1]}",
-            "cantic.bnc.cat/registres/CUCId/": lambda url: f"cantic:{url.split('/')[-1]}",
-            "eionet.europa.eu/gemet/en/concept/": lambda url: f"gemet:{url.split('/')[-1]}",
-            "/permid.org/": lambda url: f"permid:{url.split('/')[-1]}",
-            "/www.mindat.org/": lambda url: f"mindat:{url.split('/')[-1]}",
-        }
         self.uris = set()
         self.links = []
 
@@ -78,10 +38,9 @@ class LinksProcessor:
             # logger.info(f"Ignoring URL: {url}")
             return
 
-        for test_string, transformer in self.url_transformers.items():
-            if url.__contains__(test_string):
-                # logger.info(f"Matched URL: {url}")
-                self.uris.add(transformer(url))
+        for namespace, transformer in namespaces.items():
+            if url.__contains__(transformer["match"]):
+                self.uris.add(transformer["url"](url))
                 break
         else:
             logger.warning(f"Unmatched URL: {url}")

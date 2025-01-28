@@ -23,6 +23,9 @@ executor = ThreadPoolExecutor(max_workers=10)
 max_queue_size = 100  # Queue size for document update tasks
 update_queue = queue.Queue(maxsize=max_queue_size)
 
+# TODO DELETE THE FOLLOWING LINE
+link_count = 0
+
 
 def queue_worker():
     while True:
@@ -222,6 +225,8 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     # if links:
     #     logger.info(f"Links: {links}")
     # terminate
+    global link_count
+    link_count += len(links)
     return {"success": True}
 
     try:
@@ -392,6 +397,9 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                     process_variants()
 
             logger.info(f"Completed.")
+
+            global link_count
+            logger.info(f"Total links: {link_count}")
 
             # Final update to the task tracker
             task_tracker.update_task(task_id, {
