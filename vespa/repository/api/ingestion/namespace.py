@@ -44,8 +44,8 @@ namespaces = {
         "match": r"^https?://(www\.)?id\.worldcat\.org/fast/(?P<id>.*)$",
     },
     "gn": {
-        "url": lambda curie: f"http://sws.geonames.org/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?sws\.geonames\.org/(?P<id>.*)$",
+        "url": lambda curie: f"http://sws.geonames.org/{curie.split(':', 1)[-1]}/",
+        "match": r"^https?://(www\.)?sws\.geonames\.org/(?P<id>.*)(?:/)$",
     },
     "gnd": {
         "url": lambda curie: f"http://d-nb.info/gnd/{curie.split(':', 1)[-1]}",
@@ -79,6 +79,10 @@ namespaces = {
         "url": lambda curie: f"http://id.loc.gov/rwo/agents/{curie.split(':', 1)[-1]}",
         "match": r"^https?://(www\.)?id\.loc\.gov/rwo/agents/(?P<id>.*)$",
     },
+    "linz": {
+        "url": lambda curie: f"http://gazetteer.linz.govt.nz/place/{curie.split(':', 1)[-1]}",
+        "match": r"^https?://(www\.)?gazetteer\.linz\.govt\.nz/place//(?P<id>.*)$",
+    },
     "mindat": {
         "url": lambda curie: f"http://mindat.org/{curie.split(':', 1)[-1]}",
         "match": r"^https?://(www\.)?www\.mindat\.org/(?P<id>.*)$",
@@ -109,7 +113,7 @@ namespaces = {
     },
     "tgn": {
         "url": lambda curie: f"http://vocab.getty.edu/tgn/{curie.split(':', 1)[-1].removesuffix('-place')}",
-        "match": r"^https?://(www\.)?vocab\.getty\.edu/(.*/)?tgn/(?P<id>.*)$",
+        "match": r"^https?://(www\.)?vocab\.getty\.edu/(.*/)?tgn/(?P<id>.*)(?:-place)?$",
     },
     "viaf": {
         "url": lambda curie: f"http://viaf.org/viaf/{curie.split(':', 1)[-1]}",
