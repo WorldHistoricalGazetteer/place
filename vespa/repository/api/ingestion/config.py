@@ -142,10 +142,11 @@ REMOTE_DATASET_CONFIGS = [
                     lambda record: any(
                         "madsrdf:GeographicElement" in graph_item.get("@type", [])
                         for graph_item in record.get("@graph", [])
-                    )
-                    and any(
-                        "madsrdf:hasCloseExternalAuthority" in graph_item or
-                        "madsrdf:hasExactExternalAuthority" in graph_item
+                    ) and any(
+                        ("madsrdf:hasCloseExternalAuthority" in graph_item or
+                         ("madsrdf:hasExactExternalAuthority" in graph_item and
+                         # Exclude VIAF links which are typically invalid, and essentially the same as the LOC ID
+                          not graph_item.get("@id", "").startswith("http://viaf.org/")))
                         for graph_item in record.get("@graph", [])
                     )
                 ]
