@@ -23,9 +23,6 @@ executor = ThreadPoolExecutor(max_workers=10)
 max_queue_size = 100  # Queue size for document update tasks
 update_queue = queue.Queue(maxsize=max_queue_size)
 
-types = {}  # TODO: REMOVE
-doc_count = 0  # TODO: REMOVE
-
 
 def queue_worker():
     while True:
@@ -220,18 +217,9 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         "transformed": 1,
     })
 
-    # logger.info(f"Transformed document {transformed_document}")
-    # logger.info(f"Toponyms: {toponyms}")
-    # logger.info(f"Links: {links}")
-    global doc_count
-    doc_count += 1
-    if doc_count % 5000 == 0:
-        logger.info(f"{doc_count:,} documents processed")
-    global types
-    for t in transformed_document.get("fields", {}).get("types", []):
-        if t:
-            types[t] = types.get(t, 0) + 1
-    return {"success": True}
+    logger.info(f"Transformed document {transformed_document}")
+    logger.info(f"Toponyms: {toponyms}")
+    logger.info(f"Links: {links}")
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -392,16 +380,6 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
                     process_variants()
 
             logger.info(f"Completed.")
-
-            global doc_count
-            logger.info(f"Total documents processed: {doc_count}")
-            global types
-            # types = {
-            #     k: {"count": v, "AAT": None, "GeoNames": None}
-            #     for k, v in sorted(types.items(), key=lambda item: str(item[0]))
-            # }
-            types = dict(sorted(types.items(), key=lambda item: str(item[0])))
-            logger.info(f"Type counts: {types}")
 
             # Final update to the task tracker
             task_tracker.update_task(task_id, {
