@@ -217,15 +217,15 @@ async def process_document(document, dataset_config, transformer_index, sync_app
         "transformed": 1,
     })
 
-    logger.info(f"Transformed document {transformed_document}")
-    logger.info(f"Toponyms: {toponyms}")
-    if links:
-        logger.info(f"Links: {links}")
+    # logger.info(f"Transformed document {transformed_document}")
+    # logger.info(f"Toponyms: {toponyms}")
+    # if links:
+    #     logger.info(f"Links: {links}")
     # terminate
     # return {"success": True}
 
     try:
-        if links and not transformed_document and not toponyms:
+        if not transformed_document and not toponyms:
             # Set dummy response
             response = {"success": True}
             success = True
