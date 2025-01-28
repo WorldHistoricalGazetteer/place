@@ -42,7 +42,8 @@ class LinksProcessor:
         for namespace, transformer in namespaces.items():
             match = re.search(transformer["match"], url)
             if match:
-                logger.info(f"{url} -> {namespace}:{match.group('id')}")
+                if not namespace == "loc":
+                    logger.info(f"{url} -> {namespace}:{match.group('id')}")
                 self.uris.add(f"{namespace}:{match.group('id')}")
                 break
         else:
