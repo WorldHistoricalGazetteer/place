@@ -225,22 +225,27 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     # return {"success": True}
 
     try:
-        response = await asyncio.get_event_loop().run_in_executor(
-            executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'],
-            transformed_document, task_id, count, update_place
-        ) or {}
-        success = response.get("success", False)
+        if links and not transformed_document and not toponyms:
+            # Set dummy response
+            response = {"success": True}
+            success = True
+        else:
+            response = await asyncio.get_event_loop().run_in_executor(
+                executor, feed_document, sync_app, dataset_config['namespace'], dataset_config['vespa_schema'],
+                transformed_document, task_id, count, update_place
+            ) or {}
+            success = response.get("success", False)
 
-        if success and toponyms:
-            toponym_responses = await asyncio.gather(*[
-                asyncio.to_thread(feed_document, sync_app, dataset_config['namespace'], 'toponym', toponym, task_id,
-                                  count, False)
-                for toponym in toponyms
-            ])
+            if success and toponyms:
+                toponym_responses = await asyncio.gather(*[
+                    asyncio.to_thread(feed_document, sync_app, dataset_config['namespace'], 'toponym', toponym, task_id,
+                                      count, False)
+                    for toponym in toponyms
+                ])
 
-            # Check if any toponym feed failed
-            if any(not r.get("success") for r in toponym_responses):
-                success = False
+                # Check if any toponym feed failed
+                if any(not r.get("success") for r in toponym_responses):
+                    success = False
 
         if success and links:
             link_responses = await asyncio.gather(*[
