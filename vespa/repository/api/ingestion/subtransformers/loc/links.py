@@ -53,10 +53,11 @@ class LinksProcessor:
     def process(self) -> List[Dict[str, Any]]:
 
         # Populate self.uris using self.linkfacets from self.graph
+        logger.info(f"Processing graph: {self.graph}")
         for item in self.graph:
             for facet in self.linkfacets:
                 # Check if the facet exists in the item and extract the URIs
-                if facet in item:
+                if f"madsrdf:{facet}" in item:
                     logger.info(f"Processing facet: {facet}")
                     facet_value = item[facet]
                     if isinstance(facet_value, dict):
