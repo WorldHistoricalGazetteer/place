@@ -55,21 +55,24 @@ class NamesProcessor:
 
         ipa = next((self.properties[f"{type}{phonetic}"] for phonetic in self.phonetics if f"{type}{phonetic}" in self.properties), None)
 
-        self.output['names'].append({
-            'toponym_id': (toponym_id := get_uuid()),
-            **years,
-            **({'is_preferred': is_preferred} if (is_preferred := name_type == 'name') else {}),
-            **({'ipa': ipa} if ipa else {}),
-        })
-        self.output['toponyms'].append({
-            'document_id': toponym_id,
-            'fields': {
-                'name_strict': name,
-                'name': name,
-                'places': [self.document_id],
-                **(parse_bcp47_fields(isolanguage) if isolanguage else {}),
-            }
-        })
+        # OSM names should not be multiple values, but are occasionally ";"-separated
+        for name in name.split(';'):
+            name = name.strip()
+            self.output['names'].append({
+                'toponym_id': (toponym_id := get_uuid()),
+                **years,
+                **({'is_preferred': is_preferred} if (is_preferred := name_type == 'name') else {}),
+                **({'ipa': ipa} if ipa else {}),
+            })
+            self.output['toponyms'].append({
+                'document_id': toponym_id,
+                'fields': {
+                    'name_strict': name,
+                    'name': name,
+                    'places': [self.document_id],
+                    **(parse_bcp47_fields(isolanguage) if isolanguage else {}),
+                }
+            })
 
     def process(self) -> dict:
 

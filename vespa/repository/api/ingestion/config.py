@@ -108,7 +108,7 @@ REMOTE_DATASET_CONFIGS = [
             },
         ],
     },
-    {  # 2024: <22m named places with multiple toponyms (file includes some unnamed features)
+    {  # 2024: >14.8m named places with multiple toponyms (file includes some unnamed features)
         'dataset_name': 'OSM',
         'namespace': 'osm',
         'vespa_schema': 'npr',
