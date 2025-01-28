@@ -23,9 +23,6 @@ executor = ThreadPoolExecutor(max_workers=10)
 max_queue_size = 100  # Queue size for document update tasks
 update_queue = queue.Queue(maxsize=max_queue_size)
 
-# TODO DELETE THE FOLLOWING LINE
-link_count = 0
-
 
 def queue_worker():
     while True:
@@ -127,7 +124,7 @@ def feed_document(sync_app, namespace, schema, transformed_document, task_id, co
         # Handle triples differently
         task = (sync_app, namespace, None, None, transformed_document, task_id, count, task_tracker)
         update_queue.put(task)
-        return {"success": True} # Pending processing in the worker thread
+        return {"success": True}  # Pending processing in the worker thread
 
     document_id = transformed_document.get("document_id")
     if not document_id:
@@ -225,9 +222,7 @@ async def process_document(document, dataset_config, transformer_index, sync_app
     # if links:
     #     logger.info(f"Links: {links}")
     # terminate
-    global link_count
-    link_count += len(links)
-    return {"success": True}
+    # return {"success": True}
 
     try:
         response = await asyncio.get_event_loop().run_in_executor(
@@ -343,7 +338,8 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
     return results  # Return aggregated results
 
 
-async def background_ingestion(dataset_name: str, task_id: str, limit: int = None, delete_only: bool = False, no_delete: bool = False) -> None:
+async def background_ingestion(dataset_name: str, task_id: str, limit: int = None, delete_only: bool = False,
+                               no_delete: bool = False) -> None:
     """
     The main logic of dataset ingestion that will run in the background.
     """
@@ -398,9 +394,6 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
 
             logger.info(f"Completed.")
 
-            global link_count
-            logger.info(f"Total links: {link_count}")
-
             # Final update to the task tracker
             task_tracker.update_task(task_id, {
                 "status": "completed",
@@ -412,7 +405,8 @@ async def background_ingestion(dataset_name: str, task_id: str, limit: int = Non
         task_tracker.update_task(task_id, {"status": "failed", "error": str(e)})
 
 
-async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None, delete_only=False, no_delete=False) -> Task:
+async def start_ingestion_in_background(dataset_name: str, task_id: str, limit: int = None, delete_only=False,
+                                        no_delete=False) -> Task:
     """
     Starts the ingestion in a background task.
 

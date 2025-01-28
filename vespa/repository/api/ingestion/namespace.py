@@ -145,7 +145,8 @@ namespaces = {
     },
     "wd": {
         "url": lambda curie: f"http://wikidata.org/entity/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?wikidata\.org/(entit*y|wiki)/(?P<id>.*)$",
+        # Allow for both entity and wiki paths, with misspelled "entity" and missing trailing slash (in LOC data)
+        "match": r"^https?://(www\.)?wikidata\.org/(entit*y|wiki)(/)?(?P<id>Q.*)$",
     },
     "worldcat": {
         "url": lambda curie: f"http://id.oclc.org/worldcat/entity/{curie.split(':', 1)[-1]}",
