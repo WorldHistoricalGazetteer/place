@@ -143,11 +143,11 @@ REMOTE_DATASET_CONFIGS = [
                         "madsrdf:GeographicElement" in graph_item.get("@type", [])
                         for graph_item in record.get("@graph", [])
                     )
-                    # and any(
-                    #     "http://www.loc.gov/mads/rdf/v1#hasCloseExternalAuthority" in graph_item or
-                    #     "http://www.loc.gov/mads/rdf/v1#hasExactExternalAuthority" in graph_item
-                    #     for graph_item in record.get("@graph", [])
-                    # )
+                    and any(
+                        "madsrdf:hasCloseExternalAuthority" in graph_item or
+                        "madsrdf:hasExactExternalAuthority" in graph_item
+                        for graph_item in record.get("@graph", [])
+                    )
                 ]
             }
         ],
