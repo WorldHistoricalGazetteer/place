@@ -298,26 +298,20 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
 
     async for document in stream:
 
-        count += 1
-        if count < 3:
-            logger.info(f"Document {count}: {document}")
-            # Get next document
-            continue
-        else: # Terminate
-            break
-
-
-
-
-
-
-
-
         # Apply filters (if any)
         if filters and not any(f(document) for f in filters):
             # skipcount += 1
             # logger.info(f"Skipping document {skipcount}: {document['predicate']}")
             continue
+
+        ## Examine the first 3 documents and then terminate
+        if count < 3:
+            logger.info(f"Document {count}: {document}")
+            count += 1
+            # Get next document
+            continue
+        else: # Terminate
+            break
 
         current_batch.append(document)
         count += 1
