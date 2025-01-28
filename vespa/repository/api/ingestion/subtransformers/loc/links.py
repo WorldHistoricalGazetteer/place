@@ -29,12 +29,12 @@ class LinksProcessor:
 
     def _check_url(self, url: str) -> None:
         if any(url.startswith(prefix) for prefix in self.ignore_urls):
-            logger.info(f"Ignoring URL: {url}")
+            # logger.info(f"Ignoring URL: {url}")
             return
 
         for prefix, transformer in self.url_transformers.items():
             if url.startswith(prefix):
-                logger.info(f"Matched URL: {url}")
+                # logger.info(f"Matched URL: {url}")
                 self.uris.add(transformer(url))
                 break
         else:
