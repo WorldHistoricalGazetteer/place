@@ -61,7 +61,7 @@ class NamesProcessor:
             self.output['names'].append({
                 'toponym_id': (toponym_id := get_uuid()),
                 **years,
-                **({'is_preferred': is_preferred} if (is_preferred := name_type == 'name') else {}),
+                **({'is_preferred': 1} if name_type == 'name' else {}),
                 **({'ipa': ipa} if ipa else {}),
             })
             self.output['toponyms'].append({
