@@ -57,9 +57,9 @@ class LinksProcessor:
         for item in self.graph:
             for facet in self.linkfacets:
                 # Check if the facet exists in the item and extract the URIs
-                if f"madsrdf:{facet}" in item:
-                    logger.info(f"Processing facet: {facet}")
-                    facet_value = item[facet]
+                if (mads_facet := f"madsrdf:{facet}") in item:
+                    logger.info(f"Processing facet: {mads_facet}")
+                    facet_value = item[mads_facet]
                     if isinstance(facet_value, dict):
                         facet_value = [facet_value]
                     for value in facet_value:
