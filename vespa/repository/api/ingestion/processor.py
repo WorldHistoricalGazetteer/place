@@ -305,7 +305,7 @@ async def process_documents(stream, dataset_config, transformer_index, sync_app,
             continue
 
         ## Examine the first 3 documents and then terminate
-        if count < 3:
+        if count < 4:
             logger.info(f"Document {count}: {document}")
             count += 1
             # Get next document

@@ -128,7 +128,7 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
-    {
+    {  # Not useful as source of places or toponyms, but can provide links
         'dataset_name': 'LOC',
         'namespace': 'loc',
         'vespa_schema': 'place',
@@ -141,6 +141,10 @@ REMOTE_DATASET_CONFIGS = [
                 'filters': [
                     lambda record: any(
                         "@type" in graph_item and "madsrdf:GeographicElement" in graph_item["@type"]
+                        for graph_item in record.get("@graph", [])
+                    ) and any(
+                        "http://www.loc.gov/mads/rdf/v1#hasCloseExternalAuthority" in graph_item or
+                        "http://www.loc.gov/mads/rdf/v1#hasExactExternalAuthority" in graph_item
                         for graph_item in record.get("@graph", [])
                     )
                 ]
