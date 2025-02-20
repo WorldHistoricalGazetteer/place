@@ -7,6 +7,12 @@
 schema place {
     document place {
 
+        field is_staging type bool {
+            # A boolean flag indicating whether the place is not yet fully accessioned.
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
         field lpf_feature type string {
             # The full JSON of the LPF Feature.
             indexing: summary
@@ -42,9 +48,6 @@ schema place {
                 # 0 or 1: Indicates if this toponym is the preferred one for the place.
                 # Boolean type is not supported for indexing in Vespa structs.
             }
-            field ipa type string {
-                # An International Phonetic Alphabet transcription of the toponym, as pronounced locally.
-            }
         }
 
         field names type array<name> {
@@ -65,9 +68,6 @@ schema place {
             struct-field is_preferred {
                 indexing: attribute | summary
                 attribute: fast-search
-            }
-            struct-field ipa {
-                indexing: summary
             }
         }
 
@@ -155,6 +155,12 @@ schema place {
           # A single geo-position representing the approximate centre of the place.
           # Calculated using Shapely's representative_point method, and guaranteed to be within the place's combined locations.
           indexing: attribute | summary
+        }
+
+        field cartesian type tensor<float>(x[3]) {
+            # 3D Cartesian coordinates of the representative point.
+            # Used for fast ANN retrieval.
+            indexing: attribute
         }
         
         field representative_elevation type int {

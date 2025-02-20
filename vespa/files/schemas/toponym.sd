@@ -20,6 +20,12 @@ schema toponym {
             attribute: fast-search
         }
 
+        field ipa type string {
+            # An International Phonetic Alphabet transcription of the toponym, as pronounced locally.
+            indexing: attribute | summary
+            match { exact }
+        }
+
         field places type array<string> {
             # List of unique place IDs this toponym is associated with.
             # Allows reverse lookup of places associated with a toponym.

@@ -86,6 +86,8 @@ def update_existing_place(task):
 
 
 def feed_link(sync_app, namespace, schema, link, task_id, count):
+    # TODO: Check if the link already exists
+    # TODO: If the predicate is symmetrical, also check if the reverse link exists
     try:
         response = sync_app.feed_existing(
             namespace=namespace,  # source identifier

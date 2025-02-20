@@ -125,7 +125,8 @@ namespaces = {
     },
     "tgn": {
         "url": lambda curie: f"http://vocab.getty.edu/tgn/{curie.split(':', 1)[-1]}",
-        "match": r"^https?://(www\.)?vocab\.getty\.edu/(.*/)?tgn/(?P<id>[^-]+)(?:-place)?$",
+        # Allow for both place and non-place URIs, and for misspellings of "place" (in LOC data)
+        "match": r"^https?://(www\.)?vocab\.getty\.edu/(.*/)?tgn/(?P<id>[^-]+)(?:-pla*ce)?$",
     },
     "un": {
         "url": lambda curie: f"http://metadata.un.org/thesaurus/{curie.split(':', 1)[-1]}",
