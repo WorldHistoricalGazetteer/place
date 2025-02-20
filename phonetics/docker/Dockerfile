@@ -1,0 +1,51 @@
+FROM python:3.11-slim-bullseye
+
+LABEL maintainer="WHC @ Pitt"
+
+# Set environment variables to reduce build noise
+ENV DEBIAN_FRONTEND=noninteractive \
+    EPITRAN_SHARE=/usr/local/share/epitran
+
+# Combine system package installation, Flite and CEDict installation, and cleanup into a single layer
+RUN set -eux; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git curl unzip build-essential && \
+    # Install Flite (required for English G2P in Epitran - see https://github.com/dmort27/epitran?tab=readme-ov-file#installation-of-flite-for-english-g2p)
+    # Install Flite (required for English G2P in Epitran)
+    cd /tmp && git clone https://github.com/festvox/flite.git && \
+    cd flite && ./configure && make -j$(nproc) && make install && \
+    cd testsuite && make lex_lookup && cp lex_lookup /usr/local/bin && \
+    # Download the CC-CEDict dictionary for Chinese G2P in Epitran
+    mkdir -p $EPITRAN_SHARE && \
+    curl -L -o $EPITRAN_SHARE/cedict.zip https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.zip && \
+    unzip $EPITRAN_SHARE/cedict.zip -d $EPITRAN_SHARE && \
+    rm $EPITRAN_SHARE/cedict.zip && \
+    # Cleanup
+    apt-get purge -y --auto-remove && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+# Copy the other dictionaries into the Epitran share directory \
+COPY iso639.py $EPITRAN_SHARE/iso639.py
+COPY epitran_languages.py $EPITRAN_SHARE/epitran_languages.py
+
+WORKDIR /app
+
+# Install dependencies and set correct permissions
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
+# Expose the HTTP server port
+EXPOSE 8000
+
+# Copy the main server script (may be updated from git repository by an initContainer)
+COPY server.py /app/
+
+# Start the phonetics server
+CMD ["python", "/app/server.py"]
+
+## In the project root, build the Docker image:
+#sudo systemctl restart docker
+#docker login
+#docker build -t worldhistoricalgazetteer/phonetics:0.0.1 ./phonetics/docker
+#docker push worldhistoricalgazetteer/phonetics:0.0.1

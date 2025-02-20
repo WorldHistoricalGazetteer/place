@@ -23,9 +23,7 @@ RUN set -eux; \
         git \
         unzip \
         tar \
-        aria2 \
-        libsndfile1-dev \
-        libsndfile1 && \
+        aria2 && \
     # Install vespa-cli
     mkdir -p /usr/local/vespa && \
     curl -L -o /usr/local/vespa/vespa-cli.tar.gz https://github.com/vespa-engine/vespa/releases/download/v8.460.16/vespa-cli_8.460.16_linux_amd64.tar.gz && \
@@ -34,26 +32,9 @@ RUN set -eux; \
     rm /usr/local/vespa/vespa-cli.tar.gz && \
     chmod +x /usr/local/vespa/vespa-cli && \
     ln -s /usr/local/vespa/vespa-cli /usr/local/bin/vespa-cli && \
-    # Install Flite (required for English G2P in Epitran - see https://github.com/dmort27/epitran?tab=readme-ov-file#installation-of-flite-for-english-g2p)
-    # Clone Flite repository
-    cd /tmp && \
-    git clone https://github.com/festvox/flite.git && \
-    cd flite && \
-    # Build Flite from source
-    ./configure && \
-    make && \
-    make install && \
-    # Run tests and set up lex_lookup
-    cd testsuite && \
-    make lex_lookup && \
-    sudo cp lex_lookup /usr/local/bin && \
-    # Download the CC-CEDict dictionary for Chinese G2P in Epitran
-    mkdir -p /usr/local/share/epitran && \
-    curl -L -o /usr/local/share/epitran/cedict.zip https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.zip && \
-    unzip /usr/local/share/epitran/cedict.zip -d /usr/local/share/epitran && \
     # Cleanup
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
 
@@ -78,5 +59,5 @@ CMD ["sh", "-c", "fastapi run api/main.py --port ${PORT}"]
 ## In the project root, build the Docker image:
 #sudo systemctl restart docker
 #docker login
-#docker build -t worldhistoricalgazetteer/vespa-api:0.0.12 ./vespa/docker
-#docker push worldhistoricalgazetteer/vespa-api:0.0.12
+#docker build -t worldhistoricalgazetteer/vespa-api:0.0.11 ./vespa/docker
+#docker push worldhistoricalgazetteer/vespa-api:0.0.11
