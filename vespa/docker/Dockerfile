@@ -23,7 +23,9 @@ RUN set -eux; \
         git \
         unzip \
         tar \
-        aria2 && \
+        aria2 \
+        libsndfile1-dev \
+        libsndfile1 && \
     # Install vespa-cli
     mkdir -p /usr/local/vespa && \
     curl -L -o /usr/local/vespa/vespa-cli.tar.gz https://github.com/vespa-engine/vespa/releases/download/v8.460.16/vespa-cli_8.460.16_linux_amd64.tar.gz && \
@@ -32,6 +34,18 @@ RUN set -eux; \
     rm /usr/local/vespa/vespa-cli.tar.gz && \
     chmod +x /usr/local/vespa/vespa-cli && \
     ln -s /usr/local/vespa/vespa-cli /usr/local/bin/vespa-cli && \
+    # Install Flite (required for English G2P in Epitran - see https://github.com/dmort27/epitran?tab=readme-ov-file#installation-of-flite-for-english-g2p)
+    cd /tmp && \
+    wget https://github.com/festvox/flite/releases/download/v2.1/flite-2.1-release.tar.bz2 && \
+    tar -xjf flite-2.1-release.tar.bz2 && \
+    cd flite-2.1-release && \
+    ./configure && \
+    make && \
+    make install && \
+    # Download the CC-CEDict dictionary for Chinese G2P in Epitran
+    curl -L -o /usr/local/share/epitran/cedict.zip https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.zip && \
+    mkdir -p /usr/local/share/epitran && \
+    unzip /usr/local/share/epitran/cedict.zip -d /usr/local/share/epitran && \
     # Cleanup
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
     rm -rf /var/lib/apt/lists/*
