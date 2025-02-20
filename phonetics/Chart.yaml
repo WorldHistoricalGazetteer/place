@@ -1,10 +1,6 @@
 apiVersion: v2
-name: vespa
-description: A Helm chart for deploying Epitran on Kubernetes
+name: epitran
+description: A Helm chart for deploying an Epitran phonetics processing API
 type: application
-
-# This is the chart version.
 version: 0.1.0
-
-# This is the version number of the application being deployed.
-appVersion: "1.16.0"
+appVersion: "1.0.0"

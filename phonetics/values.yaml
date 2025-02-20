@@ -1,1 +1,32 @@
 namespace: epitran
+
+replicaCount: 1
+
+image:
+  repository: worldhistoricalgazetteer/phonetics
+  tag: 0.0.1
+  pullPolicy: IfNotPresent
+
+git:
+  url: "https://github.com/WorldHistoricalGazetteer/place.git"
+  sourceFolder: "phonetics/docker/"
+  sourceFile: "server.py"
+
+service:
+  type: ClusterIP
+  port: 8009
+
+containerPort: 8000
+
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  allowPrivilegeEscalation: true
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

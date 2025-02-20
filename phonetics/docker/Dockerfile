@@ -38,7 +38,7 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 # Expose the HTTP server port
 EXPOSE 8000
 
-# Copy the main server script (may be updated from git repository by an initContainer)
+# Copy the main server script (may be updated from git repository at runtime)
 COPY server.py /app/
 
 # Start the phonetics server

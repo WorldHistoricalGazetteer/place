@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phonetics
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.namespace }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.namespace }}
+    spec:
+      containers:
+      - name: {{ .Values.namespace }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+            # Exit immediately if a command exits with a non-zero status
+            set -e
+
+            # Clone only the required file
+            mkdir -p /app/tmp-repo
+            cd /app/tmp-repo
+            git init
+            git remote add origin {{ .Values.git.url }}
+            git config core.sparseCheckout true
+            echo "{{ .Values.git.sourceFolder }}/{{ .Values.git.sourceFile }}" > .git/info/sparse-checkout
+            git pull origin main
+
+            # Move the file and clean up
+            mv "{{ .Values.git.sourceFolder }}/{{ .Values.git.sourceFile }}" /app/
+            rm -rf /app/tmp-repo
+            cd /app
+
+            # Run the script
+            exec python "/app/{{ .Values.git.sourceFile }}"
+        ports:
+        - containerPort: {{ .Values.containerPort }}
+        securityContext: {{- toYaml .Values.securityContext | nindent 10 }}
+        resources: {{- toYaml .Values.resources | nindent 10 }}
