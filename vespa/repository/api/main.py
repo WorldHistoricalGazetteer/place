@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Path
 from fastapi.responses import JSONResponse
 
 from .gis.intersections import GeometryIntersect
-from .ingestion.processor import start_ingestion_in_background
+from .ingestion.processor import start_ingestion_in_background, IngestionManager
 from .search.processor import visit
 from .system.status import get_vespa_status  # Import the function from the status module
 from .utils import get_uuid, task_tracker
@@ -133,8 +133,10 @@ async def ingest_dataset(
     """
     task_id = get_uuid()  # Generate a unique task ID
 
+    ingestion_manager = IngestionManager(dataset_name, task_id, limit, delete_only, no_delete)
+
     # Start the ingestion in the background
-    background_tasks.add_task(start_ingestion_in_background, dataset_name, task_id, limit, delete_only, no_delete)
+    background_tasks.add_task(ingestion_manager.ingest_data)
 
     return JSONResponse(
         status_code=202,
