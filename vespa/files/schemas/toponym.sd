@@ -36,7 +36,8 @@ schema toponym {
         ########### BCP 47 Linguistic Fields ###########
 
         field bcp47_language type string {
-            # Language (required): ISO 639-1/639-3 codes, e.g., "en", "zh".
+            # Language (required): Strictly 3-character ISO 639-3 codes, e.g., "eng", "zho".
+            # TODO: This will generally require transformation ISO 639-2 on insertion of phonetic embedding from the phonetics service.
             indexing: attribute | summary
             match { exact }
         }
