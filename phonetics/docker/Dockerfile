@@ -4,7 +4,7 @@ LABEL maintainer="WHC @ Pitt"
 
 # Set environment variables to reduce build noise
 ENV DEBIAN_FRONTEND=noninteractive \
-    EPITRAN_SHARE=/usr/local/share/epitran
+    PYTHONPATH=/usr/local/share/epitran
 
 # Combine system package installation, Flite and CEDict installation, and cleanup into a single layer
 RUN set -eux; \
@@ -17,17 +17,17 @@ RUN set -eux; \
     cd flite && ./configure && make -j$(nproc) && make install && \
     cd testsuite && make lex_lookup && cp lex_lookup /usr/local/bin && \
     # Download the CC-CEDict dictionary for Chinese G2P in Epitran
-    mkdir -p $EPITRAN_SHARE && \
-    curl -L -o $EPITRAN_SHARE/cedict.zip https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.zip && \
-    unzip $EPITRAN_SHARE/cedict.zip -d $EPITRAN_SHARE && \
-    rm $EPITRAN_SHARE/cedict.zip && \
+    mkdir -p $PYTHONPATH && \
+    curl -L -o $PYTHONPATH/cedict.zip https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.zip && \
+    unzip $PYTHONPATH/cedict.zip -d $PYTHONPATH && \
+    rm $PYTHONPATH/cedict.zip && \
     # Cleanup
     apt-get purge -y --auto-remove && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 # Copy the other dictionaries into the Epitran share directory \
-COPY iso639.py $EPITRAN_SHARE/iso639.py
-COPY epitran_languages.py $EPITRAN_SHARE/epitran_languages.py
+COPY iso639.py $PYTHONPATH/iso639.py
+COPY epitran_languages.py $PYTHONPATH/epitran_languages.py
 
 WORKDIR /app
 

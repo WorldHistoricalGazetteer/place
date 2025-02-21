@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import re
-import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -13,9 +12,8 @@ import epitran
 import epitran.vector
 from vespa.application import Vespa, VespaAsync, VespaSync
 
-sys.path.append('/usr/local/share/epitran')  # This is where dictionaries are stored by the Dockerfile
-from iso639 import ISO_639_1_TO_3, ISO_639_3
 from epitran_languages import EPITRAN_LANGS
+from iso639 import ISO_639_1_TO_3, ISO_639_3
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,17 +40,41 @@ class PhoneticsProcessor:
     def __init__(self):
         self.epitran_instances = {}
         self.vector_instances = {}
+        self.instance_timers = {}
         self.task_queue = PriorityQueue()
         self.results = {}
         self.task_id_counter = count(1)
         self.executor = ThreadPoolExecutor(max_workers=5)
         self.vespa_feed_async_app = VespaAsync(Vespa(url=vespa_host_mapping["feed"]))
+        self.lock = threading.Lock()
 
-    def init_epitran_instances(self):
-        """Initialise Epitran instances for all supported languages."""
-        for lang_script in EPITRAN_LANGS.keys():
-            self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
-            self.vector_instances[lang_script] = epitran.vector.VectorsWithIPASpace(lang_script, [lang_script])
+    def _prepare_epitran_instance(self, lang_script):
+        """Create an Epitran instance if not already created."""
+        with self.lock:
+            if lang_script not in self.epitran_instances:
+                self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
+                if lang_script in EPITRAN_LANGS.keys():
+                    self.vector_instances[lang_script] = epitran.vector.VectorsWithIPASpace(lang_script, [lang_script])
+
+            # If there's an existing timer, cancel it
+            if lang_script in self.instance_timers:
+                self.instance_timers[lang_script].cancel()
+
+            # Set a new timer to remove the instance after 1 hour
+            timer = threading.Timer(3600, self._remove_epitran_instance, [lang_script])
+            timer.start()
+
+            # Store the new timer reference
+            self.instance_timers[lang_script] = timer
+
+    def _remove_epitran_instance(self, lang_script):
+        """Remove the Epitran instance after 1 hour."""
+        if lang_script in self.epitran_instances:
+            del self.epitran_instances[lang_script]
+            if lang_script in EPITRAN_LANGS.keys():
+                del self.vector_instances[lang_script]
+            del self.instance_timers[lang_script]
+            logger.info(f"Removed Epitran instance for {lang_script} after 1 hour.")
 
     def process_toponym(self, toponym, lang_script, priority, toponym_id=None):
         """Generate phonetic representations using Epitran."""
@@ -74,21 +96,18 @@ class PhoneticsProcessor:
         _, task_id, toponym, lang_script, event, toponym_id = self.task_queue.get()
         try:
 
-            # Initialise Epitran instance for the given language if not included in default set or previously used
-            if lang_script not in self.epitran_instances:
-                self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
+            # Initialise Epitran instances (unless already initialised and not expired)
+            self._prepare_epitran_instance(lang_script)
 
             # Process the toponym
-            segs = (
-                self.vector_instances[lang_script].word_to_segs(toponym)
-                if lang_script in self.vector_instances
-                else None
-            )
             fields = {
                 "toponym": toponym,
                 "ipa": self.epitran_instances[lang_script].transliterate(toponym),
                 "tuples": self.epitran_instances[lang_script].word_to_tuples(toponym),
-                **({"segs": segs} if segs else {}),
+                **({"segs": segs} if
+                   (segs := self.vector_instances[lang_script].word_to_segs(
+                       toponym) if lang_script in EPITRAN_LANGS.keys() else None)
+                   is not None else {}),
                 "lang": lang_script,
             }
 
@@ -128,39 +147,45 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
-        """Handle GET requests to fetch deferred results."""
-        try:
-            # Parse task_id from the URL path
-            task_id = int(self.path.strip("/"))
+        """Handle GET requests to fetch deferred results or clear the queue."""
+        if self.path == "/clear_queue":
+            # Clear the task queue
+            self.processor.task_queue.queue.clear()
+            self._send_response(200, {"message": "Queue cleared"})
+        else:
+            try:
+                # Parse task_id from the URL path
+                task_id = int(self.path.strip("/"))
 
-            # Fetch the result
-            result = self.processor.get_result(task_id)
+                # Fetch the result
+                result = self.processor.get_result(task_id)
 
-            if result:
-                self._send_response(200, result)
-            else:
-                self._send_response(404, {"error": "Task not found or expired"})
+                if result:
+                    self._send_response(200, result)
+                else:
+                    self._send_response(404, {"error": "Task not found or expired"})
 
-        except ValueError:
-            self._send_response(400, {"error": "Invalid task_id"})
-        except Exception as e:
-            logger.error(f"Error processing GET request: {e}", exc_info=True)
-            self._send_response(500, {"error": "Internal Server Error"})
+            except ValueError:
+                self._send_response(400, {"error": "Invalid task_id"})
+            except Exception as e:
+                logger.error(f"Error processing GET request: {e}", exc_info=True)
+                self._send_response(500, {"error": "Internal Server Error"})
 
     def do_POST(self):
         try:
-            toponym, lang_639_3, script, priority = self._parse_request()
+            toponym, lang_639_3, script, priority, refresh = self._parse_request()
 
-            # Query Vespa for phonetic representations
-            vespa_result = self._query_vespa(toponym, lang_639_3, script)
-            if vespa_result.get("fields", {}).get("ipa"):
-                self._send_response(200, vespa_result)
-                return
-
-            # If toponym does not exist, do not try to index phonetic representations
-            toponym_id = True if not vespa_result else False
+            if not refresh:
+                # Query Vespa for phonetic representations
+                vespa_result = self._query_vespa(toponym, lang_639_3, script)
+                if vespa_result.get("fields", {}).get("ipa"):
+                    self._send_response(200, vespa_result)
+                    return
+            else:
+                vespa_result = {}
 
             # If phonetic representations not found in Vespa, process the toponym using Epitran
+            toponym_id = vespa_result.get("document_id", None)
             task_id, event = self.processor.process_toponym(toponym, f"{lang_639_3}-{script}", priority, toponym_id)
 
             # Wait for the result for up to 3 seconds # TODO: Increase timeout if needed - how fast is Epitran?
@@ -169,8 +194,6 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
             result = self.processor.get_result(task_id)
 
             if result:
-                result.pop("tuples", None)
-                result.pop("segs", None)
                 self._send_response(200, result)
             else:
                 # If result is not ready within 1 second, return the task id and queue length
@@ -211,7 +234,9 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
 
         priority = request_json.get("priority", 0)
 
-        return toponym, lang_639_3, script, priority
+        refresh = "refresh" in request_json
+
+        return toponym, lang_639_3, script, priority, refresh
 
     def _query_vespa(self, toponym, lang_639_3, script):
         """Check if the phonetic representation already exists in Vespa."""
@@ -241,10 +266,6 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    # Initialise Epitran instances
-    processor = PhoneticsProcessor()
-    processor.init_epitran_instances()
-
     # Start the HTTP server
     server_address = ("", 8000)
     httpd = HTTPServer(server_address, PhoneticsHandler)
