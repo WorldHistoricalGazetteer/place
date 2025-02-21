@@ -215,7 +215,7 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
 
     def _query_vespa(self, toponym, lang_639_3, script):
         """Check if the phonetic representation already exists in Vespa."""
-        yql = f'SELECT * FROM toponym WHERE name_strict CONTAINS {escape_yql(toponym)} AND bcp47_language="{lang_639_3}" AND bcp47_script="{script}" LIMIT 1;'
+        yql = f'SELECT * FROM toponym WHERE name_strict="{escape_yql(toponym)}" AND bcp47_language="{lang_639_3}" AND bcp47_script="{script}" LIMIT 1;'
         response = self.vespa_query_sync_app.query({'yql': yql})
         response_root = response.get_json().get("root", {})
 
