@@ -1,13 +1,17 @@
 import json
 import logging
+import os
+import re
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from itertools import count
 from queue import PriorityQueue
 
 import epitran
 import epitran.vector
+from vespa.application import Vespa, VespaAsync, VespaSync
 
 sys.path.append('/usr/local/share/epitran')  # This is where dictionaries are stored by the Dockerfile
 from iso639 import ISO_639_1_TO_3, ISO_639_3
@@ -16,6 +20,20 @@ from epitran_languages import EPITRAN_LANGS
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+vespa_host_mapping = {
+    "query": os.getenv("VESPA_QUERY_HOST",
+                       "http://vespa-query.vespa.svc.cluster.local:8080"),
+    "feed": os.getenv("VESPA_FEED_HOST", "http://vespa-feed.vespa.svc.cluster.local:8080"),
+}
+
+
+def escape_yql(text: str) -> str:
+    """
+    Quote " and backslash \ characters in text values must be escaped by a backslash
+    See: https://docs.vespa.ai/en/reference/query-language-reference.html
+    """
+    return re.sub(r'[\\"]', r"\\\g<0>", text)
 
 
 class PhoneticsProcessor:
@@ -26,8 +44,9 @@ class PhoneticsProcessor:
         self.vector_instances = {}
         self.task_queue = PriorityQueue()
         self.results = {}
-        self.task_id_counter = 1
+        self.task_id_counter = count(1)
         self.executor = ThreadPoolExecutor(max_workers=5)
+        self.vespa_feed_async_app = VespaAsync(Vespa(url=vespa_host_mapping["feed"]))
 
     def init_epitran_instances(self):
         """Initialise Epitran instances for all supported languages."""
@@ -35,57 +54,58 @@ class PhoneticsProcessor:
             self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
             self.vector_instances[lang_script] = epitran.vector.VectorsWithIPASpace(lang_script, [lang_script])
 
-    def process_toponym(self, toponym, lang_script, priority, to_index=False):
+    def process_toponym(self, toponym, lang_script, priority, toponym_id=None):
         """Generate phonetic representations using Epitran."""
-        task_id = self.task_id_counter
-        self.task_id_counter += 1
+        task_id = next(self.task_id_counter)
 
         # Create an event for notifying when the task is done
         event = threading.Event()
 
         # Add the task to the priority queue with its event
-        self.task_queue.put((priority, task_id, toponym, lang_script, event, to_index))
+        self.task_queue.put((priority, task_id, toponym, lang_script, event, toponym_id))
 
-        # Start processing the task asynchronously
-        self.executor.submit(self._process_task, task_id, event)
+        # Start processing a task asynchronously
+        self.executor.submit(self._process_task)
 
         return task_id, event
 
-    def _process_task(self, task_id, event):
+    def _process_task(self):
         """Process a task in the queue."""
-        priority, _, toponym, lang_script, _, to_index = self.task_queue.get()
+        _, task_id, toponym, lang_script, event, toponym_id = self.task_queue.get()
+        try:
 
-        # Initialise Epitran instance for the given language if not included in default set or previously used
-        if lang_script not in self.epitran_instances:
-            self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
+            # Initialise Epitran instance for the given language if not included in default set or previously used
+            if lang_script not in self.epitran_instances:
+                self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
 
-        # Process the toponym
-        ipa = self.epitran_instances[lang_script].transliterate(toponym)
-        tuples = self.epitran_instances[lang_script].word_to_tuples(toponym)
-        segs = (
-            self.vector_instances[lang_script].word_to_segs(toponym)
-            if lang_script in self.vector_instances
-            else None
-        )
+            # Process the toponym
+            segs = (
+                self.vector_instances[lang_script].word_to_segs(toponym)
+                if lang_script in self.vector_instances
+                else None
+            )
+            fields = {
+                "toponym": toponym,
+                "ipa": self.epitran_instances[lang_script].transliterate(toponym),
+                "tuples": self.epitran_instances[lang_script].word_to_tuples(toponym),
+                **({"segs": segs} if segs else {}),
+                "lang": lang_script,
+            }
 
-        if to_index:
-            # TODO: Store phonetic representations in Vespa
-            pass
+            # Store the result (cannot rely on index if toponym is not indexed)
+            self.results[task_id] = fields
 
-        # Store the result
-        self.results[task_id] = {
-            "toponym": toponym,
-            "ipa": ipa,
-            "tuples": tuples,
-            **({"segs": segs} if segs else {}),
-            "lang": lang_script,
-        }
+            # Start the cleanup timer after the result is ready
+            threading.Timer(30, self._cleanup_result, [task_id]).start()
 
-        # Start the cleanup timer after the result is ready
-        threading.Timer(30, self._cleanup_result, [task_id]).start()
+            # Signal that the task is completed
+            event.set()
 
-        # Signal that the task is completed
-        event.set()
+            if toponym_id:
+                self.vespa_feed_async_app.feed_data_point(schema="toponym", data_id=toponym_id, fields=fields)
+
+        finally:
+            self.task_queue.task_done()
 
     def _cleanup_result(self, task_id):
         """Remove the result from memory if it hasn't been fetched."""
@@ -104,6 +124,7 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
         self.processor = PhoneticsProcessor()
+        self.vespa_query_sync_app = VespaSync(Vespa(url=vespa_host_mapping["query"]))
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -131,14 +152,19 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
             toponym, lang_639_3, script, priority = self._parse_request()
 
             # Query Vespa for phonetic representations
-            # TODO: Implement Vespa exact match query here and return the results if phonetic representations found
-            to_index = False  # Set to True if toponym is found without phonetic representations
+            vespa_result = self._query_vespa(toponym, lang_639_3, script)
+            if vespa_result.get("fields", {}).get("ipa"):
+                self._send_response(200, vespa_result)
+                return
+
+            # If toponym does not exist, do not try to index phonetic representations
+            toponym_id = True if not vespa_result else False
 
             # If phonetic representations not found in Vespa, process the toponym using Epitran
-            task_id, event = self.processor.process_toponym(toponym, f"{lang_639_3}-{script}", priority, to_index)
+            task_id, event = self.processor.process_toponym(toponym, f"{lang_639_3}-{script}", priority, toponym_id)
 
-            # Wait for the result for up to 1 second # TODO: Increase timeout if needed - how fast is Epitran?
-            event.wait(timeout=1)
+            # Wait for the result for up to 3 seconds # TODO: Increase timeout if needed - how fast is Epitran?
+            event.wait(timeout=3)
 
             result = self.processor.get_result(task_id)
 
@@ -186,6 +212,25 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
         priority = request_json.get("priority", 0)
 
         return toponym, lang_639_3, script, priority
+
+    def _query_vespa(self, toponym, lang_639_3, script):
+        """Check if the phonetic representation already exists in Vespa."""
+        yql = f'SELECT * FROM toponym WHERE name_strict CONTAINS {escape_yql(toponym)} AND bcp47_language="{lang_639_3}" AND bcp47_script="{script}" LIMIT 1;'
+        response = self.vespa_query_sync_app.query({'yql': yql})
+        response_root = response.get_json().get("root", {})
+
+        if errors := response_root.get("errors"):
+            return {"error": errors}
+        if response_root.get("fields", {}).get("totalCount", 0) == 0:
+            return {}
+        document = (
+            response_root.get("children", [{}])[0]
+            .get("fields", {})
+        )
+        return {
+            "document_id": document.get("documentid", "").split("::")[-1],
+            "fields": document,
+        }
 
     def _send_response(self, status_code, response_data):
         """Send a JSON response."""

@@ -40,6 +40,11 @@ spec:
 
             # Run the script
             exec python "/app/{{ .Values.git.sourceFile }}"
+        env:
+        - name: VESPA_QUERY_HOST
+          value: "http://vespa-query.{{ .Values.vespa.namespace }}.svc.cluster.local:8080"
+        - name: VESPA_FEED_HOST
+          value: "http://vespa-feed.{{ .Values.vespa.namespace }}.svc.cluster.local:8080"
         ports:
         - containerPort: {{ .Values.containerPort }}
         securityContext: {{- toYaml .Values.securityContext | nindent 10 }}
