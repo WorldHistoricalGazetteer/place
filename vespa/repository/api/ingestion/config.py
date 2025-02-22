@@ -53,7 +53,7 @@ REMOTE_DATASET_CONFIGS = [
             },
         ],
     },
-    {  # 2024: 3m+ places
+    {  # 2024: 3m+ places # TODO: Rebuild as JSON parser
         'dataset_name': 'TGN',
         'namespace': 'tgn',
         'vespa_schema': 'place',
