@@ -71,13 +71,28 @@ class StreamFetcher:
         self.delimiter = file.get('delimiter', '\t')  # Delimiter for CSV files
         self.local_name = file.get('local_name', None)  # Local name for the downloaded file
         self.ingestion_path = "/ingestion"  # Path to the ingestion folder
+        self.stream = None
+
+    def close_stream(self):
+        """
+        Closes the open file or stream, if any.
+        """
+        if self.stream:
+            try:
+                if isinstance(self.stream, zipfile.ZipFile):
+                    self.stream.close()
+                else:
+                    self.stream.close()  # Close the underlying file object
+                self.logger.info(f"Closed stream for {self.file_url}")
+            except Exception as e:
+                self.logger.error(f"Error closing stream for {self.file_url}: {e}")
 
     def _is_local_file(self, file_url):
         # Check if the file_url is a valid local file path
         parsed = urllib.parse.urlparse(file_url)
         return not parsed.scheme or parsed.scheme == "file"
 
-    def _get_file_path(self):
+    def get_file_path(self):
         """
         Construct the file path where the file will be stored locally.
         Use `local_name` if provided; otherwise, default to the basename of the file URL.
@@ -94,7 +109,7 @@ class StreamFetcher:
             self.logger.info(f"Using existing local file: {file_path}")
             return file_path
 
-        file_path = self._get_file_path()
+        file_path = self.get_file_path()
         if not os.path.exists(file_path):
             self.logger.info(f"Downloading file from {self.file_url} to {file_path}")
             result = subprocess.run([
@@ -159,21 +174,21 @@ class StreamFetcher:
         """
         Parse the stream and yield items based on format (json, csv, or xml).
         """
-        stream = self.get_stream()
+        self.stream = self.get_stream()
         format_type = self.file_type
 
         if format_type in ['json', 'geojson']:
-            return self._parse_json_stream(stream)
+            return self._parse_json_stream(self.stream)
         elif format_type == 'ndjson':
-            return self._parse_ndjson_stream(stream)
+            return self._parse_ndjson_stream(self.stream)
         elif format_type == 'geojsonseq':
-            return self._parse_geojsonseq_stream(stream)
+            return self._parse_geojsonseq_stream(self.stream)
         elif format_type in ['csv', 'tsv', 'txt']:
-            return self._parse_csv_stream(stream)
+            return self._parse_csv_stream(self.stream)
         elif format_type == 'xml':
-            return self._parse_xml_stream(stream)
+            return self._parse_xml_stream(self.stream)
         elif format_type == 'nt':
-            return self._parse_nt_stream(stream)
+            return self._parse_nt_stream(self.stream)
         else:
             self.logger.error(f"Unsupported format type: {format_type}")
             raise ValueError(f"Unsupported format type: {format_type}")

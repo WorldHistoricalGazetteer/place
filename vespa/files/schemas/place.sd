@@ -7,12 +7,6 @@
 schema place {
     document place {
 
-        field is_staging type bool {
-            # A boolean flag indicating whether the place is not yet fully accessioned.
-            indexing: attribute | summary
-            attribute: fast-search
-        }
-
         field lpf_feature type string {
             # The full JSON of the LPF Feature.
             indexing: summary
