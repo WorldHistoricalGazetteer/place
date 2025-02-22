@@ -93,70 +93,41 @@ class IngestionManager:
     async def _process_documents(self, stream, transformer_index, update_place=False):
         """ Processes the documents from the stream. """
         # logger.info(f"process_documents: (update place = {update_place})")
-        semaphore = asyncio.Semaphore(10)  # Limit concurrent tasks
+        semaphore = asyncio.Semaphore(10)  # Limit concurrent batch processing
         batch_size = 25  # Number of documents to process at a time
         results = []  # Collect results from processed documents
         counter = 0
-
-        async def process_limited(document):
-            nonlocal counter
-            async with semaphore:
-                counter += 1
-                # Uncomment to reprocess only specific documents (for debugging - disable deletion of other documents too if needed)
-                # if not counter in [92697, 206965, 208028]:
-                #     # Skip document
-                #     return {
-                #         "success": True,
-                #     }
-                # logger.info(f"Processing document {counter}: {document}")
-
-                result = await self._process_document(document, transformer_index, counter, update_place=update_place)
-                return result
-
-        async def process_batch(batch):
-            tasks = [process_limited(document) for document in batch]
-            return await asyncio.gather(*tasks)
-
         current_batch = []
-        # skipcount = 0
         count = 0
         filters = self.dataset_config.get('files')[transformer_index].get('filters')
 
-        async for document in stream:
+        async def _process_batch(batch):
+            async with semaphore:
+                tasks = [self._process_document(doc, transformer_index, counter, update_place=update_place) for doc in
+                         batch]
+                batch_results = await asyncio.gather(*tasks)
+                results.extend(batch_results)  # Collect results
 
+        async for document in stream:
             # Apply filters (if any)
             if filters and not any(f(document) for f in filters):
-                # skipcount += 1
-                # logger.info(f"Skipping document {skipcount}: {document['predicate']}")
                 continue
-
-            ## Examine the first 3 documents and then terminate
-            # if count < 3:
-            #     logger.info(f"Document {count}: {document}")
-            #     count += 1
-            #     # Get next document
-            #     continue
-            # else: # Terminate
-            #     break
 
             current_batch.append(document)
             count += 1
 
             # Process the batch when it reaches the batch_size or limit
             if len(current_batch) >= batch_size or (self.limit is not None and count >= self.limit):
-
-                batch_results = await process_batch(current_batch)
-                results.extend(batch_results)  # Collect results
+                await _process_batch(current_batch)
                 current_batch = []
 
                 # Stop processing if the limit is reached
-                if self.limit is not None and count >= self.limit:
+                if self.limit is not None and counter >= self.limit:
                     break
 
         # Process any remaining documents in the last batch
         if current_batch:
-            batch_results = await process_batch(current_batch)
-            results.extend(batch_results)  # Collect results
+            await _process_batch(current_batch)
 
         return results  # Return aggregated results
 
