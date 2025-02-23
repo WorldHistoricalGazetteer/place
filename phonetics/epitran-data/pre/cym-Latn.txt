@@ -1,0 +1,33 @@
+% Soft Mutation:
+% p after i
+i p > b / i _
+% t after i
+i t > d / i _
+% c after i
+i c > g / i _
+% b after i
+i b > v / i _
+% d after i
+i d > ð / i _
+% g after i (deletion)
+i g > ∅ / i _
+% ll after i
+i ll > l / i _
+% rh after i
+i rh > r / i _
+
+% Nasal Mutation:
+% p after yn
+yn p > m / yn _
+% t after yn
+yn t > n / yn _
+% c after yn
+yn c > ŋ / yn _
+
+% Aspirate Mutation:
+% p after ei
+ei p > f / ei _
+% t after ei
+ei t > θ / ei _
+% c after ei
+ei c > x / ei _
