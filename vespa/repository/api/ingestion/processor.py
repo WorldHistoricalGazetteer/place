@@ -19,17 +19,20 @@ logger = logging.getLogger(__name__)
 
 
 class TransformationManager:
-    def __init__(self, source_file_path, dataset_name, transformer_index):
+    def __init__(self, source_file_path, dataset_name, transformer_index, skip_transform=False):
         """
         Initializes TransformationManager with output file path based on source file.
 
         :param source_file_path: Path to the source file.
         :param dataset_name: Name of the dataset.
         :param transformer_index: Index of the transformer.
+        :param skip_transform: If True, skips transformation.
         """
         self.dataset_name = dataset_name
         self.transformer_index = transformer_index
         self.output_file = self._get_output_file_path(source_file_path, transformer_index)
+        if not skip_transform and os.path.exists(self.output_file):
+            os.remove(self.output_file)  # Delete pre-existing file unless skip_transform is True
 
     def _get_output_file_path(self, source_file_path, transformer_index):
         """
@@ -64,7 +67,7 @@ class TransformationManager:
 
 
 class IngestionManager:
-    def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False):
+    def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False):
         """
         Initializes IngestionManager with dataset configuration and Vespa client.
 
@@ -73,6 +76,7 @@ class IngestionManager:
         :param limit: Optional limit for the number of documents to process.
         :param delete_only: If True, only deletes existing data.
         :param no_delete: If True, skips deleting existing data.
+        :param skip_transform: If True, skips transformation
         """
         self.dataset_name = dataset_name
         self.task_id = task_id
@@ -87,6 +91,7 @@ class IngestionManager:
         self.transformer_index = None
         self.update_place = False
         self.transformation_manager = None
+        self.skip_transform = skip_transform
 
     def _get_dataset_config(self):
         """
@@ -162,14 +167,21 @@ class IngestionManager:
             # Get the source file path from StreamFetcher
             source_file_path = stream_fetcher.get_file_path()  # Access the _get_file_path method
 
-            # Initialize TransformationManager with source_file_path
-            self.transformation_manager = TransformationManager(source_file_path, self.dataset_name,
-                                                                self.transformer_index)
+            # Initialise TransformationManager with source_file_path
+            self.transformation_manager = TransformationManager(
+                source_file_path,
+                self.dataset_name,
+                self.transformer_index,
+                skip_transform=self.skip_transform
+            )
 
-            stream = stream_fetcher.get_items()
-            logger.info(f"Starting ingestion...")
-            await self._transform_documents(stream)
-            stream_fetcher.close_stream()
+            if self.skip_transform and os.path.exists(self.transformation_manager.output_file):
+                logger.info(f"Skipping transformation - using existing transformed file.")
+            else:
+                stream = stream_fetcher.get_items()
+                logger.info(f"Starting transformation...")
+                await self._transform_documents(stream)
+                stream_fetcher.close_stream()
 
             # Open a new stream for ingesting from the transformed file
             transformed_file_path = self.transformation_manager.output_file
@@ -177,13 +189,14 @@ class IngestionManager:
                 'url': transformed_file_path,
                 'file_type': 'ndjson'
             })
-            transformed_stream = transformed_stream_fetcher.get_items()
 
+            transformed_stream = transformed_stream_fetcher.get_items()
+            logger.info(f"Starting ingestion from {transformed_file_path}...")
             # Ingest data from the transformed stream
             await self._process_documents(transformed_stream)
             transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
-        logger.info(f"Completed.")
+        logger.info(f"Completed processing dataset {self.dataset_name}")
 
     async def _transform_documents(self, stream):
         """

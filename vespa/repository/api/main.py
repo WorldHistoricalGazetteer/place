@@ -120,6 +120,7 @@ async def ingest_dataset(
         limit: int = Query(None, ge=1, description="Optional limit for the number of items to ingest"),
         delete_only: bool = Query(False, description="Delete existing data without ingestion"),
         no_delete: bool = Query(False, description="Do not delete existing data"),
+        skip_transform: bool = Query(False, description="Skip transformation if file found")
 ):
     """
     Ingest a dataset by name with an optional limit parameter.
