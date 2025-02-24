@@ -27,7 +27,7 @@ RUN set -eux; \
 
 # Copy the other dictionaries into the Epitran share directory \
 COPY iso639.py $PYTHONPATH/iso639.py
-COPY epitran_languages.py $PYTHONPATH/epitran_languages.py
+COPY iso15924.py $PYTHONPATH/iso15924.py
 
 WORKDIR /app
 
@@ -35,17 +35,20 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
+# Install Epitran from the forked git repository
+RUN pip install --no-cache-dir --upgrade --force-reinstall git+https://github.com/WorldHistoricalGazetteer/epitran.git
+
 # Expose the HTTP server port
 EXPOSE 8000
 
 # Copy the main server script (may be updated from git repository at runtime)
 COPY server.py /app/
 
-# Start the phonetics server
+# Start the linguistics server
 CMD ["python", "/app/server.py"]
 
 ## In the project root, build the Docker image:
 #sudo systemctl restart docker
 #docker login
-#docker build -t worldhistoricalgazetteer/phonetics:0.0.1 ./phonetics/docker
-#docker push worldhistoricalgazetteer/phonetics:0.0.1
+#docker build -t worldhistoricalgazetteer/linguistics:0.0.1 ./linguistics/docker
+#docker push worldhistoricalgazetteer/linguistics:0.0.1

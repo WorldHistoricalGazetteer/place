@@ -1,8 +1,8 @@
-import json
 import logging
 import os
 import re
 import threading
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from itertools import count
@@ -10,10 +10,15 @@ from queue import PriorityQueue
 
 import epitran
 import epitran.vector
+import numpy
+import numpy as np
+import orjson
 from vespa.application import Vespa, VespaAsync, VespaSync
 
-from epitran_languages import EPITRAN_LANGS
+from iso15924 import ISO_15924
 from iso639 import ISO_639_1_TO_3, ISO_639_3
+
+EPITRAN_LANGS = {}
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +31,52 @@ vespa_host_mapping = {
 }
 
 
+def make_json_serializable(obj):
+    """
+    Recursively converts a data structure to a JSON-serializable format.
+    Handles lists, tuples, dictionaries, NumPy arrays, and map objects.
+    """
+    if isinstance(obj, (list, tuple)):
+        return [make_json_serializable(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {k: make_json_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, numpy.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, map):
+        return list(obj)  # Convert map objects to lists
+    else:
+        return obj  # Return other objects as is
+
+
+def generate_epitran_langs():
+    global EPITRAN_LANGS
+    # Get the directory where Epitran stores its mapping files
+    data_dir = os.path.join(os.path.dirname(epitran.__file__), "data", "map")
+
+    # List all files in the directory
+    module_files = [f for f in os.listdir(data_dir) if f.endswith('.csv')]
+
+    # Extract module names by removing the ".csv" extension
+    module_names = [os.path.splitext(f)[0] for f in module_files]
+
+    # Add eng-Latn, cmn-Hans, and cmn-Hant (implemented via additional modules in Dockerfile rather than with .csv mapping files)
+    module_names.extend(["eng-Latn", "cmn-Hans", "cmn-Hant"])
+
+    # Populate EPITRAN_LANGS dictionary
+    for mod in sorted(module_names):
+        mod_parts = mod.split("-")
+
+        # Lookup language name from ISO_639_3
+        language_name = ISO_639_3.get(mod_parts[0], {}).get("ref_name", "Unknown Language")
+
+        # Lookup script name from ISO_15924
+        script_name = ISO_15924.get(mod_parts[1], "Unknown Script") if len(mod_parts) > 1 else "Unknown Script"
+
+        EPITRAN_LANGS[mod] = f"{language_name} ({script_name})"
+
+        print(f"{mod}: {EPITRAN_LANGS[mod]}")
+
+
 def escape_yql(text: str) -> str:
     """
     Quote " and backslash \ characters in text values must be escaped by a backslash
@@ -34,11 +85,25 @@ def escape_yql(text: str) -> str:
     return re.sub(r'[\\"]', r"\\\g<0>", text)
 
 
+def convert_to_unicode(element):
+    """
+    Recursively converts strings to their hash values within a nested list.
+    """
+    if isinstance(element, str):
+        if len(element) > 1:
+            return hash(element)
+        else:
+            return ord(element)
+    elif isinstance(element, list):
+        return [convert_to_unicode(item) for item in element]
+    else:
+        return element
+
+
 class PhoneticsProcessor:
     """Processor class responsible for phonetic processing using Epitran."""
 
     def __init__(self):
-        self.epitran_instances = {}
         self.vector_instances = {}
         self.instance_timers = {}
         self.task_queue = PriorityQueue()
@@ -48,13 +113,46 @@ class PhoneticsProcessor:
         self.vespa_feed_async_app = VespaAsync(Vespa(url=vespa_host_mapping["feed"]))
         self.lock = threading.Lock()
 
+    def _generate_embeddings(self, segs, max_length=30, max_ngram=5):
+        try:
+            segs = segs[:max_length]  # Truncate to max_length
+            ipa_unicode = np.array([ord(c) for seg in segs for c in seg[3]])
+            ipa_length = len(ipa_unicode)
+
+            ngrams = []
+            for n in range(2, max_ngram + 1):
+                for i in range(ipa_length - n + 1):
+                    ngrams.append(ipa_unicode[i: i + n])
+                # Pad to max_length with space_unicode arrays of length n to ensure alignment
+                ngrams = ngrams + [np.zeros(n, dtype=int)] * (max_length - ipa_length)
+
+            return {
+                "ngram": ngrams,
+                "orthographic": [[convert_to_unicode(seg[0]), seg[1], convert_to_unicode(seg[2])] for seg in segs],
+                # No need to pad for Vespa dense tensor
+                "phonetic": [seg[-1] for seg in segs],  # No need to pad for Vespa dense tensor
+            }
+
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            logger.error(
+                f"Error generating combined embedding: {e}", exc_info=True
+            )
+            return {
+                "error": f"Internal Server Error ({e})",
+                "traceback": error_trace.split("\n")  # Convert to list for better readability in JSON
+            }
+
     def _prepare_epitran_instance(self, lang_script):
-        """Create an Epitran instance if not already created."""
+        """
+        Create an Epitran instance if not already created.
+
+        Keeping instances alive reduces the overhead in loading phonetic space definitions during initialization.
+        """
         with self.lock:
-            if lang_script not in self.epitran_instances:
-                self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
-                if lang_script in EPITRAN_LANGS.keys():
-                    self.vector_instances[lang_script] = epitran.vector.VectorsWithIPASpace(lang_script, [lang_script])
+            if lang_script not in self.vector_instances:
+                self.vector_instances[lang_script] = epitran.vector.VectorsWithIPASpace(lang_script, [
+                    'eng-Latn'])  # TODO: Switch spaces
 
             # If there's an existing timer, cancel it
             if lang_script in self.instance_timers:
@@ -69,10 +167,8 @@ class PhoneticsProcessor:
 
     def _remove_epitran_instance(self, lang_script):
         """Remove the Epitran instance after 1 hour."""
-        if lang_script in self.epitran_instances:
-            del self.epitran_instances[lang_script]
-            if lang_script in EPITRAN_LANGS.keys():
-                del self.vector_instances[lang_script]
+        if lang_script in self.vector_instances:
+            del self.vector_instances[lang_script]
             del self.instance_timers[lang_script]
             logger.info(f"Removed Epitran instance for {lang_script} after 1 hour.")
 
@@ -99,15 +195,15 @@ class PhoneticsProcessor:
             # Initialise Epitran instances (unless already initialised and not expired)
             self._prepare_epitran_instance(lang_script)
 
+            # Generate segs and IPA string (reconstruct from segs)
+            segs = self.vector_instances[lang_script].word_to_segs(toponym)
+            ipa = ''.join([seg[3] for seg in segs])  # Reconstruct IPA string
+
             # Process the toponym
             fields = {
                 "toponym": toponym,
-                "ipa": self.epitran_instances[lang_script].transliterate(toponym),
-                "tuples": self.epitran_instances[lang_script].word_to_tuples(toponym),
-                **({"segs": segs} if
-                   (segs := self.vector_instances[lang_script].word_to_segs(
-                       toponym) if lang_script in EPITRAN_LANGS.keys() else None)
-                   is not None else {}),
+                "ipa": ipa,
+                "embeddings": self._generate_embeddings(segs),
                 "lang": lang_script,
             }
 
@@ -163,7 +259,7 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
                 if result:
                     self._send_response(200, result)
                 else:
-                    self._send_response(404, {"error": "Task not found or expired"})
+                    self._send_response(404, {"error": f"Task #{task_id} not found."})
 
             except ValueError:
                 self._send_response(400, {"error": "Invalid task_id"})
@@ -188,8 +284,8 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
             toponym_id = vespa_result.get("document_id", None)
             task_id, event = self.processor.process_toponym(toponym, f"{lang_639_3}-{script}", priority, toponym_id)
 
-            # Wait for the result for up to 3 seconds # TODO: Increase timeout if needed - how fast is Epitran?
-            event.wait(timeout=3)
+            # Wait for the result for up to 10 seconds # TODO: Increase timeout if needed - how fast is Epitran?
+            event.wait(timeout=10)
 
             result = self.processor.get_result(task_id)
 
@@ -203,8 +299,12 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
         except ValueError as e:
             self._send_response(400, {"error": str(e)})
         except Exception as e:
+            error_trace = traceback.format_exc()
             logger.error(f"Error processing request: {e}", exc_info=True)
-            self._send_response(500, {"error": "Internal Server Error"})
+            self._send_response(500, {
+                "error": f"Internal Server Error ({e})",
+                "traceback": error_trace.split("\n")  # Convert to list for better readability in JSON
+            })
 
     def _parse_request(self):
         """Parse and validate the incoming JSON request."""
@@ -212,8 +312,8 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
 
         try:
-            request_json = json.loads(post_data)
-        except json.JSONDecodeError:
+            request_json = orjson.loads(post_data)
+        except orjson.JSONDecodeError:
             raise ValueError("Invalid JSON")
 
         toponym = request_json.get("toponym")
@@ -231,6 +331,10 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
             raise ValueError(f"Invalid or unsupported language code: {language}")
 
         script = request_json.get("script", "Latn")
+        lang_script = f"{lang_639_3}-{script}"
+
+        if not lang_script in EPITRAN_LANGS.keys():
+            raise ValueError(f"Unsupported language-script combination: {lang_script}")
 
         priority = request_json.get("priority", 0)
 
@@ -259,13 +363,20 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
 
     def _send_response(self, status_code, response_data):
         """Send a JSON response."""
+
+        # Make the response data JSON serializable
+        serializable_data = make_json_serializable(response_data)
+
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(json.dumps(response_data).encode())
+        self.wfile.write(orjson.dumps(serializable_data))
 
 
 if __name__ == "__main__":
+    # Generate Epitran language mappings
+    generate_epitran_langs()
+
     # Start the HTTP server
     server_address = ("", 8000)
     httpd = HTTPServer(server_address, PhoneticsHandler)

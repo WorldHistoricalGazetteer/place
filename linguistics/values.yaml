@@ -3,13 +3,13 @@ namespace: epitran
 replicaCount: 1
 
 image:
-  repository: worldhistoricalgazetteer/phonetics
+  repository: worldhistoricalgazetteer/linguistics
   tag: 0.0.1
   pullPolicy: IfNotPresent
 
 git:
   url: "https://github.com/WorldHistoricalGazetteer/place.git"
-  sourceFolder: "phonetics/docker/"
+  sourceFolder: "linguistics/docker/"
   sourceFile: "server.py"
 
 service:

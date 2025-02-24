@@ -60,15 +60,20 @@ schema toponym {
             match { exact }
         }
 
-        ########### Vector Embeddings ###########
+        ########### Linguistic Vector Embeddings ###########
 
-        field phonetic_embedding type tensor<float>(x[128]) {
+        field orthographic_embedding type tensor<float>(x[90]) {
+            # Orthographic embedding of the toponym.
+            indexing: attribute
+        }
+
+        field phonetic_embedding type tensor<float>(x[720]) {
             # Phonetic embedding of the toponym.
             indexing: attribute
         }
 
-        field semantic_embedding type tensor<float>(x[128]) {
-            # Semantic embedding of the toponym.
+        field ngram_embedding type tensor<float>(x[120]) {
+            # N-gram embedding of the toponym.
             indexing: attribute
         }
 

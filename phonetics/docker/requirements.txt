@@ -1,3 +1,0 @@
-requests>=2.31.0,<3.0.0
-pyvespa~=0.51.0
-epitran~=1.24

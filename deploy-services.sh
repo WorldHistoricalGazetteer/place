@@ -39,9 +39,9 @@ echo "Deploying Vespa components..."
 helm install vespa ./vespa
 # kubectl exec -it vespa-admin-0 --n vespa -- vespa deploy --config-dir /opt/vespa/etc/vespa ????
 
-# Deploy Phonetics service
-echo "Deploying Phonetics service..."
-helm install phonetics ./phonetics
+# Deploy Linguistics service
+echo "Deploying Linguistics service..."
+helm install linguistics ./linguistics
 
 if [ "$K8S_CONTROLLER" == 1 ]; then
 
