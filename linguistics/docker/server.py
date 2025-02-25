@@ -10,9 +10,11 @@ from queue import PriorityQueue
 
 import epitran
 import epitran.vector
+import icu
 import numpy
 import numpy as np
 import orjson
+import panphon
 from vespa.application import Vespa, VespaAsync, VespaSync
 
 from iso15924 import ISO_15924
@@ -74,8 +76,6 @@ def generate_epitran_langs():
 
         EPITRAN_LANGS[mod] = f"{language_name} ({script_name})"
 
-        print(f"{mod}: {EPITRAN_LANGS[mod]}")
-
 
 def escape_yql(text: str) -> str:
     """
@@ -85,26 +85,49 @@ def escape_yql(text: str) -> str:
     return re.sub(r'[\\"]', r"\\\g<0>", text)
 
 
-def convert_to_unicode(element):
+def detect_script(text: str) -> str:
     """
-    Recursively converts strings to their hash values within a nested list.
+    Detects the script of a given text using ICU.
+    Returns the 4-letter ISO 15924 script code.
     """
-    if isinstance(element, str):
-        if len(element) > 1:
-            return hash(element)
-        else:
-            return ord(element)
-    elif isinstance(element, list):
-        return [convert_to_unicode(item) for item in element]
-    else:
-        return element
+    scripts = {}
+    for char in text:
+        try:
+            script_name = icu.Script.getScript(char).getShortName()
+            scripts[script_name] = scripts.get(script_name, 0) + 1
+        except icu.ICUError:
+            pass  # Handle potential errors gracefully (e.g., for non-assigned characters)
+
+    # Return the most common script or default to "Latn"
+    return max(scripts, key=scripts.get, default="Latn")
+
+
+def convert_panphon(feature_vectors):
+    """
+    Converts PanPhon feature vectors from symbolic to numeric representation.
+    """
+    # Convert to NumPy array for efficient operations
+    np_vectors = np.array(feature_vectors, dtype=object)
+
+    # Create a mask for '-' and '+' symbols
+    minus_mask = np_vectors == '-'
+    zero_mask = np_vectors == '0'
+    plus_mask = np_vectors == '+'
+
+    # Use the masks to assign -1 and 1 where appropriate
+    np_vectors[minus_mask] = -1
+    np_vectors[zero_mask] = 0
+    np_vectors[plus_mask] = 1
+
+    # Convert the array back to a list of lists
+    return np_vectors.astype(int).tolist()
 
 
 class PhoneticsProcessor:
     """Processor class responsible for phonetic processing using Epitran."""
 
     def __init__(self):
-        self.vector_instances = {}
+        self.epitran_instances = {}
         self.instance_timers = {}
         self.task_queue = PriorityQueue()
         self.results = {}
@@ -112,11 +135,12 @@ class PhoneticsProcessor:
         self.executor = ThreadPoolExecutor(max_workers=5)
         self.vespa_feed_async_app = VespaAsync(Vespa(url=vespa_host_mapping["feed"]))
         self.lock = threading.Lock()
+        self.ft = panphon.FeatureTable()
 
-    def _generate_embeddings(self, segs, max_length=30, max_ngram=5):
+    def _generate_embeddings(self, ipa, max_length=30, max_ngram=5):
         try:
-            segs = segs[:max_length]  # Truncate to max_length
-            ipa_unicode = np.array([ord(c) for seg in segs for c in seg[3]])
+            ipa_truncated = ipa[:max_length]
+            ipa_unicode = [ord(ipa_character) for ipa_character in ipa_truncated]
             ipa_length = len(ipa_unicode)
 
             ngrams = []
@@ -128,9 +152,8 @@ class PhoneticsProcessor:
 
             return {
                 "ngram": ngrams,
-                "orthographic": [[convert_to_unicode(seg[0]), seg[1], convert_to_unicode(seg[2])] for seg in segs],
-                # No need to pad for Vespa dense tensor
-                "phonetic": [seg[-1] for seg in segs],  # No need to pad for Vespa dense tensor
+                "phonetic": convert_panphon(self.ft.word_to_vector_list(ipa_truncated)),
+                # No need to pad a Vespa dense tensor
             }
 
         except Exception as e:
@@ -150,9 +173,8 @@ class PhoneticsProcessor:
         Keeping instances alive reduces the overhead in loading phonetic space definitions during initialization.
         """
         with self.lock:
-            if lang_script not in self.vector_instances:
-                self.vector_instances[lang_script] = epitran.vector.VectorsWithIPASpace(lang_script, [
-                    'eng-Latn'])  # TODO: Switch spaces
+            if lang_script not in self.epitran_instances:
+                self.epitran_instances[lang_script] = epitran.Epitran(lang_script)
 
             # If there's an existing timer, cancel it
             if lang_script in self.instance_timers:
@@ -167,8 +189,8 @@ class PhoneticsProcessor:
 
     def _remove_epitran_instance(self, lang_script):
         """Remove the Epitran instance after 1 hour."""
-        if lang_script in self.vector_instances:
-            del self.vector_instances[lang_script]
+        if lang_script in self.epitran_instances:
+            del self.epitran_instances[lang_script]
             del self.instance_timers[lang_script]
             logger.info(f"Removed Epitran instance for {lang_script} after 1 hour.")
 
@@ -195,15 +217,14 @@ class PhoneticsProcessor:
             # Initialise Epitran instances (unless already initialised and not expired)
             self._prepare_epitran_instance(lang_script)
 
-            # Generate segs and IPA string (reconstruct from segs)
-            segs = self.vector_instances[lang_script].word_to_segs(toponym)
-            ipa = ''.join([seg[3] for seg in segs])  # Reconstruct IPA string
+            # Generate IPA string
+            ipa = self.epitran_instances[lang_script].transliterate(toponym)
 
             # Process the toponym
             fields = {
                 "toponym": toponym,
                 "ipa": ipa,
-                "embeddings": self._generate_embeddings(segs),
+                "embeddings": self._generate_embeddings(ipa),
                 "lang": lang_script,
             }
 
@@ -284,15 +305,15 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
             toponym_id = vespa_result.get("document_id", None)
             task_id, event = self.processor.process_toponym(toponym, f"{lang_639_3}-{script}", priority, toponym_id)
 
-            # Wait for the result for up to 10 seconds # TODO: Increase timeout if needed - how fast is Epitran?
-            event.wait(timeout=10)
+            # Wait for the result for up to 3 seconds # TODO: Increase timeout if needed - how fast is Epitran?
+            event.wait(timeout=3)
 
             result = self.processor.get_result(task_id)
 
             if result:
                 self._send_response(200, result)
             else:
-                # If result is not ready within 1 second, return the task id and queue length
+                # If result is not ready within 3 seconds, return the task id and queue length
                 queue_length = self.processor.task_queue.qsize()
                 self._send_response(202, {"task_id": task_id, "queue_length": queue_length})
 
@@ -324,13 +345,12 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
         lang_639_3 = (
             # Check that it's a valid 3-letter code
             language if len(language) == 3 and language in ISO_639_3
-            # Otherwise try to convert from 2-letter code
-            else ISO_639_1_TO_3.get(language, {}).get("639-3")
+            # Otherwise try to convert from 2-letter code: default to 'eng' if not found
+            else ISO_639_1_TO_3.get(language, {}).get("639-3", "eng")
         )
-        if not lang_639_3:
-            raise ValueError(f"Invalid or unsupported language code: {language}")
 
-        script = request_json.get("script", "Latn")
+        script = request_json.get("script", detect_script(toponym))
+
         lang_script = f"{lang_639_3}-{script}"
 
         if not lang_script in EPITRAN_LANGS.keys():
@@ -376,6 +396,16 @@ class PhoneticsHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     # Generate Epitran language mappings
     generate_epitran_langs()
+
+    # Run some tests to verify the script detection
+    print("Hello, world! ->", detect_script("Hello, world!"))
+    print("こんにちは、世界！ ->", detect_script("こんにちは、世界！"))
+    print("Привет, мир! ->", detect_script("Привет, мир!"))
+    print("مرحبا بالعالم! ->", detect_script("مرحبا بالعالم!"))
+    print("नमस्ते, दुनिया! ->", detect_script("नमस्ते, दुनिया!"))
+    print("ᜋᜄ᜔ᜆᜓ, ᜋᜄ᜔ᜆᜓ! ->", detect_script("ᜋᜄ᜔ᜆᜓ, ᜋᜄ᜔ᜆᜓ!"))
+    print("你好，世界！ ->", detect_script("你好，世界！"))
+    print("안녕하세요, 세계! ->", detect_script("안녕하세요, 세계!"))
 
     # Start the HTTP server
     server_address = ("", 8000)

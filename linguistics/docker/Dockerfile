@@ -10,7 +10,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN set -eux; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        git curl unzip build-essential && \
+        git curl unzip build-essential pkg-config libicu-dev && \
+    pip install --no-binary=:pyicu: pyicu && \
     # Install Flite (required for English G2P in Epitran - see https://github.com/dmort27/epitran?tab=readme-ov-file#installation-of-flite-for-english-g2p)
     # Install Flite (required for English G2P in Epitran)
     cd /tmp && git clone https://github.com/festvox/flite.git && \
