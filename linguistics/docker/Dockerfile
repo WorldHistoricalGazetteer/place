@@ -37,7 +37,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Install Epitran from the forked git repository
-RUN pip install --no-cache-dir --upgrade --force-reinstall git+https://github.com/WorldHistoricalGazetteer/epitran.git
+RUN pip install --no-cache-dir --upgrade --force-reinstall git+https://github.com/WorldHistoricalGazetteer/epitran.git@toponymic-linguistics
 
 # Expose the HTTP server port
 EXPOSE 8000

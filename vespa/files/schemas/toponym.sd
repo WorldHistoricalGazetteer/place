@@ -62,13 +62,13 @@ schema toponym {
 
         ########### Linguistic Vector Embeddings ###########
 
-        field ngram_embedding type tensor<float>(x[120]) {
-            # N-gram embedding of the toponym.
+        field panphon type tensor<float>(l[100], d[24]) {
+            # Panphon phonetic feature vector of the toponym (l = IPA length, d = feature vector length).
             indexing: attribute
         }
 
-        field phonetic_embedding type tensor<float>(x[720]) {
-            # Phonetic embedding of the toponym.
+        field bilstm type tensor<float>(l[256]) {
+            # BiLSTM phonetic feature vector of the toponym (l = BiLSTM output size).
             indexing: attribute
         }
 
