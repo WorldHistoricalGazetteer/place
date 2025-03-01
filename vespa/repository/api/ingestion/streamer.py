@@ -11,6 +11,7 @@ import subprocess
 import urllib.parse
 import zipfile
 
+import aiofiles
 import ijson
 import xmltodict
 
@@ -204,15 +205,21 @@ class StreamFetcher:
 
         return iterator()
 
-    def _parse_ndjson_stream(self, stream):
-        wrapper = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
+    async def _parse_ndjson_stream(self, stream):
+        """
+        Asynchronously parses an NDJSON stream and yields each document.
+        Uses asyncio.to_thread to run synchronous file I/O operations in a separate thread.
+        """
 
-        async def iterator():
+        def read_lines():
+            with open(stream, mode='r', encoding='utf-8') as file:
+                for line in file:
+                    yield line.strip()
+
+        async def async_iterator():
             try:
-                for line in wrapper:
-                    # Simulate asynchronous I/O
-                    await asyncio.sleep(0)
-                    line = line.strip()
+                # Use asyncio.to_thread to handle blocking file I/O in a separate thread
+                async for line in asyncio.to_thread(read_lines):
                     if line:  # Ignore empty lines
                         try:
                             yield json.loads(line)  # Parse and yield JSON object
@@ -223,7 +230,28 @@ class StreamFetcher:
                 self.logger.error(f"Failed to parse NDJSON stream. Error: {e}")
                 raise
 
-        return iterator()
+        return async_iterator()
+
+    # def _parse_ndjson_stream(self, stream):
+    #     wrapper = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
+    #
+    #     async def iterator():
+    #         try:
+    #             for line in wrapper:
+    #                 # Simulate asynchronous I/O
+    #                 await asyncio.sleep(0)
+    #                 line = line.strip()
+    #                 if line:  # Ignore empty lines
+    #                     try:
+    #                         yield json.loads(line)  # Parse and yield JSON object
+    #                     except json.JSONDecodeError as e:
+    #                         self.logger.error(f"Error decoding JSON line: {line}. Error: {e}")
+    #                         raise
+    #         except Exception as e:
+    #             self.logger.error(f"Failed to parse NDJSON stream. Error: {e}")
+    #             raise
+    #
+    #     return iterator()
 
     def _parse_geojsonseq_stream(self, stream):
         async def iterator():
