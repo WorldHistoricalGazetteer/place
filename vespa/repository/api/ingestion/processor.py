@@ -370,7 +370,7 @@ class IngestionManager:
                 else:
                     response = self.vespa_client.feed_existing(
                         namespace=self.dataset_config['namespace'],
-                        schema=self.dataset_config['vespa_schema'],
+                        schema='toponym' if is_toponym else self.dataset_config['vespa_schema'],
                         data_id=document_id,
                         fields=transformed_document['fields']
                     )
