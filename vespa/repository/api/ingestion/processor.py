@@ -195,7 +195,7 @@ class IngestionManager:
             if self.skip_transform and os.path.exists(self.transformation_manager.output_file):
                 logger.info(f"Skipping transformation - using existing transformed file.")
             else:
-                stream = stream_fetcher.get_items()
+                stream = await stream_fetcher.get_items()
                 logger.info(f"Starting transformation...")
                 await self._transform_documents(stream)
                 stream_fetcher.close_stream()
@@ -207,7 +207,7 @@ class IngestionManager:
                 'file_type': 'ndjson'
             })
 
-            transformed_stream = transformed_stream_fetcher.get_items()
+            transformed_stream = await transformed_stream_fetcher.get_items()
             logger.info(f"Starting ingestion from {transformed_file_path}...")
             # Ingest data from the transformed stream
             await self._process_documents(transformed_stream)
