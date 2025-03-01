@@ -81,6 +81,8 @@ class StreamFetcher:
             try:
                 if isinstance(self.stream, zipfile.ZipFile):
                     self.stream.close()
+                elif hasattr(self.stream, "aclose"):  # Check if it's an async generator
+                    asyncio.run(self.stream.aclose())
                 else:
                     self.stream.close()  # Close the underlying file object
                 self.logger.info(f"Closed stream for {self.file_url}")

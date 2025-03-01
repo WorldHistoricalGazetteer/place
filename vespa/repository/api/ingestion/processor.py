@@ -75,17 +75,7 @@ class IngestionManager:
         self.delete_only = delete_only
         self.no_delete = no_delete
         self.dataset_config = self._get_dataset_config()
-
-        logger.info("Initializing Vespa client...")
         self.vespa_client = VespaClient.sync_context("feed")  # Initialize VespaClient
-        logger.info(f"Vespa client initialized: {self.vespa_client}")
-
-        # Debug method availability
-        if hasattr(self.vespa_client, "delete_all_docs"):
-            logger.info("✅ Vespa client has delete_all_docs method")
-        else:
-            logger.error("❌ Vespa client does NOT have delete_all_docs method!")
-
         self.executor = ThreadPoolExecutor(max_workers=10)  # Executor for async tasks
         self.max_queue_size = 100  # Queue size for document update tasks
         self.update_queue = queue.Queue(maxsize=self.max_queue_size)
@@ -282,7 +272,7 @@ class IngestionManager:
                 if success and toponyms:
                     toponym_responses = await asyncio.gather(*[
                         asyncio.get_event_loop().run_in_executor(self.executor, self._feed_document, toponym, count,
-                                                                 True)
+                                                                 True) # Set is_toponym flag
                         for toponym in toponyms
                     ])
 
@@ -314,7 +304,7 @@ class IngestionManager:
                     "document": f"{self.dataset_config['namespace']}:{self.dataset_config['vespa_schema']}:{document}",
                     "error": str(e)}
 
-    def _feed_document(self, transformed_document, count, is_toponym):
+    def _feed_document(self, transformed_document, count, is_toponym=False):
         """
         Feeds the transformed document to Vespa, handling toponym deduplication and updates.
 
@@ -343,7 +333,7 @@ class IngestionManager:
         try:
             preexisting = None
             yql = None
-            if self.dataset_config['vespa_schema'] == 'toponym':
+            if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
                 # Check if toponym already exists
                 yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
                 for field in bcp47_fields:
