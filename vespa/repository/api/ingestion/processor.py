@@ -314,11 +314,8 @@ class IngestionManager:
         :return: Dictionary containing the success status and any errors.
         """
 
-        if self.dataset_config['namespace'] == 'tgn':
-            # Handle triples differently
-            task = (None, None, transformed_document, count)
-            self.update_queue.put(task)
-            return {"success": True}  # Pending processing in the worker thread
+        if is_toponym:
+            logger.info(f"Processing toponym: {transformed_document}")
 
         document_id = transformed_document.get("document_id")
         if not document_id:
@@ -346,6 +343,8 @@ class IngestionManager:
                     schema=self.dataset_config['vespa_schema'],
                 )
 
+            logger.info(f"Preexisting: {preexisting}")
+
             if preexisting:  # (and schema == 'toponym')
                 # Extend `places` list
                 existing_toponym_id = preexisting.get("document_id")
@@ -354,7 +353,7 @@ class IngestionManager:
                 response = self.vespa_client.update_existing(
                     # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
                     namespace=self.dataset_config['namespace'],
-                    schema=self.dataset_config['vespa_schema'],
+                    schema='toponym',
                     data_id=existing_toponym_id,
                     fields={
                         "places": list(set(existing_places + [document_id]))
