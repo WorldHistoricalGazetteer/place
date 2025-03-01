@@ -172,7 +172,7 @@ class StreamFetcher:
             self.logger.info(f"Extracting {self.file_name} from {zip_path}")
             return zip_file.open(self.file_name)
 
-    def get_items(self):
+    async def get_items(self):
         """
         Parse the stream and yield items based on format (json, csv, or xml).
         """
@@ -182,7 +182,7 @@ class StreamFetcher:
         if format_type in ['json', 'geojson']:
             return self._parse_json_stream(self.stream)
         elif format_type == 'ndjson':
-            return self._parse_ndjson_stream(self.stream)
+            return await self._parse_ndjson_stream(self.stream)
         elif format_type == 'geojsonseq':
             return self._parse_geojsonseq_stream(self.stream)
         elif format_type in ['csv', 'tsv', 'txt']:
