@@ -172,7 +172,7 @@ class StreamFetcher:
             self.logger.info(f"Extracting {self.file_name} from {zip_path}")
             return zip_file.open(self.file_name)
 
-    async def get_items(self):
+    def get_items(self):
         """
         Parse the stream and yield items based on format (json, csv, or xml).
         """
@@ -182,7 +182,7 @@ class StreamFetcher:
         if format_type in ['json', 'geojson']:
             return self._parse_json_stream(self.stream)
         elif format_type == 'ndjson':
-            return await self._parse_ndjson_stream(self.stream)
+            return self._parse_ndjson_stream(self.stream)
         elif format_type == 'geojsonseq':
             return self._parse_geojsonseq_stream(self.stream)
         elif format_type in ['csv', 'tsv', 'txt']:
@@ -206,7 +206,7 @@ class StreamFetcher:
 
         return iterator()
 
-    async def _parse_ndjson_stream(self, stream):
+    def _parse_ndjson_stream(self, stream):
         """
         Asynchronously parses an NDJSON stream and yields each document.
         Uses asyncio.to_thread to run synchronous file I/O operations in a separate thread.
@@ -217,10 +217,12 @@ class StreamFetcher:
                 for line in file:
                     yield line.strip()
 
-        async def async_iterator():
+        parser = asyncio.to_thread(read_lines)
+
+        async def iterator():
             try:
                 # Use asyncio.to_thread to handle blocking file I/O in a separate thread
-                async for line in asyncio.to_thread(read_lines):
+                for line in await parser:
                     if line:  # Ignore empty lines
                         try:
                             yield json.loads(line)  # Parse and yield JSON object
@@ -231,7 +233,7 @@ class StreamFetcher:
                 self.logger.error(f"Failed to parse NDJSON stream. Error: {e}")
                 raise
 
-        return async_iterator()
+        return iterator()
 
     # def _parse_ndjson_stream(self, stream):
     #     wrapper = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
