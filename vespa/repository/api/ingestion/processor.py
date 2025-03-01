@@ -361,7 +361,7 @@ class IngestionManager:
                     }
                 )
             else:
-                if self.dataset_config['vespa_schema'] == 'toponym':
+                if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
                     # Inject creation timestamp
                     transformed_document['fields']['created'] = int(time.time() * 1000)
                 if self.update_place and not is_toponym:  # (only True when schema == 'place')
