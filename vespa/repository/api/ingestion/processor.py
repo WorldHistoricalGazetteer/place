@@ -75,7 +75,6 @@ class IngestionManager:
         self.delete_only = delete_only
         self.no_delete = no_delete
         self.dataset_config = self._get_dataset_config()
-        self.vespa_client = VespaClient.sync_context("feed")  # Initialize VespaClient
         self.executor = ThreadPoolExecutor(max_workers=10)  # Executor for async tasks
         self.max_queue_size = 100  # Queue size for document update tasks
         self.update_queue = queue.Queue(maxsize=self.max_queue_size)
@@ -322,67 +321,68 @@ class IngestionManager:
                 "error": "Document ID not found in transformed document"
             }
         try:
-            preexisting = None
-            yql = None
-            if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
-                # Check if toponym already exists
-                yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
-                for field in bcp47_fields:
-                    if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
-                        yql += f'and bcp47_{field} contains "{transformed_document["fields"][f"bcp47_{field}"]}" '
-                yql += 'limit 1'
-                preexisting = self.vespa_client.query_existing(
-                    {'yql': yql},
-                    # Do not set namespace
-                    schema=self.dataset_config['vespa_schema'],
-                )
-
-            if preexisting:  # (and schema == 'toponym')
-                # Extend `places` list
-                existing_toponym_id = preexisting.get("document_id")
-                existing_places = preexisting.get("fields", {}).get("places", [])
-
-                response = self.vespa_client.update_existing(
-                    # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
-                    namespace=self.dataset_config['namespace'],
-                    schema='toponym',
-                    data_id=existing_toponym_id,
-                    fields={
-                        "places": list(set(existing_places + [document_id]))
-                    }
-                )
-            else:
+            with VespaClient.sync_context("feed") as sync_app:
+                preexisting = None
+                yql = None
                 if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
-                    # Inject creation timestamp
-                    transformed_document['fields']['created'] = int(time.time() * 1000)
-                if self.update_place and not is_toponym:  # (only True when schema == 'place')
-                    task = (self.dataset_config['vespa_schema'], document_id, transformed_document, count)
-                    self.update_queue.put(task)
-                    response = None
-                else:
-                    response = self.vespa_client.feed_existing(
-                        namespace=self.dataset_config['namespace'],
-                        schema='toponym' if is_toponym else self.dataset_config['vespa_schema'],
-                        data_id=document_id,
-                        fields=transformed_document['fields']
+                    # Check if toponym already exists
+                    yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
+                    for field in bcp47_fields:
+                        if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
+                            yql += f'and bcp47_{field} contains "{transformed_document["fields"][f"bcp47_{field}"]}" '
+                    yql += 'limit 1'
+                    preexisting = sync_app.query_existing(
+                        {'yql': yql},
+                        # Do not set namespace
+                        schema=self.dataset_config['vespa_schema'],
                     )
 
-            if (self.update_place and not is_toponym) or response.get('status_code') < 500:
-                return {"success": True, "namespace": self.dataset_config['namespace'],
-                        "schema": self.dataset_config['vespa_schema'], "document_id": document_id}
-            else:
-                msg = response if response.headers.get('content-type') == 'application/json' else response.text
-                task_tracker.update_task(self.task_id, {"error (A)": f"#{count}: {msg}"})
-                logger.error(
-                    f"Failed to feed document: {self.dataset_config['namespace']}:{self.dataset_config['vespa_schema']}::{document_id}, Status code: {response.get('status_code')}, Response: {msg}")
-                return {
-                    "success": False,
-                    "namespace": self.dataset_config['namespace'],
-                    "schema": self.dataset_config['vespa_schema'],
-                    "document_id": document_id,
-                    "status_code": response.get('status_code'),
-                    "message": msg
-                }
+                if preexisting:  # (and schema == 'toponym')
+                    # Extend `places` list
+                    existing_toponym_id = preexisting.get("document_id")
+                    existing_places = preexisting.get("fields", {}).get("places", [])
+
+                    response = sync_app.update_existing(
+                        # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
+                        namespace=self.dataset_config['namespace'],
+                        schema='toponym',
+                        data_id=existing_toponym_id,
+                        fields={
+                            "places": list(set(existing_places + [document_id]))
+                        }
+                    )
+                else:
+                    if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
+                        # Inject creation timestamp
+                        transformed_document['fields']['created'] = int(time.time() * 1000)
+                    if self.update_place and not is_toponym:  # (only True when schema == 'place')
+                        task = (self.dataset_config['vespa_schema'], document_id, transformed_document, count)
+                        self.update_queue.put(task)
+                        response = None
+                    else:
+                        response = sync_app.feed_existing(
+                            namespace=self.dataset_config['namespace'],
+                            schema='toponym' if is_toponym else self.dataset_config['vespa_schema'],
+                            data_id=document_id,
+                            fields=transformed_document['fields']
+                        )
+
+                if (self.update_place and not is_toponym) or response.get('status_code') < 500:
+                    return {"success": True, "namespace": self.dataset_config['namespace'],
+                            "schema": self.dataset_config['vespa_schema'], "document_id": document_id}
+                else:
+                    msg = response if response.headers.get('content-type') == 'application/json' else response.text
+                    task_tracker.update_task(self.task_id, {"error (A)": f"#{count}: {msg}"})
+                    logger.error(
+                        f"Failed to feed document: {self.dataset_config['namespace']}:{self.dataset_config['vespa_schema']}::{document_id}, Status code: {response.get('status_code')}, Response: {msg}")
+                    return {
+                        "success": False,
+                        "namespace": self.dataset_config['namespace'],
+                        "schema": self.dataset_config['vespa_schema'],
+                        "document_id": document_id,
+                        "status_code": response.get('status_code'),
+                        "message": msg
+                    }
         except Exception as e:
             task_tracker.update_task(self.task_id, {"error (E)": f"#{count}: yql: >>>{yql}<<< {str(e)}"})
             logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
@@ -406,26 +406,27 @@ class IngestionManager:
         # TODO: Check if the link already exists
         # TODO: If the predicate is symmetrical, also check if the reverse link exists
         try:
-            response = self.vespa_client.feed_existing(
-                namespace=self.dataset_config['namespace'],  # source identifier
-                schema=schema,  # usually 'link'
-                data_id=get_uuid(),
-                fields=link
-            )
+            with VespaClient.sync_context("feed") as sync_app:
+                response = sync_app.feed_existing(
+                    namespace=self.dataset_config['namespace'],  # source identifier
+                    schema=schema,  # usually 'link'
+                    data_id=get_uuid(),
+                    fields=link
+                )
 
-            if response.get('status_code') < 500:
-                return {"success": True, "link": link}
-            else:
-                msg = response if response.headers.get('content-type') == 'application/json' else response.text
-                task_tracker.update_task(self.task_id, {"error (C)": f"#{count}: link: >>>{link}<<< {msg}"})
-                logger.error(
-                    f"Failed to feed link: {link}, Status code: {response.get('status_code')}, Response: {msg}")
-                return {
-                    "success": False,
-                    "link": link,
-                    "status_code": response.get('status_code'),
-                    "message": msg
-                }
+                if response.get('status_code') < 500:
+                    return {"success": True, "link": link}
+                else:
+                    msg = response if response.headers.get('content-type') == 'application/json' else response.text
+                    task_tracker.update_task(self.task_id, {"error (C)": f"#{count}: link: >>>{link}<<< {msg}"})
+                    logger.error(
+                        f"Failed to feed link: {link}, Status code: {response.get('status_code')}, Response: {msg}")
+                    return {
+                        "success": False,
+                        "link": link,
+                        "status_code": response.get('status_code'),
+                        "message": msg
+                    }
         except Exception as e:
             task_tracker.update_task(self.task_id, {"error (B)": f"#{count}: link: >>>{link}<<< {str(e)}"})
             logger.error(f"Error feeding link: {link}, Error: {str(e)}", exc_info=True)
@@ -471,26 +472,27 @@ class IngestionManager:
         :param task: Tuple containing schema, document ID, transformed document, and count.
         """
         schema, document_id, transformed_document, count = task
-        response = self.vespa_client.get_existing(
-            namespace=self.dataset_config['namespace'],
-            schema=schema,
-            data_id=document_id
-        )
-        # logger.info(f"Response: {response.get('status_code')}: {response}")
-        if response.get('status_code') < 500:
-            existing_document = response
-            existing_names = existing_document.get("fields", {}).get("names", [])
-            # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
-            response = self.vespa_client.update_existing(
+        with VespaClient.sync_context("feed") as sync_app:
+            response = sync_app.get_existing(
                 namespace=self.dataset_config['namespace'],
                 schema=schema,
-                data_id=document_id,
-                fields={
-                    "names": distinct_dicts(existing_names, transformed_document['fields']['names'])
-                }
+                data_id=document_id
             )
-            # logger.info(f"Update response: {response.get('status_code')}: {response}")
-        else:
-            msg = f"Failed to get existing document: {self.dataset_config['namespace']}:{schema}::{document_id}, Status code: {response.get('status_code')}"
-            task_tracker.update_task(self.task_id, {"error (D)": f"#{count}: {msg}"})
-            logger.error(msg)
+            # logger.info(f"Response: {response.get('status_code')}: {response}")
+            if response.get('status_code') < 500:
+                existing_document = response
+                existing_names = existing_document.get("fields", {}).get("names", [])
+                # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
+                response = sync_app.update_existing(
+                    namespace=self.dataset_config['namespace'],
+                    schema=schema,
+                    data_id=document_id,
+                    fields={
+                        "names": distinct_dicts(existing_names, transformed_document['fields']['names'])
+                    }
+                )
+                # logger.info(f"Update response: {response.get('status_code')}: {response}")
+            else:
+                msg = f"Failed to get existing document: {self.dataset_config['namespace']}:{schema}::{document_id}, Status code: {response.get('status_code')}"
+                task_tracker.update_task(self.task_id, {"error (D)": f"#{count}: {msg}"})
+                logger.error(msg)
