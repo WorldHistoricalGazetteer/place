@@ -109,12 +109,13 @@ class IngestionManager:
 
         for schema in schema:
             # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.application.Vespa.delete_all_docs
-            logger.info( self.vespa_client.delete_all_docs(
+            response = self.vespa_client.delete_all_docs(
                 namespace=self.dataset_config['namespace'],
                 schema=schema,
                 content_cluster_name="content"
-            ) )
+            )
             logger.info(f"Deleted {self.dataset_config['namespace']}:{schema} documents.")
+            logger.info(f"Response: {response}")
 
     async def ingest_data(self):
         """
