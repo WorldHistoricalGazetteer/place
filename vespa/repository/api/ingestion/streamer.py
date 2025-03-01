@@ -206,35 +206,24 @@ class StreamFetcher:
 
         return iterator()
 
-    def _parse_ndjson_stream(self, stream):
+    async def _parse_ndjson_stream(self, stream):
         """
         Asynchronously parses an NDJSON stream and yields each document.
         Uses asyncio.to_thread to run synchronous file I/O operations in a separate thread.
         """
 
         def read_lines():
-            # This function will read the lines of the stream
             for line in stream:
                 yield line.strip()
 
-        # Use asyncio.to_thread to handle blocking file reading in a separate thread
-        parser = asyncio.to_thread(read_lines)
-
-        async def iterator():
-            try:
-                # Asynchronously iterate over the lines
-                async for line in parser:
-                    if line:  # Ignore empty lines
-                        try:
-                            yield json.loads(line)  # Parse and yield JSON object
-                        except json.JSONDecodeError as e:
-                            self.logger.error(f"Error decoding JSON line: {line}. Error: {e}")
-                            raise
-            except Exception as e:
-                self.logger.error(f"Failed to parse NDJSON stream. Error: {e}")
-                raise
-
-        return iterator()
+        # Correct way: Use asyncio.to_thread inside an async generator
+        for line in await asyncio.to_thread(lambda: list(read_lines())):
+            if line:
+                try:
+                    yield json.loads(line)
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Error decoding JSON line: {line}. Error: {e}")
+                    raise
 
     # def _parse_ndjson_stream(self, stream):
     #     wrapper = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
