@@ -269,6 +269,9 @@ class IngestionManager:
         :param count: The document counter.
         :return: Dictionary containing the success status and any errors.
         """
+
+        logger.info(f"Processing document: {document}")
+
         transformed_document, toponyms, links = document
         task_tracker.update_task(self.task_id, {
             "transformed": 1,
