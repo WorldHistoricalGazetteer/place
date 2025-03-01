@@ -21,6 +21,8 @@ class VespaSyncExtended(VespaSync):
     A subclass of VespaSync that adds the methods from VespaExtended.
     """
     def __init__(self, app, pool_maxsize=20, **kwargs):
+        if not isinstance(app, VespaExtended):
+            raise TypeError("VespaSyncExtended expects an instance of VespaExtended")
         # Increase the pool size to 20 (see https://pyvespa.readthedocs.io/en/stable/reference-api.html#vespasync)
         super().__init__(app, pool_maxsize=pool_maxsize, **kwargs)
 
@@ -28,7 +30,10 @@ class VespaSyncExtended(VespaSync):
         """
         Delegate method calls to the underlying VespaExtended instance.
         """
-        return getattr(self.app, name)
+        attr = getattr(self.app, name, None)
+        if attr is None:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+        return attr
 
     def get_existing(self, data_id: str = None, namespace: str = None, schema: str = None) -> dict:
         return self.app.get_existing(data_id=data_id, namespace=namespace, schema=schema)
