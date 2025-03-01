@@ -84,7 +84,17 @@ class IngestionManager:
         self.delete_only = delete_only
         self.no_delete = no_delete
         self.dataset_config = self._get_dataset_config()
+
+        logger.info("Initializing Vespa client...")
         self.vespa_client = VespaClient.sync_context("feed")  # Initialize VespaClient
+        logger.info(f"Vespa client initialized: {self.vespa_client}")
+
+        # Debug method availability
+        if hasattr(self.vespa_client, "delete_all_docs"):
+            logger.info("✅ Vespa client has delete_all_docs method")
+        else:
+            logger.error("❌ Vespa client does NOT have delete_all_docs method!")
+
         self.executor = ThreadPoolExecutor(max_workers=10)  # Executor for async tasks
         self.max_queue_size = 100  # Queue size for document update tasks
         self.update_queue = queue.Queue(maxsize=self.max_queue_size)
