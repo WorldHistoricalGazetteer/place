@@ -209,15 +209,10 @@ class StreamFetcher:
     async def _parse_ndjson_stream(self, stream):
         """
         Asynchronously parses an NDJSON stream and yields each document.
-        Uses asyncio.to_thread to run synchronous file I/O operations in a separate thread.
         """
 
-        def read_lines():
-            for line in stream:
-                yield line.strip()
-
-        # Correct way: Use asyncio.to_thread inside an async generator
-        for line in await asyncio.to_thread(lambda: list(read_lines())):
+        async for line in stream:
+            line = line.strip()
             if line:
                 try:
                     yield json.loads(line)
