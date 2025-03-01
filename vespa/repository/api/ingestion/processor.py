@@ -169,6 +169,10 @@ class IngestionManager:
                 skip_transform=self.skip_transform
             )
 
+            logger.info(f"Output file: {self.transformation_manager.output_file}")
+            logger.info(f"Path exists: {os.path.exists(self.transformation_manager.output_file)}")
+            logger.info(f"Skip transform: {self.skip_transform}")
+
             if self.skip_transform and os.path.exists(self.transformation_manager.output_file):
                 logger.info(f"Skipping transformation - using existing transformed file.")
             else:

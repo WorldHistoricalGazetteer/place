@@ -9,7 +9,7 @@ schema toponym {
 
         field name_strict type string {
             # The toponym (e.g., "London", "Londinium"), with strict matching.
-            indexing: attribute | summary
+            indexing: attribute
             match { exact }
         }
 

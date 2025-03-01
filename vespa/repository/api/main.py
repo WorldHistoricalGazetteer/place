@@ -131,10 +131,11 @@ async def ingest_dataset(
         background_tasks (object): BackgroundTasks instance to run tasks in the background.
         delete_only: If True, delete existing data without ingestion.
         no_delete: If True, do not delete existing data.
+        skip_transform: If True, skip transformation if file found.
     """
     task_id = get_uuid()  # Generate a unique task ID
 
-    ingestion_manager = IngestionManager(dataset_name, task_id, limit, delete_only, no_delete)
+    ingestion_manager = IngestionManager(dataset_name, task_id, limit, delete_only, no_delete, skip_transform)
 
     # Start the ingestion in the background
     background_tasks.add_task(ingestion_manager.ingest_data)
