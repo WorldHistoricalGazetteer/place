@@ -52,18 +52,9 @@ class TransformationManager:
         :param document: The document to be transformed and stored.
         """
         transformed_data = DocTransformer.transform(document, self.dataset_name, self.transformer_index)
-        self._write_to_file(transformed_data)
-
-    def _write_to_file(self, transformed_data):
-        """
-        Writes the transformed data to the output file.
-
-        :param transformed_data: The transformed data to be written.
-        """
         with open(self.output_file, "a") as f:
-            for item in transformed_data:
-                json.dump(item, f)
-                f.write("\n")
+            json.dump(transformed_data, f)
+            f.write("\n")
 
 
 class IngestionManager:
