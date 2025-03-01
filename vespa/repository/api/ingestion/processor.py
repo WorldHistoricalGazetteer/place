@@ -128,14 +128,14 @@ class IngestionManager:
 
         for schema in schema:
             # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.application.Vespa.delete_all_docs
-            logger.info(f"delete_all_docs: {self.vespa_client.delete_all_docs}")
-            if not callable(self.vespa_client.delete_all_docs):
-                logger.error("❌ self.vespa_client.delete_all_docs is not callable!")
 
-            self.vespa_client.delete_all_docs(
-                namespace=self.dataset_config['namespace'],
-                schema=schema,
-                content_cluster_name="content"
+            await asyncio.get_event_loop().run_in_executor(
+                self.executor,
+                lambda: self.vespa_client.delete_all_docs(
+                    namespace=self.dataset_config['namespace'],
+                    schema=schema,
+                    content_cluster_name="content"
+                )
             )
 
             # await asyncio.get_event_loop().run_in_executor(self.executor, self.vespa_client.delete_all_docs(
