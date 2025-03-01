@@ -157,9 +157,10 @@ class PhoneticsProcessor:
             for line in f:
                 if line.startswith("|"):
                     parts = line.strip().split("|")
-                    qid = parts[1].strip()
-                    if qid.startswith("Q"):
-                        TOPOS[qid] = {}
+                    bnid = parts[1].strip()
+                    if bnid.startswith("bn:"):
+                        # Remove the "bn:" namespace identifier
+                        TOPOS[bnid[3:]] = {}
         topos_files = [f for f in os.listdir(topos_dir) if f.endswith('.md') and f != "thesaurus.md"]
         # Process the topos file for each supported language
         for file in topos_files:
@@ -169,28 +170,29 @@ class PhoneticsProcessor:
                 for line in f:
                     if line.startswith("|"):
                         parts = line.strip().split("|")
-                        qid = parts[1].strip()
-                        if qid.startswith("Q"):
+                        bnid = parts[1].strip()
+                        if bnid.startswith("bn:"):
+                            id = bnid[3:]
                             elements = parts[3].strip()
                             lang_script = f"{lang}-{detect_script(elements)}"
                             if not lang_script in EPITRAN_LANGS.keys():
                                 logger.warning(f"Unsupported language-script combination: {lang_script}")
                                 # Skip unsupported language-script combinations
                                 continue
-                            if not qid in TOPOS:
+                            if not id in TOPOS:
                                 # Not in the thesaurus (controlled vocabulary), so skip it
                                 continue
-                            if not lang in TOPOS[qid]:
-                                TOPOS[qid][lang] = {'orthograph': [], 'ipa': []}
+                            if not lang in TOPOS[id]:
+                                TOPOS[id][lang] = {'orthograph': [], 'ipa': []}
                             elements = elements.replace(" ", "").split(",")
                             # Initialise Epitran instances (unless already initialised and not expired)
                             self._prepare_epitran_instance(lang_script)
                             # Loop through toponymic elements, convert to IPA and store in TOPOS
                             for element in elements:
-                                TOPOS[qid][lang]["orthograph"].append(element)
+                                TOPOS[id][lang]["orthograph"].append(element)
                                 ipa = self.epitran_instances[lang_script].transliterate(element)
                                 if ipa:
-                                    TOPOS[qid][lang]["ipa"].append(ipa)
+                                    TOPOS[id][lang]["ipa"].append(ipa)
         # Save the TOPOS dictionary as a JSON object to a file in the topos directory using orjson
         with open(os.path.join(topos_dir, "TOPOS.json"), "wb") as f:
             f.write(orjson.dumps(TOPOS, option=orjson.OPT_INDENT_2))
@@ -212,27 +214,16 @@ class PhoneticsProcessor:
             panphon = convert_panphon(self.ft.word_to_vector_list(ipa))
 
             """
-            TODO: Implement BiLSTM embeddings
+            TODO: Implement Siamese-BiLSTM `linguistic` embeddings
             
-            See comment on Issue #19 outlining an approach
+            See Issue #19 outlining an approach
             
             """
 
-            # ngrams = []
-            # ipa_truncated = ipa[:max_length]
-            # ipa_unicode = [ord(ipa_character) for ipa_character in ipa_truncated]
-            # ipa_length = len(ipa_unicode)
-            # for n in range(2, max_ngram + 1):
-            #     for i in range(ipa_length - n + 1):
-            #         ngrams.append(ipa_unicode[i: i + n])
-            #     # Pad to max_length with space_unicode arrays of length n to ensure alignment
-            #     ngrams = ngrams + [np.zeros(n, dtype=int)] * (max_length - ipa_length)
-
             return {
-                # "ngram": ngrams,
-                "panphon": panphon, # Required for training BiLSTM model
-                # "BiLSTM": bilstm,
-                "semantic": semantics
+                "semantic": semantics,
+                "panphon": panphon, # Required for training Siamese-BiLSTM model
+                # "linguistic": linguistic, # Placeholder for output from Siamese-BiLSTM model
             }
 
         except Exception as e:
