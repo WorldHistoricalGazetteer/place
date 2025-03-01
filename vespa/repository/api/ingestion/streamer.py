@@ -213,16 +213,17 @@ class StreamFetcher:
         """
 
         def read_lines():
-            with open(stream, mode='r', encoding='utf-8') as file:
-                for line in file:
-                    yield line.strip()
+            # This function will read the lines of the stream
+            for line in stream:
+                yield line.strip()
 
+        # Use asyncio.to_thread to handle blocking file reading in a separate thread
         parser = asyncio.to_thread(read_lines)
 
         async def iterator():
             try:
-                # Use asyncio.to_thread to handle blocking file I/O in a separate thread
-                for line in await parser:
+                # Asynchronously iterate over the lines
+                async for line in parser:
                     if line:  # Ignore empty lines
                         try:
                             yield json.loads(line)  # Parse and yield JSON object
