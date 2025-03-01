@@ -263,10 +263,6 @@ class IngestionManager:
 
         logger.info(f"Processing document: {document}")
 
-        # Pad document with empty lists for toponyms and links if not present
-        while len(document) < 3:
-            document.append([])
-
         transformed_document, toponyms, links = document
         task_tracker.update_task(self.task_id, {
             "transformed": 1,
