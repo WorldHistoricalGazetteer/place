@@ -55,10 +55,10 @@ class NamesProcessor:
             return self.output
 
         years = {
-            **({'year_start': int(year_start)} if (year_start := self.name.get('from')) else {}),
-            **({'year_end': int(year_end)} if (year_end := self.name.get('to')) else {}),
-            # 'year_start': self.name.get('from', 2025),
-            # 'year_end': self.name.get('to', 2025),
+            # **({'year_start': int(year_start)} if (year_start := self.name.get('from')) else {}),
+            # **({'year_end': int(year_end)} if (year_end := self.name.get('to')) else {}),
+            'year_start': int(self.name.get('from', 2025)),
+            'year_end': int(self.name.get('to', 2025)),
         }
 
         self.output['names'].append({
