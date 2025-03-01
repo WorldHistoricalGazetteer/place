@@ -117,6 +117,7 @@ class IngestionManager:
             schema = ['place', 'toponym', 'link', 'variant']
 
         for schema in schema:
+            # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.application.Vespa.delete_all_docs
             await asyncio.get_event_loop().run_in_executor(self.executor, self.vespa_client.delete_all_docs(
                 namespace=self.dataset_config['namespace'],
                 schema=schema,

@@ -24,6 +24,12 @@ class VespaSyncExtended(VespaSync):
         # Increase the pool size to 20 (see https://pyvespa.readthedocs.io/en/stable/reference-api.html#vespasync)
         super().__init__(app, pool_maxsize=pool_maxsize, **kwargs)
 
+    def __getattr__(self, name):
+        """
+        Delegate method calls to the underlying VespaExtended instance.
+        """
+        return getattr(self.app, name)
+
     def get_existing(self, data_id: str = None, namespace: str = None, schema: str = None) -> dict:
         return self.app.get_existing(data_id=data_id, namespace=namespace, schema=schema)
 
@@ -177,4 +183,6 @@ class VespaClient:
         Provide a context manager for VespaSync.
         """
         app = cls.get_instance(client_type)
+        if not isinstance(app, VespaExtended):
+            raise TypeError("Expected VespaExtended instance")
         return VespaSyncExtended(app)
