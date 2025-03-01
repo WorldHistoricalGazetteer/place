@@ -109,16 +109,10 @@ class IngestionManager:
 
         for schema in schema:
             # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.application.Vespa.delete_all_docs
-            await asyncio.get_event_loop().run_in_executor(
-                self.executor,
-                # The lambda function is used to wrap the method call because `run_in_executor`
-                # expects a callable object, and directly passing a bound method (like
-                # `self.vespa_client.delete_all_docs`) can sometimes cause issues with method resolution.
-                lambda: self.vespa_client.delete_all_docs(
-                    namespace=self.dataset_config['namespace'],
-                    schema=schema,
-                    content_cluster_name="content"
-                )
+            self.vespa_client.delete_all_docs(
+                namespace=self.dataset_config['namespace'],
+                schema=schema,
+                content_cluster_name="content"
             )
             logger.info(f"Deleted {self.dataset_config['namespace']}:{schema} documents.")
 
@@ -314,9 +308,6 @@ class IngestionManager:
         :return: Dictionary containing the success status and any errors.
         """
 
-        if is_toponym:
-            logger.info(f"Processing toponym: {transformed_document}")
-
         document_id = transformed_document.get("document_id")
         if not document_id:
             logger.error(f"Document ID not found: {transformed_document}")
@@ -342,8 +333,6 @@ class IngestionManager:
                     # Do not set namespace
                     schema=self.dataset_config['vespa_schema'],
                 )
-
-            logger.info(f"Preexisting: {preexisting}")
 
             if preexisting:  # (and schema == 'toponym')
                 # Extend `places` list
