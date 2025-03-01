@@ -128,21 +128,17 @@ class IngestionManager:
 
         for schema in schema:
             # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.application.Vespa.delete_all_docs
-
             await asyncio.get_event_loop().run_in_executor(
                 self.executor,
+                # The lambda function is used to wrap the method call because `run_in_executor`
+                # expects a callable object, and directly passing a bound method (like
+                # `self.vespa_client.delete_all_docs`) can sometimes cause issues with method resolution.
                 lambda: self.vespa_client.delete_all_docs(
                     namespace=self.dataset_config['namespace'],
                     schema=schema,
                     content_cluster_name="content"
                 )
             )
-
-            # await asyncio.get_event_loop().run_in_executor(self.executor, self.vespa_client.delete_all_docs(
-            #     namespace=self.dataset_config['namespace'],
-            #     schema=schema,
-            #     content_cluster_name="content"
-            # ))
             logger.info(f"Deleted {self.dataset_config['namespace']}:{schema} documents.")
 
     async def ingest_data(self):
@@ -232,12 +228,8 @@ class IngestionManager:
             if filters and not any(f(document) for f in filters):
                 continue
 
-            # Offload transformation to the executor
-            task = asyncio.get_event_loop().run_in_executor(
-                self.executor, self.transformation_manager.transform_and_store, document
-            )
-            # It is necessary to await the task to ensure that the file is written to (otherwise the file may not be closed correctly)
-            await task
+            # It is necessary to await the task to ensure that the file is written (otherwise the file may not be closed correctly)
+            await self.transformation_manager.transform_and_store(document)
             task_tracker.update_task(self.task_id, {"transformed": 1})
             counter += 1
 
