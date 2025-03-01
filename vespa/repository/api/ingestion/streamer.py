@@ -11,7 +11,6 @@ import subprocess
 import urllib.parse
 import zipfile
 
-import aiofiles
 import ijson
 import xmltodict
 
@@ -154,6 +153,7 @@ class StreamFetcher:
 
     def _get_regular_file_stream(self, file_path):
         """Return an asynchronous file stream."""
+
         async def async_file_stream():
             with open(file_path, 'rb') as file:
                 while True:
@@ -161,6 +161,7 @@ class StreamFetcher:
                     if not line:  # EOF
                         break
                     yield line
+
         return async_file_stream()
 
     def _get_zip_stream(self, zip_path):
