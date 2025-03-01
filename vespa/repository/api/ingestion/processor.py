@@ -250,11 +250,7 @@ class IngestionManager:
         counter = 0
 
         async for document in stream:
-            # Offload transformation to the executor
-            task = asyncio.get_event_loop().run_in_executor(
-                self.executor, self._process_document, document, counter
-            )
-            await task
+            await self._process_document(document, counter)
             task_tracker.update_task(self.task_id, {"transformed": 1})
             counter += 1
 
