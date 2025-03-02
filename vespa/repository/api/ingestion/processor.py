@@ -517,7 +517,7 @@ class IngestionManager:
 
                 oldest_toponym_id = oldest_toponym['documentid']
                 if oldest_toponym.get('is_staging'):
-                    sync_app.update_existing(
+                    await sync_app.update_existing(
                         namespace=self.dataset_config['namespace'],
                         schema='toponym',
                         data_id=oldest_toponym_id,
@@ -557,7 +557,7 @@ class IngestionManager:
                             unique_places.add(place_id)
 
                         # Delete the merged toponym
-                        sync_app.delete_existing(
+                        await sync_app.delete_existing(
                             namespace=self.dataset_config['namespace'],
                             schema='toponym',
                             data_id=toponym_id
