@@ -52,6 +52,7 @@ class TransformationManager:
         :param document: The document to be transformed and stored.
         """
         transformed_data = DocTransformer.transform(document, self.dataset_name, self.transformer_index)
+        task_tracker.update_task(self.task_id, {"transformed": 1})
         with open(self.output_file, "a") as f:
             json.dump(transformed_data, f)
             f.write("\n")
@@ -195,6 +196,9 @@ class IngestionManager:
             await self._process_documents(transformed_stream)
             transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
+        logger.info("Starting post-processing...")
+        await self._condense_toponyms()  # Condense toponyms after all are processed
+
         logger.info(f"Completed processing dataset {self.dataset_name}")
 
     async def _transform_documents(self, stream):
@@ -212,7 +216,6 @@ class IngestionManager:
 
             # It is necessary to await the task to ensure that the file is written (otherwise the file may not be closed correctly)
             await self.transformation_manager.transform_and_store(document)
-            task_tracker.update_task(self.task_id, {"transformed": 1})
             counter += 1
 
             # Stop processing if the limit is reached
@@ -232,8 +235,8 @@ class IngestionManager:
         counter = 0
 
         async for document in stream:
-            await self._process_document(document, counter)
-            task_tracker.update_task(self.task_id, {"transformed": 1})
+            transformed_document, toponyms, links = document
+            await self._process_document(transformed_document, toponyms, links, counter)
             counter += 1
 
             # Stop processing if the limit is reached
@@ -242,7 +245,7 @@ class IngestionManager:
 
         return results  # Return aggregated results
 
-    async def _process_document(self, document, count):
+    async def _process_document(self, transformed_document, toponyms, links, count):
         """
         Processes a single document by transforming it, feeding it to Vespa,
         and handling any associated toponyms and links.
@@ -251,11 +254,6 @@ class IngestionManager:
         :param count: The document counter.
         :return: Dictionary containing the success status and any errors.
         """
-
-        transformed_document, toponyms, links = document
-        task_tracker.update_task(self.task_id, {
-            "transformed": 1,
-        })
 
         try:
             if not transformed_document and not toponyms:
@@ -271,7 +269,7 @@ class IngestionManager:
                 if success and toponyms:
                     toponym_responses = await asyncio.gather(*[
                         asyncio.get_event_loop().run_in_executor(self.executor, self._feed_document, toponym, count,
-                                                                 True) # Set is_toponym flag
+                                                                 True)  # Set is_toponym flag
                         for toponym in toponyms
                     ])
 
@@ -300,7 +298,7 @@ class IngestionManager:
         except Exception as e:
             task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1, "error": f"#{count}: {str(e)}"})
             return {"success": False,
-                    "document": f"{self.dataset_config['namespace']}:{self.dataset_config['vespa_schema']}:{document}",
+                    "document": f"{self.dataset_config['namespace']}:{self.dataset_config['vespa_schema']}:{transformed_document}",
                     "error": str(e)}
 
     def _feed_document(self, transformed_document, count, is_toponym=False):
@@ -323,54 +321,29 @@ class IngestionManager:
                 "document_id": document_id,
                 "error": "Document ID not found in transformed document"
             }
+
         try:
             with VespaClient.sync_context("feed") as sync_app:
-                preexisting = None
-                yql = None
+                #  Handle toponyms: add creation timestamp and staging flag
                 if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
-                    # Check if toponym already exists
-                    yql = f'select documentid, places from toponym where name_strict contains "{escape_yql(transformed_document["fields"]["name"])}" '
-                    for field in bcp47_fields:
-                        if transformed_document.get("fields", {}).get(f"bcp47_{field}"):
-                            yql += f'and bcp47_{field} contains "{transformed_document["fields"][f"bcp47_{field}"]}" '
-                    yql += 'limit 1'
-                    preexisting = sync_app.query_existing(
-                        {'yql': yql},
-                        # Do not set namespace
-                        schema=self.dataset_config['vespa_schema'],
-                    )
+                    transformed_document['fields']['created'] = int(time.time() * 1000)
+                    transformed_document['fields']['is_staging'] = True
 
-                if preexisting:  # (and schema == 'toponym')
-                    # Extend `places` list
-                    existing_toponym_id = preexisting.get("document_id")
-                    existing_places = preexisting.get("fields", {}).get("places", [])
+                #  If updating place, add to queue and return
+                if self.update_place and not is_toponym:
+                    task = (self.dataset_config['vespa_schema'], document_id, transformed_document, count)
+                    self.update_queue.put(task)
+                    return {"success": True}  # Indicate success for queueing
 
-                    response = sync_app.update_existing(
-                        # https://docs.vespa.ai/en/reference/document-json-format.html#add-array-elements
-                        namespace=self.dataset_config['namespace'],
-                        schema='toponym',
-                        data_id=existing_toponym_id,
-                        fields={
-                            "places": list(set(existing_places + [document_id]))
-                        }
-                    )
-                else:
-                    if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
-                        # Inject creation timestamp
-                        transformed_document['fields']['created'] = int(time.time() * 1000)
-                    if self.update_place and not is_toponym:  # (only True when schema == 'place')
-                        task = (self.dataset_config['vespa_schema'], document_id, transformed_document, count)
-                        self.update_queue.put(task)
-                        response = None
-                    else:
-                        response = sync_app.feed_existing(
-                            namespace=self.dataset_config['namespace'],
-                            schema='toponym' if is_toponym else self.dataset_config['vespa_schema'],
-                            data_id=document_id,
-                            fields=transformed_document['fields']
-                        )
+                #  Otherwise, feed the document directly to Vespa
+                response = sync_app.feed_existing(
+                    namespace=self.dataset_config['namespace'],
+                    schema='toponym' if is_toponym else self.dataset_config['vespa_schema'],
+                    data_id=document_id,
+                    fields=transformed_document['fields']
+                )
 
-                if (self.update_place and not is_toponym) or response.get('status_code') < 500:
+                if response.get('status_code') < 500:
                     return {"success": True, "namespace": self.dataset_config['namespace'],
                             "schema": self.dataset_config['vespa_schema'], "document_id": document_id}
                 else:
@@ -386,6 +359,7 @@ class IngestionManager:
                         "status_code": response.get('status_code'),
                         "message": msg
                     }
+
         except Exception as e:
             task_tracker.update_task(self.task_id, {"error (E)": f"#{count}: yql: >>>{yql}<<< {str(e)}"})
             logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
@@ -499,3 +473,86 @@ class IngestionManager:
                 msg = f"Failed to get existing document: {self.dataset_config['namespace']}:{schema}::{document_id}, Status code: {response.get('status_code')}"
                 task_tracker.update_task(self.task_id, {"error (D)": f"#{count}: {msg}"})
                 logger.error(msg)
+
+    async def _condense_toponyms(self):
+        """
+        Condenses staged toponyms in Vespa, iterating until no more are found.
+        """
+        with VespaClient.sync_context("feed") as sync_app:
+            while True:
+                yql = 'select * from toponym where is_staging = true limit 1'
+                staging_toponym = sync_app.query_existing({'yql': yql}, schema='toponym')
+
+                if not staging_toponym:
+                    break  # No more staging toponyms
+
+                toponym_id = staging_toponym['document_id']
+                places = staging_toponym['fields'].get('places', [])
+                name = staging_toponym['fields']['name']
+
+            # Find all matching toponyms, ordered by creation timestamp
+            yql = f'select documentid, places, created from toponym where name_strict contains "{escape_yql(name)}" '
+            for field in bcp47_fields:
+                if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
+                    yql += f'and bcp47_{field} contains "{staging_toponym["fields"][f"bcp47_{field}"]}" '
+            yql += 'order by created asc'  # Order by creation timestamp
+            matching_toponyms = sync_app.query({'yql': yql}, schema='toponym')
+
+            if matching_toponyms:
+                oldest_toponym = matching_toponyms[0]  # Get the oldest toponym
+                oldest_toponym_id = oldest_toponym['document_id']
+                unique_places = set(oldest_toponym['fields'].get('places', []))
+
+                # Loop all but the oldest toponyms. For each, replace the toponym id in the linked place with the oldest toponym id
+                for toponym in matching_toponyms[1:]:
+                    toponym_id = toponym['document_id']
+                    toponym_places = toponym['fields'].get('places', [])
+
+                    # Update the place(s) linked to the toponym
+                    for place_id in toponym_places:
+                        place = sync_app.get_existing(
+                            namespace=self.dataset_config['namespace'],
+                            schema='place',
+                            data_id=place_id
+                        )
+                        place_names = place['fields'].get('names', [])
+                        # Find the matching name and replace the toponym id
+                        for name in place_names:
+                            if name.get('toponym_id') == toponym_id:
+                                name['toponym_id'] = oldest_toponym_id
+                        # Update the place with the replaced toponym id
+                        sync_app.update_existing(
+                            namespace=self.dataset_config['namespace'],
+                            schema='place',
+                            data_id=place_id,
+                            fields={"names": place_names}
+                        )
+                        # Add the place to the unique set
+                        unique_places.add(place_id)
+
+                # Update the oldest toponym with merged places
+                sync_app.update_existing(
+                    namespace=self.dataset_config['namespace'],
+                    schema='toponym',
+                    data_id=oldest_toponym_id,
+                    fields={
+                        "places": list(unique_places),
+                        "is_staging": False
+                    }
+                )
+
+                # Delete duplicate toponyms
+                for toponym in matching_toponyms[1:]:
+                    sync_app.delete_existing(
+                        namespace=self.dataset_config['namespace'],
+                        schema='toponym',
+                        data_id=toponym['document_id']
+                    )
+            else:
+                # Remove the staging flag from the toponym
+                sync_app.update_existing(
+                    namespace=self.dataset_config['namespace'],
+                    schema='toponym',
+                    data_id=toponym_id,
+                    fields={"is_staging": False}
+                )
