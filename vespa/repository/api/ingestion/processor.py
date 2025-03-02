@@ -585,6 +585,7 @@ class IngestionManager:
                         schema='toponym',
                         data_id=oldest_toponym_id
                     )
+                    logger.info(f"Check update Oldest toponym: {oldest_toponym}")
                     if not oldest_toponym.get('fields', {}).get('is_staging'):
                         break
                     time.sleep(0.001)
