@@ -491,6 +491,8 @@ class IngestionManager:
                 if not staging_toponym:
                     break  # No more staging toponyms
 
+                logger.info(f"Found staging toponym: {staging_toponym}")
+
                 # Find all matching toponyms, ordered by creation timestamp
                 name = staging_toponym['fields']['name']
                 yql = f'select documentid, places, is_staging, created from toponym where name_strict contains "{escape_yql(name)}" '
@@ -565,6 +567,7 @@ class IngestionManager:
                         data_id=oldest_toponym_id
                     )
                     if not oldest_toponym.get('fields', {}).get('is_staging'):
+                        logger.info(f"Oldest toponym unstaged: {oldest_toponym_id}")
                         break
                     time.sleep(0.001)
 
