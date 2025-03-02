@@ -74,6 +74,11 @@ schema toponym {
 
         ########### Metadata ###########
 
+        field is_staging type bool {
+            # A boolean flag indicating if the place is in a staging state.
+            indexing: attribute
+        }
+
         field created type long {
             # Unix timestamp of when the toponym was created.
             indexing: attribute | summary
