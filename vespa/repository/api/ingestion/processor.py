@@ -433,12 +433,13 @@ class IngestionManager:
 
                 self._update_existing_place(task)
 
-                if count % 1000 == 0:
-                    logger.info(f"{count:,} documents sent for indexing")
-                # Pausing helps reduce GC pressure or system resource exhaustion during heavy processing
-                if count % 100_000 == 0:
-                    logger.info(f"Pausing for 3 minutes to reduce system pressure ...")
-                    time.sleep(3 * 60)
+                # if count != 0:
+                #     if count % 1000 == 0:
+                #         logger.info(f"{count:,} documents sent for indexing")
+                #     # Pausing helps reduce GC pressure or system resource exhaustion during heavy processing
+                #     if count % 100_000 == 0:
+                #         logger.info(f"Pausing for 3 minutes to reduce system pressure ...")
+                #         time.sleep(3 * 60)
 
             except Exception as e:
                 logger.error(f"Error processing update: {e}", exc_info=True)
@@ -490,11 +491,8 @@ class IngestionManager:
                 if not staging_toponym:
                     break  # No more staging toponyms
 
-                logger.info(f"Found staging toponym: {staging_toponym}")
-
-                name = staging_toponym['fields']['name']
-
                 # Find all matching toponyms, ordered by creation timestamp
+                name = staging_toponym['fields']['name']
                 yql = f'select documentid, places, is_staging, created from toponym where name_strict contains "{escape_yql(name)}" '
                 for field in bcp47_fields:
                     if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
@@ -507,14 +505,9 @@ class IngestionManager:
                     break
 
                 matching_toponyms = [doc.get('fields', {}) for doc in query_response.get_json().get('root', {}).get('children', [])]
-                logger.info(f"Found {len(matching_toponyms)} matching toponyms for {name}")
-                logger.info(f"Matching toponyms: {matching_toponyms}")
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
-
-                logger.info(f"Oldest toponym: {oldest_toponym}")
-
                 oldest_toponym_id = oldest_toponym['documentid'].split('::')[-1]
                 deleted_toponyms = []
                 if oldest_toponym.get('is_staging'):
@@ -585,7 +578,6 @@ class IngestionManager:
                         schema='toponym',
                         data_id=oldest_toponym_id
                     )
-                    logger.info(f"Check update Oldest toponym: {oldest_toponym}")
                     if not oldest_toponym.get('fields', {}).get('is_staging'):
                         break
                     time.sleep(0.001)
