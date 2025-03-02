@@ -522,8 +522,7 @@ class IngestionManager:
                         namespace=self.dataset_config['namespace'],
                         schema='toponym',
                         data_id=oldest_toponym_id,
-                        # fields={"is_staging": False}
-                        fields={"is_staging": {"remove": True}}
+                        fields={"is_staging": False}
                     )
                     task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
 
