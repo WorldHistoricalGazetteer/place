@@ -365,8 +365,8 @@ class IngestionManager:
                     }
 
         except Exception as e:
-            task_tracker.update_task(self.task_id, {"error (E)": f"#{count}: yql: >>>{yql}<<< {str(e)}"})
-            logger.error(f"Error feeding document: {document_id} with {yql}, Error: {str(e)}", exc_info=True)
+            task_tracker.update_task(self.task_id, {"error (E)": f"#{count}: {str(e)}"})
+            logger.error(f"Error feeding document: {str(e)}", exc_info=True)
             return {
                 "success": False,
                 "namespace": self.dataset_config['namespace'],
@@ -522,7 +522,8 @@ class IngestionManager:
                         namespace=self.dataset_config['namespace'],
                         schema='toponym',
                         data_id=oldest_toponym_id,
-                        fields={"is_staging": False}
+                        # fields={"is_staging": False}
+                        fields={"is_staging": {"remove": True}}
                     )
                     task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
 

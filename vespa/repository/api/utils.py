@@ -16,6 +16,8 @@ class TaskTracker:
             "status": "in_progress",
             "transformed": 0,
             "processed": 0,
+            "toponyms_staged": 0,
+            "toponyms_unstaged": 0,
             "success": 0,
             "failure": 0,
             "errors": [],
