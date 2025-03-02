@@ -486,7 +486,7 @@ class IngestionManager:
         with VespaClient.sync_context("feed") as sync_app:
             while True:
                 yql = 'select * from toponym where is_staging = true limit 1'
-                staging_toponym = await asyncio.to_thread(sync_app.query_existing({'yql': yql}, schema='toponym'))
+                staging_toponym = await asyncio.to_thread(sync_app.query_existing, {'yql': yql}, schema='toponym')
 
                 if not staging_toponym:
                     break  # No more staging toponyms
@@ -498,25 +498,27 @@ class IngestionManager:
                     if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f'and bcp47_{field} contains "{staging_toponym["fields"][f"bcp47_{field}"]}" '
                 yql += 'order by created asc'  # Order by creation timestamp
-                query_response = await asyncio.to_thread(sync_app.query({'yql': yql}, schema='toponym'))
+                query_response = await asyncio.to_thread(sync_app.query, {'yql': yql}, schema='toponym')
 
                 if not query_response.is_successful():
                     logger.error(f"Failed to query toponyms: {query_response.get_status_code()}")
                     break
 
-                matching_toponyms = [doc.get('fields', {}) for doc in query_response.get_json().get('root', {}).get('children', [])]
+                matching_toponyms = [doc.get('fields', {}) for doc in
+                                     query_response.get_json().get('root', {}).get('children', [])]
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
                 oldest_toponym_id = oldest_toponym['documentid'].split('::')[-1]
                 deleted_toponyms = []
                 if oldest_toponym.get('is_staging'):
-                    await asyncio.to_thread(sync_app.update_existing(
-                        namespace=self.dataset_config['namespace'],
-                        schema='toponym',
-                        data_id=oldest_toponym_id,
-                        fields={"is_staging": False}
-                    ))
+                    await asyncio.to_thread(
+                        sync_app.update_existing,
+                        self.dataset_config['namespace'],
+                        'toponym',
+                        oldest_toponym_id,
+                        {"is_staging": False}
+                    )
                     task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
 
                 # If any matching toponyms remain, merge them with the oldest toponym
@@ -530,44 +532,28 @@ class IngestionManager:
 
                         # Update the place(s) linked to the toponym
                         for place_id in toponym_places:
-                            place = await asyncio.to_thread(sync_app.get_existing(
-                                namespace=self.dataset_config['namespace'],
-                                schema='place',
-                                data_id=place_id
-                            ))
+                            place = await asyncio.to_thread(sync_app.get_existing, self.dataset_config['namespace'],
+                                                            'place', place_id)
                             place_names = place['fields'].get('names', [])
                             # Find the matching name and replace the toponym id
                             for name in place_names:
                                 if name.get('toponym_id') == toponym_id:
                                     name['toponym_id'] = oldest_toponym_id
                             # Update the place with the replaced toponym id
-                            await asyncio.to_thread(sync_app.update_existing(
-                                namespace=self.dataset_config['namespace'],
-                                schema='place',
-                                data_id=place_id,
-                                fields={"names": place_names}
-                            ))
+                            await asyncio.to_thread(sync_app.update_existing, self.dataset_config['namespace'], 'place',
+                                                    place_id, {"names": place_names})
                             # Add the place to the unique set
                             unique_places.add(place_id)
 
                         # Delete the merged toponym
-                        await asyncio.to_thread(sync_app.delete_data(
-                            namespace=self.dataset_config['namespace'],
-                            schema='toponym',
-                            data_id=toponym_id
-                        ))
+                        await asyncio.to_thread(sync_app.delete_data, self.dataset_config['namespace'], 'toponym',
+                                                toponym_id)
                         task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
                         deleted_toponyms += [toponym_id]
 
                     # Update the oldest toponym with merged places
-                    await asyncio.to_thread(sync_app.update_existing(
-                        namespace=self.dataset_config['namespace'],
-                        schema='toponym',
-                        data_id=oldest_toponym_id,
-                        fields={
-                            "places": list(unique_places)
-                        }
-                    ))
+                    await asyncio.to_thread(sync_app.update_existing, self.dataset_config['namespace'], 'toponym',
+                                            oldest_toponym_id, {"places": list(unique_places)})
 
                 # ## Latency has to be mitigated
                 #
