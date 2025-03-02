@@ -490,7 +490,8 @@ class IngestionManager:
                 if not staging_toponym:
                     break  # No more staging toponyms
 
-                toponym_id = staging_toponym['document_id']
+                logger.info(f"Found staging toponym: {staging_toponym}")
+
                 name = staging_toponym['fields']['name']
 
                 # Find all matching toponyms, ordered by creation timestamp
@@ -511,6 +512,9 @@ class IngestionManager:
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
+
+                logger.info(f"Oldest toponym: {oldest_toponym}")
+
                 oldest_toponym_id = oldest_toponym['documentid']
                 if oldest_toponym.get('is_staging'):
                     sync_app.update_existing(
