@@ -30,7 +30,7 @@ class TaskTracker:
     def update_task(self, task_id, updates):
         if task_id in self.tasks:
             for key, value in updates.items():
-                if isinstance(value, int) and key in {"transformed", "processed", "success", "failure"}:
+                if isinstance(value, int) and key in {"transformed", "processed", "toponyms_staged", "toponyms_unstaged", "success", "failure"}:
                     self.tasks[task_id][key] += value
                 elif key == "error":
                     errors = self.tasks[task_id].setdefault("errors", [])
