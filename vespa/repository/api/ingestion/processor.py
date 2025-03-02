@@ -490,72 +490,71 @@ class IngestionManager:
                     break  # No more staging toponyms
 
                 toponym_id = staging_toponym['document_id']
-                places = staging_toponym['fields'].get('places', [])
                 name = staging_toponym['fields']['name']
 
-            # Find all matching toponyms, ordered by creation timestamp
-            yql = f'select documentid, places, created from toponym where name_strict contains "{escape_yql(name)}" '
-            for field in bcp47_fields:
-                if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
-                    yql += f'and bcp47_{field} contains "{staging_toponym["fields"][f"bcp47_{field}"]}" '
-            yql += 'order by created asc'  # Order by creation timestamp
-            matching_toponyms = sync_app.query({'yql': yql}, schema='toponym')
+                # Find all matching toponyms, ordered by creation timestamp
+                yql = f'select documentid, places, created from toponym where name_strict contains "{escape_yql(name)}" '
+                for field in bcp47_fields:
+                    if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
+                        yql += f'and bcp47_{field} contains "{staging_toponym["fields"][f"bcp47_{field}"]}" '
+                yql += 'order by created asc'  # Order by creation timestamp
+                matching_toponyms = sync_app.query({'yql': yql}, schema='toponym')
 
-            if matching_toponyms:
-                oldest_toponym = matching_toponyms[0]  # Get the oldest toponym
-                oldest_toponym_id = oldest_toponym['document_id']
-                unique_places = set(oldest_toponym['fields'].get('places', []))
+                if matching_toponyms:
+                    oldest_toponym = matching_toponyms[0]  # Get the oldest toponym
+                    oldest_toponym_id = oldest_toponym['document_id']
+                    unique_places = set(oldest_toponym['fields'].get('places', []))
 
-                # Loop all but the oldest toponyms. For each, replace the toponym id in the linked place with the oldest toponym id
-                for toponym in matching_toponyms[1:]:
-                    toponym_id = toponym['document_id']
-                    toponym_places = toponym['fields'].get('places', [])
+                    # Loop all but the oldest toponyms. For each, replace the toponym id in the linked place with the oldest toponym id
+                    for toponym in matching_toponyms[1:]:
+                        toponym_id = toponym['document_id']
+                        toponym_places = toponym['fields'].get('places', [])
 
-                    # Update the place(s) linked to the toponym
-                    for place_id in toponym_places:
-                        place = sync_app.get_existing(
-                            namespace=self.dataset_config['namespace'],
-                            schema='place',
-                            data_id=place_id
-                        )
-                        place_names = place['fields'].get('names', [])
-                        # Find the matching name and replace the toponym id
-                        for name in place_names:
-                            if name.get('toponym_id') == toponym_id:
-                                name['toponym_id'] = oldest_toponym_id
-                        # Update the place with the replaced toponym id
-                        sync_app.update_existing(
-                            namespace=self.dataset_config['namespace'],
-                            schema='place',
-                            data_id=place_id,
-                            fields={"names": place_names}
-                        )
-                        # Add the place to the unique set
-                        unique_places.add(place_id)
+                        # Update the place(s) linked to the toponym
+                        for place_id in toponym_places:
+                            place = sync_app.get_existing(
+                                namespace=self.dataset_config['namespace'],
+                                schema='place',
+                                data_id=place_id
+                            )
+                            place_names = place['fields'].get('names', [])
+                            # Find the matching name and replace the toponym id
+                            for name in place_names:
+                                if name.get('toponym_id') == toponym_id:
+                                    name['toponym_id'] = oldest_toponym_id
+                            # Update the place with the replaced toponym id
+                            sync_app.update_existing(
+                                namespace=self.dataset_config['namespace'],
+                                schema='place',
+                                data_id=place_id,
+                                fields={"names": place_names}
+                            )
+                            # Add the place to the unique set
+                            unique_places.add(place_id)
 
-                # Update the oldest toponym with merged places
-                sync_app.update_existing(
-                    namespace=self.dataset_config['namespace'],
-                    schema='toponym',
-                    data_id=oldest_toponym_id,
-                    fields={
-                        "places": list(unique_places),
-                        "is_staging": False
-                    }
-                )
-
-                # Delete duplicate toponyms
-                for toponym in matching_toponyms[1:]:
-                    sync_app.delete_existing(
+                    # Update the oldest toponym with merged places
+                    sync_app.update_existing(
                         namespace=self.dataset_config['namespace'],
                         schema='toponym',
-                        data_id=toponym['document_id']
+                        data_id=oldest_toponym_id,
+                        fields={
+                            "places": list(unique_places),
+                            "is_staging": False
+                        }
                     )
-            else:
-                # Remove the staging flag from the toponym
-                sync_app.update_existing(
-                    namespace=self.dataset_config['namespace'],
-                    schema='toponym',
-                    data_id=toponym_id,
-                    fields={"is_staging": False}
-                )
+
+                    # Delete duplicate toponyms
+                    for toponym in matching_toponyms[1:]:
+                        sync_app.delete_existing(
+                            namespace=self.dataset_config['namespace'],
+                            schema='toponym',
+                            data_id=toponym['document_id']
+                        )
+                else:
+                    # Remove the staging flag from the toponym
+                    sync_app.update_existing(
+                        namespace=self.dataset_config['namespace'],
+                        schema='toponym',
+                        data_id=toponym_id,
+                        fields={"is_staging": False}
+                    )
