@@ -82,6 +82,7 @@ class IngestionManager:
         self.update_place = False
         self.transformation_manager = None
         self.skip_transform = skip_transform
+        task_tracker.add_task(self.task_id)
 
     def _get_dataset_config(self):
         """
@@ -250,8 +251,6 @@ class IngestionManager:
         :param count: The document counter.
         :return: Dictionary containing the success status and any errors.
         """
-
-        logger.info(f"Processing document: {document}")
 
         transformed_document, toponyms, links = document
         task_tracker.update_task(self.task_id, {
