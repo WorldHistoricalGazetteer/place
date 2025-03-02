@@ -515,7 +515,7 @@ class IngestionManager:
 
                 logger.info(f"Oldest toponym: {oldest_toponym}")
 
-                oldest_toponym_id = oldest_toponym['documentid']
+                oldest_toponym_id = oldest_toponym['documentid'].split('::')[-1]
                 deleted_toponyms = []
                 if oldest_toponym.get('is_staging'):
                     sync_app.update_existing(
@@ -532,7 +532,7 @@ class IngestionManager:
 
                     # For each, replace the toponym id in the linked place with the oldest toponym id
                     for toponym in matching_toponyms:
-                        toponym_id = toponym['documentid']
+                        toponym_id = toponym['documentid'].split('::')[-1]
                         toponym_places = toponym.get('places', [])
 
                         # Update the place(s) linked to the toponym
