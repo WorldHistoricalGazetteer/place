@@ -509,6 +509,8 @@ class IngestionManager:
                 matching_toponyms = [doc.get('fields', {}) for doc in
                                      query_response.get_json().get('root', {}).get('children', [])]
 
+                logger.info(f"Found {len(matching_toponyms)} toponyms for `{name}`: {matching_toponyms}")
+
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
                 oldest_toponym_id = oldest_toponym['documentid'].split('::')[-1]
@@ -569,6 +571,7 @@ class IngestionManager:
                     if not oldest_toponym.get('fields', {}).get('is_staging'):
                         logger.info(f"Oldest toponym unstaged: {oldest_toponym_id}")
                         break
+                    logger.info(f"Oldest toponym still staged: {oldest_toponym}")
                     time.sleep(0.001)
 
                 # Loop until all deleted toponyms are no longer found
