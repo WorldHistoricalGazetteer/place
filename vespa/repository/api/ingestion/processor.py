@@ -54,14 +54,25 @@ class TransformationManager:
         :param document: The document to be transformed and stored.
         """
         transformed_data = DocTransformer.transform(document, self.dataset_name, self.transformer_index)
+        # TODO: Split into three separate files, one for each type of document
+
+        # TODO: If self.update_place, fetch existing place and update names, then set `operation_type` in subsequent `feed_async_iterable` call
+
+        await asyncio.to_thread(self._write_to_file, transformed_data)
         task_tracker.update_task(self.task_id, {"transformed": 1})
+
+    def _write_to_file(self, transformed_data):
+        """
+        Synchronous method to write transformed data to a file. Called from asyncio.to_thread.
+        """
         with open(self.output_file, "a") as f:
             json.dump(transformed_data, f)
             f.write("\n")
 
 
 class IngestionManager:
-    def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False, condense_only=False):
+    def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False,
+                 condense_only=False):
         """
         Initializes IngestionManager with dataset configuration and Vespa client.
 
@@ -117,10 +128,10 @@ class IngestionManager:
             for schema in schema:
                 # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.application.Vespa.delete_all_docs
                 response = await asyncio.to_thread(sync_app.delete_all_docs,
-                    namespace=self.dataset_config['namespace'],
-                    schema=schema,
-                    content_cluster_name="content"
-                )
+                                                   namespace=self.dataset_config['namespace'],
+                                                   schema=schema,
+                                                   content_cluster_name="content"
+                                                   )
                 logger.info(f"Deleted {self.dataset_config['namespace']}:{schema} documents.")
                 logger.info(f"Response: {response}")
 
@@ -304,7 +315,7 @@ class IngestionManager:
 
     def _feed_document(self, transformed_document, count, is_toponym=False):
         """
-        Feeds the transformed document to Vespa, handling toponym deduplication and updates.
+        Feeds the transformed document to Vespa.
 
         :param transformed_document: The transformed document to feed.
         :param count: The document counter.
@@ -536,9 +547,9 @@ class IngestionManager:
                         # Update the place(s) linked to the toponym
                         for place_id in toponym_places:
                             place = await asyncio.to_thread(sync_app.get_existing,
-                                namespace=self.dataset_config['namespace'],
-                                schema='place',
-                                data_id=place_id)
+                                                            namespace=self.dataset_config['namespace'],
+                                                            schema='place',
+                                                            data_id=place_id)
                             place_names = place['fields'].get('names', [])
                             # Find the matching name and replace the toponym id
                             for name in place_names:
@@ -546,32 +557,32 @@ class IngestionManager:
                                     name['toponym_id'] = oldest_toponym_id
                             # Update the place with the replaced toponym id
                             await asyncio.to_thread(sync_app.update_existing,
-                                namespace=self.dataset_config['namespace'],
-                                schema='place',
-                                data_id=place_id,
-                                fields={"names": place_names}
-                            )
+                                                    namespace=self.dataset_config['namespace'],
+                                                    schema='place',
+                                                    data_id=place_id,
+                                                    fields={"names": place_names}
+                                                    )
                             # Add the place to the unique set
                             unique_places.add(place_id)
 
                         # Delete the merged toponym
                         await asyncio.to_thread(sync_app.delete_data,
-                            namespace=self.dataset_config['namespace'],
-                            schema='toponym',
-                            data_id=toponym_id
-                        )
+                                                namespace=self.dataset_config['namespace'],
+                                                schema='toponym',
+                                                data_id=toponym_id
+                                                )
                         task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
                         deleted_toponyms += [toponym_id]
 
                     # Update the oldest toponym with merged places
                     await asyncio.to_thread(sync_app.update_existing,
-                        namespace=self.dataset_config['namespace'],
-                        schema='toponym',
-                        data_id=oldest_toponym_id,
-                        fields={
-                            "places": list(unique_places)
-                        }
-                    )
+                                            namespace=self.dataset_config['namespace'],
+                                            schema='toponym',
+                                            data_id=oldest_toponym_id,
+                                            fields={
+                                                "places": list(unique_places)
+                                            }
+                                            )
 
                 # ## If latency has to be mitigated...
                 #
