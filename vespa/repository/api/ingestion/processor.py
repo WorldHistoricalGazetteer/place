@@ -558,7 +558,7 @@ class IngestionManager:
                             unique_places.add(place_id)
 
                         # Delete the merged toponym
-                        sync_app.delete_existing(
+                        sync_app.delete_data(
                             namespace=self.dataset_config['namespace'],
                             schema='toponym',
                             data_id=toponym_id
