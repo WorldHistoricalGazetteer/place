@@ -498,7 +498,16 @@ class IngestionManager:
                     if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f'and bcp47_{field} contains "{staging_toponym["fields"][f"bcp47_{field}"]}" '
                 yql += 'order by created asc'  # Order by creation timestamp
-                matching_toponyms = sync_app.query({'yql': yql}, schema='toponym')
+                query_response = sync_app.query({'yql': yql}, schema='toponym')
+
+                if not query_response.is_successful():
+                    logger.error(f"Failed to query toponyms: {query_response.get_status_code()}")
+                    break
+                else:
+                    matching_toponyms = query_response.get_json()
+                    logger.info(f"Found {len(matching_toponyms)} matching toponyms for {name}")
+                    logger.info(f"Matching toponyms: {matching_toponyms}")
+                    break
 
                 if matching_toponyms:
                     oldest_toponym = matching_toponyms[0]  # Get the oldest toponym
