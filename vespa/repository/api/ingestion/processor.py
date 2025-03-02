@@ -516,8 +516,9 @@ class IngestionManager:
                 logger.info(f"Oldest toponym: {oldest_toponym}")
 
                 oldest_toponym_id = oldest_toponym['documentid']
+                deleted_toponyms = []
                 if oldest_toponym.get('is_staging'):
-                    await sync_app.update_existing(
+                    sync_app.update_existing(
                         namespace=self.dataset_config['namespace'],
                         schema='toponym',
                         data_id=oldest_toponym_id,
@@ -557,12 +558,13 @@ class IngestionManager:
                             unique_places.add(place_id)
 
                         # Delete the merged toponym
-                        await sync_app.delete_existing(
+                        sync_app.delete_existing(
                             namespace=self.dataset_config['namespace'],
                             schema='toponym',
                             data_id=toponym_id
                         )
                         task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
+                        deleted_toponyms += [toponym_id]
 
                     # Update the oldest toponym with merged places
                     sync_app.update_existing(
@@ -573,3 +575,31 @@ class IngestionManager:
                             "places": list(unique_places)
                         }
                     )
+
+                ## Latency has to be mitigated
+
+                # Loop until the oldest_toponym has a False is_staging flag
+                while True:
+                    oldest_toponym = sync_app.get_existing(
+                        namespace=self.dataset_config['namespace'],
+                        schema='toponym',
+                        data_id=oldest_toponym_id
+                    )
+                    if not oldest_toponym.get('fields', {}).get('is_staging'):
+                        break
+                    time.sleep(0.001)
+
+                # Loop until all deleted toponyms are no longer found
+                while True:
+                    found = []
+                    for toponym_id in deleted_toponyms:
+                        toponym = sync_app.get_existing(
+                            namespace=self.dataset_config['namespace'],
+                            schema='toponym',
+                            data_id=toponym_id
+                        )
+                        if toponym:
+                            found.append(toponym_id)
+                    if not found:
+                        break
+                    time.sleep(0.001)
