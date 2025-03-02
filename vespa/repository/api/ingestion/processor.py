@@ -495,7 +495,7 @@ class IngestionManager:
                 name = staging_toponym['fields']['name']
 
                 # Find all matching toponyms, ordered by creation timestamp
-                yql = f'select documentid, places, created from toponym where name_strict contains "{escape_yql(name)}" '
+                yql = f'select documentid, places, is_staging, created from toponym where name_strict contains "{escape_yql(name)}" '
                 for field in bcp47_fields:
                     if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
                         yql += f'and bcp47_{field} contains "{staging_toponym["fields"][f"bcp47_{field}"]}" '
