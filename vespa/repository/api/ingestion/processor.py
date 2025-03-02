@@ -61,7 +61,7 @@ class TransformationManager:
 
 
 class IngestionManager:
-    def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False):
+    def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False, condense_only=False):
         """
         Initializes IngestionManager with dataset configuration and Vespa client.
 
@@ -71,12 +71,13 @@ class IngestionManager:
         :param delete_only: If True, only deletes existing data.
         :param no_delete: If True, skips deleting existing data.
         :param skip_transform: If True, skips transformation
+        :param condense_only: If True, only condenses existing toponyms.
         """
         self.dataset_name = dataset_name
         self.task_id = task_id
         self.limit = limit
         self.delete_only = delete_only
-        self.no_delete = no_delete
+        self.no_delete = no_delete or condense_only
         self.dataset_config = self._get_dataset_config()
         self.executor = ThreadPoolExecutor(max_workers=10)  # Executor for async tasks
         self.max_queue_size = 100  # Queue size for document update tasks
@@ -85,6 +86,7 @@ class IngestionManager:
         self.update_place = False
         self.transformation_manager = None
         self.skip_transform = skip_transform
+        self.condense_only = condense_only
         task_tracker.add_task(self.task_id)
 
     def _get_dataset_config(self):
@@ -114,7 +116,7 @@ class IngestionManager:
 
             for schema in schema:
                 # https://pyvespa.readthedocs.io/en/latest/reference-api.html#vespa.application.Vespa.delete_all_docs
-                response = sync_app.delete_all_docs(
+                response = await asyncio.to_thread(sync_app.delete_all_docs,
                     namespace=self.dataset_config['namespace'],
                     schema=schema,
                     content_cluster_name="content"
@@ -157,47 +159,48 @@ class IngestionManager:
         Processes each file in the dataset configuration by fetching data from the stream,
         initiating document processing, and handling any post-processing steps.
         """
-        for self.transformer_index, file_config in enumerate(self.dataset_config['files']):
-            logger.info(f"Fetching items from stream: {file_config['url']}")
-            self.update_place = file_config.get("update_place", False)
-            stream_fetcher = StreamFetcher(file_config)
+        if not self.condense_only:
+            for self.transformer_index, file_config in enumerate(self.dataset_config['files']):
+                logger.info(f"Fetching items from stream: {file_config['url']}")
+                self.update_place = file_config.get("update_place", False)
+                stream_fetcher = StreamFetcher(file_config)
 
-            # Get the source file path from StreamFetcher
-            source_file_path = stream_fetcher.get_file_path()  # Access the _get_file_path method
+                # Get the source file path from StreamFetcher
+                source_file_path = stream_fetcher.get_file_path()  # Access the _get_file_path method
 
-            # Initialise TransformationManager with source_file_path
-            self.transformation_manager = TransformationManager(
-                source_file_path,
-                self.dataset_name,
-                self.transformer_index,
-                self.task_id,
-                skip_transform=self.skip_transform
-            )
+                # Initialise TransformationManager with source_file_path
+                self.transformation_manager = TransformationManager(
+                    source_file_path,
+                    self.dataset_name,
+                    self.transformer_index,
+                    self.task_id,
+                    skip_transform=self.skip_transform
+                )
 
-            logger.info(f"Output file: {self.transformation_manager.output_file}")
-            logger.info(f"Path exists: {os.path.exists(self.transformation_manager.output_file)}")
-            logger.info(f"Skip transform: {self.skip_transform}")
+                logger.info(f"Output file: {self.transformation_manager.output_file}")
+                logger.info(f"Path exists: {os.path.exists(self.transformation_manager.output_file)}")
+                logger.info(f"Skip transform: {self.skip_transform}")
 
-            if self.skip_transform and os.path.exists(self.transformation_manager.output_file):
-                logger.info(f"Skipping transformation - using existing transformed file.")
-            else:
-                stream = stream_fetcher.get_items()
-                logger.info(f"Starting transformation...")
-                await self._transform_documents(stream)
-                stream_fetcher.close_stream()
+                if self.skip_transform and os.path.exists(self.transformation_manager.output_file):
+                    logger.info(f"Skipping transformation - using existing transformed file.")
+                else:
+                    stream = stream_fetcher.get_items()
+                    logger.info(f"Starting transformation...")
+                    await self._transform_documents(stream)
+                    stream_fetcher.close_stream()
 
-            # Open a new stream for ingesting from the transformed file
-            transformed_file_path = self.transformation_manager.output_file
-            transformed_stream_fetcher = StreamFetcher({
-                'url': transformed_file_path,
-                'file_type': 'ndjson'
-            })
+                # Open a new stream for ingesting from the transformed file
+                transformed_file_path = self.transformation_manager.output_file
+                transformed_stream_fetcher = StreamFetcher({
+                    'url': transformed_file_path,
+                    'file_type': 'ndjson'
+                })
 
-            transformed_stream = transformed_stream_fetcher.get_items()
-            logger.info(f"Starting ingestion from {transformed_file_path}...")
-            # Ingest data from the transformed stream
-            await self._process_documents(transformed_stream)
-            transformed_stream_fetcher.close_stream()  # Close the transformed stream
+                transformed_stream = transformed_stream_fetcher.get_items()
+                logger.info(f"Starting ingestion from {transformed_file_path}...")
+                # Ingest data from the transformed stream
+                await self._process_documents(transformed_stream)
+                transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
         logger.info("Starting post-processing...")
         await self._condense_toponyms()  # Condense toponyms after all are processed
@@ -208,7 +211,6 @@ class IngestionManager:
         """
         Processes documents from the stream, applying filters and handling concurrency.
         """
-        results = []
         counter = 0
         filters = self.dataset_config.get('files')[self.transformer_index].get('filters')
 
@@ -225,7 +227,7 @@ class IngestionManager:
             if self.limit is not None and counter >= self.limit:
                 break
 
-        return results
+        return
 
     async def _process_documents(self, stream):
         """
@@ -234,7 +236,6 @@ class IngestionManager:
         :param stream: Asynchronous iterator yielding documents.
         :return: List of results from processed documents.
         """
-        results = []  # Collect results from processed documents
         counter = 0
 
         async for document in stream:
@@ -246,7 +247,7 @@ class IngestionManager:
             if self.limit is not None and counter >= self.limit:
                 break
 
-        return results  # Return aggregated results
+        return
 
     async def _process_document(self, transformed_document, toponyms, links, count):
         """
@@ -260,8 +261,6 @@ class IngestionManager:
 
         try:
             if not transformed_document and not toponyms:
-                # Set dummy response
-                response = {"success": True}
                 success = True
             else:
                 response = await asyncio.get_event_loop().run_in_executor(
@@ -297,12 +296,11 @@ class IngestionManager:
                 "success": 1 if success else 0,
                 "failure": 1 if not success else 0
             })
-            return response
+            return
+
         except Exception as e:
             task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1, "error": f"#{count}: {str(e)}"})
-            return {"success": False,
-                    "document": f"{self.dataset_config['namespace']}:{self.dataset_config['vespa_schema']}:{transformed_document}",
-                    "error": str(e)}
+            return
 
     def _feed_document(self, transformed_document, count, is_toponym=False):
         """
@@ -575,7 +573,7 @@ class IngestionManager:
                         }
                     )
 
-                # ## Latency has to be mitigated
+                # ## If latency has to be mitigated...
                 #
                 # # Loop until the oldest_toponym has a False is_staging flag
                 # while True:
