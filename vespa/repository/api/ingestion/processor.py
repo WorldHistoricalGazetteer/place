@@ -599,7 +599,7 @@ class IngestionManager:
                             schema='toponym',
                             data_id=toponym_id
                         )
-                        if response.get('status_code') != 404:
+                        if response.get('fields', {}).get('is_staging'):
                             found.append(toponym_id)
                     if not found:
                         break
