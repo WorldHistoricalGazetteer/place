@@ -516,13 +516,14 @@ class IngestionManager:
                 oldest_toponym_id = oldest_toponym['documentid'].split('::')[-1]
                 deleted_toponyms = []
                 if oldest_toponym.get('is_staging'):
-                    await asyncio.to_thread(
+                    result = await asyncio.to_thread(
                         sync_app.update_existing,
                         self.dataset_config['namespace'],
                         'toponym',
                         oldest_toponym_id,
                         {"is_staging": False}
                     )
+                    logger.info(f"Unstaged oldest toponym: {oldest_toponym_id}, Result: {result}")
                     task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
 
                 # If any matching toponyms remain, merge them with the oldest toponym
