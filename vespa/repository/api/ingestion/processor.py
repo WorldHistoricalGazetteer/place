@@ -594,12 +594,12 @@ class IngestionManager:
                 while True:
                     found = []
                     for toponym_id in deleted_toponyms:
-                        toponym = sync_app.get_existing(
+                        response = sync_app.get_existing(
                             namespace=self.dataset_config['namespace'],
                             schema='toponym',
                             data_id=toponym_id
                         )
-                        if toponym:
+                        if response.get('status_code') != 404:
                             found.append(toponym_id)
                     if not found:
                         break
