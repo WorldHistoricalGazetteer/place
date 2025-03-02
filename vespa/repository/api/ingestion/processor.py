@@ -19,17 +19,19 @@ logger = logging.getLogger(__name__)
 
 
 class TransformationManager:
-    def __init__(self, source_file_path, dataset_name, transformer_index, skip_transform=False):
+    def __init__(self, source_file_path, dataset_name, transformer_index, task_id, skip_transform=False):
         """
         Initializes TransformationManager with output file path based on source file.
 
         :param source_file_path: Path to the source file.
         :param dataset_name: Name of the dataset.
         :param transformer_index: Index of the transformer.
+        :param task_id: Unique identifier for the ingestion task.
         :param skip_transform: If True, skips transformation.
         """
         self.dataset_name = dataset_name
         self.transformer_index = transformer_index
+        self.task_id = task_id
         self.output_file = self._get_output_file_path(source_file_path, transformer_index)
         if not skip_transform and os.path.exists(self.output_file):
             os.remove(self.output_file)  # Delete pre-existing file unless skip_transform is True
@@ -168,6 +170,7 @@ class IngestionManager:
                 source_file_path,
                 self.dataset_name,
                 self.transformer_index,
+                self.task_id,
                 skip_transform=self.skip_transform
             )
 
