@@ -504,10 +504,9 @@ class IngestionManager:
                     logger.error(f"Failed to query toponyms: {query_response.get_status_code()}")
                     break
                 else:
-                    matching_toponyms = query_response.get_json()
+                    matching_toponyms = [doc.get('fields', {}) for doc in query_response.get_json().get('root', {}).get('children', [])]
                     logger.info(f"Found {len(matching_toponyms)} matching toponyms for {name}")
                     logger.info(f"Matching toponyms: {matching_toponyms}")
-                    break
 
                 if matching_toponyms:
                     oldest_toponym = matching_toponyms[0]  # Get the oldest toponym
