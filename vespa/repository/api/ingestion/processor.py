@@ -253,15 +253,14 @@ class IngestionManager:
         return
 
     async def _feed_documents(self, doc_type, stream):
-        # Use `feed_async_iterable` to feed documents asynchronously
         try:
-            sync_app = VespaClient.sync_context("feed", True)
-            sync_app.feed_async_iterable(
-                iter=stream,
-                schema=doc_type,
-                namespace=self.dataset_config['namespace'],
-                callback=self._feed_callback
-            )
+            with VespaClient.sync_context("feed") as sync_app:
+                await sync_app.feed_iterable(
+                    iter=stream,
+                    schema=doc_type,
+                    namespace=self.dataset_config['namespace'],
+                    callback=self._feed_callback
+                )
 
         except:
             logger.exception(f"Error feeding documents to Vespa: {doc_type}")
