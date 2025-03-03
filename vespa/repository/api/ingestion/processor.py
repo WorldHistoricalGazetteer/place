@@ -256,12 +256,12 @@ class IngestionManager:
         # Use `feed_async_iterable` to feed documents asynchronously
         try:
             with VespaClient.sync_context("feed") as sync_app:
-                await asyncio.to_thread(sync_app.feed_async_iterable,
-                                        iter=stream,
-                                        schema=doc_type,
-                                        namespace=self.dataset_config['namespace'],
-                                        callback=self._feed_callback
-                                        )
+                await sync_app.feed_async_iterable(
+                    iter=stream,
+                    schema=doc_type,
+                    namespace=self.dataset_config['namespace'],
+                    callback=self._feed_callback
+                )
 
         except:
             logger.exception(f"Error feeding documents to Vespa: {doc_type}")
