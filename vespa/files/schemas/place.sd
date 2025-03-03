@@ -14,6 +14,11 @@ schema place {
 
         ########### Source Metadata ###########
 
+        field is_staging type bool {
+            # A boolean flag indicating if the place is in a staging state.
+            indexing: attribute | summary
+        }
+
         field record_id type string {
             # A unique identifier for the place within the source.
             indexing: attribute | summary

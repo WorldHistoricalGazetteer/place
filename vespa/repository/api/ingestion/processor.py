@@ -3,17 +3,14 @@ import asyncio
 import json
 import logging
 import os
-import queue
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
 from ..bcp_47.bcp_47 import bcp47_fields
 from ..config import VespaClient
-from ..utils import task_tracker, get_uuid, distinct_dicts, escape_yql
+from ..utils import task_tracker, distinct_dicts, escape_yql
 
 logger = logging.getLogger(__name__)
 
@@ -32,20 +29,26 @@ class TransformationManager:
         self.dataset_name = dataset_name
         self.transformer_index = transformer_index
         self.task_id = task_id
-        self.output_file = self._get_output_file_path(source_file_path, transformer_index)
-        if not skip_transform and os.path.exists(self.output_file):
-            os.remove(self.output_file)  # Delete pre-existing file unless skip_transform is True
+        self.output_files = self._get_output_file_paths(source_file_path, transformer_index)
+        if not skip_transform:
+            for output_file in self.output_files.values():
+                if os.path.exists(output_file):
+                    os.remove(output_file)  # Delete pre-existing file unless skip_transform is True
 
-    def _get_output_file_path(self, source_file_path, transformer_index):
+    def _get_output_file_paths(self, source_file_path, transformer_index):
         """
-        Constructs the output file path based on the source file path and transformer index.
+        Constructs the output file paths based on the source file path and transformer index.
 
         :param source_file_path: Path to the source file.
         :param transformer_index: Index of the transformer.
-        :return: Path to the output file.
+        :return: Paths to the output files.
         """
         base_name, _ = os.path.splitext(source_file_path)
-        return f"{base_name}_transformed_{transformer_index}.ndjson"
+        output_file_paths = {}
+        for doc_type in ["place", "toponym", "link"]:
+            output_file_paths[doc_type] = f"{base_name}_transformed_{transformer_index}_{doc_type}.ndjson"
+
+        return output_file_paths
 
     async def transform_and_store(self, document):
         """
@@ -53,19 +56,25 @@ class TransformationManager:
 
         :param document: The document to be transformed and stored.
         """
-        transformed_data = DocTransformer.transform(document, self.dataset_name, self.transformer_index)
-        # TODO: Split into three separate files, one for each type of document
+        place, toponyms, links = DocTransformer.transform(document, self.dataset_name, self.transformer_index)
 
-        # TODO: If self.update_place, fetch existing place and update names, then set `operation_type` in subsequent `feed_async_iterable` call
-
-        await asyncio.to_thread(self._write_to_file, transformed_data)
+        # Write place to file
+        await asyncio.to_thread(self._write_to_file, place, 'place')
         task_tracker.update_task(self.task_id, {"transformed": 1})
 
-    def _write_to_file(self, transformed_data):
+        # Write toponyms to file
+        for toponym in toponyms:
+            await asyncio.to_thread(self._write_to_file, toponym, 'toponym')
+
+        # Write links to file
+        for link in links:
+            await asyncio.to_thread(self._write_to_file, link, 'link')
+
+    def _write_to_file(self, transformed_data, doc_type):
         """
         Synchronous method to write transformed data to a file. Called from asyncio.to_thread.
         """
-        with open(self.output_file, "a") as f:
+        with open(self.output_files[doc_type], "a") as f:
             json.dump(transformed_data, f)
             f.write("\n")
 
@@ -90,9 +99,6 @@ class IngestionManager:
         self.delete_only = delete_only
         self.no_delete = no_delete or condense_only
         self.dataset_config = self._get_dataset_config()
-        self.executor = ThreadPoolExecutor(max_workers=10)  # Executor for async tasks
-        self.max_queue_size = 100  # Queue size for document update tasks
-        self.update_queue = queue.Queue(maxsize=self.max_queue_size)
         self.transformer_index = None
         self.update_place = False
         self.transformation_manager = None
@@ -146,10 +152,6 @@ class IngestionManager:
         })
 
         try:
-            # Start the queue worker thread
-            worker_thread = threading.Thread(target=self._queue_worker, daemon=True)
-            worker_thread.start()
-
             if not self.no_delete:
                 await self._delete_existing_data()
 
@@ -188,11 +190,10 @@ class IngestionManager:
                     skip_transform=self.skip_transform
                 )
 
-                logger.info(f"Output file: {self.transformation_manager.output_file}")
-                logger.info(f"Path exists: {os.path.exists(self.transformation_manager.output_file)}")
+                logger.info(f"Output files: {self.transformation_manager.output_files}")
                 logger.info(f"Skip transform: {self.skip_transform}")
 
-                if self.skip_transform and os.path.exists(self.transformation_manager.output_file):
+                if self.skip_transform:
                     logger.info(f"Skipping transformation - using existing transformed file.")
                 else:
                     stream = stream_fetcher.get_items()
@@ -200,21 +201,29 @@ class IngestionManager:
                     await self._transform_documents(stream)
                     stream_fetcher.close_stream()
 
-                # Open a new stream for ingesting from the transformed file
-                transformed_file_path = self.transformation_manager.output_file
-                transformed_stream_fetcher = StreamFetcher({
-                    'url': transformed_file_path,
-                    'file_type': 'ndjson'
-                })
+                # Process each document type
+                for doc_type in ["place", "toponym", "link"]:
+                    transformed_file_path = self.transformation_manager.output_files[doc_type]
+                    if not os.path.exists(transformed_file_path):
+                        logger.warning(f"No {doc_type} data found in {transformed_file_path}")
+                        continue
+                    transformed_stream_fetcher = StreamFetcher({
+                        'url': transformed_file_path,
+                        'file_type': 'ndjson'
+                    })
 
-                transformed_stream = transformed_stream_fetcher.get_items()
-                logger.info(f"Starting ingestion from {transformed_file_path}...")
-                # Ingest data from the transformed stream
-                await self._process_documents(transformed_stream)
-                transformed_stream_fetcher.close_stream()  # Close the transformed stream
+                    transformed_stream = transformed_stream_fetcher.get_items()
+                    logger.info(f"Starting ingestion from {transformed_file_path}...")
+                    # Ingest data from the transformed stream
+                    await self._feed_documents(doc_type, transformed_stream)
+                    transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
         logger.info("Starting post-processing...")
+        await self._condense_places()  # Condense places after all are processed
         await self._condense_toponyms()  # Condense toponyms after all are processed
+
+        # TODO: Post-process links: check if the link already existed
+        # TODO: If the predicate is symmetrical, also check if the reverse link exists
 
         logger.info(f"Completed processing dataset {self.dataset_name}")
 
@@ -240,267 +249,103 @@ class IngestionManager:
 
         return
 
-    async def _process_documents(self, stream):
-        """
-        Processes documents from the stream, handling concurrency.
-
-        :param stream: Asynchronous iterator yielding documents.
-        :return: List of results from processed documents.
-        """
-        counter = 0
-
-        async for document in stream:
-            transformed_document, toponyms, links = document
-            await self._process_document(transformed_document, toponyms, links, counter)
-            counter += 1
-
-            # Stop processing if the limit is reached
-            if self.limit is not None and counter >= self.limit:
-                break
-
-        return
-
-    async def _process_document(self, transformed_document, toponyms, links, count):
-        """
-        Processes a single document by transforming it, feeding it to Vespa,
-        and handling any associated toponyms and links.
-
-        :param document: The document to process.
-        :param count: The document counter.
-        :return: Dictionary containing the success status and any errors.
-        """
-
-        try:
-            if not transformed_document and not toponyms:
-                success = True
-            else:
-                response = await asyncio.get_event_loop().run_in_executor(
-                    self.executor, self._feed_document, transformed_document, count, False
-                ) or {}
-                success = response.get("success", False)
-
-                if success and toponyms:
-                    toponym_responses = await asyncio.gather(*[
-                        asyncio.get_event_loop().run_in_executor(self.executor, self._feed_document, toponym, count,
-                                                                 True)  # Set is_toponym flag
-                        for toponym in toponyms
-                    ])
-
-                    # Check if any toponym feed failed
-                    if any(not r.get("success") for r in toponym_responses):
-                        success = False
-
-            if success and links:
-                link_responses = await asyncio.gather(*[
-                    asyncio.get_event_loop().run_in_executor(
-                        self.executor, self._feed_link, 'link', link, count
-                    )
-                    for link in links
-                ])
-
-                # Check if any link feed failed
-                if any(not r.get("success") for r in link_responses):
-                    success = False
-
-            task_tracker.update_task(self.task_id, {
-                "processed": 1,
-                "success": 1 if success else 0,
-                "failure": 1 if not success else 0
-            })
-            return
-
-        except Exception as e:
-            task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1, "error": f"#{count}: {str(e)}"})
-            return
-
-    def _feed_document(self, transformed_document, count, is_toponym=False):
-        """
-        Feeds the transformed document to Vespa.
-
-        :param transformed_document: The transformed document to feed.
-        :param count: The document counter.
-        :param is_toponym: Flag indicating whether the document is a toponym.
-        :return: Dictionary containing the success status and any errors.
-        """
-
-        document_id = transformed_document.get("document_id")
-        if not document_id:
-            logger.error(f"Document ID not found: {transformed_document}")
-            return {
-                "success": False,
-                "namespace": self.dataset_config['namespace'],
-                "schema": self.dataset_config['vespa_schema'],
-                "document_id": document_id,
-                "error": "Document ID not found in transformed document"
-            }
-
+    async def _feed_documents(self, doc_type, stream):
+        # Use `feed_async_iterable` to feed documents asynchronously
         try:
             with VespaClient.sync_context("feed") as sync_app:
-                #  Handle toponyms: add creation timestamp and staging flag
-                if is_toponym or self.dataset_config['vespa_schema'] == 'toponym':
-                    transformed_document['fields']['created'] = int(time.time() * 1000)
-                    transformed_document['fields']['is_staging'] = True
-                    task_tracker.update_task(self.task_id, {"toponyms_staged": 1})
+                await asyncio.to_thread(sync_app.feed_async_iterable,
+                                        iter=stream,
+                                        schema=doc_type,
+                                        namespace=self.dataset_config['namespace'],
+                                        callback=self._feed_callback
+                                        )
 
-                #  If updating place, add to queue and return
-                if self.update_place and not is_toponym:
-                    task = (self.dataset_config['vespa_schema'], document_id, transformed_document, count)
-                    self.update_queue.put(task)
-                    return {"success": True}  # Indicate success for queueing
+        except:
+            logger.exception(f"Error feeding documents to Vespa: {doc_type}")
+            raise
 
-                #  Otherwise, feed the document directly to Vespa
-                response = sync_app.feed_existing(
-                    namespace=self.dataset_config['namespace'],
-                    schema='toponym' if is_toponym else self.dataset_config['vespa_schema'],
-                    data_id=document_id,
-                    fields=transformed_document['fields']
-                )
-
-                if response.get('status_code') < 500:
-                    return {"success": True, "namespace": self.dataset_config['namespace'],
-                            "schema": self.dataset_config['vespa_schema'], "document_id": document_id}
-                else:
-                    msg = response if response.headers.get('content-type') == 'application/json' else response.text
-                    task_tracker.update_task(self.task_id, {"error (A)": f"#{count}: {msg}"})
-                    logger.error(
-                        f"Failed to feed document: {self.dataset_config['namespace']}:{self.dataset_config['vespa_schema']}::{document_id}, Status code: {response.get('status_code')}, Response: {msg}")
-                    return {
-                        "success": False,
-                        "namespace": self.dataset_config['namespace'],
-                        "schema": self.dataset_config['vespa_schema'],
-                        "document_id": document_id,
-                        "status_code": response.get('status_code'),
-                        "message": msg
-                    }
-
-        except Exception as e:
-            task_tracker.update_task(self.task_id, {"error (E)": f"#{count}: {str(e)}"})
-            logger.error(f"Error feeding document: {str(e)}", exc_info=True)
-            return {
-                "success": False,
-                "namespace": self.dataset_config['namespace'],
-                "schema": self.dataset_config['vespa_schema'],
-                "document_id": document_id,
-                "error": str(e)
-            }
-
-    def _feed_link(self, schema, link, count):
+    async def _feed_callback(self, response, id):
         """
-        Feeds a link to Vespa.
+        Callback function for the feed_async_iterable method.
 
-        :param schema: The schema for the link.
-        :param link: The link document to feed.
-        :param count: The document counter.
-        :return: Dictionary containing the success status and any errors.
+        :param response: Response from the feed operation.
+        :param id: Document ID.
         """
-        # TODO: Check if the link already exists
-        # TODO: If the predicate is symmetrical, also check if the reverse link exists
-        try:
-            with VespaClient.sync_context("feed") as sync_app:
-                response = sync_app.feed_existing(
-                    namespace=self.dataset_config['namespace'],  # source identifier
-                    schema=schema,  # usually 'link'
-                    data_id=get_uuid(),
-                    fields=link
-                )
+        if response.is_successful():
+            task_tracker.update_task(self.task_id, {"processed": 1, "success": 1})
+        else:
+            task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1,
+                                                    "error": f"Failed to feed document {id}: {response.get_status_code()}"})
+            logger.error(
+                f"Failed to feed document: {id}, Status code: {response.get('status_code')}, Response: {response}")
 
-                if response.get('status_code') < 500:
-                    return {"success": True, "link": link}
-                else:
-                    msg = response if response.headers.get('content-type') == 'application/json' else response.text
-                    task_tracker.update_task(self.task_id, {"error (C)": f"#{count}: link: >>>{link}<<< {msg}"})
-                    logger.error(
-                        f"Failed to feed link: {link}, Status code: {response.get('status_code')}, Response: {msg}")
-                    return {
-                        "success": False,
-                        "link": link,
-                        "status_code": response.get('status_code'),
-                        "message": msg
-                    }
-        except Exception as e:
-            task_tracker.update_task(self.task_id, {"error (B)": f"#{count}: link: >>>{link}<<< {str(e)}"})
-            logger.error(f"Error feeding link: {link}, Error: {str(e)}", exc_info=True)
-            return {
-                "success": False,
-                "link": link,
-                "error": str(e)
-            }
-
-    def _queue_worker(self):
+    async def _condense_places(self):
         """
-        Worker function to process tasks from the update queue.
-        Uses queue to ensure sequential processing of documents.
-        Handles feeding triples and updating existing places.
+        Condenses staged places in Vespa, iterating until no more are found.
         """
-        while True:
-            task = self.update_queue.get()
-            if task is None:  # Sentinel to terminate the worker thread
-                break
-
-            try:
-                _, _, _, count = task
-
-                self._update_existing_place(task)
-
-                # if count != 0:
-                #     if count % 1000 == 0:
-                #         logger.info(f"{count:,} documents sent for indexing")
-                #     # Pausing helps reduce GC pressure or system resource exhaustion during heavy processing
-                #     if count % 100_000 == 0:
-                #         logger.info(f"Pausing for 3 minutes to reduce system pressure ...")
-                #         time.sleep(3 * 60)
-
-            except Exception as e:
-                logger.error(f"Error processing update: {e}", exc_info=True)
-
-            finally:
-                self.update_queue.task_done()
-
-    def _update_existing_place(self, task):
-        """
-        Updates an existing place document with new names.
-
-        :param task: Tuple containing schema, document ID, transformed document, and count.
-        """
-        schema, document_id, transformed_document, count = task
         with VespaClient.sync_context("feed") as sync_app:
-            response = sync_app.get_existing(
-                namespace=self.dataset_config['namespace'],
-                schema=schema,
-                data_id=document_id
-            )
-            # logger.info(f"Response: {response.get('status_code')}: {response}")
-            if response.get('status_code') < 500:
-                existing_document = response
-                existing_names = existing_document.get("fields", {}).get("names", [])
-                # logger.info(f'Extending names with {transformed_document["fields"]["names"]} for place {document_id}')
-                response = sync_app.update_existing(
-                    namespace=self.dataset_config['namespace'],
-                    schema=schema,
-                    data_id=document_id,
-                    fields={
-                        "names": distinct_dicts(existing_names, transformed_document['fields']['names'])
-                    }
-                )
-                # logger.info(f"Update response: {response.get('status_code')}: {response}")
-            else:
-                msg = f"Failed to get existing document: {self.dataset_config['namespace']}:{schema}::{document_id}, Status code: {response.get('status_code')}"
-                task_tracker.update_task(self.task_id, {"error (D)": f"#{count}: {msg}"})
-                logger.error(msg)
+            logger.info("Condensing places...")
+            while True:
+                yql = 'select * from place where is_staging = true limit 1'
+                staging_place = await asyncio.to_thread(sync_app.query_existing, {'yql': yql}, schema='place')
+
+                if not staging_place:
+                    break
+
+                staging_id = staging_place['fields']['record_id']
+
+                # Find all staged places with the same record_id
+                yql = f'select names from place where record_id contains "{staging_id}" and is_staging = true'
+                query_response = await asyncio.to_thread(sync_app.query, {'yql': yql}, schema='place')
+
+                if not query_response.is_successful():
+                    logger.error(f"Failed to query places: {query_response.get_status_code()}")
+                    break
+
+                matching_places = [doc.get('fields', {}) for doc in
+                                   query_response.get_json().get('root', {}).get('children', [])]
+
+                # Delete the staged places
+                matching_ids = [place['documentid'].split('::')[-1] for place in matching_places]
+                for place_id in matching_ids:
+                    await asyncio.to_thread(sync_app.delete_data,
+                                            namespace=self.dataset_config['namespace'],
+                                            schema='place',
+                                            data_id=place_id
+                                            )
+                    task_tracker.update_task(self.task_id, {"places_unstaged": 1})
+
+                # Fetch the parent place from Vespa
+                parent_place = await asyncio.to_thread(sync_app.get_existing,
+                                                       namespace=self.dataset_config['namespace'],
+                                                       schema='place',
+                                                       data_id=staging_id)
+
+                # Update the parent place with the merged names
+                await asyncio.to_thread(sync_app.update_existing,
+                                        namespace=self.dataset_config['namespace'],
+                                        schema='place',
+                                        data_id=staging_id,
+                                        fields={
+                                            "names": distinct_dicts(
+                                                parent_place['fields'].get('names', []),
+                                                [name for place in matching_places for name in place.get('names', [])]
+                                            )
+                                        }
+                                        )
 
     async def _condense_toponyms(self):
         """
         Condenses staged toponyms in Vespa, iterating until no more are found.
         """
         with VespaClient.sync_context("feed") as sync_app:
+            logger.info("Condensing toponyms...")
             while True:
                 yql = 'select * from toponym where is_staging = true limit 1'
                 staging_toponym = await asyncio.to_thread(sync_app.query_existing, {'yql': yql}, schema='toponym')
 
                 if not staging_toponym:
                     break  # No more staging toponyms
-
-                logger.info(f"Found staging toponym: {staging_toponym}")
 
                 # Find all matching toponyms, ordered by creation timestamp
                 name = staging_toponym['fields']['name']
@@ -518,8 +363,6 @@ class IngestionManager:
                 matching_toponyms = [doc.get('fields', {}) for doc in
                                      query_response.get_json().get('root', {}).get('children', [])]
 
-                logger.info(f"Found {len(matching_toponyms)} toponyms for `{name}`: {matching_toponyms}")
-
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
                 oldest_toponym_id = oldest_toponym['documentid'].split('::')[-1]
@@ -532,7 +375,6 @@ class IngestionManager:
                         data_id=oldest_toponym_id,
                         fields={"is_staging": False}
                     )
-                    logger.info(f"Unstaged oldest toponym: {oldest_toponym_id}, Result: {result}")
                     task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
 
                 # If any matching toponyms remain, merge them with the oldest toponym
@@ -583,33 +425,3 @@ class IngestionManager:
                                                 "places": list(unique_places)
                                             }
                                             )
-
-                # ## If latency has to be mitigated...
-                #
-                # # Loop until the oldest_toponym has a False is_staging flag
-                # while True:
-                #     oldest_toponym = await asyncio.to_thread(sync_app.get_existing,
-                #         namespace=self.dataset_config['namespace'],
-                #         schema='toponym',
-                #         data_id=oldest_toponym_id
-                #     )
-                #     if not oldest_toponym.get('fields', {}).get('is_staging'):
-                #         logger.info(f"Oldest toponym unstaged: {oldest_toponym_id}")
-                #         break
-                #     logger.info(f"Oldest toponym still staged: {oldest_toponym}")
-                #     time.sleep(0.001)
-                #
-                # # Loop until all deleted toponyms are no longer found
-                # while True:
-                #     found = []
-                #     for toponym_id in deleted_toponyms:
-                #         response = await asyncio.to_thread(sync_app.get_existing,
-                #             namespace=self.dataset_config['namespace'],
-                #             schema='toponym',
-                #             data_id=toponym_id
-                #         )
-                #         if response.get('fields', {}).get('is_staging'):
-                #             found.append(toponym_id)
-                #     if not found:
-                #         break
-                #     time.sleep(0.001)

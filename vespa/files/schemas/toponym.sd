@@ -75,7 +75,7 @@ schema toponym {
         ########### Metadata ###########
 
         field is_staging type bool {
-            # A boolean flag indicating if the place is in a staging state.
+            # A boolean flag indicating if the toponym is in a staging state.
             indexing: attribute | summary
         }
 

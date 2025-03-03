@@ -76,7 +76,7 @@ class DocTransformer:
         "LPF": [  # Linked Places Format: default transformer for extended GeoJSON Feature
             lambda data: (
                 {  # Feature and Locations
-                    "document_id": (document_id := get_uuid()),
+                    "id": (document_id := get_uuid()),
                     "fields": {
                         "names": [
                             # TODO: Code a general ToponymProcessor to produce names and attestations
@@ -90,7 +90,7 @@ class DocTransformer:
                 },
                 [  # Attestations and Toponyms # TODO
                     {
-                        "document_id": toponym_id,
+                        "id": toponym_id,
                         "fields": {
                         }
                     }
@@ -101,7 +101,7 @@ class DocTransformer:
         "ISO3166": [
             lambda data: (
                 {
-                    "document_id": (document_id := get_uuid()),
+                    "id": (document_id := get_uuid()),
                     "fields": {
                         "names": [
                             {"toponym_id": (toponym_id := get_uuid()), "year_start": 2018, "year_end": 2018,
@@ -123,7 +123,7 @@ class DocTransformer:
                 },
                 [
                     {
-                        "document_id": toponym_id,
+                        "id": toponym_id,
                         "fields": {
                             "name_strict": (name := data.get("properties", {}).get("ADMIN")),
                             "name": name,
@@ -139,7 +139,7 @@ class DocTransformer:
             # TODO: Before running this again, delete the cached data download and augment the types dictionary
             lambda data: (
                 {
-                    "document_id": (document_id := get_uuid()),
+                    "id": (document_id := get_uuid()),
                     "fields": {
                         **({"record_id": record_id} if (record_id := data.get("id")) else {}),
                         **({"record_url": f"https://pleiades.stoa.org/places/{record_id}"} if record_id else {}),
@@ -164,7 +164,7 @@ class DocTransformer:
             # All geometries are points, so the following is much more efficient than using the GeometryProcessor
             lambda data: (  # Transform the primary record
                 {
-                    "document_id": (document_id := data.get("geonameid", get_uuid())),
+                    "id": (document_id := data.get("geonameid", get_uuid())),
                     "fields": {
                         **({"record_id": record_id} if (record_id := data.get("geonameid")) else {}),
                         **({"record_url": f"https://www.geonames.org/{record_id}"} if record_id else {}),
@@ -189,7 +189,7 @@ class DocTransformer:
                 },
                 [
                     {
-                        "document_id": toponym_id,
+                        "id": toponym_id,
                         "fields": {
                             "name_strict": (name := data.get("name", "")),
                             "name": name,
@@ -202,8 +202,10 @@ class DocTransformer:
             ),
             lambda data: (  # Transform the alternate names
                 {
-                    "document_id": (document_id := data.get("geonameid", get_uuid())),
+                    "id": get_uuid(),
                     "fields": {
+                        "is_staging": True,
+                        "record_id": (document_id := data.get("geonameid")),
                         **({"names": names["names"]} if (
                             names := GeonamesNamesProcessor(document_id, data).process()) else {}),
                     }
@@ -222,7 +224,7 @@ class DocTransformer:
         "Wikidata": [  # Depends on GeoNames having been already processed
             lambda data: (
                 {
-                    "document_id": (document_id := data.get("id", get_uuid())),
+                    "id": (document_id := data.get("id", get_uuid())),
                     "fields": {
                         "record_id": document_id,
                         "record_url": f"https://www.wikidata.org/wiki/Special:EntityData/{document_id}.json",
@@ -247,7 +249,7 @@ class DocTransformer:
         "OSM": [
             lambda data: (
                 {  # Feature and Locations
-                    "document_id": (document_id := get_uuid()),
+                    "id": (document_id := get_uuid()),
                     "fields": {
                         **({"names": names["names"]} if (
                             names := OSMNamesProcessor(document_id,
@@ -296,7 +298,7 @@ class DocTransformer:
         "Terrarium": [  # GeoJSON detailing sources of DEM data
             lambda data: (
                 {
-                    "document_id": get_uuid(),
+                    "id": get_uuid(),
                     "fields": {
                         **({"geometry": geometry_etc.get("locations")[0].get("geometry")} if (
                             geometry_etc := GeometryProcessor(data.get("geometry"),
