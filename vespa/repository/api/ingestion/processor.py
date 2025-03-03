@@ -57,18 +57,21 @@ class TransformationManager:
         :param document: The document to be transformed and stored.
         """
         place, toponyms, links = DocTransformer.transform(document, self.dataset_name, self.transformer_index)
-
-        # Write place to file
-        await asyncio.to_thread(self._write_to_file, place, 'place')
         task_tracker.update_task(self.task_id, {"transformed": 1})
 
+        # Write place to file
+        if place:
+            await asyncio.to_thread(self._write_to_file, place, 'place')
+
         # Write toponyms to file
-        for toponym in toponyms:
-            await asyncio.to_thread(self._write_to_file, toponym, 'toponym')
+        if toponyms:
+            for toponym in toponyms:
+                await asyncio.to_thread(self._write_to_file, toponym, 'toponym')
 
         # Write links to file
-        for link in links:
-            await asyncio.to_thread(self._write_to_file, link, 'link')
+        if links:
+            for link in links:
+                await asyncio.to_thread(self._write_to_file, link, 'link')
 
     def _write_to_file(self, transformed_data, doc_type):
         """
