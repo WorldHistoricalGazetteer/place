@@ -58,21 +58,23 @@ class TransformationManager:
         :param document: The document to be transformed and stored.
         """
         place, toponyms, links = DocTransformer.transform(document, self.dataset_name, self.transformer_index)
-        task_tracker.update_task(self.task_id, {"transformed": 1})
 
         # Write place to file
         if place:
             await asyncio.to_thread(self._write_to_file, place, 'place')
+            task_tracker.update_task(self.task_id, {"transformed_places": 1})
 
         # Write toponyms to file
         if toponyms:
             for toponym in toponyms:
                 await asyncio.to_thread(self._write_to_file, toponym, 'toponym')
+            task_tracker.update_task(self.task_id, {"transformed_toponyms": len(toponyms)})
 
         # Write links to file
         if links:
             for link in links:
                 await asyncio.to_thread(self._write_to_file, link, 'link')
+            task_tracker.update_task(self.task_id, {"transformed_links": len(links)})
 
     def _write_to_file(self, transformed_data, doc_type):
         """
@@ -208,22 +210,22 @@ class IngestionManager:
                     stream_fetcher.close_stream()
 
                 # Process each document type
-                async_app = VespaClient.sync_context("feed", True)
-                for doc_type in ["place", "toponym", "link"]:
-                    transformed_file_path = self.transformation_manager.output_files[doc_type]
-                    if not os.path.exists(transformed_file_path):
-                        logger.warning(f"No {doc_type} data found in {transformed_file_path}")
-                        continue
-                    transformed_stream_fetcher = StreamFetcher({
-                        'url': transformed_file_path,
-                        'file_type': 'ndjson'
-                    })
+                with VespaClient.sync_context("feed") as sync_app:
+                    for doc_type in ["place", "toponym", "link"]:
+                        transformed_file_path = self.transformation_manager.output_files[doc_type]
+                        if not os.path.exists(transformed_file_path):
+                            logger.warning(f"No {doc_type} data found in {transformed_file_path}")
+                            continue
+                        transformed_stream_fetcher = StreamFetcher({
+                            'url': transformed_file_path,
+                            'file_type': 'ndjson'
+                        })
 
-                    transformed_stream = transformed_stream_fetcher.get_items()
-                    logger.info(f"Starting ingestion from {transformed_file_path}...")
-                    # Ingest data from the transformed stream
-                    await self._feed_documents(doc_type, transformed_stream, async_app)
-                    transformed_stream_fetcher.close_stream()  # Close the transformed stream
+                        transformed_stream = transformed_stream_fetcher.get_items()
+                        logger.info(f"Starting ingestion from {transformed_file_path}...")
+                        # Ingest data from the transformed stream
+                        await self._feed_documents(doc_type, transformed_stream, sync_app)
+                        transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
         logger.info("Starting post-processing...")
         await self._condense_places()  # Condense places after all are processed
@@ -304,16 +306,16 @@ class IngestionManager:
                         fields=item['fields'],
                     )
                     if response.is_successful():
-                        task_tracker.update_task(self.task_id, {"processed": 1, "success": 1})
+                        task_tracker.update_task(self.task_id, {f"processed_{doc_type}s": 1, "success": 1})
                         logger.debug(f"Successfully fed document {item['id']}")
                     else:
                         error_msg = f"Failed to feed document {item['id']}: {response.get_status_code()}, Response: {response}"
-                        task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1, "error": error_msg})
+                        task_tracker.update_task(self.task_id, {f"processed_{doc_type}s": 1, "failure": 1, "error": error_msg})
                         logger.error(error_msg)
 
                 except Exception as e:
                     error_msg = f"Error feeding data point: {e}, item: {item}"
-                    task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1, "error": error_msg})
+                    task_tracker.update_task(self.task_id, {f"processed_{doc_type}s": 1, "failure": 1, "error": error_msg})
                     logger.error(error_msg, exc_info=True)
 
             except asyncio.TimeoutError:
