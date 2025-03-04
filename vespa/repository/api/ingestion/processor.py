@@ -5,8 +5,6 @@ import logging
 import os
 import time
 
-from vespa.application import Vespa
-
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
@@ -86,7 +84,7 @@ class TransformationManager:
 
 class IngestionManager:
     def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False,
-                 condense_only=False):
+                 condense_only=False, number_of_consumers=10):
         """
         Initializes IngestionManager with dataset configuration and Vespa client.
 
@@ -110,6 +108,8 @@ class IngestionManager:
         self.skip_transform = skip_transform
         self.condense_only = condense_only
         task_tracker.add_task(self.task_id)
+        self.task_queue = asyncio.Queue()
+        self.number_of_consumers = number_of_consumers
 
     def _get_dataset_config(self):
         """
@@ -207,9 +207,6 @@ class IngestionManager:
                     stream_fetcher.close_stream()
 
                 # Process each document type
-
-                app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
-
                 for doc_type in ["place", "toponym", "link"]:
                     transformed_file_path = self.transformation_manager.output_files[doc_type]
                     if not os.path.exists(transformed_file_path):
@@ -223,7 +220,7 @@ class IngestionManager:
                     transformed_stream = transformed_stream_fetcher.get_items()
                     logger.info(f"Starting ingestion from {transformed_file_path}...")
                     # Ingest data from the transformed stream
-                    await self._feed_documents(doc_type, transformed_stream, app)
+                    await self._feed_documents(doc_type, transformed_stream)
                     transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
         logger.info("Starting post-processing...")
@@ -257,38 +254,64 @@ class IngestionManager:
 
         return
 
-    async def _feed_documents(self, doc_type, stream, app):
+    async def _feed_documents(self, doc_type, stream):
         try:
-            if not hasattr(stream, "__aiter__"):
-                logger.error("stream is not an async iterable")
-                return
+            with VespaClient.sync_context("feed", True) as async_app:
 
-            await asyncio.to_thread(
-                app.feed_async_iterable,
-                iter=stream,
-                schema=doc_type,
-                namespace=self.dataset_config['namespace'],
-                callback=self._feed_callback
-            )
+                # Start the producer to enqueue items from the stream
+                producer_task = asyncio.create_task(self._enqueue_items(stream))
+
+                # Start the consumers to process items from the queue
+                consumer_tasks = [
+                    asyncio.create_task(self._process_item(async_app, doc_type, self.dataset_config['namespace']))
+                    for _ in range(self.number_of_consumers)
+                ]
+
+                # Wait for the producer and consumers to finish their tasks
+                await producer_task
+                await self.task_queue.join()  # Ensure all items have been processed
+
+                # Stop the consumers by adding None to the queue
+                for _ in range(self.number_of_consumers):
+                    await self.task_queue.put(None)
+
+                # Wait for all consumer tasks to finish
+                await asyncio.gather(*consumer_tasks)
 
         except:
             logger.exception(f"Error feeding documents to Vespa: {doc_type}")
             raise
 
-    async def _feed_callback(self, response, id):
-        """
-        Callback function for the feed_async_iterable method.
+    async def _enqueue_items(self, stream):
+        """Producer: Enqueue items from the stream."""
+        async for item in stream:
+            await self.task_queue.put(item)
 
-        :param response: Response from the feed operation.
-        :param id: Document ID.
-        """
-        if response.is_successful():
-            task_tracker.update_task(self.task_id, {"processed": 1, "success": 1})
-        else:
-            task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1,
-                                                    "error": f"Failed to feed document {id}: {response.get_status_code()}"})
-            logger.error(
-                f"Failed to feed document: {id}, Status code: {response.get('status_code')}, Response: {response}")
+    async def _process_item(self, app, doc_type, namespace):
+        """Consumer: Dequeue an item and feed it to Vespa."""
+        while True:
+            item = await self.task_queue.get()  # Get an item from the queue
+            if item is None:  # None is used as a sentinel value to stop processing
+                break
+
+            try:
+                # Use the feed_data_point method to feed a single item to Vespa
+                response = await app.feed_data_point(
+                    schema=doc_type,
+                    namespace=namespace,
+                    data_point=item
+                )
+                if response.is_successful():
+                    task_tracker.update_task(self.task_id, {"processed": 1, "success": 1})
+                else:
+                    task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1,
+                                                            "error": f"Failed to feed document {id}: {response.get_status_code()}"})
+                    logger.error(
+                        f"Failed to feed document: {id}, Status code: {response.get('status_code')}, Response: {response}")
+            except Exception as e:
+                logger.error(f"Error feeding data point: {e}")
+            finally:
+                self.task_queue.task_done()  # Mark the task as done
 
     async def _condense_places(self):
         """
