@@ -277,7 +277,7 @@ class IngestionManager:
         # Create a semaphore to limit concurrency
         semaphore = asyncio.Semaphore(10)
 
-        batch_size = 100  # Define the batch size
+        batch_size = 1000  # Define the batch size
         batch = []
         counter = 0
 
