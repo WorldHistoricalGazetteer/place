@@ -224,9 +224,9 @@ class IngestionManager:
                     await self._feed_documents(doc_type, transformed_stream, async_app)
                     transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
-                # Stop the consumers by adding None to the queue
-                for _ in range(self.number_of_consumers):
-                    await self.task_queue.put(None)
+                # # Stop the consumers by adding None to the queue
+                # for _ in range(self.number_of_consumers):
+                #     await self.task_queue.put(None)
 
         logger.info("Starting post-processing...")
         await self._condense_places()  # Condense places after all are processed
