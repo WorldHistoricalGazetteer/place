@@ -46,12 +46,17 @@ class NamesProcessor:
                 self.name["from"] = self.name.get('from', '1793')  # Such names persisted for different periods
 
         if isolanguage == 'wkdt':
-            self.output['links'].append({
-                'record_id': self.document_id,
-                'place_curie': f'gn:{self.document_id}',
-                'predicate': 'owl:sameAs',
-                'object': f'wd:{alternateName}',
-            })
+            self.output['links'].append(
+                {
+                    "id": get_uuid(),
+                    "fields": {
+                        'record_id': self.document_id,
+                        'place_curie': f'gn:{self.document_id}',
+                        'predicate': 'owl:sameAs',
+                        'object': f'wd:{alternateName}',
+                    }
+                }
+            )
             return self.output
 
         years = {
