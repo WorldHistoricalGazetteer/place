@@ -263,15 +263,13 @@ class IngestionManager:
                 logger.error("stream is not an async iterable")
                 return
 
-            task = asyncio.create_task(
-                app.feed_async_iterable(
-                    iter=stream,
-                    schema=doc_type,
-                    namespace=self.dataset_config['namespace'],
-                    callback=self._feed_callback
-                )
+            await asyncio.to_thread(
+                app.feed_async_iterable,
+                iter(stream),
+                doc_type,
+                self.dataset_config['namespace'],
+                self._feed_callback
             )
-            await task
 
         except:
             logger.exception(f"Error feeding documents to Vespa: {doc_type}")
