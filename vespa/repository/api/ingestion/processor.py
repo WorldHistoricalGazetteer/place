@@ -271,14 +271,17 @@ class IngestionManager:
         # Create a semaphore to limit concurrency
         semaphore = asyncio.Semaphore(10)  # Allow 10 concurrent requests
 
-        # Process only the first self.limit triples
-        counter = 0
-        tasks = []
-        async for item in stream:
-            if counter >= self.limit:
-                break
-            tasks.append(fetch_and_write_jsonld(item, semaphore))
-            counter += 1
+        if self.limit:
+            # Process only the first self.limit triples
+            counter = 0
+            tasks = []
+            async for item in stream:
+                if counter >= self.limit:
+                    break
+                tasks.append(fetch_and_write_jsonld(item, semaphore))
+                counter += 1
+        else:
+            tasks = [fetch_and_write_jsonld(item, semaphore) async for item in stream]
 
         await asyncio.gather(*tasks)
         stream_fetcher.close_stream()
