@@ -299,8 +299,8 @@ class IngestionManager:
                 response = await app.feed_data_point(
                     schema=doc_type,
                     namespace=namespace,
-                    data_id=item.id,
-                    fields=item.fields,
+                    data_id=item['id'],
+                    fields=item['fields'],
                 )
                 if response.is_successful():
                     task_tracker.update_task(self.task_id, {"processed": 1, "success": 1})
