@@ -121,7 +121,8 @@ async def ingest_dataset(
         delete_only: bool = Query(False, description="Delete existing data without ingestion"),
         no_delete: bool = Query(False, description="Do not delete existing data"),
         skip_transform: bool = Query(False, description="Skip transformation if file found"),
-        condense_only: bool = Query(False, description="Condense existing toponyms without ingestion")
+        condense_only: bool = Query(False, description="Condense existing toponyms without ingestion"),
+        convert_triples: bool = Query(False, description="Convert triples to JSON-LD")
 ):
     """
     Ingest a dataset by name with an optional limit parameter.
@@ -134,10 +135,11 @@ async def ingest_dataset(
         no_delete: If True, do not delete existing data.
         skip_transform: If True, skip transformation if file found.
         condense_only: If True, condense existing toponyms without ingestion.
+        convert_triples: If True, convert triples to JSON-LD.
     """
     task_id = get_uuid()  # Generate a unique task ID
 
-    ingestion_manager = IngestionManager(dataset_name, task_id, limit, delete_only, no_delete, skip_transform, condense_only)
+    ingestion_manager = IngestionManager(dataset_name, task_id, limit, delete_only, no_delete, skip_transform, condense_only, convert_triples)
 
     # Start the ingestion in the background
     background_tasks.add_task(ingestion_manager.ingest_data)

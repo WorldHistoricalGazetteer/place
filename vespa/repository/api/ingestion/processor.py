@@ -5,6 +5,8 @@ import logging
 import os
 import time
 
+import httpx
+
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
@@ -87,7 +89,7 @@ class TransformationManager:
 
 class IngestionManager:
     def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False,
-                 condense_only=False, number_of_consumers=500):
+                 condense_only=False, convert_triples=False, number_of_consumers=500):
         """
         Initializes IngestionManager with dataset configuration and Vespa client.
 
@@ -98,6 +100,7 @@ class IngestionManager:
         :param no_delete: If True, skips deleting existing data.
         :param skip_transform: If True, skips transformation
         :param condense_only: If True, only condenses existing toponyms.
+        :param convert_triples: If True, converts triples to JSON-LD.
         """
         self.dataset_name = dataset_name
         self.task_id = task_id
@@ -110,6 +113,7 @@ class IngestionManager:
         self.transformation_manager = None
         self.skip_transform = skip_transform
         self.condense_only = condense_only
+        self.convert_triples = convert_triples
         task_tracker.add_task(self.task_id)
         self.task_queue = asyncio.Queue()
         self.number_of_consumers = number_of_consumers
@@ -186,11 +190,11 @@ class IngestionManager:
                 self.update_place = file_config.get("update_place", False)
                 stream_fetcher = StreamFetcher(file_config)
 
+                if 'ld_file' in file_config and self.convert_triples:
+                    stream_fetcher = await self._convert_triples(stream_fetcher, file_config)
+
                 # Get the source file path from StreamFetcher
                 source_file_path = stream_fetcher.get_file_path()  # Access the _get_file_path method
-
-                logger.info(f"Processing file: {source_file_path}")
-                exit(0)
 
                 # Initialise TransformationManager with source_file_path
                 self.transformation_manager = TransformationManager(
@@ -238,6 +242,49 @@ class IngestionManager:
         # TODO: If the predicate is symmetrical, also check if the reverse link exists
 
         logger.info(f"Completed processing dataset {self.dataset_name}")
+
+    async def _convert_triples(self, stream_fetcher, file_config):
+        source_file_path = stream_fetcher.get_file_path()
+        ld_source_path = source_file_path.replace(file_config['local_name'], file_config['ld_file'])
+        stream = stream_fetcher.get_items()
+
+        async def fetch_and_write_jsonld(triple: dict, semaphore: asyncio.Semaphore):
+            async with semaphore:  # Acquire the semaphore
+                try:
+                    place_id = triple.get("subject", "").split('/')[-1]
+                    url = f"https://vocab.getty.edu/tgn/{place_id}.jsonld"
+                    async with httpx.AsyncClient() as client:
+                        response = await client.get(url, timeout=10)
+                        response.raise_for_status()
+                        jsonld = response.json()
+                        if jsonld:
+                            with open(ld_source_path, "a") as f:
+                                json.dump(jsonld, f)
+                                f.write("\n")
+                                task_tracker.update_task(self.task_id, {f"processed_triples": 1})
+                except Exception as e:
+                    logger.error(f"Error processing triple {triple}: {e}", exc_info=True)
+
+        # Create a semaphore to limit concurrency
+        semaphore = asyncio.Semaphore(10)  # Allow 10 concurrent requests
+
+        # Process only the first self.limit triples
+        counter = 0
+        tasks = []
+        async for item in stream:
+            if counter >= self.limit:
+                break
+            tasks.append(fetch_and_write_jsonld(item, semaphore))
+            counter += 1
+
+        await asyncio.gather(*tasks)
+        stream_fetcher.close_stream()
+
+        return StreamFetcher({
+            'url': ld_source_path,
+            'file_type': 'ndjson'
+        })
+
 
     async def _transform_documents(self, stream):
         """

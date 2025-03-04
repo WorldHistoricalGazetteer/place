@@ -64,6 +64,7 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'http://tgndownloads.getty.edu/VocabData/explicit.zip',
                 'local_name': 'tgn_explicit.zip',  # 1.2GB
                 'file_name': 'TGNOut_PlaceMap.nt', # 2.3GB
+                'ld_file': 'tgn_places.ndjson',
                 'file_type': 'nt',
                 'filters': [],
             },
