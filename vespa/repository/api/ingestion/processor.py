@@ -352,8 +352,6 @@ class IngestionManager:
                 matching_places = [doc.get('fields', {}) for doc in
                                    query_response.get_json().get('root', {}).get('children', [])]
 
-                logger.info(f"Matching places: {matching_places}")
-
                 # Delete the staged places
                 matching_ids = [place['documentid'].split('::')[-1] for place in matching_places]
                 for place_id in matching_ids:
