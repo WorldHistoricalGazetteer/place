@@ -207,6 +207,7 @@ class IngestionManager:
                     stream_fetcher.close_stream()
 
                 # Process each document type
+                async_app = VespaClient.sync_context("feed", True)
                 for doc_type in ["place", "toponym", "link"]:
                     transformed_file_path = self.transformation_manager.output_files[doc_type]
                     if not os.path.exists(transformed_file_path):
@@ -220,7 +221,7 @@ class IngestionManager:
                     transformed_stream = transformed_stream_fetcher.get_items()
                     logger.info(f"Starting ingestion from {transformed_file_path}...")
                     # Ingest data from the transformed stream
-                    await self._feed_documents(doc_type, transformed_stream)
+                    await self._feed_documents(doc_type, transformed_stream, async_app)
                     transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
         logger.info("Starting post-processing...")
@@ -254,16 +255,15 @@ class IngestionManager:
 
         return
 
-    async def _feed_documents(self, doc_type, stream):
+    async def _feed_documents(self, doc_type, stream, async_app):
         try:
-            async_app = VespaClient.sync_context("feed", True)
 
             # Start the producer to enqueue items from the stream
             producer_task = asyncio.create_task(self._enqueue_items(stream))
 
             # Start the consumers to process items from the queue
             consumer_tasks = [
-                asyncio.create_task(self._process_item(async_app, doc_type, self.dataset_config['namespace']))
+                asyncio.create_task(self._process_item(async_app, doc_type))
                 for _ in range(self.number_of_consumers)
             ]
 
@@ -287,7 +287,7 @@ class IngestionManager:
         async for item in stream:
             await self.task_queue.put(item)
 
-    async def _process_item(self, app, doc_type, namespace):
+    async def _process_item(self, app, doc_type):
         """Consumer: Dequeue an item and feed it to Vespa."""
         while True:
             item = await self.task_queue.get()  # Get an item from the queue
@@ -298,7 +298,7 @@ class IngestionManager:
                 # Use the feed_data_point method to feed a single item to Vespa
                 response = app.feed_data_point(
                     schema=doc_type,
-                    namespace=namespace,
+                    namespace=self.dataset_config['namespace'],
                     data_id=item['id'],
                     fields=item['fields'],
                 )
