@@ -342,7 +342,7 @@ class IngestionManager:
                 staging_id = staging_place['fields']['record_id']
 
                 # Find all staged places with the same record_id
-                yql = f'select names from place where record_id contains "{staging_id}" and is_staging = true'
+                yql = f'select documentid, names from place where record_id contains "{staging_id}" and is_staging = true'
                 query_response = await asyncio.to_thread(sync_app.query, {'yql': yql}, schema='place')
 
                 if not query_response.is_successful():
