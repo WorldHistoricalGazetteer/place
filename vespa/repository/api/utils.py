@@ -42,8 +42,9 @@ class TaskTracker:
                     "processed_places",
                     "processed_toponyms",
                     "processed_links",
-                    "toponyms_unstaged",
-                    "places_unstaged",
+                    "unstaged_toponyms",
+                    "unstaged_places",
+                    "unstaged_links",
                     "success",
                     "failure"
                 }:
