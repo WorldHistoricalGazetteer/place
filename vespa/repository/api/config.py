@@ -183,13 +183,11 @@ class VespaClient:
         return url
 
     @classmethod
-    def sync_context(cls, client_type, asynchronous=False):
+    def sync_context(cls, client_type):
         """
         Provide a context manager for VespaSync.
         """
         app = cls.get_instance(client_type)
         if not isinstance(app, VespaExtended):
             raise TypeError("Expected VespaExtended instance")
-        if asynchronous:
-            return app
         return VespaSyncExtended(app)

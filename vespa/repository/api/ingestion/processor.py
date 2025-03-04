@@ -5,6 +5,8 @@ import logging
 import os
 import time
 
+from vespa.application import Vespa
+
 from .config import REMOTE_DATASET_CONFIGS
 from .streamer import StreamFetcher
 from .transformers import DocTransformer
@@ -205,6 +207,9 @@ class IngestionManager:
                     stream_fetcher.close_stream()
 
                 # Process each document type
+
+                app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
+
                 for doc_type in ["place", "toponym", "link"]:
                     transformed_file_path = self.transformation_manager.output_files[doc_type]
                     if not os.path.exists(transformed_file_path):
@@ -218,7 +223,7 @@ class IngestionManager:
                     transformed_stream = transformed_stream_fetcher.get_items()
                     logger.info(f"Starting ingestion from {transformed_file_path}...")
                     # Ingest data from the transformed stream
-                    await self._feed_documents(doc_type, transformed_stream)
+                    await self._feed_documents(doc_type, transformed_stream, app)
                     transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
         logger.info("Starting post-processing...")
@@ -252,12 +257,11 @@ class IngestionManager:
 
         return
 
-    async def _feed_documents(self, doc_type, stream):
+    async def _feed_documents(self, doc_type, stream, app):
         try:
             if not hasattr(stream, "__aiter__"):
                 logger.error("stream is not an async iterable")
-            vespa_app = VespaClient.get_instance("feed")
-            await vespa_app.feed_async_iterable(
+            app.feed_async_iterable(
                 iter=stream,
                 schema=doc_type,
                 namespace=self.dataset_config['namespace'],
