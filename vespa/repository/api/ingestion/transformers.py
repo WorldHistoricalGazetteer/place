@@ -191,6 +191,7 @@ class DocTransformer:
                     {
                         "id": toponym_id,
                         "fields": {
+                            "is_staging": True,
                             "name_strict": (name := data.get("name", "")),
                             "name": name,
                             "places": [document_id],
