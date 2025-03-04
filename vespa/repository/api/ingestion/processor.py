@@ -256,27 +256,27 @@ class IngestionManager:
 
     async def _feed_documents(self, doc_type, stream):
         try:
-            with VespaClient.sync_context("feed", True) as async_app:
+            async_app = VespaClient.sync_context("feed", True)
 
-                # Start the producer to enqueue items from the stream
-                producer_task = asyncio.create_task(self._enqueue_items(stream))
+            # Start the producer to enqueue items from the stream
+            producer_task = asyncio.create_task(self._enqueue_items(stream))
 
-                # Start the consumers to process items from the queue
-                consumer_tasks = [
-                    asyncio.create_task(self._process_item(async_app, doc_type, self.dataset_config['namespace']))
-                    for _ in range(self.number_of_consumers)
-                ]
+            # Start the consumers to process items from the queue
+            consumer_tasks = [
+                asyncio.create_task(self._process_item(async_app, doc_type, self.dataset_config['namespace']))
+                for _ in range(self.number_of_consumers)
+            ]
 
-                # Wait for the producer and consumers to finish their tasks
-                await producer_task
-                await self.task_queue.join()  # Ensure all items have been processed
+            # Wait for the producer and consumers to finish their tasks
+            await producer_task
+            await self.task_queue.join()  # Ensure all items have been processed
 
-                # Stop the consumers by adding None to the queue
-                for _ in range(self.number_of_consumers):
-                    await self.task_queue.put(None)
+            # Stop the consumers by adding None to the queue
+            for _ in range(self.number_of_consumers):
+                await self.task_queue.put(None)
 
-                # Wait for all consumer tasks to finish
-                await asyncio.gather(*consumer_tasks)
+            # Wait for all consumer tasks to finish
+            await asyncio.gather(*consumer_tasks)
 
         except:
             logger.exception(f"Error feeding documents to Vespa: {doc_type}")
