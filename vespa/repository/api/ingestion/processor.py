@@ -208,7 +208,7 @@ class IngestionManager:
 
                 # Process each document type
                 async_app = VespaClient.sync_context("feed", True)
-                for doc_type in ["toponym", "place", "link"]:
+                for doc_type in ["place", "toponym", "link"]:
                     transformed_file_path = self.transformation_manager.output_files[doc_type]
                     if not os.path.exists(transformed_file_path):
                         logger.warning(f"No {doc_type} data found in {transformed_file_path}")
@@ -223,6 +223,10 @@ class IngestionManager:
                     # Ingest data from the transformed stream
                     await self._feed_documents(doc_type, transformed_stream, async_app)
                     transformed_stream_fetcher.close_stream()  # Close the transformed stream
+
+                # Stop the consumers by adding None to the queue
+                for _ in range(self.number_of_consumers):
+                    await self.task_queue.put(None)
 
         logger.info("Starting post-processing...")
         await self._condense_places()  # Condense places after all are processed
@@ -270,10 +274,6 @@ class IngestionManager:
             # Wait for the producer and consumers to finish their tasks
             await producer_task
             await self.task_queue.join()  # Ensure all items have been processed
-
-            # Stop the consumers by adding None to the queue
-            for _ in range(self.number_of_consumers):
-                await self.task_queue.put(None)
 
             # Wait for all consumer tasks to finish
             await asyncio.gather(*consumer_tasks)
