@@ -208,7 +208,7 @@ class IngestionManager:
 
                 # Process each document type
                 async_app = VespaClient.sync_context("feed", True)
-                for doc_type in ["place", "toponym", "link"]:
+                for doc_type in ["toponym", "place", "link"]:
                     transformed_file_path = self.transformation_manager.output_files[doc_type]
                     if not os.path.exists(transformed_file_path):
                         logger.warning(f"No {doc_type} data found in {transformed_file_path}")
