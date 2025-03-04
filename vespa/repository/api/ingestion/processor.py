@@ -224,10 +224,6 @@ class IngestionManager:
                     await self._feed_documents(doc_type, transformed_stream, async_app)
                     transformed_stream_fetcher.close_stream()  # Close the transformed stream
 
-                # # Stop the consumers by adding None to the queue
-                # for _ in range(self.number_of_consumers):
-                #     await self.task_queue.put(None)
-
         logger.info("Starting post-processing...")
         await self._condense_places()  # Condense places after all are processed
         await self._condense_toponyms()  # Condense toponyms after all are processed
@@ -275,6 +271,10 @@ class IngestionManager:
             await producer_task
             await self.task_queue.join()  # Ensure all items have been processed
 
+            # Stop the consumers by adding None to the queue
+            for _ in range(self.number_of_consumers):
+                await self.task_queue.put(None)
+
             # Wait for all consumer tasks to finish
             await asyncio.gather(*consumer_tasks)
 
@@ -290,29 +290,40 @@ class IngestionManager:
     async def _process_item(self, app, doc_type):
         """Consumer: Dequeue an item and feed it to Vespa."""
         while True:
-            item = await self.task_queue.get()  # Get an item from the queue
-            if item is None:  # None is used as a sentinel value to stop processing
-                break
-
             try:
-                # Use the feed_data_point method to feed a single item to Vespa
-                response = app.feed_data_point(
-                    schema=doc_type,
-                    namespace=self.dataset_config['namespace'],
-                    data_id=item['id'],
-                    fields=item['fields'],
-                )
-                if response.is_successful():
-                    task_tracker.update_task(self.task_id, {"processed": 1, "success": 1})
-                else:
-                    task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1,
-                                                            "error": f"Failed to feed document {id}: {response.get_status_code()}"})
-                    logger.error(
-                        f"Failed to feed document: {id}, Status code: {response.get('status_code')}, Response: {response}")
+                item = await asyncio.wait_for(self.task_queue.get(), timeout=60)  # Add timeout
+                if item is None:
+                    break  # Sentinel value
+
+                try:
+                    response = app.feed_data_point(
+                        schema=doc_type,
+                        namespace=self.dataset_config['namespace'],
+                        data_id=item['id'],
+                        fields=item['fields'],
+                    )
+                    if response.is_successful():
+                        task_tracker.update_task(self.task_id, {"processed": 1, "success": 1})
+                        logger.debug(f"Successfully fed document {item['id']}")
+                    else:
+                        error_msg = f"Failed to feed document {item['id']}: {response.get_status_code()}, Response: {response}"
+                        task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1, "error": error_msg})
+                        logger.error(error_msg)
+
+                except Exception as e:
+                    error_msg = f"Error feeding data point: {e}, item: {item}"
+                    task_tracker.update_task(self.task_id, {"processed": 1, "failure": 1, "error": error_msg})
+                    logger.error(error_msg, exc_info=True)
+
+            except asyncio.TimeoutError:
+                logger.warning("task_queue.get() timed out.")
+                continue
+
             except Exception as e:
-                logger.error(f"Error feeding data point: {e}")
+                logger.error(f"Error in _process_item: {e}", exc_info=True)
+
             finally:
-                self.task_queue.task_done()  # Mark the task as done
+                self.task_queue.task_done()
 
     async def _condense_places(self):
         """
