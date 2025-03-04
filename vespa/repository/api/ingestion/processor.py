@@ -15,6 +15,7 @@ from ..config import VespaClient
 from ..utils import task_tracker, distinct_dicts, escape_yql
 
 logger = logging.getLogger(__name__)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 class TransformationManager:
