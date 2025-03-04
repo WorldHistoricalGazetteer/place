@@ -189,6 +189,9 @@ class IngestionManager:
                 # Get the source file path from StreamFetcher
                 source_file_path = stream_fetcher.get_file_path()  # Access the _get_file_path method
 
+                logger.info(f"Processing file: {source_file_path}")
+                exit(0)
+
                 # Initialise TransformationManager with source_file_path
                 self.transformation_manager = TransformationManager(
                     source_file_path,

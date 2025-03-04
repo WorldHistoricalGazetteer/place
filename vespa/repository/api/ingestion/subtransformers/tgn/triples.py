@@ -1,115 +1,62 @@
 import logging
-import re
 
-from ....bcp_47.bcp_47 import parse_bcp47_fields
-from ....utils import escape_yql
+import httpx
 
 logger = logging.getLogger(__name__)
 
 
 class TriplesProcessor:
-
     def __init__(self, data: dict):
         """
         :param data: A dictionary containing 'subject', 'predicate', and 'object' keys.
         """
         try:
             self.data = data
-            self.subject_id = data.get("subject", "").split('/')[-1].removesuffix("-geometry")
-            self.predicate = data.get("predicate", "").split('/')[-1].split('#')[-1]
-            self.object = data.get("object", "")
-            self.processed = self.process()
-
-            # logger.info(f"TRIPLE: {self.subject_id} *** {self.predicate} *** {self.object}")
+            self.id = data.get("subject", "").split('/')[-1]  # Extract ID
+            self.fields = {}
+            self.names = []
+            self.links = []
         except Exception as e:
-            logger.exception(f"Exception during triple processing: {str(e)}", exc_info=True)
+            logger.exception(f"Exception during initialization: {str(e)}", exc_info=True)
 
-    def process(self) -> dict:
+    async def fetch_jsonld(self):
+        """Fetch JSON-LD from Getty TGN."""
+        url = f"https://vocab.getty.edu/tgn/{self.id}.jsonld"
         try:
-            match self.predicate:
-                case "placeType":
-                    return {
-                        'place': {
-                            'document_id': self.subject_id,
-                            'fields': {
-                                'types': [self.object.split('/')[-1]],
-                            }
-                        }
-                    }
-                case "longitude":
-                    return {
-                        'place': {
-                            'document_id': self.subject_id,
-                            'fields': {
-                                'bbox_sw_lng': float(self.object.split('^^')[0].strip('"')),
-                            }
-                        }
-                    }
-                case "latitude":
-                    return {
-                        'place': {
-                            'document_id': self.subject_id,
-                            'fields': {
-                                'bbox_sw_lat': float(self.object.split('^^')[0].strip('"')),
-                            }
-                        }
-                    }
-                case "term":
-                    toponym, _, language = self.object.partition("@")
-                    return {
-                        'toponym': {
-                            'document_id': None,  # Generate UUID on first insertion
-                            'variant_id': self.subject_id,  # Add toponym UUID to this variant
-                            'fields': {
-                                'name_strict': (toponym := escape_yql(toponym.strip('"').encode('utf-8').decode('unicode_escape'))),
-                                'name': toponym,
-                                **(parse_bcp47_fields(language) if language else {}),
-                            }
-                        }
-                    }
-                case "estStart":
-                    match = re.match(r'"(-?\d+)', self.object)
-                    if not match:  # Catch rogue values, such as '"######"^^<http://www.w3.org/2001/XMLSchema#gYear'
-                        return {}
-                    return {
-                        'variant': {
-                            'document_id': self.subject_id,
-                            'fields': {
-                                # Sometimes month and day are included, e.g. '"2015-08-28"'
-                                'year_start': int(match.group(1)),
-                            }
-                        }
-                    }
-                case "estEnd":
-                    match = re.match(r'"(-?\d+)', self.object)
-                    if not match:  # Catch rogue values, such as '"######"^^<http://www.w3.org/2001/XMLSchema#gYear'
-                        return {}
-                    return {
-                        'variant': {
-                            'document_id': self.subject_id,
-                            'fields': {
-                                # Sometimes month and day are included, e.g. '"2015-08-28"'
-                                'year_end': int(match.group(1)),
-                            }
-                        }
-                    }
-                case _:  # altLabel, prefLabel, prefLabelGVP
-                    variant_id = self.object.split('/')[-1]
-                    return {
-                        'variant': {
-                            'document_id': variant_id,
-                            'fields': {
-                                'place': self.subject_id,
-                                **({'is_preferred': 1} if self.predicate == "prefLabel" else {}),
-                                **({'is_preferred_GVP': 1} if self.predicate == "prefLabelGVP" else {}),
-                            }
-                        }
-                    }
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, timeout=10)
+                response.raise_for_status()
+                return response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error fetching {url}: {e.response.status_code} - {e.response.text}")
+        except httpx.RequestError as e:
+            logger.error(f"Request error fetching {url}: {str(e)}")
+        except Exception as e:
+            logger.exception(f"Unexpected error fetching {url}: {str(e)}", exc_info=True)
+        return None  # Return None if there's an error
+
+    async def process(self):
+        """Process the JSON-LD data."""
+        try:
+            jsonld = await self.fetch_jsonld()
+            if jsonld:
+                self.parse_jsonld(jsonld)
         except Exception as e:
             logger.exception(f"Exception during triple processing {self.data}: {str(e)}", exc_info=True)
 
-    def get(self, key, default=None):
-        """
-        Mimics dictionary .get() behaviour for the processed result.
-        """
-        return self.processed.get(key, default)
+    def parse_jsonld(self, jsonld: dict):
+        """Extract relevant information from the JSON-LD response."""
+        try:
+            for item in jsonld.get('@graph', []):
+                if 'prefLabel' in item:
+                    self.names.append(item['prefLabel'])
+                if 'sameAs' in item:
+                    self.links.append(item['sameAs'])
+
+            self.fields = {
+                "id": self.id,
+                "names": self.names,
+                "links": self.links,
+            }
+        except Exception as e:
+            logger.exception(f"Error parsing JSON-LD data: {str(e)}", exc_info=True)

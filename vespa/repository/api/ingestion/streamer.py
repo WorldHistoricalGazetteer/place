@@ -223,27 +223,6 @@ class StreamFetcher:
                     self.logger.error(f"Error decoding JSON line: {line}. Error: {e}")
                     raise
 
-    # def _parse_ndjson_stream(self, stream):
-    #     wrapper = io.TextIOWrapper(stream, encoding="utf-8", errors="replace")
-    #
-    #     async def iterator():
-    #         try:
-    #             for line in wrapper:
-    #                 # Simulate asynchronous I/O
-    #                 await asyncio.sleep(0)
-    #                 line = line.strip()
-    #                 if line:  # Ignore empty lines
-    #                     try:
-    #                         yield json.loads(line)  # Parse and yield JSON object
-    #                     except json.JSONDecodeError as e:
-    #                         self.logger.error(f"Error decoding JSON line: {line}. Error: {e}")
-    #                         raise
-    #         except Exception as e:
-    #             self.logger.error(f"Failed to parse NDJSON stream. Error: {e}")
-    #             raise
-    #
-    #     return iterator()
-
     def _parse_geojsonseq_stream(self, stream):
         async def iterator():
             # Process each record one-by-one

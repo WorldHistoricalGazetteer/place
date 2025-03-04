@@ -217,6 +217,12 @@ class DocTransformer:
         ],
         "TGN": [
             lambda data: (
+                 {
+                    "id": (document_id := data.get("geonameid", get_uuid())),
+                    "fields": {
+
+                    }
+                 },
                 TGNTriplesProcessor(data).processed or None,
                 None,  # Ignored for triples
                 None  # Ignored for triples
