@@ -265,10 +265,10 @@ class IngestionManager:
 
             await asyncio.to_thread(
                 app.feed_async_iterable,
-                iter(stream),
-                doc_type,
-                self.dataset_config['namespace'],
-                self._feed_callback
+                iter=stream,
+                schema=doc_type,
+                namespace=self.dataset_config['namespace'],
+                callback=self._feed_callback
             )
 
         except:
