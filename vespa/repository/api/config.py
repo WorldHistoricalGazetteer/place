@@ -157,7 +157,7 @@ class VespaClient:
     _instances = {}
 
     @classmethod
-    def get_instance(cls, client_type: str) -> Vespa | VespaExtended:
+    def get_instance(cls, client_type: str) -> VespaExtended:
         """
         Get or create a Vespa client instance for the specified client type.
         """
