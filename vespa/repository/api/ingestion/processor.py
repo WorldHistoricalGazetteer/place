@@ -87,7 +87,7 @@ class TransformationManager:
 
 class IngestionManager:
     def __init__(self, dataset_name, task_id, limit=None, delete_only=False, no_delete=False, skip_transform=False,
-                 condense_only=False, number_of_consumers=100):
+                 condense_only=False, number_of_consumers=500):
         """
         Initializes IngestionManager with dataset configuration and Vespa client.
 

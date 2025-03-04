@@ -1,6 +1,8 @@
 import logging
 from typing import List, Dict, Any
 
+from ....utils import get_uuid
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,18 +26,23 @@ class LinksProcessor:
     def process(self) -> List[Dict[str, Any]]:
         links = []
         for link in self.place_links:
-            links.append({
-                "record_id": link.get("id"),  # Pleiades connection ID
-                "place_curie": f"pleiades:{self.record_id}",
-                "place_id": self.document_id,
-                "predicate": link.get("connectionTypeURI"),
-                "object": f"pleiades:{link.get('connectsTo')}",
-                **({"year_start": link.get("start")} if "start" in link else {}),
-                **({"year_end": link.get("end")} if "end" in link else {}),
-                **({"confidence": self.certainty_map.get(
-                    link.get("associationCertainty"))} if "associationCertainty" in link else {}),
-                **({"notes": link.get("description")} if "description" in link else {}),
-            })
+            links.append(
+                {
+                    "id": get_uuid(),
+                    "fields": {
+                        "record_id": link.get("id"),  # Pleiades connection ID
+                        "place_curie": f"pleiades:{self.record_id}",
+                        "place_id": self.document_id,
+                        "predicate": link.get("connectionTypeURI"),
+                        "object": f"pleiades:{link.get('connectsTo')}",
+                        **({"year_start": link.get("start")} if "start" in link else {}),
+                        **({"year_end": link.get("end")} if "end" in link else {}),
+                        **({"confidence": self.certainty_map.get(
+                            link.get("associationCertainty"))} if "associationCertainty" in link else {}),
+                        **({"notes": link.get("description")} if "description" in link else {}),
+                    }
+                }
+            )
 
         # logger.info(f"Processed links: {links}")
         return links

@@ -61,9 +61,9 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'The Getty Thesaurus of Geographic Names® (TGN) is provided by the J. Paul Getty Trust under the Open Data Commons Attribution License (ODC-By) 1.0. https://www.getty.edu/research/tools/vocabularies/tgn/',
         'files': [
             {
-                'url': 'http://tgndownloads.getty.edu/VocabData/full.zip',
-                'local_name': 'tgn_full.zip',  # 1.98GB
-                'file_name': 'TGNOut_Full.nt',
+                'url': 'http://tgndownloads.getty.edu/VocabData/explicit.zip',
+                'local_name': 'tgn_explicit.zip',  # 1.98GB
+                'file_name': 'TGNOut_Explicit.nt',
                 'file_type': 'nt',
                 'filters': [  # Filter to only include records with these predicates
                     # lambda triple: triple['predicate'] == '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"

@@ -82,7 +82,7 @@ class NamesProcessor:
                 **years,
             })
             self.output['toponyms'].append({
-                'document_id': toponym_id,
+                'id': toponym_id,
                 'fields': {
                     'name_strict': expanded_toponym,
                     'name': expanded_toponym,

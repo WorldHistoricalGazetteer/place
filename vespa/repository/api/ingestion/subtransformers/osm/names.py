@@ -65,7 +65,7 @@ class NamesProcessor:
                 **({'ipa': ipa} if ipa else {}),
             })
             self.output['toponyms'].append({
-                'document_id': toponym_id,
+                'id': toponym_id,
                 'fields': {
                     'name_strict': name,
                     'name': name,
