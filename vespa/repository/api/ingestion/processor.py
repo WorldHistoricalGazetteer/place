@@ -279,9 +279,12 @@ class IngestionManager:
 
         batch_size = 100  # Define the batch size
         batch = []
-        tasks = []
+        counter = 0
 
         async for item in stream:
+            counter += 1
+            if self.limit and counter > self.limit:
+                break
             batch.append(item)
             if len(batch) >= batch_size:
                 # Fetch JSON-LD for the batch concurrently
