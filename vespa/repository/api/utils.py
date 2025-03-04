@@ -16,7 +16,6 @@ class TaskTracker:
             "status": "in_progress",
             "transformed": 0,
             "processed": 0,
-            "toponyms_staged": 0,
             "toponyms_unstaged": 0,
             "success": 0,
             "failure": 0,
@@ -30,7 +29,7 @@ class TaskTracker:
     def update_task(self, task_id, updates):
         if task_id in self.tasks:
             for key, value in updates.items():
-                if isinstance(value, int) and key in {"transformed", "processed", "toponyms_staged", "toponyms_unstaged", "success", "failure"}:
+                if isinstance(value, int) and key in {"transformed", "processed", "toponyms_unstaged", "success", "failure"}:
                     self.tasks[task_id][key] += value
                 elif key == "error":
                     errors = self.tasks[task_id].setdefault("errors", [])
