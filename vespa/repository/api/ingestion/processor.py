@@ -255,7 +255,7 @@ class IngestionManager:
     async def _feed_documents(self, doc_type, stream):
         try:
             with VespaClient.sync_context("feed") as sync_app:
-                await sync_app.feed_iterable(
+                await sync_app.feed_async_iterable(
                     iter=stream,
                     schema=doc_type,
                     namespace=self.dataset_config['namespace'],
