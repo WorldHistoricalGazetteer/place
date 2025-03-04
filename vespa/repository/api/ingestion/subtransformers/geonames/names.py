@@ -67,7 +67,7 @@ class NamesProcessor:
             **({'is_preferred': is_preferred} if (is_preferred := self.name.get('isPreferredName')) else {}),
         })
         self.output['toponyms'].append({
-            'document_id': toponym_id,
+            'id': toponym_id,
             'fields': {
                 'name_strict': alternateName,
                 'name': alternateName,
