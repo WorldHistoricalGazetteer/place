@@ -296,7 +296,7 @@ class IngestionManager:
 
             try:
                 # Use the feed_data_point method to feed a single item to Vespa
-                response = await app.feed_data_point(
+                response = app.feed_data_point(
                     schema=doc_type,
                     namespace=namespace,
                     data_id=item['id'],
