@@ -254,6 +254,8 @@ class IngestionManager:
 
     async def _feed_documents(self, doc_type, stream):
         try:
+            if not hasattr(stream, "__aiter__"):
+                logger.error("stream is not an async iterable")
             vespa_app = VespaClient.get_instance("feed")
             await vespa_app.feed_async_iterable(
                 iter=stream,
