@@ -23,6 +23,7 @@ class TaskTracker:
             "unstaged_toponyms": 0,
             "unstaged_places": 0,
             "unstaged_links": 0,
+            "processed_triples": 0,
             "success": 0,
             "failure": 0,
             "errors": [],
@@ -45,6 +46,7 @@ class TaskTracker:
                     "unstaged_toponyms",
                     "unstaged_places",
                     "unstaged_links",
+                    "processed_triples",
                     "success",
                     "failure"
                 }:
