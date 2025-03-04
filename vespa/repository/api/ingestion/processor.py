@@ -34,6 +34,7 @@ class TransformationManager:
             for output_file in self.output_files.values():
                 if os.path.exists(output_file):
                     os.remove(output_file)  # Delete pre-existing file unless skip_transform is True
+                    logger.info(f"Deleted existing file: {output_file}")
 
     def _get_output_file_paths(self, source_file_path, transformer_index):
         """
@@ -291,7 +292,7 @@ class IngestionManager:
         """Consumer: Dequeue an item and feed it to Vespa."""
         while True:
             try:
-                item = await asyncio.wait_for(self.task_queue.get(), timeout=60)  # Add timeout
+                item = await asyncio.wait_for(self.task_queue.get(), timeout=60)
                 if item is None:
                     break  # Sentinel value
 
