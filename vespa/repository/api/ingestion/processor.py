@@ -251,8 +251,8 @@ class IngestionManager:
             os.remove(ld_source_path)
         stream = stream_fetcher.get_items()
 
-        async def fetch_and_write_jsonld(triple: dict, semaphore: asyncio.Semaphore):
-            async with semaphore:  # Acquire the semaphore
+        async def fetch_jsonld(triple: dict, semaphore: asyncio.Semaphore):
+            async with semaphore:
                 try:
                     place_id = triple.get("subject", "").split('/')[-1]
                     url = f"https://vocab.getty.edu/tgn/{place_id}.jsonld"
@@ -261,29 +261,42 @@ class IngestionManager:
                         response.raise_for_status()
                         jsonld = response.json()
                         if jsonld:
-                            with open(ld_source_path, "a") as f:
-                                json.dump(jsonld, f)
-                                f.write("\n")
-                                task_tracker.update_task(self.task_id, {f"processed_triples": 1})
+                            return jsonld  # Return the JSON-LD data
                 except Exception as e:
                     logger.error(f"Error processing triple {triple}: {e}", exc_info=True)
+                    return None  # Return None in case of an error
+
+        async def write_batch(batch: list):
+            with open(ld_source_path, "a") as f:
+                for jsonld in batch:
+                    if jsonld:  # Check if jsonld is not None
+                        json.dump(jsonld, f)
+                        f.write("\n")
+                        task_tracker.update_task(self.task_id, {f"processed_triples": 1})
 
         # Create a semaphore to limit concurrency
-        semaphore = asyncio.Semaphore(10)  # Allow 10 concurrent requests
+        semaphore = asyncio.Semaphore(10)
 
-        if self.limit:
-            # Process only the first self.limit triples
-            counter = 0
-            tasks = []
-            async for item in stream:
-                if counter >= self.limit:
-                    break
-                tasks.append(fetch_and_write_jsonld(item, semaphore))
-                counter += 1
-        else:
-            tasks = [fetch_and_write_jsonld(item, semaphore) async for item in stream]
+        batch_size = 100  # Define the batch size
+        batch = []
+        tasks = []
 
-        await asyncio.gather(*tasks)
+        async for item in stream:
+            batch.append(item)
+            if len(batch) >= batch_size:
+                # Fetch JSON-LD for the batch concurrently
+                fetch_tasks = [fetch_jsonld(triple, semaphore) for triple in batch]
+                results = await asyncio.gather(*fetch_tasks)
+                # Write the fetched JSON-LD data to the file
+                await write_batch(results)
+                batch = []  # Clear the batch
+
+        # Process any remaining items in the batch
+        if batch:
+            fetch_tasks = [fetch_jsonld(triple, semaphore) for triple in batch]
+            results = await asyncio.gather(*fetch_tasks)
+            await write_batch(results)
+
         stream_fetcher.close_stream()
 
         return StreamFetcher({
