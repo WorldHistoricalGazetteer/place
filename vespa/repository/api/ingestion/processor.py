@@ -261,7 +261,7 @@ class IngestionManager:
         try:
             if not hasattr(stream, "__aiter__"):
                 logger.error("stream is not an async iterable")
-            app.feed_async_iterable(
+            await app.feed_async_iterable(
                 iter=stream,
                 schema=doc_type,
                 namespace=self.dataset_config['namespace'],
