@@ -362,7 +362,7 @@ class IngestionManager:
                                             schema='place',
                                             data_id=place_id
                                             )
-                    task_tracker.update_task(self.task_id, {"places_unstaged": 1})
+                    task_tracker.update_task(self.task_id, {"unstaged_places": 1})
 
                 # Fetch the parent place from Vespa
                 parent_place = await asyncio.to_thread(sync_app.get_existing,
@@ -424,7 +424,7 @@ class IngestionManager:
                         data_id=oldest_toponym_id,
                         fields={"is_staging": False}
                     )
-                    task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
+                    task_tracker.update_task(self.task_id, {"unstaged_toponyms": 1})
 
                 # If any matching toponyms remain, merge them with the oldest toponym
                 if matching_toponyms:
@@ -462,7 +462,7 @@ class IngestionManager:
                                                 schema='toponym',
                                                 data_id=toponym_id
                                                 )
-                        task_tracker.update_task(self.task_id, {"toponyms_unstaged": 1})
+                        task_tracker.update_task(self.task_id, {"unstaged_toponyms": 1})
                         deleted_toponyms += [toponym_id]
 
                     # Update the oldest toponym with merged places
