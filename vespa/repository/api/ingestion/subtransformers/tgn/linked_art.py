@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import unicodedata
 from typing import Dict, Any
 
 from ....bcp_47.bcp_47 import parse_bcp47_fields
@@ -41,6 +42,13 @@ class LinkedArtProcessor:
 
         for name in filter(lambda name_ld: name_ld.get('type') == 'Name', self.linked_art_ld.get('identified_by', [])):
             toponym = name.get('content').strip()
+            # Normalise Unicode (NFC to prevent decomposition issues)
+            toponym = unicodedata.normalize("NFC", toponym)
+            # Remove problematic invisible Unicode characters
+            toponym = toponym.translate(dict.fromkeys([0x200B, 0x2060]))
+            # Ensure UTF-8 encoding (ignore errors)
+            toponym = toponym.encode("utf-8", "ignore").decode("utf-8")
+
             preferred = any(cls.get('id', '') == 'http://vocab.getty.edu/aat/300404670' for cls in name.get('classified_as', []))
 
             self.names.append({
