@@ -503,6 +503,7 @@ class IngestionManager:
                 # Catch a no-match scenario for debugging
                 if not matching_toponyms:
                     logger.error(f"Failed to find matching toponyms for {staging_toponym}: yql={yql}")
+                    logger.info(f"Query response: {query_response.get_json()}")
                     break
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
