@@ -1,7 +1,6 @@
 # /ingestion/processor.py
 import asyncio
 import json
-import orjson
 import logging
 import os
 import time
