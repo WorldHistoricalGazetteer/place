@@ -208,6 +208,7 @@ class IngestionManager:
 
                 logger.info(f"Output files: {self.transformation_manager.output_files}")
                 logger.info(f"Skip transform: {self.skip_transform}")
+                logger.info(f"Source file path: {source_file_path}")
 
                 if self.skip_transform:
                     logger.info(f"Skipping transformation - using existing transformed file.")
@@ -326,8 +327,8 @@ class IngestionManager:
 
         async for document in stream:
             # Apply filters (if any)
-            if filters and not any(f(document) for f in filters):
-                continue
+            # if filters and not any(f(document) for f in filters):
+            #     continue
 
             # It is necessary to await the task to ensure that the file is written (otherwise the file may not be closed correctly)
             await self.transformation_manager.transform_and_store(document)
