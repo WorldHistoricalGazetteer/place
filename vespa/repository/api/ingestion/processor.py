@@ -196,7 +196,7 @@ class IngestionManager:
                         stream_fetcher = await self._convert_triples(stream_fetcher, file_config)
                     else:
                         stream_fetcher = StreamFetcher({
-                            'url': stream_fetcher.get_file_path(),
+                            'url': stream_fetcher.get_file_path().replace(file_config['local_name'], file_config['ld_file']),
                             'file_type': 'ndjson'
                         })
 
@@ -333,8 +333,8 @@ class IngestionManager:
 
         async for document in stream:
             # Apply filters (if any)
-            # if filters and not any(f(document) for f in filters):
-            #     continue
+            if filters and not any(f(document) for f in filters):
+                continue
 
             # It is necessary to await the task to ensure that the file is written (otherwise the file may not be closed correctly)
             await self.transformation_manager.transform_and_store(document)
