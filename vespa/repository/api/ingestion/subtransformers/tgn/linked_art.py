@@ -14,7 +14,7 @@ class LinkedArtProcessor:
         """
         :param linked_art_ld: The Linked Art JSON-LD object.
         """
-        logger.info(f"Processing Linked Art object: {linked_art_ld}")
+        # logger.info(f"Processing Linked Art object: {linked_art_ld}")
         self.linked_art_ld = linked_art_ld
         self.id = linked_art_ld.get('id').split('/')[-1]
         self.names = []
@@ -59,37 +59,45 @@ class LinkedArtProcessor:
 
     def process(self) -> dict:
 
-        return {
-            'id': self.id,
-            'place': {
-                'record_id': self.id,
-                'record_url': f'https://vocab.getty.edu/tgn/{self.id}.jsonld',
+        logger.info(f"Processed Linked Art object: {self.id}")
+        logger.info((f"Toponym count: {len(self.toponyms)}"))
 
-                'names': self.names,
+        try:
+            return {
+                'id': self.id,
+                'place': {
+                    'record_id': self.id,
+                    'record_url': f'https://vocab.getty.edu/tgn/{self.id}.jsonld',
 
-                **({"bbox_sw_lat": bbox_sw_lat} if (bbox_sw_lat := self.coordinates[0]) else {}),
-                **({"bbox_sw_lng": bbox_sw_lng} if (bbox_sw_lng := self.coordinates[1]) else {}),
-                **({"bbox_ne_lat": bbox_sw_lat} if bbox_sw_lat else {}),
-                **({"bbox_ne_lng": bbox_sw_lng} if bbox_sw_lng else {}),
-                "bbox_antimeridial": False,
-                **({"convex_hull": point} if (point := json.dumps((point_json := {
-                    "type": "Point",
-                    "coordinates": [bbox_sw_lng, bbox_sw_lat]
-                })) if bbox_sw_lng and bbox_sw_lat else None) else {}),
-                **({"locations": [{"geometry": point}]} if point else {}),
-                **({"representative_point": {"lat": bbox_sw_lat,
-                                             "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
+                    'names': self.names,
 
-                'types': [aat.get('id').split('/')[-1] for aat in self.linked_art_ld.get('classified_as', [])],
+                    **({"bbox_sw_lat": bbox_sw_lat} if (bbox_sw_lat := self.coordinates[0]) else {}),
+                    **({"bbox_sw_lng": bbox_sw_lng} if (bbox_sw_lng := self.coordinates[1]) else {}),
+                    **({"bbox_ne_lat": bbox_sw_lat} if bbox_sw_lat else {}),
+                    **({"bbox_ne_lng": bbox_sw_lng} if bbox_sw_lng else {}),
+                    "bbox_antimeridial": False,
+                    **({"convex_hull": point} if (point := json.dumps((point_json := {
+                        "type": "Point",
+                        "coordinates": [bbox_sw_lng, bbox_sw_lat]
+                    })) if bbox_sw_lng and bbox_sw_lat else None) else {}),
+                    **({"locations": [{"geometry": point}]} if point else {}),
+                    **({"representative_point": {"lat": bbox_sw_lat,
+                                                 "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
 
-                **({"ccodes": GeometryIntersect(geometry=point_json).resolve()} if bbox_sw_lat and bbox_sw_lng else {}),
-            },
-            'toponyms': self.toponyms,
-            'links': [
-                # {
-                #     "place_id": self.id,
-                #     "predicate": None,
-                #     "object": None,
-                # } for link in self.linked_art_ld.get('see_also', [])
-            ],
-        }
+                    'types': [aat.get('id').split('/')[-1] for aat in self.linked_art_ld.get('classified_as', [])],
+
+                    **({"ccodes": GeometryIntersect(geometry=point_json).resolve()} if bbox_sw_lat and bbox_sw_lng else {}),
+                },
+                'toponyms': self.toponyms,
+                'links': [
+                    # {
+                    #     "place_id": self.id,
+                    #     "predicate": None,
+                    #     "object": None,
+                    # } for link in self.linked_art_ld.get('see_also', [])
+                ],
+            }
+        except Exception as e:
+            logger.error(f"Error processing Linked Art object: {e}", exc_info=True)
+            logger.info(f"Linked Art object: {self.linked_art_ld}")
+            return {}
