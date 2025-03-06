@@ -82,7 +82,7 @@ class LinkedArtProcessor:
 
                 'types': [aat.get('id').split('/')[-1] for aat in self.linked_art_ld.get('classified_as', [])],
 
-                **({"country_codes": GeometryIntersect(geometry=point_json).resolve()} if bbox_sw_lat and bbox_sw_lng else {}),
+                **({"ccodes": GeometryIntersect(geometry=point_json).resolve()} if bbox_sw_lat and bbox_sw_lng else {}),
             },
             'toponyms': self.toponyms,
             'links': [
