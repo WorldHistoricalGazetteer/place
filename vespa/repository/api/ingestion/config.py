@@ -66,7 +66,13 @@ REMOTE_DATASET_CONFIGS = [
                 'file_name': 'TGNOut_PlaceMap.nt', # 2.3GB
                 'ld_file': 'tgn_places.ndjson',
                 'file_type': 'nt',
-                'filters': [],
+                'filters': [
+                    # At least one of the `identified_by` list items must have "type": "crm:E47_Spatial_Coordinates"
+                    lambda doc: any(
+                        'crm:E47_Spatial_Coordinates' in identified_by.get('type', [])
+                        for identified_by in doc.get('identified_by', [])
+                    )
+                ],
             },
         ],
     },

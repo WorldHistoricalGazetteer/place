@@ -11,7 +11,7 @@ from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLo
 from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
 from .subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
 from .subtransformers.pleiades.years import YearsProcessor as PleiadesYearsProcessor
-from .subtransformers.tgn.triples import TriplesProcessor as TGNTriplesProcessor
+from .subtransformers.tgn.linked_art import LinkedArtProcessor
 from .subtransformers.wikidata.locations import LocationsProcessor as WikidataLocationsProcessor
 from .subtransformers.wikidata.names import NamesProcessor as WikidataNamesProcessor
 from .subtransformers.wikidata.types import TypesProcessor as WikidataTypesProcessor
@@ -218,14 +218,12 @@ class DocTransformer:
         "TGN": [
             lambda data: (
                  {
-                    "id": (document_id := data.get("geonameid", get_uuid())),
-                    "fields": {
-
-                    }
+                    "id": linked_art["id"] if (
+                            linked_art := LinkedArtProcessor(data).process()) else None,
+                    "fields": linked_art["place"] if linked_art else {},
                  },
-                TGNTriplesProcessor(data).processed or None,
-                None,  # Ignored for triples
-                None  # Ignored for triples
+                linked_art["toponyms"] if linked_art else None,
+                linked_art["links"] if linked_art else None
             )
         ],
         "Wikidata": [  # Depends on GeoNames having been already processed

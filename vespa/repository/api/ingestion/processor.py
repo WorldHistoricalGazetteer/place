@@ -1,6 +1,7 @@
 # /ingestion/processor.py
 import asyncio
 import json
+import orjson
 import logging
 import os
 import time
@@ -247,14 +248,22 @@ class IngestionManager:
     async def _convert_triples(self, stream_fetcher, file_config):
         source_file_path = stream_fetcher.get_file_path()
         ld_source_path = source_file_path.replace(file_config['local_name'], file_config['ld_file'])
-        if os.path.exists(ld_source_path):
-            os.remove(ld_source_path)
+        # if os.path.exists(ld_source_path): # TODO: Enable this
+        #     os.remove(ld_source_path)
         stream = stream_fetcher.get_items()
 
         async def fetch_jsonld(triple: dict, semaphore: asyncio.Semaphore):
             async with semaphore:
                 try:
                     place_id = triple.get("subject", "").split('/')[-1]
+
+                    # Reject if not an integer
+                    if not place_id.isdigit():
+                        return None
+                    # Reject if predicate is not focus
+                    if triple.get("predicate", "") != "http://xmlns.com/foaf/0.1/focus":
+                        return None
+
                     url = f"https://vocab.getty.edu/tgn/{place_id}.jsonld"
                     async with httpx.AsyncClient() as client:
                         response = await client.get(url, timeout=10)
@@ -283,6 +292,11 @@ class IngestionManager:
 
         async for item in stream:
             counter += 1
+
+            # Skip first 2990276 items # TODO: Remove this
+            if counter <= 2990276:
+                continue
+
             if self.limit and counter > self.limit:
                 break
             batch.append(item)
