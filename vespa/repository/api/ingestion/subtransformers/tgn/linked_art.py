@@ -74,22 +74,26 @@ class LinkedArtProcessor:
 
                     'names': self.names,
 
-                    **({"bbox_sw_lat": bbox_sw_lat} if (bbox_sw_lat := self.coordinates[0]) else {}),
-                    **({"bbox_sw_lng": bbox_sw_lng} if (bbox_sw_lng := self.coordinates[1]) else {}),
-                    **({"bbox_ne_lat": bbox_sw_lat} if bbox_sw_lat else {}),
-                    **({"bbox_ne_lng": bbox_sw_lng} if bbox_sw_lng else {}),
+                    'bbox_sw_lat': (bbox_sw_lat:= self.coordinates[0]),
+                    'bbox_sw_lng': (bbox_sw_lng:= self.coordinates[1]),
+                    'bbox_ne_lat': bbox_sw_lat,
+                    'bbox_ne_lng': bbox_sw_lng,
                     "bbox_antimeridial": False,
-                    **({"convex_hull": point} if (point := json.dumps((point_json := {
+                    "convex_hull": (point := json.dumps(point_json := {
                         "type": "Point",
                         "coordinates": [bbox_sw_lng, bbox_sw_lat]
-                    })) if bbox_sw_lng and bbox_sw_lat else None) else {}),
-                    **({"locations": [{"geometry": point}]} if point else {}),
-                    **({"representative_point": {"lat": bbox_sw_lat,
-                                                 "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
+                    })),
+                    "locations": [{"geometry": point}],
+                    "representative_point": {"lat": bbox_sw_lat,
+                                                 "lng": bbox_sw_lng},
 
                     'types': [aat.get('id').split('/')[-1] for aat in self.linked_art_ld.get('classified_as', [])],
 
-                    **({"ccodes": GeometryIntersect(geometry=point_json).resolve()} if bbox_sw_lat and bbox_sw_lng else {}),
+                    **({"ccodes": [
+                            meta["ISO_A2"] for result in GeometryIntersect(geometry=point_json).resolve()
+                            if (meta := json.loads(result["meta"]))["ISO_A2"] != "-"
+                        ]} if bbox_sw_lat and bbox_sw_lng else {}),
+
                 },
                 'toponyms': self.toponyms,
                 'links': [
