@@ -191,8 +191,14 @@ class IngestionManager:
                 self.update_place = file_config.get("update_place", False)
                 stream_fetcher = StreamFetcher(file_config)
 
-                if 'ld_file' in file_config and self.convert_triples:
-                    stream_fetcher = await self._convert_triples(stream_fetcher, file_config)
+                if 'ld_file' in file_config:
+                    if self.convert_triples:
+                        stream_fetcher = await self._convert_triples(stream_fetcher, file_config)
+                    else:
+                        stream_fetcher = StreamFetcher({
+                            'url': stream_fetcher.get_file_path(),
+                            'file_type': 'ndjson'
+                        })
 
                 # Get the source file path from StreamFetcher
                 source_file_path = stream_fetcher.get_file_path()  # Access the _get_file_path method
