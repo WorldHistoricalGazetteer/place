@@ -478,7 +478,7 @@ class IngestionManager:
         with VespaClient.sync_context("feed") as sync_app:
             logger.info("Condensing toponyms...")
             while True:
-                yql = 'select name_strict from toponym where is_staging = true limit 1'
+                yql = 'select * from toponym where is_staging = true limit 1'
                 staging_toponym = await asyncio.to_thread(sync_app.query_existing, {'yql': yql}, schema='toponym')
 
                 if not staging_toponym:
@@ -504,7 +504,10 @@ class IngestionManager:
                 if not matching_toponyms:
                     logger.error(f"Failed to find matching toponyms for {staging_toponym}: yql={yql}")
                     logger.info(f"Query response: {query_response.get_json()}")
-                    break
+                    # break
+                    # Instead of breaking, pause for 1 second and try again - it may be a race condition
+                    await asyncio.sleep(1)
+                    continue
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
