@@ -53,7 +53,7 @@ class LinkedArtProcessor:
                     'name_strict': toponym,
                     'name': toponym,
                     'places': [self.id],
-                    **(parse_bcp47_fields(isolanguages[0]) if (isolanguages := name.get('language')) else {}),
+                    **(parse_bcp47_fields(isolanguages[0].get('id','').split('/')[-1]) if (isolanguages := name.get('language')) else {}),
                 }
             })
 
