@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Dict, Any
 
 from ....bcp_47.bcp_47 import parse_bcp47_fields
@@ -22,6 +23,8 @@ class LinkedArtProcessor:
         self._get_names()
         try:
             self.coordinate_string = self._get_value_from_type(linked_art_ld.get('identified_by', []), 'crm:E47_Spatial_Coordinates')
+            # Add leading zeros to the coordinates where required for valid JSON, e.g. '[-.166,11.5833]' -> '[-0.166,11.5833]'
+            self.coordinate_string = re.sub(r'(?<!\d)\.(\d+)', r'0.\1', self.coordinate_string)
             # Convert self.coordinate_string like '[-101.123047, 37.09024]' to a list of floats
             self.coordinates = json.loads(self.coordinate_string) if self.coordinate_string else None
             # Force error if there are not exactly two coordinates
