@@ -478,14 +478,14 @@ class IngestionManager:
         with VespaClient.sync_context("feed") as sync_app:
             logger.info("Condensing toponyms...")
             while True:
-                yql = 'select * from toponym where is_staging = true limit 1'
+                yql = 'select name_strict from toponym where is_staging = true limit 1'
                 staging_toponym = await asyncio.to_thread(sync_app.query_existing, {'yql': yql}, schema='toponym')
 
                 if not staging_toponym:
                     break  # No more staging toponyms
 
                 # Find all matching toponyms, ordered by creation timestamp
-                name = staging_toponym['fields']['name']
+                name = staging_toponym['fields']['name_strict']
                 yql = f'select documentid, places, is_staging, created from toponym where name_strict contains "{escape_yql(name)}" '
                 for field in bcp47_fields:
                     if staging_toponym.get("fields", {}).get(f"bcp47_{field}"):
