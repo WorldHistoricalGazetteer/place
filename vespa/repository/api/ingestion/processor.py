@@ -500,6 +500,10 @@ class IngestionManager:
                 matching_toponyms = [doc.get('fields', {}) for doc in
                                      query_response.get_json().get('root', {}).get('children', [])]
 
+                # Due to race conditions, it is possible that no matching toponyms are found because the selected toponym has now been deleted
+                if not matching_toponyms:
+                    continue
+
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
                 oldest_toponym_id = oldest_toponym['documentid'].split('::')[-1]

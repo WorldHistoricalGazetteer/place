@@ -62,8 +62,8 @@ class LinkedArtProcessor:
 
     def process(self) -> dict:
 
-        logger.info(f"Processed Linked Art object: {self.id}")
-        logger.info((f"Toponym count: {len(self.toponyms)}"))
+        # logger.info(f"Processed Linked Art object: {self.id}")
+        # logger.info((f"Toponym count: {len(self.toponyms)}"))
 
         try:
             return {
