@@ -14,6 +14,7 @@ class LinkedArtProcessor:
         """
         :param linked_art_ld: The Linked Art JSON-LD object.
         """
+        logger.info(f"Processing Linked Art object: {linked_art_ld}")
         self.linked_art_ld = linked_art_ld
         self.id = linked_art_ld.get('id').split('/')[-1]
         self.names = []
