@@ -21,7 +21,8 @@ class LinkedArtProcessor:
         self._get_names()
         try:
             self.coordinate_string = self._get_value_from_type(linked_art_ld.get('identified_by', []), 'crm:E47_Spatial_Coordinates')
-            self.coordinates = [float(x) for x in self.coordinate_string.split(',') if x] if self.coordinate_string else None
+            # Convert self.coordinate_string like '[-101.123047, 37.09024]' to a list of floats
+            self.coordinates = json.loads(self.coordinate_string) if self.coordinate_string else None
             # Force error if there are not exactly two coordinates
             if self.coordinates and len(self.coordinates) != 2:
                 raise ValueError(f"Invalid point coordinates: {self.coordinates}")
