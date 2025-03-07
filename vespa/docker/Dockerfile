@@ -59,5 +59,5 @@ CMD ["sh", "-c", "fastapi run api/main.py --port ${PORT}"]
 ## In the project root, build the Docker image:
 #sudo systemctl restart docker
 #docker login
-#docker build -t worldhistoricalgazetteer/vespa-api:0.0.11 ./vespa/docker
-#docker push worldhistoricalgazetteer/vespa-api:0.0.11
+#docker build -t worldhistoricalgazetteer/vespa-api:0.0.12 ./vespa/docker
+#docker push worldhistoricalgazetteer/vespa-api:0.0.12

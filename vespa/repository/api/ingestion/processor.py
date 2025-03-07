@@ -502,6 +502,62 @@ class IngestionManager:
 
                 # Catch a no-match scenario for debugging
                 if not matching_toponyms:
+                    """
+                    ශ්‍රී ලංකාව
+                    İzlanda
+                    
+from vespa.application import Vespa
+vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
+response = vespa_app.query(body={"yql": "select * from toponym where name_strict contains 'İzlanda'"})
+print(response.json)
+
+                    
+response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
+print(response.json)
+
+import unicodedata
+from vespa.application import Vespa
+vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
+
+query_str = "İzlanda"
+normalized_query = unicodedata.normalize("NFC", query_str)
+response = vespa_app.query(body={"yql": f"select * from toponym where name_strict contains '{normalized_query}'"})
+print(response.json)
+
+response = vespa_app.query(
+    body={
+        "yql": "select * from toponym where name_strict contains +query_term",
+        "inputs": {"query_term": "İzlanda"}
+    }
+)
+print(response.json)
+
+from vespa.query import QueryBuilder
+from vespa.application import Vespa
+
+vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
+
+# Create a query builder instance
+query_builder = QueryBuilder()
+
+# Build query using the DSL API
+query = (
+    query_builder
+    .select("*")
+    .where(query_builder.contains("name_strict", "İzlanda"))
+    .build()
+)
+
+# Execute the query
+response = vespa_app.query(body=query)
+
+# Print results
+print(response.json())
+
+
+
+                    
+                    """
                     logger.error(f"Failed to find matching toponyms for {staging_toponym}: yql={yql}")
                     logger.info(f"Query response: {query_response.get_json()}")
                     # break
