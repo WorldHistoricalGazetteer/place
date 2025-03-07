@@ -47,7 +47,7 @@ class LinkedArtProcessor:
             # Remove problematic invisible Unicode characters
             toponym = toponym.translate(dict.fromkeys([0x200B, 0x2060]))
             # Ensure UTF-8 encoding (ignore errors)
-            toponym = toponym.encode("utf-8", "ignore").decode("utf-8")
+            toponym = toponym.encode("utf-8", "strict").decode("utf-8")
 
             preferred = any(cls.get('id', '') == 'http://vocab.getty.edu/aat/300404670' for cls in name.get('classified_as', []))
 
