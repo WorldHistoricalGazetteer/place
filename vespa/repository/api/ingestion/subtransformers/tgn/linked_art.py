@@ -125,9 +125,6 @@ vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
 response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
 place_name = response.json['root']['children'][0]['fields']['name_strict']
 print(place_name)
-place_name = "તાંઝાનિયા"
-place_name = "İslandiya"
-place_name = "Vanuatu"
 name_strict = QueryField("name_strict")
 q = (
     qb.select(["*"])
@@ -136,7 +133,14 @@ q = (
 )
 response = vespa_app.query(yql=q)
 print(response.json)
-place_name = "Vanuatu"
+response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
+place_name = response.json['root']['children'][0]['fields']['name_strict']
+print(place_name)
+
+
+
+
+place_name = "İslandiya"
 name = QueryField("name")
 q = (
     qb.select(["*"])
@@ -146,7 +150,7 @@ q = (
 response = vespa_app.query(yql=q)
 print(response.json)
 
-place_name = "anuatu"
+place_name = "anu"
 name = QueryField("name")
 q = (
     qb.select(["*"])

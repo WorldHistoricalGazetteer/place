@@ -16,7 +16,6 @@ schema toponym {
         field name type string {
             # The toponym (e.g., "London", "Londinium").
             indexing: attribute | summary | index
-            stemming: multiple
             attribute: fast-search
             match {
                 substring

@@ -12,7 +12,7 @@ replicaCounts:
 image:
   repository: vespaengine/vespa
   pullPolicy: IfNotPresent
-  tag: "8"
+  tag: "8.492.15"
 
 imagePullSecrets: [ ]
 nameOverride: ""
@@ -193,7 +193,7 @@ api:
   image:
     repository: worldhistoricalgazetteer/vespa-api
     pullPolicy: IfNotPresent
-    tag: "0.0.13"
+    tag: "0.0.14"
   securityContext:
     container:
       runAsUser: 0
