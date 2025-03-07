@@ -116,3 +116,35 @@ class LinkedArtProcessor:
             logger.error(f"Error processing Linked Art object: {e}", exc_info=True)
             logger.info(f"Linked Art object: {self.linked_art_ld}")
             return {}
+
+"""
+from vespa.application import Vespa
+import vespa.querybuilder as qb
+from vespa.querybuilder import QueryField
+vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
+response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
+place_name = response.json['root']['children'][0]['fields']['name_strict']
+print(place_name)
+place_name = "તાંઝાનિયા"
+place_name = "İslandiya"
+place_name = "anuatu"
+name_strict = QueryField("name_strict")
+q = (
+    qb.select(["*"])
+    .from_("toponym")
+    .where(name_strict.contains(place_name))
+)
+response = vespa_app.query(yql=q)
+print(response.json)
+name = QueryField("name")
+q = (
+    qb.select(["*"])
+    .from_("toponym")
+    .where(name.contains(place_name))
+)
+response = vespa_app.query(yql=q)
+print(response.json)
+response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
+place_name = response.json['root']['children'][0]['fields']['name_strict']
+print(place_name)
+"""

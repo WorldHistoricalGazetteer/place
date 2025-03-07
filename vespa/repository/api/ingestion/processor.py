@@ -505,14 +505,15 @@ class IngestionManager:
                 if not matching_toponyms:
                     logger.error(f"Failed to find matching toponyms for {staging_toponym['fields']['name_strict']}")
                     # Remove the is_staging flag from the staging_toponym
-                    result = await asyncio.to_thread(
-                        sync_app.update_existing,
-                        namespace=self.dataset_config['namespace'],
-                        schema='toponym',
-                        data_id=staging_toponym['document_id'],
-                        fields={"is_staging": False}
-                    )
+                    # result = await asyncio.to_thread(
+                    #     sync_app.update_existing,
+                    #     namespace=self.dataset_config['namespace'],
+                    #     schema='toponym',
+                    #     data_id=staging_toponym['document_id'],
+                    #     fields={"is_staging": False}
+                    # )
                     continue
+
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
                 oldest_toponym = matching_toponyms.pop(0)
