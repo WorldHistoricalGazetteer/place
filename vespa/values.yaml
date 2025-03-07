@@ -12,7 +12,7 @@ replicaCounts:
 image:
   repository: vespaengine/vespa
   pullPolicy: IfNotPresent
-  tag: "8.492.15"
+  tag: "8.492.15" # Vespa version: do not attempt to upgrade more than 30 minor versions at a time
 
 imagePullSecrets: [ ]
 nameOverride: ""
