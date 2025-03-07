@@ -501,6 +501,7 @@ class IngestionManager:
                                      query_response.get_json().get('root', {}).get('children', [])]
 
                 # Catch a no-match scenario for debugging
+                # See https://stackoverflow.com/questions/79491894/vespa-indexing-anomaly-on-exact-indexed-field-with-diacritical-variants-and-no
                 if not matching_toponyms:
                     logger.error(f"Failed to find matching toponyms for {staging_toponym['fields']['name_strict']}")
                     # Remove the is_staging flag from the staging_toponym
@@ -511,8 +512,6 @@ class IngestionManager:
                         data_id=staging_toponym['document_id'],
                         fields={"is_staging": False}
                     )
-
-
                     continue
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag

@@ -193,7 +193,7 @@ api:
   image:
     repository: worldhistoricalgazetteer/vespa-api
     pullPolicy: IfNotPresent
-    tag: "0.0.12"
+    tag: "0.0.13"
   securityContext:
     container:
       runAsUser: 0
