@@ -18,6 +18,9 @@ schema toponym {
             indexing: attribute | summary | index
             stemming: multiple
             attribute: fast-search
+            match {
+                substring
+            }
         }
 
         field ipa type string {

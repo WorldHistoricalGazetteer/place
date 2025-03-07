@@ -127,7 +127,7 @@ place_name = response.json['root']['children'][0]['fields']['name_strict']
 print(place_name)
 place_name = "તાંઝાનિયા"
 place_name = "İslandiya"
-place_name = "anuatu"
+place_name = "Vanuatu"
 name_strict = QueryField("name_strict")
 q = (
     qb.select(["*"])
@@ -136,6 +136,17 @@ q = (
 )
 response = vespa_app.query(yql=q)
 print(response.json)
+place_name = "Vanuatu"
+name = QueryField("name")
+q = (
+    qb.select(["*"])
+    .from_("toponym")
+    .where(name.contains(place_name))
+)
+response = vespa_app.query(yql=q)
+print(response.json)
+
+place_name = "anuatu"
 name = QueryField("name")
 q = (
     qb.select(["*"])
