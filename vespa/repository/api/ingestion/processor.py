@@ -502,69 +502,13 @@ class IngestionManager:
 
                 # Catch a no-match scenario for debugging
                 if not matching_toponyms:
-                    """
-                    ශ්‍රී ලංකාව
-                    İzlanda
-                    
-from vespa.application import Vespa
-vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
-response = vespa_app.query(body={"yql": "select * from toponym where name_strict contains 'İzlanda'"})
-print(response.json)
-
-                    
-response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
-print(response.json)
-
-import unicodedata
-from vespa.application import Vespa
-vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
-
-query_str = "İzlanda"
-normalized_query = unicodedata.normalize("NFC", query_str)
-response = vespa_app.query(body={"yql": f"select * from toponym where name_strict contains '{normalized_query}'"})
-print(response.json['children']['fields']['name_strict'])
-
-response = vespa_app.query(
-    body={
-        "yql": "select * from toponym where name_strict contains +query_term",
-        "inputs": {"query_term": "İzlanda"}
-    }
-)
-print(response.json)
-
-from vespa.application import Vespa
-import vespa.querybuilder as qb
-from vespa.querybuilder import QueryField
-vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
-
-response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
-place_name = response.json['root']['children'][0]['fields']['name_strict']
-print(place_name)
-
-name_strict = QueryField("name_strict")
-q = (
-    qb.select(["*"])
-    .from_("toponym")
-    .where(name_strict.contains(place_name))
-)
-response = vespa_app.query(yql=q)
-print(response.json)
-
-response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
-place_name = response.json['root']['children'][0]['fields']['name_strict']
-print(place_name)
-
-
-
-                    
-                    """
                     logger.error(f"Failed to find matching toponyms for {staging_toponym}")
                     # Remove the is_staging flag from the staging_toponym
                     result = await asyncio.to_thread(
                         sync_app.update_existing,
                         namespace=self.dataset_config['namespace'],
                         schema='toponym',
-                        data_id=staging_toponym['documentid'].split('::')[-1],
+                        data_id=staging_toponym['document_id'],
                         fields={"is_staging": False}
                     )
 
