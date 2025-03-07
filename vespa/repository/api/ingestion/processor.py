@@ -522,7 +522,7 @@ vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
 query_str = "İzlanda"
 normalized_query = unicodedata.normalize("NFC", query_str)
 response = vespa_app.query(body={"yql": f"select * from toponym where name_strict contains '{normalized_query}'"})
-print(response.json)
+print(response.json['children']['fields']['name_strict'])
 
 response = vespa_app.query(
     body={
@@ -532,37 +532,43 @@ response = vespa_app.query(
 )
 print(response.json)
 
-from vespa.query import QueryBuilder
 from vespa.application import Vespa
-
+import vespa.querybuilder as qb
+from vespa.querybuilder import QueryField
 vespa_app = Vespa(url="http://vespa-feed.vespa.svc.cluster.local:8080")
 
-# Create a query builder instance
-query_builder = QueryBuilder()
+response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
+place_name = response.json['root']['children'][0]['fields']['name_strict']
+print(place_name)
 
-# Build query using the DSL API
-query = (
-    query_builder
-    .select("*")
-    .where(query_builder.contains("name_strict", "İzlanda"))
-    .build()
+name_strict = QueryField("name_strict")
+q = (
+    qb.select(["*"])
+    .from_("toponym")
+    .where(name_strict.contains(place_name))
 )
+response = vespa_app.query(yql=q)
+print(response.json)
 
-# Execute the query
-response = vespa_app.query(body=query)
-
-# Print results
-print(response.json())
+response = vespa_app.query(body={"yql": "select * from toponym where is_staging = true limit 1"})
+place_name = response.json['root']['children'][0]['fields']['name_strict']
+print(place_name)
 
 
 
                     
                     """
-                    logger.error(f"Failed to find matching toponyms for {staging_toponym}: yql={yql}")
-                    logger.info(f"Query response: {query_response.get_json()}")
-                    # break
-                    # Instead of breaking, pause for 1 second and try again - it may be a race condition
-                    await asyncio.sleep(1)
+                    logger.error(f"Failed to find matching toponyms for {staging_toponym}")
+                    # Remove the is_staging flag from the staging_toponym
+                    result = await asyncio.to_thread(
+                        sync_app.update_existing,
+                        namespace=self.dataset_config['namespace'],
+                        schema='toponym',
+                        data_id=staging_toponym['documentid'].split('::')[-1],
+                        fields={"is_staging": False}
+                    )
+
+
                     continue
 
                 # Remove the oldest toponym from the list using pop, and if necessary clear the is_staging flag
