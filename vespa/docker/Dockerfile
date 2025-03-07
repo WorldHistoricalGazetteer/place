@@ -26,7 +26,7 @@ RUN set -eux; \
         aria2 && \
     # Install vespa-cli
     mkdir -p /usr/local/vespa && \
-    curl -L -o /usr/local/vespa/vespa-cli.tar.gz https://github.com/vespa-engine/vespa/releases/download/v8.460.16/vespa-cli_8.460.16_linux_amd64.tar.gz && \
+    curl -L -o /usr/local/vespa/vespa-cli.tar.gz https://github.com/vespa-engine/vespa/releases/download/v8.492.15/vespa-cli_8.492.15_linux_amd64.tar.gz && \
     tar -xzf /usr/local/vespa/vespa-cli.tar.gz -C /usr/local/vespa && \
     mv /usr/local/vespa/vespa-cli_* /usr/local/vespa/vespa-cli && \
     rm /usr/local/vespa/vespa-cli.tar.gz && \
@@ -59,5 +59,5 @@ CMD ["sh", "-c", "fastapi run api/main.py --port ${PORT}"]
 ## In the project root, build the Docker image:
 #sudo systemctl restart docker
 #docker login
-#docker build -t worldhistoricalgazetteer/vespa-api:0.0.12 ./vespa/docker
-#docker push worldhistoricalgazetteer/vespa-api:0.0.12
+#docker build -t worldhistoricalgazetteer/vespa-api:0.0.13 ./vespa/docker
+#docker push worldhistoricalgazetteer/vespa-api:0.0.13
