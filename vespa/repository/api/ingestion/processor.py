@@ -502,7 +502,7 @@ class IngestionManager:
 
                 # Catch a no-match scenario for debugging
                 if not matching_toponyms:
-                    logger.error(f"Failed to find matching toponyms for {staging_toponym}")
+                    logger.error(f"Failed to find matching toponyms for {staging_toponym['fields']['name_strict']}")
                     # Remove the is_staging flag from the staging_toponym
                     result = await asyncio.to_thread(
                         sync_app.update_existing,
