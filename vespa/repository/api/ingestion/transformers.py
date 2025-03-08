@@ -223,7 +223,7 @@ class DocTransformer:
                     "fields": linked_art["place"] if linked_art else {},
                  },
                 linked_art["toponyms"] if linked_art else None,
-                linked_art["links"] if linked_art else None
+                linked_art["links"] if linked_art else None # TODO: Implement links for hierarchical relationships between places
             )
         ],
         "Wikidata": [  # Depends on GeoNames having been already processed
