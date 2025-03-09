@@ -1,13 +1,14 @@
 # /main.py
 import json
 import logging
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Path
 from fastapi.responses import JSONResponse
 
 from .gis.intersections import GeometryIntersect
 from .ingestion.processor import IngestionManager
-from .search.processor import visit
+from .search.processor import visit, search
 from .system.status import get_vespa_status  # Import the function from the status module
 from .utils import get_uuid, task_tracker
 
@@ -22,10 +23,28 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 
+@app.get("/search")
+async def search_toponyms(
+    query: str = Query(..., description="The toponym to search for"),
+    med: int = Query(1, description="Maximum edit distance for fuzzy matching. Omit for exact matching"),
+    pl: int = Query(None, description="Prefix length for fuzzy matching"),
+    bcp47: str = Query(None, description="BCP 47 tag for language/script filtering"),
+    limit: int = Query(10, ge=1, le=100, description="The number of results to retrieve (max 100)")
+):
+    """
+    Search for toponyms using fuzzy or exact matching.
+    """
+    try:
+        results = search(query, med, pl, bcp47, limit)
+        return JSONResponse(status_code=200, content=results)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
 @app.get("/iso3166/{latitude}/{longitude}")
 async def get_country_codes(
-    latitude: float = Path(..., description="Latitude of the point"),
-    longitude: float = Path(..., description="Longitude of the point"),
+        latitude: float = Path(..., description="Latitude of the point"),
+        longitude: float = Path(..., description="Longitude of the point"),
 ):
     """
     Returns a list of country codes for a given latitude and longitude.
@@ -55,8 +74,8 @@ async def get_country_codes(
 
 @app.get("/terrarium/{latitude}/{longitude}")
 async def get_terrarium_object(
-    latitude: float = Path(..., description="Latitude of the point"),
-    longitude: float = Path(..., description="Longitude of the point"),
+        latitude: float = Path(..., description="Latitude of the point"),
+        longitude: float = Path(..., description="Longitude of the point"),
 ):
     """
     Returns the terrarium object with the smallest resolution for the given latitude and longitude.
@@ -87,7 +106,8 @@ async def get_terrarium_object(
 async def visit_documents(
         schema: str = Query(..., description="The document type to filter by"),
         namespace: str = Query(None, description="The Vespa namespace to query"),
-        limit: int = Query(50, ge=1, le=10000, description="The number of results to retrieve (max 10,000); use -1 for no limit"),
+        limit: int = Query(50, ge=1, le=10000,
+                           description="The number of results to retrieve (max 10,000); use -1 for no limit"),
         slices: int = Query(1, ge=1, description="The number of slices for parallel processing"),
         delete: bool = Query(False, description="Delete existing data")
 ):
@@ -139,7 +159,8 @@ async def ingest_dataset(
     """
     task_id = get_uuid()  # Generate a unique task ID
 
-    ingestion_manager = IngestionManager(dataset_name, task_id, limit, delete_only, no_delete, skip_transform, condense_only, convert_triples)
+    ingestion_manager = IngestionManager(dataset_name, task_id, limit, delete_only, no_delete, skip_transform,
+                                         condense_only, convert_triples)
 
     # Start the ingestion in the background
     background_tasks.add_task(ingestion_manager.ingest_data)

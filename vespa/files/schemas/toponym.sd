@@ -15,11 +15,14 @@ schema toponym {
 
         field name type string {
             # The toponym (e.g., "London", "Londinium").
-            indexing: attribute | summary | index
+            # Enables fuzzy matching, e.g.:
+            # 'select * from toponym where name contains ({maxEditDistance: 1}fuzzy("ond"))'
+            # Or with prefix:
+            # 'select * from toponym where name contains ({maxEditDistance: 1, prefix: true}fuzzy("Lond"))'
+            # Or with prefix locking (disallows prefix fuzziness):
+            # 'select * from toponym where name contains ({maxEditDistance: 1, prefix: true, prefixLength:4}fuzzy("Lond"))'
+            indexing: summary | attribute
             attribute: fast-search
-            match {
-                substring
-            }
         }
 
         field ipa type string {
@@ -69,11 +72,6 @@ schema toponym {
             indexing: attribute
         }
 
-        field bilstm type tensor<float>(l[256]) {
-            # BiLSTM phonetic feature vector of the toponym (l = BiLSTM output size).
-            indexing: attribute
-        }
-
         ########### Metadata ###########
 
         field is_staging type bool {
@@ -87,4 +85,12 @@ schema toponym {
         }
 
     }
+
+    # Defined outside the document clause, per https://docs.vespa.ai/en/embedding.html
+    # field bilstm type tensor<float>(l[256]) {
+        # BiLSTM phonetic feature vector of the toponym (l = BiLSTM output size).
+        # indexing {
+        #     input ipa | embed embedderId | attribute | index
+        # }
+    # }
 }

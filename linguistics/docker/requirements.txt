@@ -1,5 +1,5 @@
 orjson~=3.10.15
 requests>=2.31.0,<3.0.0
 panphon~=0.21.2
-pyvespa~=0.51.0
+pyvespa~=0.54.0
 # epitran is loaded in the Dockerfile from a forked repository which includes additional language support
