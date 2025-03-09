@@ -26,16 +26,16 @@ app = FastAPI()
 @app.get("/search")
 async def search_toponyms(
     query: str = Query(..., description="The toponym to search for"),
-    fuzzy: int = Query(None, description="Maximum edit distance for fuzzy matching. Omit for exact matching"),
-    prefix: int = Query(None, description="Prefix length for fuzzy matching"),
-    language: str = Query(None, description="BCP 47 tag for language/script filtering"),
+    med: int = Query(None, description="Maximum edit distance for fuzzy matching. Omit for exact matching"),
+    pl: int = Query(None, description="Prefix length for fuzzy matching"),
+    bcp47: str = Query(None, description="BCP 47 tag for language/script filtering"),
     limit: int = Query(10, ge=1, le=250, description="The number of results to retrieve (max 250)")
 ):
     """
     Search for toponyms using fuzzy or exact matching.
     """
     try:
-        results = search(query, fuzzy, prefix, language, limit)
+        results = search(query, med, pl, bcp47, limit)
         return JSONResponse(status_code=200, content=results)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
