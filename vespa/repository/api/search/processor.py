@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 
 import requests
 
+from ..bcp_47.bcp_47 import parse_bcp47_fields
 from ..config import VespaClient
 
 logger = logging.getLogger(__name__)
@@ -63,33 +64,33 @@ def _perform_search(sync_app, query, med, pl, bcp47, limit):
     Returns:
         Dict[str, Any]: Search results.
     """
+    conditions = []
+
+    # Handle name search
     if med is None:
-        # Exact match
-        yql = f'select * from toponym where name_strict contains "{query}"'
+        conditions.append(f'name_strict contains "{query}"')
     else:
-        # Fuzzy match
         fuzzy_params = f'{{maxEditDistance: {med}'
         if pl is not None:
             fuzzy_params += f', prefixLength: {pl}'
         fuzzy_params += '}'
+        conditions.append(f'name contains ({fuzzy_params}fuzzy("{query}"))')
 
-        yql = f'select * from toponym where name contains ({fuzzy_params}fuzzy("{query}"))'
-
+    # Handle BCP 47 filtering
     if bcp47:
-        yql += f' and bcp47 contains "{bcp47}"'
+        bcp47_parts = parse_bcp47_fields(bcp47)
+        for field, value in bcp47_parts.items():
+            conditions.append(f'{field} contains "{value}"')
 
-    if limit:
-        yql += f' limit {limit}'
-
-    yql += ";"
+    # Construct the YQL query
+    where_clause = " and ".join(conditions)
+    yql = f'select * from toponym where {where_clause} limit {limit};'
 
     response = sync_app.query(yql=yql)
 
-    response_data = response.json
-
     return {
-        "totalHits": response_data.get("root", {}).get("fields", {}).get("totalCount", 0),
-        "hits": response_data.get("root", {}).get("children", [])
+        "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
+        "hits": response.json.get("root", {}).get("children", [])
     }
 
 
