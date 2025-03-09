@@ -83,11 +83,13 @@ def _perform_search(sync_app, query, med, pl, bcp47, limit):
 
     yql += ";"
 
-    results = sync_app.query(yql=yql)
+    response = sync_app.query(yql=yql)
+
+    response_data = response.json
 
     return {
-        "totalHits": results.get("root", {}).get("fields", {}).get("totalCount", 0),
-        "hits": results.get("root", {}).get("children", [])
+        "totalHits": response_data.get("root", {}).get("fields", {}).get("totalCount", 0),
+        "hits": response_data.get("root", {}).get("children", [])
     }
 
 
