@@ -26,10 +26,10 @@ app = FastAPI()
 @app.get("/search")
 async def search_toponyms(
     query: str = Query(..., description="The toponym to search for"),
-    med: int = Query(1, description="Maximum edit distance for fuzzy matching. Omit for exact matching"),
+    med: int = Query(None, description="Maximum edit distance for fuzzy matching. Omit for exact matching"),
     pl: int = Query(None, description="Prefix length for fuzzy matching"),
     bcp47: str = Query(None, description="BCP 47 tag for language/script filtering"),
-    limit: int = Query(10, ge=1, le=100, description="The number of results to retrieve (max 100)")
+    limit: int = Query(10, ge=1, le=250, description="The number of results to retrieve (max 250)")
 ):
     """
     Search for toponyms using fuzzy or exact matching.
