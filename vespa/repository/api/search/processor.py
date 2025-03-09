@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 def search(
         query: str,
-        med: Optional[int] = None,  # Omit for exact matching
-        pl: Optional[int] = None,
-        bcp47: Optional[str] = None,  # Combined language and script tag
+        fuzzy: Optional[int] = None,  # Omit for exact matching
+        prefix: Optional[int] = None,
+        language: Optional[str] = None,  # Combined language and script tag
         limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
@@ -22,9 +22,9 @@ def search(
 
     Args:
         query (str): The search query string.
-        med (Optional[int]): Maximum edit distance for fuzzy matching; None for exact.
-        pl (Optional[int]): Prefix length for fuzzy matching.
-        bcp47 (Optional[str]): BCP 47 tag for language/script filtering.
+        fuzzy (Optional[int]): Maximum edit distance for fuzzy matching; None for exact.
+        prefix (Optional[int]): Prefix length for fuzzy matching.
+        language (Optional[str]): BCP 47 tag for language/script filtering.
         limit (Optional[int]): Maximum number of results.
 
     Returns:
@@ -32,11 +32,11 @@ def search(
     """
     try:
         with VespaClient.sync_context("query") as sync_app:
-            if med is None:  # Exact search
-                return _perform_search(sync_app, query, med=None, pl=None, bcp47=bcp47, limit=limit)
+            if fuzzy is None:  # Exact search
+                return _perform_search(sync_app, query, fuzzy=None, prefix=None, language=language, limit=limit)
 
-            exact_results = _perform_search(sync_app, query, med=None, pl=None, bcp47=bcp47, limit=limit)
-            fuzzy_results = _perform_search(sync_app, query, med=med, pl=pl, bcp47=bcp47, limit=limit)
+            exact_results = _perform_search(sync_app, query, fuzzy=None, prefix=None, language=language, limit=limit)
+            fuzzy_results = _perform_search(sync_app, query, fuzzy=fuzzy, prefix=prefix, language=language, limit=limit)
 
             return _combine_results(exact_results, fuzzy_results, limit)
 
@@ -49,16 +49,16 @@ def search(
         raise Exception(f"Error during Vespa search: {e}")
 
 
-def _perform_search(sync_app, query, med, pl, bcp47, limit):
+def _perform_search(sync_app, query, fuzzy, prefix, language, limit):
     """
     Perform a Vespa search using YQL.
 
     Args:
         sync_app: Vespa client.
         query (str): Search term.
-        med (Optional[int]): Max edit distance for fuzzy matching; None for exact.
-        pl (Optional[int]): Prefix length for fuzzy matching.
-        bcp47 (Optional[str]): Language/script filter.
+        fuzzy (Optional[int]): Max edit distance for fuzzy matching; None for exact.
+        prefix (Optional[int]): Prefix length for fuzzy matching.
+        language (Optional[str]): Language/script filter.
         limit (Optional[int]): Max number of results.
 
     Returns:
@@ -67,18 +67,18 @@ def _perform_search(sync_app, query, med, pl, bcp47, limit):
     conditions = []
 
     # Handle name search
-    if med is None:
+    if fuzzy is None:
         conditions.append(f'name_strict contains "{query}"')
     else:
-        fuzzy_params = f'{{maxEditDistance: {med}'
-        if pl is not None:
-            fuzzy_params += f', prefixLength: {pl}'
+        fuzzy_params = f'{{maxEditDistance: {fuzzy}'
+        if prefix is not None:
+            fuzzy_params += f', prefixLength: {prefix}'
         fuzzy_params += '}'
         conditions.append(f'name contains ({fuzzy_params}fuzzy("{query}"))')
 
     # Handle BCP 47 filtering
-    if bcp47:
-        bcp47_parts = parse_bcp47_fields(bcp47)
+    if language:
+        bcp47_parts = parse_bcp47_fields(language)
         for field, value in bcp47_parts.items():
             conditions.append(f'{field} contains "{value}"')
 
