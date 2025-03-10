@@ -204,14 +204,18 @@ def _locate_by_point(sync_app, point, radius, limit, namespace):
     else:
         x, y, z = geo_to_cartesian(lat, lon)
         conditions = [
-            f'{{"targetHits": {limit}}}nearestNeighbor(cartesian, [{x}, {y}, {z}])'
+            f'{{"targetHits": {limit}}}nearestNeighbor(cartesian, query_tensor)'
         ]
 
     where_clause = " and ".join(conditions)
 
     yql = f'select * from place where {where_clause};'
 
-    response = sync_app.query(yql=yql, hits=limit)
+    response = sync_app.query(
+        yql=yql,
+        hits=limit,
+        query_model={'input': {'query_tensor': [x, y, z]}}
+    )
 
     return {
         "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
