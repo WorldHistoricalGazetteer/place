@@ -202,7 +202,11 @@ def _locate_by_point_radius(sync_app, point, radius, limit, namespace):
     where_clause = " and ".join(conditions)
     yql = f'select * from place where {where_clause} limit {limit};'
 
-    response = sync_app.query(yql=yql, namespace=namespace or "*")
+    # response = sync_app.query(yql=yql, namespace=namespace or "*")
+    response = sync_app.query(yql=yql, namespace=namespace)
+
+    logger.info(f"Query: {yql}")
+    logger.info(f"Response: {response.json}")
 
     return {
         "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
