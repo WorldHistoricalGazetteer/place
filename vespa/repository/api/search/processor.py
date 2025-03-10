@@ -209,7 +209,7 @@ def _locate_by_point(sync_app, point, radius, limit, namespace):
 
     yql = f'select * from place where {where_clause};'
 
-    response = sync_app.query(yql=yql, hits=limit, ranking=closeness)
+    response = sync_app.query(yql=yql, hits=limit)
 
     return {
         "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
