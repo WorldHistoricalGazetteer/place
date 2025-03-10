@@ -224,4 +224,11 @@ schema place {
         indexing: now | attribute | summary
     }
 
+    rank-profile nearest-neighbour {
+        inputs {
+            query(query_vector) tensor<float>(x[3])
+        }
+        first-phase: closeness(field, cartesian)
+    }
+
 }
