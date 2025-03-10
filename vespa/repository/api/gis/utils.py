@@ -19,7 +19,20 @@ def geo_to_cartesian(lat: float, lon: float) -> Tuple[float, float, float]:
     Converts geographic coordinates (latitude, longitude) to 3D Cartesian (ECEF).
     Uses WGS84 ellipsoid.
     """
-    return _wgs84_to_ecef(lon, lat)
+    logger.info(f"Converting geographic coordinates to Cartesian: {lat}, {lon}")
+    result = _wgs84_to_ecef(lon, lat)
+    logger.info(f"Converted to Cartesian: {result}")
+
+    if isinstance(result, tuple) and len(result) == 3:
+        return result
+    else:
+        # Handle the case where the transformation didn't return three values
+        logger.warning(f"Unexpected result from _wgs84_to_ecef: {result}")
+        # You can choose to:
+        # 1. Raise an exception
+        # raise ValueError(f"Invalid transformation result: {result}")
+        # 2. Return a default value (e.g., (0.0, 0.0, 0.0))
+        return 0.0, 0.0, 0.0
 
 
 def vespa_bbox(geom) -> dict:
