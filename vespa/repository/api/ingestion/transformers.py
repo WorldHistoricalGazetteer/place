@@ -16,6 +16,7 @@ from .subtransformers.wikidata.locations import LocationsProcessor as WikidataLo
 from .subtransformers.wikidata.names import NamesProcessor as WikidataNamesProcessor
 from .subtransformers.wikidata.types import TypesProcessor as WikidataTypesProcessor
 from ..gis.processor import GeometryProcessor
+from ..gis.utils import geo_to_cartesian
 from ..utils import get_uuid
 
 logger = logging.getLogger(__name__)
@@ -183,6 +184,7 @@ class DocTransformer:
                         **({"locations": [{"geometry": point}]} if point else {}),
                         **({"representative_point": {"lat": bbox_sw_lat,
                                                      "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
+                        **({"cartesian": geo_to_cartesian(bbox_sw_lat, bbox_sw_lng)} if bbox_sw_lat and bbox_sw_lng else {}),
                         **({"classes": classes} if (classes := [data.get("feature_class", "")]) else {}),
                         **({"ccodes": [ccode]} if (ccode := data.get("country_code")) else {}),
                     }

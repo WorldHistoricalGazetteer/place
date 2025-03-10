@@ -3,11 +3,23 @@ import logging
 import math
 from typing import Optional, Tuple
 
+import pyproj
 from fastapi import Query, HTTPException, Depends
 from shapely.geometry.geo import shape, mapping
 from shapely.validation import explain_validity
 
 logger = logging.getLogger(__name__)
+
+# Define transformer once for efficiency
+_wgs84_to_ecef = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:4978", always_xy=True).transform
+
+
+def geo_to_cartesian(lat: float, lon: float) -> Tuple[float, float, float]:
+    """
+    Converts geographic coordinates (latitude, longitude) to 3D Cartesian (ECEF).
+    Uses WGS84 ellipsoid.
+    """
+    return _wgs84_to_ecef(lon, lat)
 
 
 def vespa_bbox(geom) -> dict:
@@ -96,7 +108,8 @@ def parse_bbox(bbox: Optional[str] = Query(None)) -> Optional[Tuple[float, float
             coords = [float(c) for c in bbox.split(',')]
             if len(coords) != 4:
                 raise ValueError("bbox must contain 4 comma-separated coordinates")
-            if not (-90 <= coords[0] <= 90 and -180 <= coords[1] <= 180 and -90 <= coords[2] <= 90 and -180 <= coords[3] <= 180):
+            if not (-90 <= coords[0] <= 90 and -180 <= coords[1] <= 180 and -90 <= coords[2] <= 90 and -180 <= coords[
+                3] <= 180):
                 raise ValueError("Bounding box coordinates out of bounds")
             return tuple(coords)
         except ValueError as e:
@@ -121,9 +134,5 @@ def parse_point(point: Optional[str] = Query(None)) -> Optional[Tuple[float, flo
 def validate_locate_params(bbox: Optional[Tuple[float, float, float, float]] = Depends(parse_bbox),
                            point: Optional[Tuple[float, float]] = Depends(parse_point),
                            radius: Optional[float] = Query(None)):
-    if not bbox and not (point and radius):
-        raise HTTPException(status_code=400, detail="Either bbox or point and radius must be provided")
-    if point and not radius:
-        raise HTTPException(status_code=400, detail="Radius must be provided with point")
-    if radius and not point:
-        raise HTTPException(status_code=400, detail="Point must be provided with radius")
+    if not bbox and not point:
+        raise HTTPException(status_code=400, detail="Either bbox or point must be provided")

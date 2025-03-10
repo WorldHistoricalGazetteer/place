@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 from ....bcp_47.bcp_47 import parse_bcp47_fields
 from ....gis.intersections import GeometryIntersect
+from ....gis.utils import geo_to_cartesian
 from ....utils import get_uuid
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,7 @@ class LinkedArtProcessor:
                     "locations": [{"geometry": point}],
                     "representative_point": {"lat": bbox_sw_lat,
                                                  "lng": bbox_sw_lng},
+                    "cartesian": geo_to_cartesian(bbox_sw_lat, bbox_sw_lng),
 
                     'types': [aat.get('id').split('/')[-1] for aat in self.linked_art_ld.get('classified_as', [])],
 

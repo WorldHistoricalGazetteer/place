@@ -19,6 +19,12 @@ schema place {
             indexing: attribute | summary
         }
 
+        field namespace type string {
+            # The namespace of the source record.
+            indexing: attribute | summary
+            match { exact }
+        }
+
         field record_id type string {
             # A unique identifier for the place within the source.
             indexing: attribute | summary
@@ -216,6 +222,19 @@ schema place {
 
     field last_modified type long {
         indexing: now | attribute | summary
+    }
+
+    rank-profile closeness {
+        num-threads-per-search: 1
+        match-features: distance(cartesian, query(q))
+
+        inputs {
+            query(q) tensor<float>(x[3])
+        }
+
+        first-phase {
+            expression: distance(cartesian, query(q))
+        }
     }
 
 }

@@ -6,7 +6,7 @@ from shapely.geometry.geo import shape
 from shapely.io import to_geojson
 
 from .intersections import GeometryIntersect
-from .utils import get_valid_geom, vespa_bbox
+from .utils import get_valid_geom, vespa_bbox, geo_to_cartesian
 from ..dates.dates import year_from_value
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,7 @@ class GeometryProcessor:
             if "representative_point" in self.values
             else None
         )
+        cartesian = geo_to_cartesian(representative_point["lat"], representative_point["lng"]) if representative_point else None
 
         # Group geometries by matching temporal attributes (start and end)
         if self.geometry["type"] == "GeometryCollection":
@@ -113,4 +114,5 @@ class GeometryProcessor:
             **({"ccodes": iso_codes} if iso_codes else {}),
             **({"length": longest_length} if longest_length else {}),  # Omitted if zero or None
             **({"representative_point": representative_point} if representative_point else {}), # Stored not as GeoJSON but as Vespa `position` type
+            **({"cartesian": cartesian} if cartesian else {}),
         }

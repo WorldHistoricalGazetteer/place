@@ -46,13 +46,13 @@ async def search_toponyms(
 async def locate_places(
         bbox: Optional[Tuple[float, float, float, float]] = Depends(parse_bbox),
         point: Optional[Tuple[float, float]] = Depends(parse_point),
-        radius: Optional[float] = Query(None, description="Radius in kilometres"),
+        radius: Optional[float] = Query(None, description="Radius in kilometers"),
         limit: int = Query(10, ge=1, le=250, description="The number of results to retrieve (max 250)"),
         namespace: Optional[str] = Query(None, description="Namespace to filter results by"),
         _: None = Depends(validate_locate_params)  # ensure validation happens.
 ):
     """
-    Locate places based on bounding box or point and radius.
+    Locate places based on bounding box or point. If a point is given without a radius, the closest places are returned, regardless of distance.
     """
     try:
         results = locate(bbox, point, radius, limit, namespace)

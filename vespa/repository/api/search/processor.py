@@ -7,6 +7,7 @@ import requests
 from ..bcp_47.bcp_47 import parse_bcp47_fields
 from ..config import VespaClient
 from ..gis.intersections import GeometryIntersect
+from ..gis.utils import geo_to_cartesian
 
 logger = logging.getLogger(__name__)
 
@@ -160,8 +161,8 @@ def locate(
         with VespaClient.sync_context("query") as sync_app:
             if bbox:
                 return _locate_by_bbox(bbox, limit, namespace)
-            elif point and radius:
-                return _locate_by_point_radius(sync_app, point, radius, limit, namespace)
+            elif point:
+                return _locate_by_point(sync_app, point, radius, limit, namespace)
             else:
                 return {"totalHits": 0, "hits": []}  # Validation should avoid reaching this point
 
@@ -192,17 +193,23 @@ def _locate_by_bbox(bbox, limit, namespace):
         raise Exception(f"Error during bbox locate: {e}")
 
 
-def _locate_by_point_radius(sync_app, point, radius, limit, namespace):
-    """Locate places within a radius of a point."""
+def _locate_by_point(sync_app, point, radius, limit, namespace):
+    """Locate places closest to a point."""
     lon, lat = point
     conditions = [
-        f'geoLocation(representative_point, {lon}, {lat}, "{radius} km")',
+        f'namespace contains "{namespace}"' if namespace else ""
     ]
+    if radius:
+        conditions.append(f'geoLocation(representative_point, {lon}, {lat}, "{radius} km")')
+    else:
+        x, y, z = geo_to_cartesian(lat, lon)
+        conditions.append(f'''{{targetHits: {limit}}}nearestNeighbor(cartesian, [{x}, {y}, {z}])''')
 
     where_clause = " and ".join(conditions)
-    yql = f'select * from place where {where_clause} limit {limit};'
 
-    response = sync_app.query(yql=yql, namespace=namespace or "*")
+    yql = f'select * from place where {where_clause};'
+
+    response = sync_app.query(yql=yql, hits=limit, ranking=closeness)
 
     return {
         "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),

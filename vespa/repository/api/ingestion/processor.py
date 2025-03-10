@@ -387,6 +387,9 @@ class IngestionManager:
                     break  # Sentinel value
 
                 try:
+                    if doc_type == "place":
+                        item['fields']['namespace'] = self.dataset_config['namespace']
+
                     response = app.feed_data_point(
                         schema=doc_type,
                         namespace=self.dataset_config['namespace'],
