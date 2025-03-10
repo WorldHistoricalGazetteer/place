@@ -10,9 +10,12 @@ from shapely.validation import explain_validity
 
 logger = logging.getLogger(__name__)
 
-# Define transformer once for efficiency
-_wgs84_to_ecef = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:4978", always_xy=True).transform
+# Define the source and target CRS
+wgs84 = pyproj.Proj(init='epsg:4326')
+ecef = pyproj.Proj(init='epsg:4978')
 
+# Define the transformer
+_wgs84_to_ecef = lambda lon, lat: pyproj.transform(wgs84, ecef, lon, lat, always_xy=True)
 
 def geo_to_cartesian(lat: float, lon: float) -> Tuple[float, float, float]:
     """
@@ -20,7 +23,7 @@ def geo_to_cartesian(lat: float, lon: float) -> Tuple[float, float, float]:
     Uses WGS84 ellipsoid.
     """
     logger.info(f"Converting geographic coordinates to Cartesian: {lat}, {lon}")
-    result = _wgs84_to_ecef(lon, lat)
+    result = _wgs84_to_ecef(lon, lat)  # Use the explicit transformer
     logger.info(f"Converted to Cartesian: {result}")
 
     if isinstance(result, tuple) and len(result) == 3:
@@ -28,11 +31,7 @@ def geo_to_cartesian(lat: float, lon: float) -> Tuple[float, float, float]:
     else:
         # Handle the case where the transformation didn't return three values
         logger.warning(f"Unexpected result from _wgs84_to_ecef: {result}")
-        # You can choose to:
-        # 1. Raise an exception
-        # raise ValueError(f"Invalid transformation result: {result}")
-        # 2. Return a default value (e.g., (0.0, 0.0, 0.0))
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0, 0.0  # Or raise an exception
 
 
 def vespa_bbox(geom) -> dict:
