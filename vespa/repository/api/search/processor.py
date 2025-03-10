@@ -196,7 +196,7 @@ def _locate_by_point_radius(sync_app, point, radius, limit, namespace):
     """Locate places within a radius of a point."""
     lon, lat = point
     conditions = [
-        f'geoLocation(representative_point, {lat}, {lon}, "{radius} km")',
+        f'geoLocation(representative_point, {lon}, {lat}, "{radius} km")',
     ]
 
     where_clause = " and ".join(conditions)
