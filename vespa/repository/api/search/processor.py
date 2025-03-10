@@ -205,7 +205,8 @@ def _locate_by_point(sync_app, point, radius, limit, namespace):
         conditions.append(f'geoLocation(representative_point, {lon}, {lat}, "{radius} km")')
         query_params = {}  # No need for `query_tensor`
     else:
-        x, y, z = geo_to_cartesian(lat, lon)
+        x, y, z = geo_to_cartesian(lat, lon, 0)
+        logger.info(f"Cartesian coordinates: {x}, {y}, {z}")
         conditions.append(f'{{targetHits: {max(1, limit)}}}nearestNeighbor(cartesian, query_tensor)')
         query_params = {
             "input.query(query_tensor)": [x, y, z]
