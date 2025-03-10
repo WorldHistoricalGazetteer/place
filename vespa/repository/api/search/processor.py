@@ -206,8 +206,12 @@ def _locate_by_point(sync_app, point, radius, limit, namespace):
         query_params = {}  # No need for `query_tensor`
     else:
         x, y, z = geo_to_cartesian(lat, lon)
-        conditions.append('nearestNeighbor(cartesian, query_tensor)')
-        query_params = {"input.query(query_tensor)": {"cells": [{"address": {"x": i}, "value": v} for i, v in enumerate([x, y, z])]}}
+        conditions.append(f'nearestNeighbor(cartesian, query_tensor) {{targetHits: {max(1, limit)}}}')
+        query_params = {
+            "input.query(query_tensor)": {
+                "cells": [{"address": {"x": i}, "value": v} for i, v in enumerate([x, y, z])]
+            }
+        }
 
     where_clause = " and ".join(conditions) if conditions else ""
 
