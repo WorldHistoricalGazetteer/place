@@ -14,24 +14,17 @@ logger = logging.getLogger(__name__)
 _wgs84_to_ecef = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:4978", always_xy=True).transform
 
 
-def geo_to_cartesian(lat: float, lon: float) -> Tuple[float, float, float]:
+def geo_to_cartesian(lat: float, lon: float, elevation: float = 0) -> Tuple[float, float, float]:
     """
     Converts geographic coordinates (latitude, longitude) to 3D Cartesian (ECEF).
     Uses WGS84 ellipsoid.
     """
-    logger.info(f"Converting geographic coordinates to Cartesian: {lat}, {lon}")
-    result = _wgs84_to_ecef(lon, lat, 0)
-    logger.info(f"Converted to Cartesian: {result}")
+    result = _wgs84_to_ecef(lon, lat, elevation)
 
     if isinstance(result, tuple) and len(result) == 3:
         return result
     else:
-        # Handle the case where the transformation didn't return three values
         logger.warning(f"Unexpected result from _wgs84_to_ecef: {result}")
-        # You can choose to:
-        # 1. Raise an exception
-        # raise ValueError(f"Invalid transformation result: {result}")
-        # 2. Return a default value (e.g., (0.0, 0.0, 0.0))
         return 0.0, 0.0, 0.0
 
 
