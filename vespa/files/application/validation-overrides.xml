@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <validation-overrides>
-    <allow until="2025-12-31">content-cluster-removal</allow>
-    <allow until='2025-12-31'>schema-removal</allow>
-    <allow until='2025-12-31'>indexing-change</allow>
-    <allow until='2025-12-31'>field-type-change</allow>
-    <allow until='2025-12-31'>field-type-change</allow>
+    <allow until="2025-03-31">content-cluster-removal</allow>
+    <allow until='2025-03-31'>schema-removal</allow>
+    <allow until='2025-03-31'>indexing-change</allow>
+    <allow until='2025-03-31'>field-type-change</allow>
+    <allow until='2025-03-31'>field-type-change</allow>
 </validation-overrides>
