@@ -1,7 +1,9 @@
 # /gis/utils.py
 import logging
 import math
+from typing import Optional, Tuple
 
+from fastapi import Query, HTTPException, Depends
 from shapely.geometry.geo import shape, mapping
 from shapely.validation import explain_validity
 
@@ -59,7 +61,7 @@ def get_valid_geom(geometry) -> tuple:
         return None, None
     try:
         if geometry.get('type') == 'GeometryCollection':
-            geometries = geometry.get('geometries', []) # Prevent KeyError if 'geometries' is missing
+            geometries = geometry.get('geometries', [])  # Prevent KeyError if 'geometries' is missing
             geometry_tuples = [get_valid_geom(g) for g in geometries]
             # logger.info(f"geometry_tuples: {geometry_tuples}")
             if all(g[0] for g in geometry_tuples) and all(g[1] for g in geometry_tuples):
@@ -86,3 +88,42 @@ def get_valid_geom(geometry) -> tuple:
     except Exception as e:
         logger.error("Error converting geometry.", exc_info=True)
     return None, None
+
+
+def parse_bbox(bbox: Optional[str] = Query(None)) -> Optional[Tuple[float, float, float, float]]:
+    if bbox:
+        try:
+            coords = [float(c) for c in bbox.split(',')]
+            if len(coords) != 4:
+                raise ValueError("bbox must contain 4 comma-separated coordinates")
+            if not (-90 <= coords[0] <= 90 and -180 <= coords[1] <= 180 and -90 <= coords[2] <= 90 and -180 <= coords[3] <= 180):
+                raise ValueError("Bounding box coordinates out of bounds")
+            return tuple(coords)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    return None
+
+
+def parse_point(point: Optional[str] = Query(None)) -> Optional[Tuple[float, float]]:
+    if point:
+        try:
+            coords = [float(c) for c in point.split(',')]
+            if len(coords) != 2:
+                raise ValueError("point must contain 2 comma-separated coordinates")
+            if not (-90 <= coords[0] <= 90 and -180 <= coords[1] <= 180):
+                raise ValueError("Point coordinates out of bounds")
+            return tuple(coords)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    return None
+
+
+def validate_locate_params(bbox: Optional[Tuple[float, float, float, float]] = Depends(parse_bbox),
+                           point: Optional[Tuple[float, float]] = Depends(parse_point),
+                           radius: Optional[float] = Query(None)):
+    if not bbox and not (point and radius):
+        raise HTTPException(status_code=400, detail="Either bbox or point and radius must be provided")
+    if point and not radius:
+        raise HTTPException(status_code=400, detail="Radius must be provided with point")
+    if radius and not point:
+        raise HTTPException(status_code=400, detail="Point must be provided with radius")

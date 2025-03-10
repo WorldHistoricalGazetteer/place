@@ -22,7 +22,9 @@ class GeometryIntersect:
 
         Args:
             geometry (dict): The GeoJSON geometry to check against.
+            geom (shapely.geometry.base.BaseGeometry): The Shapely geometry object to check against.
             bbox (dict): A bounding box dictionary with keys "bbox_sw_lat", "bbox_sw_lng", "bbox_ne_lat", "bbox_ne_lng", and "bbox_antimeridial".
+            namespace (str, optional): Vespa namespace to query. Defaults to "iso3166".
             schema (str, optional): Vespa schema to query. Defaults to "place".
             fields (str, optional): Comma-separated list of fields to query. Defaults to "code2".
         """

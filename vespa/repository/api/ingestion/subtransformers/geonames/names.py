@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any
 
 from ....bcp_47.bcp_47 import parse_bcp47_fields
+from ....dates.dates import year_from_value
 from ....utils import get_uuid
 
 logger = logging.getLogger(__name__)
@@ -60,10 +61,8 @@ class NamesProcessor:
             return self.output
 
         years = {
-            # **({'year_start': int(year_start)} if (year_start := self.name.get('from')) else {}),
-            # **({'year_end': int(year_end)} if (year_end := self.name.get('to')) else {}),
-            'year_start': int(self.name.get('from') or 2025),
-            'year_end': int(self.name.get('to') or 2025),
+            'year_start': year_from_value(self.name.get('from'), default=2025),
+            'year_end': year_from_value(self.name.get('to'), default=2025),
         }
 
         self.output['names'].append({

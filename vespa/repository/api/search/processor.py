@@ -1,11 +1,12 @@
 # ./search/processor.py
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 import requests
 
 from ..bcp_47.bcp_47 import parse_bcp47_fields
 from ..config import VespaClient
+from ..gis.intersections import GeometryIntersect
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +133,80 @@ def _combine_results(exact_results: Dict[str, Any], fuzzy_results: Dict[str, Any
     return {
         "totalHits": len(sorted_hits),
         "hits": sorted_hits[:limit] if limit else sorted_hits
+    }
+
+
+def locate(
+        bbox: Optional[Tuple[float, float, float, float]] = None,
+        point: Optional[Tuple[float, float]] = None,
+        radius: Optional[float] = None,
+        limit: Optional[int] = None,
+        namespace: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Locate places based on bounding box or point and radius.
+
+    Args:
+        bbox (Optional[Tuple[float, float, float, float]]): Bounding box coordinates (min_lon, min_lat, max_lon, max_lat).
+        point (Optional[Tuple[float, float]]): Point coordinates (lon, lat).
+        radius (Optional[float]): Radius in kilometres.
+        limit (Optional[int]): Maximum number of results.
+        namespace (Optional[str]): Namespace to filter results by.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the locate results.
+    """
+    try:
+        with VespaClient.sync_context("query") as sync_app:
+            if bbox:
+                return _locate_by_bbox(bbox, limit, namespace)
+            elif point and radius:
+                return _locate_by_point_radius(sync_app, point, radius, limit, namespace)
+            else:
+                return {"totalHits": 0, "hits": []}  # Validation should avoid reaching this point
+
+    except requests.exceptions.RequestException as req_err:
+        logger.error(f"HTTP Request failed: {req_err}", exc_info=True)
+        raise Exception(f"Error during Vespa locate: HTTP Request failed - {req_err}")
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}", exc_info=True)
+        raise Exception(f"Error during Vespa locate: {e}")
+
+
+def _locate_by_bbox(bbox, limit, namespace):
+    """Locate places within a bounding box."""
+    min_lon, min_lat, max_lon, max_lat = bbox
+    geojson_bbox = {
+        "type": "Polygon",
+        "coordinates": [[[min_lon, min_lat], [max_lon, min_lat], [max_lon, max_lat], [min_lon, max_lat], [min_lon, min_lat]]]
+    }
+    try:
+        results = GeometryIntersect(geometry=geojson_bbox, namespace=namespace).resolve()
+        return {
+            "totalHits": len(results),
+            "hits": results[:limit] if limit else results, # TODO: limit should be implemented in the GeometryIntersect class
+        }
+    except Exception as e:
+        logger.error(f"Error during bbox locate: {e}", exc_info=True)
+        raise Exception(f"Error during bbox locate: {e}")
+
+
+def _locate_by_point_radius(sync_app, point, radius, limit, namespace):
+    """Locate places within a radius of a point."""
+    lon, lat = point
+    conditions = [
+        f'geoLocation(representative_point, {lat}, {lon}, "{radius} km")'
+    ]
+
+    where_clause = " and ".join(conditions)
+    yql = f'select * from place where {where_clause} limit {limit};'
+
+    response = sync_app.query(yql=yql, namespace=namespace or "*")
+
+    return {
+        "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
+        "hits": response.json.get("root", {}).get("children", [])
     }
 
 

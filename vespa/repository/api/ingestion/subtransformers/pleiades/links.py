@@ -1,6 +1,7 @@
 import logging
 from typing import List, Dict, Any
 
+from ....dates.dates import year_from_value
 from ....utils import get_uuid
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,8 @@ class LinksProcessor:
                         "place_id": self.document_id,
                         "predicate": link.get("connectionTypeURI"),
                         "object": f"pleiades:{link.get('connectsTo')}",
-                        **({"year_start": link.get("start")} if "start" in link else {}),
-                        **({"year_end": link.get("end")} if "end" in link else {}),
+                        **({"year_start": year_from_value(link.get("start"))} if "start" in link else {}),
+                        **({"year_end": year_from_value(link.get("end"))} if "end" in link else {}),
                         **({"confidence": self.certainty_map.get(
                             link.get("associationCertainty"))} if "associationCertainty" in link else {}),
                         **({"notes": link.get("description")} if "description" in link else {}),

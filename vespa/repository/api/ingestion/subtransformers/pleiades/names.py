@@ -2,6 +2,7 @@ import logging
 import re
 from typing import List, Dict, Any
 
+from ....dates.dates import year_from_value
 from ....utils import get_uuid, debracket
 
 logger = logging.getLogger(__name__)
@@ -107,8 +108,8 @@ class NamesProcessor:
                 continue
 
             years = {
-                **({'year_start': year_start} if (year_start:= name.get('start')) else {}),
-                **({'year_end': year_end} if (year_end:= name.get('end')) else {}),
+                **({'year_start': year_start} if (year_start:= year_from_value(name.get('start'))) else {}),
+                **({'year_end': year_end} if (year_end:= year_from_value(name.get('end'))) else {}),
             }
 
             is_latin = language == 'la' or attested == romanized

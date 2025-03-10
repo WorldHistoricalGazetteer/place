@@ -1,14 +1,15 @@
 # /main.py
 import json
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Path
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Path, Depends
 from fastapi.responses import JSONResponse
 
 from .gis.intersections import GeometryIntersect
+from .gis.utils import parse_bbox, parse_point, validate_locate_params
 from .ingestion.processor import IngestionManager
-from .search.processor import visit, search
+from .search.processor import visit, search, locate
 from .system.status import get_vespa_status  # Import the function from the status module
 from .utils import get_uuid, task_tracker
 
@@ -25,17 +26,36 @@ app = FastAPI()
 
 @app.get("/search")
 async def search_toponyms(
-    query: str = Query(..., description="The toponym to search for"),
-    med: int = Query(None, description="Maximum edit distance for fuzzy matching. Omit for exact matching"),
-    pl: int = Query(None, description="Prefix length for fuzzy matching"),
-    bcp47: str = Query(None, description="BCP 47 tag for language/script filtering"),
-    limit: int = Query(10, ge=1, le=250, description="The number of results to retrieve (max 250)")
+        query: str = Query(..., description="The toponym to search for"),
+        med: int = Query(None, description="Maximum Edit Distance for fuzzy matching. Omit for exact matching"),
+        pl: int = Query(None, description="Prefix Length for fuzzy matching"),
+        bcp47: str = Query(None, description="BCP 47 tag for language/script filtering"),
+        limit: int = Query(10, ge=1, le=250, description="The number of results to retrieve (max 250)")
 ):
     """
     Search for toponyms using fuzzy or exact matching.
     """
     try:
         results = search(query, med, pl, bcp47, limit)
+        return JSONResponse(status_code=200, content=results)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
+@app.get("/locate")
+async def locate_places(
+        bbox: Optional[Tuple[float, float, float, float]] = Depends(parse_bbox),
+        point: Optional[Tuple[float, float]] = Depends(parse_point),
+        radius: Optional[float] = Query(None, description="Radius in kilometres"),
+        limit: int = Query(10, ge=1, le=250, description="The number of results to retrieve (max 250)"),
+        namespace: Optional[str] = Query(None, description="Namespace to filter results by"),
+        _: None = Depends(validate_locate_params)  # ensure validation happens.
+):
+    """
+    Locate places based on bounding box or point and radius.
+    """
+    try:
+        results = locate(bbox, point, radius, limit, namespace)
         return JSONResponse(status_code=200, content=results)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")

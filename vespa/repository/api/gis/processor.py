@@ -7,6 +7,7 @@ from shapely.io import to_geojson
 
 from .intersections import GeometryIntersect
 from .utils import get_valid_geom, vespa_bbox
+from ..dates.dates import year_from_value
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,8 @@ class GeometryProcessor:
             geometries = self.geometry["geometries"]
             grouped_geometries: dict = {}
             for geometry in geometries:
-                start = geometry.get("start", None)
-                end = geometry.get("end", None)
+                start = year_from_value(geometry.get("start"))
+                end = year_from_value(geometry.get("end"))
                 key = (start, end)
                 if key not in grouped_geometries:
                     grouped_geometries[key] = []
@@ -93,8 +94,8 @@ class GeometryProcessor:
             for key, group in grouped_geometries.items():
                 grouped_geometries[key] = {
                     "geometry": json.dumps({"type": "GeometryCollection", "geometries": group}),
-                    "year_start": key[0],
-                    "year_end": key[1],
+                    **({'year_start': key[0]} if key[0] else {}),
+                    **({'year_end': key[1]} if key[1] else {}),
                 }
 
             locations = list(grouped_geometries.values())
