@@ -165,7 +165,7 @@ schema place {
         field cartesian type tensor<float>(x[3]) {
             # 3D Cartesian coordinates of the representative point.
             # Used for fast ANN retrieval.
-            indexing: attribute | embed
+            indexing: attribute
         }
         
         field representative_elevation type int {
