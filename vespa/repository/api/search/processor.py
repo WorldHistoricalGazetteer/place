@@ -196,7 +196,8 @@ def _locate_by_point_radius(sync_app, point, radius, limit, namespace):
     """Locate places within a radius of a point."""
     lon, lat = point
     conditions = [
-        f'geoLocation(representative_point, {lat}, {lon}, "{radius} km")'
+        f'geoLocation(representative_point, {lat}, {lon}, "{radius} km")',
+        f'documentid contains "id:{namespace}:place::"' if namespace else None
     ]
 
     where_clause = " and ".join(conditions)
@@ -206,6 +207,7 @@ def _locate_by_point_radius(sync_app, point, radius, limit, namespace):
     response = sync_app.query(yql=yql, namespace=namespace)
 
     logger.info(f"Query: {yql}")
+    logger.info(f"Namespace: {namespace}")
     logger.info(f"Response: {response.json}")
 
     return {
