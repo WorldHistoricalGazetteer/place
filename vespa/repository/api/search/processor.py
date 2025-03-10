@@ -203,19 +203,17 @@ def _locate_by_point(sync_app, point, radius, limit, namespace):
 
     if radius:
         conditions.append(f'geoLocation(representative_point, {lon}, {lat}, "{radius} km")')
-        query_params = {}
     else:
         x, y, z = geo_to_cartesian(lat, lon, 0)
         logger.info(f"Cartesian coordinates: {x}, {y}, {z}")
-        conditions.append(f'{{targetHits: {max(1, limit)}}}nearestNeighbor(cartesian, [{x}, {y}, {z}])')
-        query_params = {}
+        conditions.append(f'{{targetHits: {max(1, limit)}}}nearestNeighbor(cartesian, query_vector)&input.query(query_vector)=[{x}, {y}, {z}]')
 
     where_clause = " and ".join(conditions) if conditions else ""
 
     yql = f'select * from place{" where " + where_clause if where_clause else ""};'
 
     # Perform the query with the updated YQL and query parameters
-    response = sync_app.query(yql=yql, **query_params)
+    response = sync_app.query(yql=yql)
 
     return {
         "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
