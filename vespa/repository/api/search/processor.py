@@ -197,18 +197,12 @@ def _locate_by_point_radius(sync_app, point, radius, limit, namespace):
     lon, lat = point
     conditions = [
         f'geoLocation(representative_point, {lat}, {lon}, "{radius} km")',
-        f'documentid contains "id:{namespace}:place::"' if namespace else None
     ]
 
     where_clause = " and ".join(conditions)
     yql = f'select * from place where {where_clause} limit {limit};'
 
-    # response = sync_app.query(yql=yql, namespace=namespace or "*")
-    response = sync_app.query(yql=yql, namespace=namespace)
-
-    logger.info(f"Query: {yql}")
-    logger.info(f"Namespace: {namespace}")
-    logger.info(f"Response: {response.json}")
+    response = sync_app.query(yql=yql, namespace=namespace or "*")
 
     return {
         "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
