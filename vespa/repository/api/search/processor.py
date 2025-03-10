@@ -196,14 +196,16 @@ def _locate_by_bbox(bbox, limit, namespace):
 def _locate_by_point(sync_app, point, radius, limit, namespace):
     """Locate places closest to a point."""
     lon, lat = point
-    conditions = [
-        f'namespace contains "{namespace}"' if namespace else ""
-    ]
     if radius:
-        conditions.append(f'geoLocation(representative_point, {lon}, {lat}, "{radius} km")')
+        conditions = [
+            f'namespace contains "{namespace}"' if namespace else "",
+            f'geoLocation(representative_point, {lon}, {lat}, "{radius} km")'
+        ]
     else:
         x, y, z = geo_to_cartesian(lat, lon)
-        conditions.append(f'''{{targetHits: {limit}}}nearestNeighbor(cartesian, [{x}, {y}, {z}])''')
+        conditions = [
+            f'''{{targetHits: {limit}}}nearestNeighbor(cartesian, [{x}, {y}, {z}])'''
+        ]
 
     where_clause = " and ".join(conditions)
 
