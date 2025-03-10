@@ -206,9 +206,8 @@ def _locate_by_point(sync_app, point, radius, limit, namespace):
         query_params = {}  # No need for `query_tensor`
     else:
         x, y, z = geo_to_cartesian(lat, lon)
-        conditions.append(f'nearestNeighbor(cartesian, query_tensor)')
+        conditions.append(f'{{targetHits: {max(1, limit)}}}nearestNeighbor(cartesian, query_tensor)')
         query_params = {
-            "targetHits": max(1, limit),
             "input.query(query_tensor)": {
                 "cells": [{"address": {"x": i}, "value": v} for i, v in enumerate([x, y, z])]
             }
@@ -218,11 +217,8 @@ def _locate_by_point(sync_app, point, radius, limit, namespace):
 
     yql = f'select * from place{" where " + where_clause if where_clause else ""};'
 
-    response = sync_app.query(
-        yql=yql,
-        hits=limit,
-        **query_params
-    )
+    # Perform the query with the updated YQL and query parameters
+    response = sync_app.query(yql=yql, **query_params)
 
     return {
         "totalHits": response.json.get("root", {}).get("fields", {}).get("totalCount", 0),
