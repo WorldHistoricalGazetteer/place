@@ -1,4 +1,4 @@
-## Generating and Using an SSH Key (Without PubkeyAuthentication)
+## SSH Key
 
 Here's how to generate an SSH key, copy it to a remote server, and log in without relying on `PubkeyAuthentication` during the initial setup.
 
@@ -90,4 +90,17 @@ Here's how to generate an SSH key, copy it to a remote server, and log in withou
      ssh -L 8001:127.0.0.1:8001 <username>@gazetteer.crcd.pitt.edu
      ```
 
-* Access the Kubernetes dashboard by visiting `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy` in your browser.
+* Access the Kubernetes dashboard by visiting `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=_all` in your browser.
+
+## Storage Allocation & Repository Cloning
+
+```bash
+# Create the necessary directories within the mounted `/ix3` storage
+mkdir -p /ix3/gazetteer/repo
+mkdir -p /ix3/gazetteer/data
+chown -R gazetteer:gazetteer /ix3/gazetteer
+chmod 755 /ix3/gazetteer
+
+# Clone the World Historical Gazetteer PLACE repository into the `/ix3/gazetteer/repo` directory
+git clone https://github.com/WorldHistoricalGazetteer/place /ix3/gazetteer/repo
+```
