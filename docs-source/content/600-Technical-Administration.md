@@ -53,7 +53,7 @@ Here's how to generate an SSH key, copy it to a remote server, and log in withou
      ```bash
      # Automatically switch to the gazetteer account on login
      if [[ $USER == "username" && $- == *i* ]]; then
-         exec sudo su - gazetteer
+         sudo su - gazetteer
      fi
      ```
 
@@ -71,3 +71,23 @@ Here's how to generate an SSH key, copy it to a remote server, and log in withou
      ```
 
    * This will display a list of nodes and their status. A `Ready` status indicates that the node is functioning correctly.
+
+## Enabling Kubernetes Dashboard
+
+* **Enable the required Minikube addons:** First, log in to the VM and run the following commands to enable the metrics-server and the dashboard:
+     ```bash
+     minikube addons enable metrics-server
+     minikube addons enable dashboard
+     ```
+  
+* **Start the kubectl proxy in the background:** Run the following command to start the Kubernetes proxy. Use `nohup` to keep it running even after you log out:
+     ```bash
+     nohup kubectl proxy --address=0.0.0.0 --port=8001 --disable-filter=true > kubectl_proxy.log 2>&1 &
+     ```
+
+* **Forward the proxy port to your local machine:** After starting the proxy, exit the VM and establish an SSH tunnel from your local machine to forward the proxy port:
+     ```bash
+     ssh -L 8001:127.0.0.1:8001 <username>@gazetteer.crcd.pitt.edu
+     ```
+
+* Access the Kubernetes dashboard by visiting `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy` in your browser.
