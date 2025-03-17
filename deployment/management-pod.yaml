@@ -25,4 +25,3 @@ spec:
     - name: gazetteer-repo-volume
       hostPath:
         path: /home/gazetteer/repo
-        type: Directory

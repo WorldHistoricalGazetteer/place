@@ -149,6 +149,8 @@ git clone https://github.com/WorldHistoricalGazetteer/place ~/repo
 ```bash
 # Create the management namespace
 kubectl create namespace management
+# Create a Secret to pass the kubeconfig to the management pod
+kubectl create secret generic kubeconfig --from-file=config=/home/gazetteer/.kube/config -n management
 # Create a Secret to pass the HashiCorp credentials to the management pod
 kubectl create secret generic hcp-credentials --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" -n management
 # Create the management pod
