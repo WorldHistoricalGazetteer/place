@@ -107,10 +107,14 @@ spec:
 EOF
 
 # Wait for creation of the Secret
-until secret_exists whg-secret management; do
+until secret_exists whg-secret default; do
   echo "Waiting for whg-secret to be created..."
   sleep 2
 done
+# Move the Secret to the management namespace
+kubectl get secret whg-secret -n default -o yaml | \
+sed 's/namespace: default/namespace: management/' | \
+kubectl apply -f -
 echo "...whg-secret has been created."
 
 # Delete both copies of the hcp-credentials Secret
