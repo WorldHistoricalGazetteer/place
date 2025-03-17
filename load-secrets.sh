@@ -33,6 +33,8 @@ helm_release_exists() {
 }
 if helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator"; then
   echo "Deleting the HashiCorp Vault Secrets Operator..."
+  kubectl delete hcpauth default -n vault-secrets-operator-system
+  kubectl delete hcpvaultsecretsapp whg-secret -n default
   helm delete vault-secrets-operator -n vault-secrets-operator-system
   until ! helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator"; do
     echo "Waiting for vault-secrets-operator to be deleted..."
