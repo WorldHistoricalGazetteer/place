@@ -213,6 +213,8 @@ echo "$SECRET_JSON" | kubectl apply -f -
 for namespace in management monitoring tileserver whg wordpress; do
   # Create namespace if it doesn't exist
   kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
+  # Delete pre-existing secret in namespace
+  delete_resource "Secret" "whg-secret" "$namespace"
   kubectl get secret whg-secret -o json \
     | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
     | kubectl apply -f -
