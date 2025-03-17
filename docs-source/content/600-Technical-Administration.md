@@ -143,9 +143,13 @@ kubectl create secret generic kubeconfig --from-file=config=/tmp/kubeconfig -n m
 unset CA_CERT CLIENT_CERT CLIENT_KEY
 shred -u /tmp/kubeconfig
 
-# Create a Secret to pass the HashiCorp credentials to the management pod
-kubectl create secret generic hcp-credentials --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" -n management --dry-run=client -o yaml | kubectl apply -f -
-
+# Create a Secret with the HashiCorp credentials
+kubectl create secret generic hcp-credentials \
+  --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" \
+  --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" \
+  -n management \
+  --dry-run=client -o yaml | kubectl apply -f -
+  
 # Create the management deployment
 echo 'apiVersion: apps/v1
 kind: Deployment

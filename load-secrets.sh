@@ -31,6 +31,11 @@ fi
 
 # Create HCPAuth resource for the HashiCorp Vault Secrets Operator
 echo "Creating HCPAuth resource for the HashiCorp Vault Secrets Operator..."
+
+kubectl get secret hcp-credentials -n management -o yaml | \
+sed 's/namespace: management/namespace: vault-secrets-operator-system/' | \
+kubectl apply -f -
+
 kubectl apply -f - <<EOF
 ---
 apiVersion: secrets.hashicorp.com/v1beta1
@@ -43,7 +48,6 @@ spec:
   projectID: "be40e446-773e-4069-9913-803be758e6e8"
   servicePrincipal:
     name: hcp-credentials
-    namespace: management
 EOF
 
 # Fetch required Secrets from HashiCorp Vault
@@ -108,6 +112,10 @@ until secret_exists whg-secret management; do
   sleep 2
 done
 echo "...whg-secret has been created."
+
+# Delete both copies of the hcp-credentials Secret
+kubectl delete secret hcp-credentials -n management
+kubectl delete secret hcp-credentials -n vault-secrets-operator-system
 
 # Ensure existence of `/whg/files/private` directory; create files from secrets
 PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
