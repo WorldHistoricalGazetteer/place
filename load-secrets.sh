@@ -151,6 +151,8 @@ retry_patch() {
 }
 
 # Ensure existence of `/whg/files/private` directory; create files from secrets
+
+SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
 mkdir -p "$PRIVATE_DIR"
 chmod 775 "$PRIVATE_DIR"
