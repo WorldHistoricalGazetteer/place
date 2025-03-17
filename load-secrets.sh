@@ -62,6 +62,7 @@ delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
 delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
 delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
 delete_resource "Secret" "whg-secret" "$NAMESPACE_MANAGEMENT"
+delete_resource "Secret" "whg-secret" "$NAMESPACE_DEFAULT"
 delete_resource "Secret" "hcp-credentials" "$NAMESPACE_VAULT"
 
 # **2. Install the HashiCorp Vault Secrets Operator**
