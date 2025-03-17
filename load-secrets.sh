@@ -26,12 +26,16 @@ delete_resource() {
 
   if resource_exists "$kind" "$name" "$namespace"; then
     echo "Deleting $kind $name in namespace $namespace..."
-    kubectl delete "$kind" "$name" -n "$namespace" --ignore-not-found=true
-    # Wait until resource is removed
-    until ! resource_exists "$kind" "$name" "$namespace"; do
-      echo "Waiting for $kind $name to be deleted..."
-      sleep 2
-    done
+    if ! kubectl delete "$kind" "$name" -n "$namespace" --ignore-not-found=true; then
+      echo "Error deleting $kind $name in namespace $namespace."
+      return 1 # Indicate failure
+    fi
+
+    # Wait for the resource to be deleted
+    if ! kubectl wait --for=delete "$kind/$name" -n "$namespace" --timeout=60s; then
+      echo "Timeout waiting for $kind $name to be deleted in namespace $namespace."
+      return 1 # Indicate failure
+    fi
   fi
 }
 
@@ -45,10 +49,20 @@ delete_helm_release() {
 
   if helm_release_exists "$release" "$namespace"; then
     echo "Deleting Helm release $release in namespace $namespace..."
-    helm delete "$release" -n "$namespace"
+    if ! helm delete "$release" -n "$namespace"; then
+      echo "Error deleting Helm release $release in namespace $namespace."
+      return 1 # Indicate failure
+    fi
 
-    # Wait until Helm release is removed
-    until ! helm_release_exists "$release" "$namespace"; do
+    # Wait until Helm release is removed (with a timeout)
+    local timeout=60 # seconds
+    local start_time=$(date +%s)
+    while helm_release_exists "$release" "$namespace"; do
+      local current_time=$(date +%s)
+      if (( current_time - start_time > timeout )); then
+        echo "Timeout waiting for Helm release $release to be deleted in namespace $namespace."
+        return 1 # Indicate failure
+      fi
       echo "Waiting for Helm release $release to be deleted..."
       sleep 2
     done
@@ -56,7 +70,7 @@ delete_helm_release() {
 }
 
 # **1. Remove existing resources**
-kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge --ignore-not-found=true
 delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
 delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
 delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
@@ -151,13 +165,8 @@ spec:
 EOF
 
 # Wait for creation of the Secret
-secret_exists() {
-  kubectl get secret "$1" -n "$2" -o name &>/dev/null
-}
-until secret_exists whg-secret default; do
-  echo "Waiting for whg-secret to be created..."
-  sleep 2
-done
+echo "Waiting for whg-secret to be created..."
+kubectl wait --for=condition=Ready secret/whg-secret -n default --timeout=60s
 echo "...whg-secret has been created."
 
 # Ensure existence of `/whg/files/private` directory
