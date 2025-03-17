@@ -210,5 +210,5 @@ kubectl delete pod $MANAGEMENT_POD -n management
 MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o jsonpath='{.items[0].metadata.name}')
 kubectl wait --for=condition=containersready pod/"$MANAGEMENT_POD" -n management --timeout=60s
 # Connect to the management pod
-kubectl exec -it "$MANAGEMENT_POD" -n management -- /bin/sh
+kubectl exec -it "$MANAGEMENT_POD" -n management -c helm -- /bin/sh -c "cd /apps/repository && ls -l && /bin/sh"
 ```
