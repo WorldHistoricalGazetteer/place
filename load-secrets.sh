@@ -135,32 +135,24 @@ until secret_exists whg-secret default; do
   echo "Waiting for whg-secret to be created..."
   sleep 2
 done
-# Move the Secret to the management namespace
-kubectl get secret whg-secret -n default -o yaml | \
-sed 's/namespace: default/namespace: management/' | \
-kubectl apply -f -
 echo "...whg-secret has been created."
-
-# Delete both copies of the hcp-credentials Secret
-kubectl delete secret hcp-credentials -n management
-kubectl delete secret hcp-credentials -n vault-secrets-operator-system
 
 # Ensure existence of `/whg/files/private` directory; create files from secrets
 PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
 mkdir -p "$PRIVATE_DIR"
 chmod 775 "$PRIVATE_DIR"
-kubectl get secret whg-secret -n management -o jsonpath='{.data.ca_cert}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
-kubectl get secret whg-secret -n management -o jsonpath='{.data.django_files}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
-kubectl patch secret whg-secret -n management -p '{"data": {"django_files": null}}'
+kubectl get secret whg-secret -o jsonpath='{.data.ca_cert}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
+kubectl get secret whg-secret -o jsonpath='{.data.django_files}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
+kubectl patch secret whg-secret -p '{"data": {"django_files": null}}'
 chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
 base64 -d "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
 unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
 rm -f "$PRIVATE_DIR/django-files.zip"
 rm -f "$PRIVATE_DIR/django-files.zip.base64"
-kubectl get secret whg-secret -n management -o jsonpath='{.data.id_rsa}' | base64 -d > "$PRIVATE_DIR/id_rsa"
-kubectl patch secret whg-secret -n management -p '{"data": {"id_rsa": null}}'
-kubectl get secret whg-secret -n management -o jsonpath='{.data.id_rsa_whg}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
-kubectl patch secret whg-secret -n management -p '{"data": {"id_rsa_whg": null}}'
+kubectl get secret whg-secret -o jsonpath='{.data.id_rsa}' | base64 -d > "$PRIVATE_DIR/id_rsa"
+kubectl patch secret whg-secret -p '{"data": {"id_rsa": null}}'
+kubectl get secret whg-secret -o jsonpath='{.data.id_rsa_whg}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
+kubectl patch secret whg-secret -p '{"data": {"id_rsa_whg": null}}'
 
 chmod 600 "$PRIVATE_DIR/id_rsa"
 chmod 600 "$PRIVATE_DIR/id_rsa_whg"
@@ -169,25 +161,30 @@ chmod 644 "$PRIVATE_DIR/env_template.py"
 chmod 644 "$PRIVATE_DIR/local_settings.py"
 
 # Add these unzipped files back into the Secret
-kubectl patch secret whg-secret -n management -p '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
-kubectl patch secret whg-secret -n management -p '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
+kubectl patch secret whg-secret -p '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
+kubectl patch secret whg-secret -p '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
 
 # Construct and add DATABASE_URL
 VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
 DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
 DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
 POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
-DB_PASSWORD=$(kubectl get secret whg-secret -n management -o jsonpath='{.data.db-password}' | base64 -d)
+DB_PASSWORD=$(kubectl get secret whg-secret -o jsonpath='{.data.db-password}' | base64 -d)
 POSTGRES_HOST="postgres"
 DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
-kubectl patch secret whg-secret -n management -p '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
+kubectl patch secret whg-secret -p '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
 
-# Copy secret to other namespaces # TODO: Need to update deployments to include namespace for secret
-#for namespace in whg monitoring tileserver wordpress; do
-#  kubectl get secret whg-secret -n management -o json \
-#    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
-#    | kubectl apply -f -
-#done
+# Copy secret to other namespaces
+for namespace in management monitoring tileserver whg wordpress; do
+  kubectl get secret whg-secret -o json \
+    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
+    | kubectl apply -f -
+done
+
+# Delete redundant Secrets
+kubectl delete secret whg-secret
+kubectl delete secret hcp-credentials -n management
+kubectl delete secret hcp-credentials -n vault-secrets-operator-system
 
 echo "Secrets have been fetched and files stored in $PRIVATE_DIR."
 ls -l "$PRIVATE_DIR"
