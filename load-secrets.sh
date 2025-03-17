@@ -136,96 +136,57 @@ until secret_exists whg-secret default; do
 done
 echo "...whg-secret has been created."
 
-SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
-PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
+# Retry function to mitigate concurrent patching issues
+retry_patch() {
+  local retries=5
+  local delay=1
+  for i in $(seq 1 $retries); do
+    kubectl patch secret whg-secret -n management -p "$1" &>/dev/null && return 0
+    echo "Conflict detected. Retrying in $delay seconds..."
+    sleep $delay
+    delay=$((delay * 2)) # Exponential backoff
+  done
+  echo "Failed to patch after $retries retries."
+  return 1
+}
 
-# Ensure existence of `/whg/files/private` directory
+# Ensure existence of `/whg/files/private` directory; create files from secrets
+PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
 mkdir -p "$PRIVATE_DIR"
 chmod 775 "$PRIVATE_DIR"
 
-# Get the current secret as JSON
-current_secret=$(kubectl get secret whg-secret -o json)
-
-if [[ -z "$current_secret" ]]; then
-  echo "Error: Failed to retrieve whg-secret."
-  exit 1
-fi
-
-# Extract the data section
-secret_data=$(echo "$current_secret" | jq '.data')
-
-if [[ -z "$secret_data" ]]; then
-  echo "Error: Failed to extract data from whg-secret."
-  exit 1
-fi
-
-# Decode and extract files from the secret data
-decoded_ca_cert=$(echo "$secret_data" | jq -r '.ca_cert | @base64d')
-decoded_django_files=$(echo "$secret_data" | jq -r '.django_files | @base64d')
-decoded_id_rsa=$(echo "$secret_data" | jq -r '.id_rsa | @base64d')
-decoded_id_rsa_whg=$(echo "$secret_data" | jq -r '.id_rsa_whg | @base64d')
-decoded_env_template=$(echo "$secret_data" | jq -r '.env_template | @base64d')
-decoded_local_settings=$(echo "$secret_data" | jq -r '.local_settings | @base64d')
-decoded_db_password=$(kubectl get secret whg-secret -o 'go-template={{.data.db-password}}' | base64 -d)
-
-# Write files to the private directory
-echo -n "$decoded_ca_cert" > "$PRIVATE_DIR/ca-cert.pem"
-echo -n "$decoded_django_files" > "$PRIVATE_DIR/django-files.zip"
-echo -n "$decoded_id_rsa" > "$PRIVATE_DIR/id_rsa"
-echo -n "$decoded_id_rsa_whg" > "$PRIVATE_DIR/id_rsa_whg"
-echo -n "$decoded_env_template" > "$PRIVATE_DIR/env_template.py"
-echo -n "$decoded_local_settings" > "$PRIVATE_DIR/local_settings.py"
-
-# Unzip django_files
+kubectl get secret whg-secret -n management -o 'go-template={{.data.ca_cert}}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
+kubectl get secret whg-secret -n management -o 'go-template={{.data.django_files}}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
+retry_patch '{"data": {"django_files": null}}'
+chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
+base64 -d "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
 unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
 rm -f "$PRIVATE_DIR/django-files.zip"
+rm -f "$PRIVATE_DIR/django-files.zip.base64"
+kubectl get secret whg-secret -n management -o 'go-template={{.data.id_rsa}}' | base64 -d > "$PRIVATE_DIR/id_rsa"
+retry_patch '{"data": {"id_rsa": null}}'
+kubectl get secret whg-secret -n management -o 'go-template={{.data.id_rsa_whg}}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
+retry_patch '{"data": {"id_rsa_whg": null}}'
 
-# Set file permissions
 chmod 600 "$PRIVATE_DIR/id_rsa"
 chmod 600 "$PRIVATE_DIR/id_rsa_whg"
 chmod 644 "$PRIVATE_DIR/ca-cert.pem"
 chmod 644 "$PRIVATE_DIR/env_template.py"
 chmod 644 "$PRIVATE_DIR/local_settings.py"
 
-# Construct DATABASE_URL
+# Add these unzipped files back into the Secret
+retry_patch '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
+retry_patch '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
+
+# Construct and add DATABASE_URL
+VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
 DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
 DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
 POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
+DB_PASSWORD=$(kubectl get secret whg-secret -n management -o 'go-template={{.data.db-password}}' | base64 -d)
 POSTGRES_HOST="postgres"
-DATABASE_URL="postgres://${DB_USER}:${decoded_db_password}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
-
-# Encode the updated data
-encoded_env_template=$(base64 -w 0 "$PRIVATE_DIR/env_template.py")
-encoded_local_settings=$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")
-encoded_database_url=$(echo -n "$DATABASE_URL" | base64 -w 0)
-
-# Construct the new data object
-new_data=$(jq -n \
-    --arg encoded_env_template "$encoded_env_template" \
-    --arg encoded_local_settings "$encoded_local_settings" \
-    --arg encoded_database_url "$encoded_database_url" \
-    '{
-        "env_template": $encoded_env_template,
-        "local_settings": $encoded_local_settings,
-        "database-url": $encoded_database_url,
-        "django_files": null,
-        "id_rsa": null,
-        "id_rsa_whg": null
-    }')
-
-# Create the patch
-patch=$(jq ".data = $new_data" <<< "$current_secret")
-
-# Apply the single patch
-kubectl patch secret whg-secret --type merge -p "$(jq '.data' <<< "$patch")"
-
-if [[ $? -ne 0 ]]; then
-    echo "Error: Failed to patch whg-secret."
-    exit 1
-fi
-
-echo "whg-secret successfully patched."
+DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
+retry_patch '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
 
 # Copy secret to other namespaces
 for namespace in management monitoring tileserver whg wordpress; do
