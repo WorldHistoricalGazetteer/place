@@ -1,0 +1,10 @@
+storageClassName: gazetteer-storage
+dataDir: /ix3/gazetteer/
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+pvName: repo-pv
+pvStorageSize: 1Gi
+accessMode: ReadWriteOnce
+pvHostPath: /ix3/gazetteer/repo
+pvcName: repo-pvc
+namespace: repo

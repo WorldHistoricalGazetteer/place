@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: management
+  namespace: management
+  labels:
+    app: gazetteer-management
+spec:
+  containers:
+  - name: helm
+    image: alpine/helm:latest
+    command: ["sleep", "infinity"]
+    volumeMounts:
+      - name: kubeconfig-volume
+        mountPath: /root/.kube
+      - name: gazetteer-repo-volume
+        mountPath: /gazetteer-repo
+    envFrom:
+      - secretRef:
+          name: hcp-credentials
+  volumes:
+    - name: kubeconfig-volume
+      secret:
+        secretName: kubeconfig
+    - name: gazetteer-repo-volume
+      hostPath:
+        path: /ix3/gazetteer/repo
+        type: Directory
