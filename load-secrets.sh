@@ -209,7 +209,7 @@ SECRET_JSON=$(echo "$SECRET_JSON" | jq --arg db "$(echo -n "$DATABASE_URL" | bas
 echo "$SECRET_JSON" | kubectl apply -f -
 
 # Copy secret to other namespaces
-for namespace in monitoring tileserver whg wordpress; do
+for namespace in management monitoring tileserver whg wordpress; do
   # Create namespace if it doesn't exist
   kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
   kubectl get secret whg-secret -o json \
