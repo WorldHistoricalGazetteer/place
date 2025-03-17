@@ -116,43 +116,90 @@ during the initial setup.
   export HCP_CLIENT_ID=*** HCP_CLIENT_SECRET=***
   ```
 
-## Storage Allocation & Repository Cloning
-
-* Storage is primarily managed through the `csi-hostpath-driver`, which creates persistent volumes and claims for the
-  required storage. However, the World Historical Gazetteer PLACE repository must first be cloned manually as it
-  contains the Helm charts needed for further configuration and deployment.
-
-```bash
-## Create the repository directory within the mounted `/ix3` storage
-#mkdir -p /ix3/gazetteer/repo
-#chown -R gazetteer:gazetteer /ix3/gazetteer
-#chmod 755 /ix3/gazetteer
-#
-## Clone the World Historical Gazetteer PLACE repository into the `/ix3/gazetteer/repo` directory
-#git clone https://github.com/WorldHistoricalGazetteer/place /ix3/gazetteer/repo
-```
-
-```bash
-# Create the repository directory within the mounted `~/` storage
-mkdir -p ~/repo
-chmod 755 ~/repo
-
-# Clone the World Historical Gazetteer PLACE repository into the `~/repo` directory
-git clone https://github.com/WorldHistoricalGazetteer/place ~/repo
-```
-
 ## Deploy Services
 
-* Helm is not installed on the VM, so the first step is to set up a management pod to deploy the services. This pod will
-  have Helm installed and will be used to deploy the Gazetteer services.
+* Helm is not installed on the VM, so the first step is to set up a Helm-enabled management pod to deploy the services.
 
 ```bash
 # Create the management namespace
 kubectl create namespace management
+
 # Create a Secret to pass the kubeconfig to the management pod
-kubectl create secret generic kubeconfig --from-file=config=/home/gazetteer/.kube/config -n management
+CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
+CLIENT_CERT=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.crt)
+CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.key)
+cp /home/gazetteer/.kube/config /tmp/kubeconfig
+sed -i "s|certificate-authority: .*|certificate-authority-data: $CA_CERT|" /tmp/kubeconfig
+sed -i "s|client-certificate: .*|client-certificate-data: $CLIENT_CERT|" /tmp/kubeconfig
+sed -i "s|client-key: .*|client-key-data: $CLIENT_KEY|" /tmp/kubeconfig
+minikube_ip=$(minikube ip)
+sed -i "s|server: https://127.0.0.1:[0-9]*|server: https://$minikube_ip:8443|" /tmp/kubeconfig
+kubectl create secret generic kubeconfig --from-file=config=/tmp/kubeconfig -n management
+unset CA_CERT CLIENT_CERT CLIENT_KEY
+shred -u /tmp/kubeconfig
+
 # Create a Secret to pass the HashiCorp credentials to the management pod
 kubectl create secret generic hcp-credentials --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" -n management
-# Create the management pod
-kubectl apply -f ~/repo/deployment/management-pod.yaml
+
+# Create the management deployment
+echo 'apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: management-deployment
+  namespace: management
+  labels:
+    app: gazetteer-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gazetteer-management
+  template:
+    metadata:
+      labels:
+        app: gazetteer-management
+    spec:
+      initContainers:
+      - name: git-clone
+        image: alpine/git:latest
+        command: ["git", "clone", "https://github.com/WorldHistoricalGazetteer/place", "/apps/repository"]
+        volumeMounts:
+          - name: empty-dir-volume
+            mountPath: /apps/repository
+      containers:
+      - name: helm
+        image: dtzar/helm-kubectl:latest
+        # command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && ./load-secrets.sh && sleep infinity"]
+        command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && sleep infinity"]
+        volumeMounts:
+          - name: kubeconfig-volume
+            mountPath: /root/.kube
+          - name: empty-dir-volume
+            mountPath: /apps/repository
+        envFrom:
+          - secretRef:
+              name: hcp-credentials
+      volumes:
+      - name: kubeconfig-volume
+        secret:
+          secretName: kubeconfig
+      - name: empty-dir-volume
+        emptyDir:
+          sizeLimit: 1Gi' | kubectl apply -f -
+```
+
+* To force redeployment of the management pod, delete the existing pod:
+
+```bash
+kubectl delete pod $MANAGEMENT_POD -n management
+```
+
+* To log in to the management pod after it has been created:
+
+```bash
+# Wait for the Pod to be ready
+MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o jsonpath='{.items[0].metadata.name}')
+kubectl wait --for=condition=containersready pod/"$MANAGEMENT_POD" -n management --timeout=60s
+# Connect to the management pod
+kubectl exec -it "$MANAGEMENT_POD" -n management -- /bin/sh
 ```

@@ -2,8 +2,8 @@
 
 # To create the Django Files Secret for storage in HashiCorp Vault, run the following commands in the folder
 # where the Django Files are stored, then copy-paste the output into the `data` section of the Secret definition:
-# zip -j ./django-files.zip ./env_template.py ./local_settings.py
-# base64 -w 0 ./django-files.zip > ./django-files.zip.base64
+# sudo zip -j ./django-files.zip ./env_template.py ./local_settings.py
+# sudo base64 -w 0 ./django-files.zip > ./django-files.zip.base64
 
 # Install the HashiCorp Vault Secrets Operator
 echo "Installing the HashiCorp Vault Secrets Operator..."
@@ -99,7 +99,7 @@ echo "...whg-secret has been created."
 
 # Ensure existence of `/whg/files/private` directory; create files from secrets
 PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
-mkdir -p "$PRIVATE_DIR"
+sudo mkdir -p "$PRIVATE_DIR"
 chmod 775 "$PRIVATE_DIR"
 kubectl get secret whg-secret -o jsonpath='{.data.ca_cert}' | base64 --decode > "$PRIVATE_DIR/ca-cert.pem"
 kubectl get secret whg-secret -o jsonpath='{.data.django_files}' | base64 --decode > "$PRIVATE_DIR/django-files.zip.base64"
@@ -107,8 +107,8 @@ kubectl patch secret whg-secret -p '{"data": {"django_files": null}}'
 chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
 base64 --decode "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
 unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
-rm -f "$PRIVATE_DIR/django-files.zip"
-rm -f "$PRIVATE_DIR/django-files.zip.base64"
+sudo rm -f "$PRIVATE_DIR/django-files.zip"
+sudo rm -f "$PRIVATE_DIR/django-files.zip.base64"
 kubectl get secret whg-secret -o jsonpath='{.data.id_rsa}' | base64 --decode > "$PRIVATE_DIR/id_rsa"
 kubectl patch secret whg-secret -p '{"data": {"id_rsa": null}}'
 kubectl get secret whg-secret -o jsonpath='{.data.id_rsa_whg}' | base64 --decode > "$PRIVATE_DIR/id_rsa_whg"
