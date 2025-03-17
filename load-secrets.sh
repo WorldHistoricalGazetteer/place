@@ -141,7 +141,7 @@ retry_patch() {
   local retries=5
   local delay=1
   for i in $(seq 1 $retries); do
-    kubectl patch secret whg-secret -n management -p "$1" &>/dev/null && return 0
+    kubectl patch secret whg-secret -p "$1" &>/dev/null && return 0
     echo "Conflict detected. Retrying in $delay seconds..."
     sleep $delay
     delay=$((delay * 2)) # Exponential backoff
@@ -155,17 +155,17 @@ PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
 mkdir -p "$PRIVATE_DIR"
 chmod 775 "$PRIVATE_DIR"
 
-kubectl get secret whg-secret -n management -o 'go-template={{.data.ca_cert}}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
-kubectl get secret whg-secret -n management -o 'go-template={{.data.django_files}}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
+kubectl get secret whg-secret -o 'go-template={{.data.ca_cert}}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
+kubectl get secret whg-secret -o 'go-template={{.data.django_files}}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
 retry_patch '{"data": {"django_files": null}}'
 chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
 base64 -d "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
 unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
 rm -f "$PRIVATE_DIR/django-files.zip"
 rm -f "$PRIVATE_DIR/django-files.zip.base64"
-kubectl get secret whg-secret -n management -o 'go-template={{.data.id_rsa}}' | base64 -d > "$PRIVATE_DIR/id_rsa"
+kubectl get secret whg-secret -o 'go-template={{.data.id_rsa}}' | base64 -d > "$PRIVATE_DIR/id_rsa"
 retry_patch '{"data": {"id_rsa": null}}'
-kubectl get secret whg-secret -n management -o 'go-template={{.data.id_rsa_whg}}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
+kubectl get secret whg-secret -o 'go-template={{.data.id_rsa_whg}}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
 retry_patch '{"data": {"id_rsa_whg": null}}'
 
 chmod 600 "$PRIVATE_DIR/id_rsa"
@@ -183,7 +183,7 @@ VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
 DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
 DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
 POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
-DB_PASSWORD=$(kubectl get secret whg-secret -n management -o 'go-template={{.data.db-password}}' | base64 -d)
+DB_PASSWORD=$(kubectl get secret whg-secret -o 'go-template={{.data.db-password}}' | base64 -d)
 POSTGRES_HOST="postgres"
 DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
 retry_patch '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
