@@ -47,7 +47,7 @@ spec:
   organizationID: "a99eb120-dbe9-48b7-96c1-0286a81223ed"
   projectID: "be40e446-773e-4069-9913-803be758e6e8"
   servicePrincipal:
-    name: hcp-credentials
+    secretRef: hcp-credentials
 EOF
 
 # Fetch required Secrets from HashiCorp Vault
