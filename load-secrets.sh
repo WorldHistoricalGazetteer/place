@@ -6,6 +6,27 @@
 # base64 -w 0 ./django-files.zip > ./django-files.zip.base64
 
 
+secret_exists() {
+  kubectl get secret "$1" -n "$2" >/dev/null 2>&1
+  return $?
+}
+# Delete any pre-existing whg-secret
+if secret_exists whg-secret management; then
+  kubectl delete secret whg-secret -n management
+  until ! secret_exists whg-secret management; do
+    echo "Waiting for whg-secret to be deleted..."
+    sleep 2
+  done
+fi
+# Delete any pre-existing hcp-credentials:vault-secrets-operator-system Secret
+if secret_exists hcp-credentials vault-secrets-operator-system; then
+  kubectl delete secret hcp-credentials -n vault-secrets-operator-system
+  until ! secret_exists hcp-credentials vault-secrets-operator-system; do
+    echo "Waiting for hcp-credentials to be deleted..."
+    sleep 2
+  done
+fi
+
 # Install the HashiCorp Vault Secrets Operator
 helm_release_exists() {
   helm list -n "$1" | grep -q "^$2\t"
@@ -20,20 +41,6 @@ if helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator";
 fi
 echo "Installing the HashiCorp Vault Secrets Operator..."
 helm install vault-secrets-operator ./vault-secrets-operator --namespace vault-secrets-operator-system --create-namespace
-
-
-secret_exists() {
-  kubectl get secret "$1" -n "$2" >/dev/null 2>&1
-  return $?
-}
-# Delete any pre-existing whg-secret
-if secret_exists whg-secret management; then
-  kubectl delete secret whg-secret -n management
-  until ! secret_exists whg-secret management; do
-    echo "Waiting for whg-secret to be deleted..."
-    sleep 2
-  done
-fi
 
 # Create HCPAuth resource for the HashiCorp Vault Secrets Operator
 echo "Creating HCPAuth resource for the HashiCorp Vault Secrets Operator..."
