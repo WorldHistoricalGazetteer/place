@@ -8,7 +8,6 @@
 set -e  # Exit on error
 set -o pipefail  # Catch errors in pipes
 
-NAMESPACE_MANAGEMENT="management"
 NAMESPACE_VAULT="vault-secrets-operator-system"
 NAMESPACE_DEFAULT="default"
 
@@ -56,6 +55,7 @@ delete_helm_release() {
 }
 
 # **1. Remove existing resources**
+kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
 delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
 delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
 delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
@@ -209,6 +209,8 @@ echo "$SECRET_JSON" | kubectl apply -f -
 
 # Copy secret to other namespaces
 for namespace in management monitoring tileserver whg wordpress; do
+  # Create namespace if it doesn't exist
+  kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
   kubectl get secret whg-secret -o json \
     | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
     | kubectl apply -f -
