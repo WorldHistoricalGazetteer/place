@@ -184,7 +184,6 @@ done
 
 # Delete redundant Secrets
 kubectl delete secret whg-secret
-kubectl delete secret hcp-credentials -n management
 kubectl delete secret hcp-credentials -n vault-secrets-operator-system
 
 echo "Secrets have been fetched and files stored in $PRIVATE_DIR."
