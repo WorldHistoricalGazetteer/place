@@ -119,6 +119,7 @@ during the initial setup.
 ## Deploy Services
 
 * Helm is not installed on the VM, so the first step is to set up a Helm-enabled management pod to deploy the services.
+  This will also serve as part of the CI/CD pipeline.
 
 ```bash
 # Create the management namespace (idempotent method)

@@ -5,67 +5,85 @@
 # zip -j ./django-files.zip ./env_template.py ./local_settings.py
 # base64 -w 0 ./django-files.zip > ./django-files.zip.base64
 
-secret_exists() {
-  kubectl get secret "$1" -n "$2" >/dev/null 2>&1
-  return $?
-}
-# Delete any pre-existing whg-secret
-if secret_exists whg-secret management; then
-  kubectl delete secret whg-secret -n management
-  until ! secret_exists whg-secret management; do
-    echo "Waiting for whg-secret to be deleted..."
-    sleep 2
-  done
-fi
-# Delete any pre-existing hcp-credentials:vault-secrets-operator-system Secret
-if secret_exists hcp-credentials vault-secrets-operator-system; then
-  kubectl delete secret hcp-credentials -n vault-secrets-operator-system
-  until ! secret_exists hcp-credentials vault-secrets-operator-system; do
-    echo "Waiting for hcp-credentials to be deleted..."
-    sleep 2
-  done
-fi
+set -e  # Exit on error
+set -o pipefail  # Catch errors in pipes
 
-# Install the HashiCorp Vault Secrets Operator
+NAMESPACE_MANAGEMENT="management"
+NAMESPACE_VAULT="vault-secrets-operator-system"
+NAMESPACE_DEFAULT="default"
+
+resource_exists() {
+  local kind="$1"
+  local name="$2"
+  local namespace="$3"
+  kubectl get "$kind" "$name" -n "$namespace" >/dev/null 2>&1
+}
+
+delete_resource() {
+  local kind="$1"
+  local name="$2"
+  local namespace="$3"
+
+  if resource_exists "$kind" "$name" "$namespace"; then
+    echo "Deleting $kind $name in namespace $namespace..."
+    kubectl delete "$kind" "$name" -n "$namespace" --ignore-not-found=true
+    # Wait until resource is removed
+    until ! resource_exists "$kind" "$name" "$namespace"; do
+      echo "Waiting for $kind $name to be deleted..."
+      sleep 2
+    done
+  fi
+}
+
 helm_release_exists() {
-  helm list -n "$1" | grep -q "^$2\t"
+  helm list -n "$2" | grep -q "^$1\s"
 }
-if helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator"; then
-  echo "Deleting the HashiCorp Vault Secrets Operator..."
-  kubectl delete hcpauth default -n vault-secrets-operator-system
-  kubectl delete hcpvaultsecretsapp whg-secret -n default
-  helm delete vault-secrets-operator -n vault-secrets-operator-system
-  until ! helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator"; do
-    echo "Waiting for vault-secrets-operator to be deleted..."
-    sleep 2
-  done
-fi
+
+delete_helm_release() {
+  local release="$1"
+  local namespace="$2"
+
+  if helm_release_exists "$release" "$namespace"; then
+    echo "Deleting Helm release $release in namespace $namespace..."
+    helm delete "$release" -n "$namespace"
+
+    # Wait until Helm release is removed
+    until ! helm_release_exists "$release" "$namespace"; do
+      echo "Waiting for Helm release $release to be deleted..."
+      sleep 2
+    done
+  fi
+}
+
+# **1. Remove existing resources**
+delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
+delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
+delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
+delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
+delete_resource "Secret" "whg-secret" "$NAMESPACE_DEFAULT"
+delete_resource "Secret" "hcp-credentials" "$NAMESPACE_VAULT"
+
+# **2. Install the HashiCorp Vault Secrets Operator**
 echo "Installing the HashiCorp Vault Secrets Operator..."
-helm install vault-secrets-operator ./vault-secrets-operator --namespace vault-secrets-operator-system --create-namespace
+helm install vault-secrets-operator ./vault-secrets-operator --namespace "$NAMESPACE_VAULT" --create-namespace
 
-# Create HCPAuth resource for the HashiCorp Vault Secrets Operator
-echo "Creating HCPAuth resource for the HashiCorp Vault Secrets Operator..."
-
-kubectl get secret hcp-credentials -n management -o yaml | \
-sed 's/namespace: management/namespace: vault-secrets-operator-system/' | \
+# **3. Create Kubernetes Secret for HCP Service Principal credentials**
+echo "Creating Kubernetes Secret for HCP Service Principal..."
+kubectl create secret generic vso-sp \
+    --namespace "$NAMESPACE_DEFAULT" \
+    --from-literal=clientID="$HCP_CLIENT_ID" \
+    --from-literal=clientSecret="$HCP_CLIENT_SECRET" --dry-run=client -o yaml | \
 kubectl apply -f -
 
-# Create Secret for HashiCorp Cloud Platform (HCP) Service Principal credentials (these should already be set as environment variables)
-echo "Creating Kubernetes Secret for HashiCorp Cloud Platform Service Principal credentials..."
-kubectl create secret generic vso-sp \
-    --namespace default \
-    --from-literal=clientID=$HCP_CLIENT_ID \
-    --from-literal=clientSecret=$HCP_CLIENT_SECRET
 
-# Create HCPAuth resource for the HashiCorp Vault Secrets Operator
-echo "Creating HCPAuth resource for the HashiCorp Vault Secrets Operator..."
-kubectl create -f - <<EOF
----
+# **4. Create HCPAuth resource for the HashiCorp Vault Secrets Operator**
+echo "Creating HCPAuth resource..."
+kubectl apply -f - <<EOF
 apiVersion: secrets.hashicorp.com/v1beta1
 kind: HCPAuth
 metadata:
   name: default
-  namespace: vault-secrets-operator-system
+  namespace: $NAMESPACE_VAULT
 spec:
   organizationID: "a99eb120-dbe9-48b7-96c1-0286a81223ed"
   projectID: "be40e446-773e-4069-9913-803be758e6e8"
@@ -73,13 +91,14 @@ spec:
     secretRef: vso-sp
 EOF
 
-# Fetch required Secrets from HashiCorp Vault
+# **5. Create HCPVaultSecretsApp to fetch required secrets**
+echo "Fetching required secrets from HashiCorp Vault..."
 kubectl apply -f - <<EOF
 apiVersion: secrets.hashicorp.com/v1beta1
 kind: HCPVaultSecretsApp
 metadata:
   name: whg-secret
-  namespace: default
+  namespace: $NAMESPACE_DEFAULT
 spec:
   appName: "WHG-PLACE"
   destination:
@@ -151,7 +170,7 @@ echo "$SECRET_JSON" | jq -r '.data.django_files' | base64 -d > "$PRIVATE_DIR/dja
 echo "$SECRET_JSON" | jq -r '.data.id_rsa' | base64 -d > "$PRIVATE_DIR/id_rsa"
 echo "$SECRET_JSON" | jq -r '.data.id_rsa_whg' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
 
-# Remove sensitive keys from JSON and prepare for re-upload
+# Remove sensitive keys from JSON and prepare for update
 SECRET_JSON=$(echo "$SECRET_JSON" | jq 'del(.data.django_files, .data.id_rsa, .data.id_rsa_whg)')
 
 # Unzip django files
@@ -184,40 +203,6 @@ SECRET_JSON=$(echo "$SECRET_JSON" | jq --arg db "$(echo -n "$DATABASE_URL" | bas
 
 # Apply the modified secret in one atomic update
 echo "$SECRET_JSON" | kubectl apply -f -
-
-## Fetch and store the Secrets
-#kubectl get secret whg-secret -o jsonpath='{.data.ca_cert}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
-#kubectl get secret whg-secret -o jsonpath='{.data.django_files}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
-#kubectl patch secret whg-secret -p '{"data": {"django_files": null}}'
-#chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
-#base64 -d "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
-#unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
-#rm -f "$PRIVATE_DIR/django-files.zip"
-#rm -f "$PRIVATE_DIR/django-files.zip.base64"
-#kubectl get secret whg-secret -o jsonpath='{.data.id_rsa}' | base64 -d > "$PRIVATE_DIR/id_rsa"
-#kubectl patch secret whg-secret -p '{"data": {"id_rsa": null}}'
-#kubectl get secret whg-secret -o jsonpath='{.data.id_rsa_whg}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
-#kubectl patch secret whg-secret -p '{"data": {"id_rsa_whg": null}}'
-#
-#chmod 600 "$PRIVATE_DIR/id_rsa"
-#chmod 600 "$PRIVATE_DIR/id_rsa_whg"
-#chmod 644 "$PRIVATE_DIR/ca-cert.pem"
-#chmod 644 "$PRIVATE_DIR/env_template.py"
-#chmod 644 "$PRIVATE_DIR/local_settings.py"
-#
-## Add these unzipped files back into the Secret
-#kubectl patch secret whg-secret -p '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
-#kubectl patch secret whg-secret -p '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
-#
-## Construct and add DATABASE_URL
-#VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
-#DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
-#DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
-#POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
-#DB_PASSWORD=$(kubectl get secret whg-secret -o jsonpath='{.data.db-password}' | base64 -d)
-#POSTGRES_HOST="postgres"
-#DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
-#kubectl patch secret whg-secret -p '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
 
 # Copy secret to other namespaces
 for namespace in management monitoring tileserver whg wordpress; do
