@@ -24,5 +24,5 @@ spec:
         secretName: kubeconfig
     - name: gazetteer-repo-volume
       hostPath:
-        path: ~/repo
+        path: /home/gazetteer/repo
         type: Directory
