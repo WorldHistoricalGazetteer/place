@@ -51,7 +51,16 @@ kubectl get secret hcp-credentials -n management -o yaml | \
 sed 's/namespace: management/namespace: vault-secrets-operator-system/' | \
 kubectl apply -f -
 
-kubectl apply -f - <<EOF
+# Create Secret for HashiCorp Cloud Platform (HCP) Service Principal credentials (these should already be set as environment variables)
+echo "Creating Kubernetes Secret for HashiCorp Cloud Platform Service Principal credentials..."
+kubectl create secret generic vso-sp \
+    --namespace default \
+    --from-literal=clientID=$HCP_CLIENT_ID \
+    --from-literal=clientSecret=$HCP_CLIENT_SECRET
+
+# Create HCPAuth resource for the HashiCorp Vault Secrets Operator
+echo "Creating HCPAuth resource for the HashiCorp Vault Secrets Operator..."
+kubectl create -f - <<EOF
 ---
 apiVersion: secrets.hashicorp.com/v1beta1
 kind: HCPAuth
@@ -62,7 +71,7 @@ spec:
   organizationID: "a99eb120-dbe9-48b7-96c1-0286a81223ed"
   projectID: "be40e446-773e-4069-9913-803be758e6e8"
   servicePrincipal:
-    secretRef: hcp-credentials
+    secretRef: vso-sp
 EOF
 
 # Fetch required Secrets from HashiCorp Vault
