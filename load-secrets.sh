@@ -136,59 +136,88 @@ until secret_exists whg-secret default; do
 done
 echo "...whg-secret has been created."
 
-# Retry function to mitigate concurrent patching issues
-retry_patch() {
-  local retries=5
-  local delay=1
-  for i in $(seq 1 $retries); do
-    kubectl patch secret whg-secret -p "$1" &>/dev/null && return 0
-    echo "Conflict detected. Retrying in $delay seconds..."
-    sleep $delay
-    delay=$((delay * 2)) # Exponential backoff
-  done
-  echo "Failed to patch after $retries retries."
-  return 1
-}
-
-# Ensure existence of `/whg/files/private` directory; create files from secrets
-
+# Ensure existence of `/whg/files/private` directory
 SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 PRIVATE_DIR="$SCRIPT_DIR/whg/files/private"
 mkdir -p "$PRIVATE_DIR"
 chmod 775 "$PRIVATE_DIR"
 
-kubectl get secret whg-secret -o 'go-template={{.data.ca_cert}}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
-kubectl get secret whg-secret -o 'go-template={{.data.django_files}}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
-retry_patch '{"data": {"django_files": null}}'
+# Fetch Secret JSON
+SECRET_JSON=$(kubectl get secret whg-secret -o json)
+
+# Extract and store secrets
+echo "$SECRET_JSON" | jq -r '.data.ca_cert' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
+echo "$SECRET_JSON" | jq -r '.data.django_files' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
+echo "$SECRET_JSON" | jq -r '.data.id_rsa' | base64 -d > "$PRIVATE_DIR/id_rsa"
+echo "$SECRET_JSON" | jq -r '.data.id_rsa_whg' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
+
+# Remove sensitive keys from JSON and prepare for re-upload
+SECRET_JSON=$(echo "$SECRET_JSON" | jq 'del(.data.django_files, .data.id_rsa, .data.id_rsa_whg)')
+
+# Unzip django files
 chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
 base64 -d "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
 unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
-rm -f "$PRIVATE_DIR/django-files.zip"
-rm -f "$PRIVATE_DIR/django-files.zip.base64"
-kubectl get secret whg-secret -o 'go-template={{.data.id_rsa}}' | base64 -d > "$PRIVATE_DIR/id_rsa"
-retry_patch '{"data": {"id_rsa": null}}'
-kubectl get secret whg-secret -o 'go-template={{.data.id_rsa_whg}}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
-retry_patch '{"data": {"id_rsa_whg": null}}'
+rm -f "$PRIVATE_DIR/django-files.zip" "$PRIVATE_DIR/django-files.zip.base64"
 
-chmod 600 "$PRIVATE_DIR/id_rsa"
-chmod 600 "$PRIVATE_DIR/id_rsa_whg"
-chmod 644 "$PRIVATE_DIR/ca-cert.pem"
-chmod 644 "$PRIVATE_DIR/env_template.py"
-chmod 644 "$PRIVATE_DIR/local_settings.py"
+# Set file permissions
+chmod 600 "$PRIVATE_DIR/id_rsa" "$PRIVATE_DIR/id_rsa_whg"
+chmod 644 "$PRIVATE_DIR/ca-cert.pem" "$PRIVATE_DIR/env_template.py" "$PRIVATE_DIR/local_settings.py"
 
-# Add these unzipped files back into the Secret
-retry_patch '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
-retry_patch '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
+# Encode new files and update SECRET_JSON
+SECRET_JSON=$(echo "$SECRET_JSON" | jq --arg env "$(base64 -w 0 "$PRIVATE_DIR/env_template.py")" \
+                                      --arg loc "$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")" \
+                                      '.data.env_template = $env | .data.local_settings = $loc')
 
-# Construct and add DATABASE_URL
+# Construct DATABASE_URL
 VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
 DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
 DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
 POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
-DB_PASSWORD=$(kubectl get secret whg-secret -o 'go-template={{.data.db-password}}' | base64 -d)
+DB_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.data."db-password"' | base64 -d)
 POSTGRES_HOST="postgres"
 DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
-retry_patch '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
+
+# Add DATABASE_URL to SECRET_JSON
+SECRET_JSON=$(echo "$SECRET_JSON" | jq --arg db "$(echo -n "$DATABASE_URL" | base64 -w 0)" \
+                                      '.data."database-url" = $db')
+
+# Apply the modified secret in one atomic update
+echo "$SECRET_JSON" | kubectl apply -f -
+
+## Fetch and store the Secrets
+#kubectl get secret whg-secret -o jsonpath='{.data.ca_cert}' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
+#kubectl get secret whg-secret -o jsonpath='{.data.django_files}' | base64 -d > "$PRIVATE_DIR/django-files.zip.base64"
+#kubectl patch secret whg-secret -p '{"data": {"django_files": null}}'
+#chmod 600 "$PRIVATE_DIR/django-files.zip.base64"
+#base64 -d "$PRIVATE_DIR/django-files.zip.base64" > "$PRIVATE_DIR/django-files.zip"
+#unzip -o "$PRIVATE_DIR/django-files.zip" -d "$PRIVATE_DIR"
+#rm -f "$PRIVATE_DIR/django-files.zip"
+#rm -f "$PRIVATE_DIR/django-files.zip.base64"
+#kubectl get secret whg-secret -o jsonpath='{.data.id_rsa}' | base64 -d > "$PRIVATE_DIR/id_rsa"
+#kubectl patch secret whg-secret -p '{"data": {"id_rsa": null}}'
+#kubectl get secret whg-secret -o jsonpath='{.data.id_rsa_whg}' | base64 -d > "$PRIVATE_DIR/id_rsa_whg"
+#kubectl patch secret whg-secret -p '{"data": {"id_rsa_whg": null}}'
+#
+#chmod 600 "$PRIVATE_DIR/id_rsa"
+#chmod 600 "$PRIVATE_DIR/id_rsa_whg"
+#chmod 644 "$PRIVATE_DIR/ca-cert.pem"
+#chmod 644 "$PRIVATE_DIR/env_template.py"
+#chmod 644 "$PRIVATE_DIR/local_settings.py"
+#
+## Add these unzipped files back into the Secret
+#kubectl patch secret whg-secret -p '{"data": {"env_template": "'$(base64 -w 0 "$PRIVATE_DIR/env_template.py")'"}}'
+#kubectl patch secret whg-secret -p '{"data": {"local_settings": "'$(base64 -w 0 "$PRIVATE_DIR/local_settings.py")'"}}'
+#
+## Construct and add DATABASE_URL
+#VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
+#DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
+#DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
+#POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
+#DB_PASSWORD=$(kubectl get secret whg-secret -o jsonpath='{.data.db-password}' | base64 -d)
+#POSTGRES_HOST="postgres"
+#DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
+#kubectl patch secret whg-secret -p '{"data": {"database-url": "'$(echo -n "$DATABASE_URL" | base64 -w 0)'"}}'
 
 # Copy secret to other namespaces
 for namespace in management monitoring tileserver whg wordpress; do
