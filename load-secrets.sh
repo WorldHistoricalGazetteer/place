@@ -5,6 +5,7 @@
 # zip -j ./django-files.zip ./env_template.py ./local_settings.py
 # base64 -w 0 ./django-files.zip > ./django-files.zip.base64
 
+export SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
 secret_exists() {
   kubectl get secret "$1" -n "$2" >/dev/null 2>&1
