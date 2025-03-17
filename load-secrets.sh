@@ -56,7 +56,7 @@ apiVersion: secrets.hashicorp.com/v1beta1
 kind: HCPVaultSecretsApp
 metadata:
   name: whg-secret
-  namespace: management
+  namespace: default
 spec:
   appName: "WHG-PLACE"
   destination:
