@@ -10,10 +10,16 @@
 helm_release_exists() {
   helm list -n "$1" | grep -q "^$2\t"
 }
-if ! helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator"; then
-  echo "Installing the HashiCorp Vault Secrets Operator..."
-  helm install vault-secrets-operator ./vault-secrets-operator --namespace vault-secrets-operator-system --create-namespace
+if helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator"; then
+  echo "Deleting the HashiCorp Vault Secrets Operator..."
+  helm delete vault-secrets-operator -n vault-secrets-operator-system
+  until ! helm_release_exists "vault-secrets-operator-system" "vault-secrets-operator"; do
+    echo "Waiting for vault-secrets-operator to be deleted..."
+    sleep 2
+  done
 fi
+echo "Installing the HashiCorp Vault Secrets Operator..."
+helm install vault-secrets-operator ./vault-secrets-operator --namespace vault-secrets-operator-system --create-namespace
 
 
 secret_exists() {
