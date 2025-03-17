@@ -121,8 +121,13 @@ during the initial setup.
 * Helm is not installed on the VM, so the first step is to set up a Helm-enabled management pod to deploy the services.
 
 ```bash
-# Create the management namespace
-kubectl create namespace management
+# Create the management namespace (idempotent method)
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: management
+EOF
 
 # Create a Secret to pass the kubeconfig to the management pod
 CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
@@ -134,12 +139,12 @@ sed -i "s|client-certificate: .*|client-certificate-data: $CLIENT_CERT|" /tmp/ku
 sed -i "s|client-key: .*|client-key-data: $CLIENT_KEY|" /tmp/kubeconfig
 minikube_ip=$(minikube ip)
 sed -i "s|server: https://127.0.0.1:[0-9]*|server: https://$minikube_ip:8443|" /tmp/kubeconfig
-kubectl create secret generic kubeconfig --from-file=config=/tmp/kubeconfig -n management
+kubectl create secret generic kubeconfig --from-file=config=/tmp/kubeconfig -n management --dry-run=client -o yaml | kubectl apply -f -
 unset CA_CERT CLIENT_CERT CLIENT_KEY
 shred -u /tmp/kubeconfig
 
 # Create a Secret to pass the HashiCorp credentials to the management pod
-kubectl create secret generic hcp-credentials --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" -n management
+kubectl create secret generic hcp-credentials --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" -n management --dry-run=client -o yaml | kubectl apply -f -
 
 # Create the management deployment
 echo 'apiVersion: apps/v1
@@ -169,8 +174,7 @@ spec:
       containers:
       - name: helm
         image: dtzar/helm-kubectl:latest
-        # command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && ./load-secrets.sh && sleep infinity"]
-        command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && sleep infinity"]
+        command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && ./load-secrets.sh && sleep infinity"]
         volumeMounts:
           - name: kubeconfig-volume
             mountPath: /root/.kube
