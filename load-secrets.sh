@@ -149,6 +149,9 @@ spec:
 EOF
 
 # Wait for creation of the Secret
+secret_exists() {
+  kubectl get secret "$1" -n "$2" -o name &>/dev/null
+}
 until secret_exists whg-secret default; do
   echo "Waiting for whg-secret to be created..."
   sleep 2
