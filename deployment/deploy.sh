@@ -21,6 +21,8 @@ CLIENT_CERT=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.crt)
 CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.key)
 minikube_ip=$(minikube ip)
 
+ls -l
+
 # Install Helm chart
 helm upgrade --install management-chart "$REPO_DIR/deployment" \
   --namespace management \
