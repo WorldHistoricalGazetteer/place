@@ -34,11 +34,11 @@ spec:
             export KUBECONFIG=/root/.kube/config &&
             cd /apps/repository &&
             chmod +x *.sh &&
-{{/*            ./remove-secrets.sh &&*/}}
-{{/*            if [ $? -ne 0 ]; then*/}}
-{{/*              echo "remove-secrets.sh failed"*/}}
-{{/*              exit 1*/}}
-{{/*            fi &&*/}}
+            ./remove-secrets.sh &&
+            if [ $? -ne 0 ]; then
+              echo "remove-secrets.sh failed"
+              exit 1
+            fi &&
             ./load-secrets.sh &&
             if [ $? -ne 0 ]; then
               echo "load-secrets.sh failed"

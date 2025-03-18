@@ -1,8 +1,5 @@
 #!/bin/bash
 
-set -e  # Exit on error
-set -o pipefail  # Catch errors in pipes
-
 NAMESPACE_VAULT="vault-secrets-operator-system"
 NAMESPACE_DEFAULT="default"
 
@@ -71,7 +68,7 @@ if kubectl get hcpvaultsecretsapp whg-secret -n "$NAMESPACE_DEFAULT" &>/dev/null
 fi
 delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
 delete_resource "Secret" "hcp-credentials" "$NAMESPACE_VAULT"
-#delete_resource "Secret" "vso-cc-storage-hmac-key" "$NAMESPACE_VAULT"
+delete_resource "Secret" "vso-cc-storage-hmac-key" "$NAMESPACE_VAULT"
 for namespace in $(kubectl get secrets --all-namespaces -o jsonpath='{.items[?(@.metadata.name=="whg-secret")].metadata.namespace}'); do
   echo "Deleting whg-secret in namespace $namespace..."
   kubectl delete secret whg-secret -n "$namespace"
