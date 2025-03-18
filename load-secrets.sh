@@ -78,9 +78,10 @@ delete_helm_release() {
 #  # Remove finalizers to allow deletion of HCPVaultSecretsApp
 #  kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
 #fi
-#delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
-#delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
-#delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
+delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
+# TODO: Deleting other VSO resources first might help
+delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
+delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
 
 delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
 delete_resource "Secret" "whg-secret" "$NAMESPACE_MANAGEMENT"
