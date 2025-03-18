@@ -1,6 +1,17 @@
 #!/bin/bash
 
-set -e
+set -e # Ensure the script exits on error
+
+cleanup() {
+  echo "Cleaning up temporary directory: $REPO_DIR"
+  if [ -d "$REPO_DIR" ]; then
+    rm -rf "$REPO_DIR"
+  fi
+  unset CA_CERT CLIENT_CERT CLIENT_KEY minikube_ip
+}
+
+# Register the cleanup function to be called on exit
+trap cleanup EXIT
 
 # Git repository details
 REPO_URL="https://github.com/WorldHistoricalGazetteer/place.git"
@@ -33,9 +44,3 @@ helm upgrade --install management-chart "$REPO_DIR/deployment" \
   --set caCert="$CA_CERT" \
   --set clientCert="$CLIENT_CERT" \
   --set clientKey="$CLIENT_KEY"
-
-unset CA_CERT CLIENT_CERT CLIENT_KEY minikube_ip
-
-# Clean up temporary clone
-cd ..
-rm -rf "$REPO_DIR"
