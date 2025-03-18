@@ -8,6 +8,9 @@
 set -e  # Exit on error
 set -o pipefail  # Catch errors in pipes
 
+NAMESPACE_VAULT="vault-secrets-operator-system"
+NAMESPACE_DEFAULT="default"
+
 # **1. Install the HashiCorp Vault Secrets Operator**
 echo "Installing the HashiCorp Vault Secrets Operator..."
 helm install vault-secrets-operator ./vault-secrets-operator --namespace "$NAMESPACE_VAULT" --create-namespace
