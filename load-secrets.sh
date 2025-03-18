@@ -83,8 +83,10 @@ for namespace in $(kubectl get secrets --all-namespaces -o jsonpath='{.items[?(@
   kubectl delete secret whg-secret -n "$namespace"
 done
 delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
-kubectl get crds | grep "secrets.hashicorp.com" | awk '{print $1}' | xargs kubectl delete crd
-
+crds=$(kubectl get crds | grep "secrets.hashicorp.com" | awk '{print $1}')
+if [ -n "$crds" ]; then
+  echo "$crds" | xargs kubectl delete crd
+fi
 
 # **2. Install the HashiCorp Vault Secrets Operator**
 echo "Installing the HashiCorp Vault Secrets Operator..."
