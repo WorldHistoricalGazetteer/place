@@ -16,6 +16,7 @@ resource_exists() {
   local kind="$1"
   local name="$2"
   local namespace="$3"
+  echo "Checking if $kind $name exists in namespace $namespace..."
   kubectl get "$kind" "$name" -n "$namespace" >/dev/null 2>&1
 }
 
