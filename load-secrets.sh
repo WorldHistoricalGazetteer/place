@@ -99,7 +99,6 @@ kubectl create secret generic vso-sp \
     --from-literal=clientSecret="$HCP_CLIENT_SECRET" --dry-run=client -o yaml | \
 kubectl apply -f -
 
-
 # **4. Create HCPAuth resource for the HashiCorp Vault Secrets Operator**
 echo "Creating HCPAuth resource..."
 kubectl apply -f - <<EOF
