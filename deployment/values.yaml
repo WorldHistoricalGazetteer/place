@@ -1,3 +1,10 @@
+image:
+  repository: worldhistoricalgazetteer/deployment
+  pullPolicy: IfNotPresent
+  tag: "0.0.1"
+
+sizeLimit: 1Gi
+
 hcpClientId: ""
 hcpClientSecret: ""
 minikubeIp: ""
