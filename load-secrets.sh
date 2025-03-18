@@ -71,10 +71,10 @@ delete_helm_release() {
 }
 
 # **1. Remove existing resources**
-if kubectl get hcpvaultsecretsapp whg-secret -n default &>/dev/null; then
-  # Remove finalizers to allow deletion of HCPVaultSecretsApp
-  kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
-fi
+#if kubectl get hcpvaultsecretsapp whg-secret -n default &>/dev/null; then
+#  # Remove finalizers to allow deletion of HCPVaultSecretsApp
+#  kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
+#fi
 delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
 delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
 delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
