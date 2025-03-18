@@ -4,16 +4,16 @@ metadata:
   name: management-deployment
   namespace: management
   labels:
-    app: gazetteer-management
+    app: {{ .Values.app.name }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gazetteer-management
+      app: {{ .Values.app.name }}
   template:
     metadata:
       labels:
-        app: gazetteer-management
+        app: {{ .Values.app.name }}
     spec:
       initContainers:
       - name: setup
@@ -55,7 +55,9 @@ spec:
           - |
             export KUBECONFIG=/root/.kube/config &&
             cd /apps/repository/deployment/app &&
-            sleep infinity
+            uvicorn api:app --host 0.0.0.0 --port {{ .Values.containerPort }}
+        ports:
+          - containerPort: {{ .Values.containerPort }}
         volumeMounts:
           - name: kubeconfig-volume
             mountPath: /root/.kube

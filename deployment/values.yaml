@@ -3,6 +3,15 @@ image:
   pullPolicy: IfNotPresent
   tag: "0.0.2"
 
+app:
+  name: gazetteer-management
+
+containerPort: 50000
+
+service:
+  port: 80
+  nodePort: 30000
+
 sizeLimit: 1Gi
 
 hcpClientId: ""
