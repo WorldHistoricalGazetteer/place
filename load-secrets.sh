@@ -73,7 +73,9 @@ delete_helm_release() {
 # **1. Remove existing resources**
 delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
 delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
-kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
+if kubectl get hcpvaultsecretsapp whg-secret -n "$NAMESPACE_DEFAULT" &>/dev/null; then
+  kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
+fi
 delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
 delete_resource "Secret" "hcp-credentials" "$NAMESPACE_VAULT"
 for namespace in $(kubectl get secrets --all-namespaces -o jsonpath='{.items[?(@.metadata.name=="whg-secret")].metadata.namespace}'); do
