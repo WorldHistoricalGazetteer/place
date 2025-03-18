@@ -13,7 +13,7 @@ mkdir -p "$REPO_DIR"
 git clone --depth 1 --filter=blob:none --sparse "$REPO_URL" "$REPO_DIR"
 cd "$REPO_DIR"
 git sparse-checkout init --cone
-git sparse-checkout add deploy/management
+git sparse-checkout add deployment
 
 # Prepare values
 CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
@@ -22,7 +22,7 @@ CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.key)
 minikube_ip=$(minikube ip)
 
 # Install Helm chart
-helm upgrade --install management-chart "deploy/management" \
+helm upgrade --install management-chart "$REPO_DIR/deployment" \
   --namespace management \
   --create-namespace \
   --set hcpClientId="$HCP_CLIENT_ID" \
