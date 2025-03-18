@@ -13,4 +13,3 @@ def install_chart(chart_name: str, namespace: str = "default"):
     else:
         return {"status": "error", "message": result.stderr}
 
-# Run with: uvicorn api:app --host 0.0.0.0 --port 8000

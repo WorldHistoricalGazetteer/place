@@ -55,7 +55,7 @@ spec:
           - |
             export KUBECONFIG=/root/.kube/config &&
             cd /apps/repository/deployment/app &&
-            python api.py
+            sleep infinity
         volumeMounts:
           - name: kubeconfig-volume
             mountPath: /root/.kube
