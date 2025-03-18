@@ -34,6 +34,7 @@ spec:
             export KUBECONFIG=/root/.kube/config &&
             cd /apps/repository &&
             chmod +x *.sh &&
+            sleep 10 &&
             ./remove-secrets.sh &&
             if [ $? -ne 0 ]; then
               echo "remove-secrets.sh failed"
