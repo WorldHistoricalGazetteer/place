@@ -26,7 +26,25 @@ spec:
       - name: helm
         image: dtzar/helm-kubectl:latest
 {{/*        command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && ./remove-secrets.sh && ./load-secrets.sh && sleep infinity"]*/}}
-        command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && sleep infinity"]
+{{/*        command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && sleep infinity"]*/}}
+        command:
+          - "/bin/sh"
+          - "-c"
+          - |
+            export KUBECONFIG=/root/.kube/config &&
+            cd /apps/repository &&
+            chmod +x *.sh &&
+            ./remove-secrets.sh &&
+            if [ $? -ne 0 ]; then
+              echo "remove-secrets.sh failed"
+              exit 1
+            fi &&
+            ./load-secrets.sh &&
+            if [ $? -ne 0 ]; then
+              echo "load-secrets.sh failed"
+              exit 1
+            fi &&
+            sleep infinity
 {{/*        command:*/}}
 {{/*          - "/bin/sh"*/}}
 {{/*          - "-c"*/}}
