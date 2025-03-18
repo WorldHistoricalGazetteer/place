@@ -112,7 +112,7 @@ mkdir -p "$PRIVATE_DIR"
 chmod 775 "$PRIVATE_DIR"
 
 # Fetch Secret JSON
-SECRET_JSON=$(kubectl get secret whg-secret -o json)
+SECRET_JSON=$(kubectl get secret whg-secret -n default -o json)
 
 # Extract and store secrets
 echo "$SECRET_JSON" | jq -r '.data.ca_cert' | base64 -d > "$PRIVATE_DIR/ca-cert.pem"
@@ -158,7 +158,7 @@ echo "$SECRET_JSON" | kubectl apply -f -
 for namespace in management monitoring tileserver whg wordpress; do
   # Create namespace if it doesn't exist
   kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
-  kubectl get secret whg-secret -o json \
+  kubectl get secret whg-secret -n default -o json \
     | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
     | kubectl apply -f -
 done
