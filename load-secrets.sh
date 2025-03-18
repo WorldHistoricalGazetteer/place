@@ -79,7 +79,8 @@ fi
 delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
 delete_resource "Secret" "hcp-credentials" "$NAMESPACE_VAULT"
 for namespace in $(kubectl get secrets --all-namespaces -o jsonpath='{.items[?(@.metadata.name=="whg-secret")].metadata.namespace}'); do
-    kubectl delete secret whg-secret -n "$namespace"
+  echo "Deleting whg-secret in namespace $namespace..."
+  kubectl delete secret whg-secret -n "$namespace"
 done
 delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
 kubectl get crds | grep "secrets.hashicorp.com" | awk '{print $1}' | xargs kubectl delete crd
