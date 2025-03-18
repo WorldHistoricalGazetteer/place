@@ -7,9 +7,7 @@
 
 # Install the HashiCorp Vault Secrets Operator
 echo "Installing the HashiCorp Vault Secrets Operator..."
-helm install vault-secrets-operator ./vault-secrets-operator \
-     --namespace vault-secrets-operator-system \
-     --create-namespace
+helm install vault-secrets-operator ./vault-secrets-operator --namespace vault-secrets-operator-system --create-namespace
 
 # Create Secret for HashiCorp Cloud Platform (HCP) Service Principal credentials (these should already be set as environment variables)
 echo "Creating Kubernetes Secret for HashiCorp Cloud Platform Service Principal credentials..."
