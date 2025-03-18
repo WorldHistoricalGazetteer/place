@@ -118,8 +118,12 @@ during the initial setup.
 
 ## Deploy Services
 
-* Helm is not installed on the VM, so the first step is to set up a Helm-enabled management pod to deploy the services.
-  This will also serve as part of the CI/CD pipeline.
+```bash
+bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/deploy.sh")
+```
+
+
+
 
 ```bash
 # Create the management namespace (idempotent method)
@@ -180,6 +184,17 @@ spec:
       - name: helm
         image: dtzar/helm-kubectl:latest
         command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && ./load-secrets.sh && sleep infinity"]
+        command:
+          - "/bin/sh"
+          - "-c"
+          - |
+            apk add --no-cache python3 py3-pip &&
+            pip install fastapi uvicorn &&
+            export KUBECONFIG=/root/.kube/config &&
+            cd /apps/repository &&
+            chmod +x *.sh &&
+            ./load-secrets.sh &&
+            python /app/api.py
         volumeMounts:
           - name: kubeconfig-volume
             mountPath: /root/.kube

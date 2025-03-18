@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: management-deployment
+  namespace: management
+  labels:
+    app: gazetteer-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gazetteer-management
+  template:
+    metadata:
+      labels:
+        app: gazetteer-management
+    spec:
+      initContainers:
+      - name: git-clone
+        image: alpine/git:latest
+        command: ["git", "clone", "https://github.com/WorldHistoricalGazetteer/place", "/apps/repository"]
+        volumeMounts:
+          - name: empty-dir-volume
+            mountPath: /apps/repository
+      containers:
+      - name: helm
+        image: dtzar/helm-kubectl:latest
+        command:
+          - "/bin/sh"
+          - "-c"
+          - |
+            apk add --no-cache python3 py3-pip &&
+            pip install fastapi uvicorn &&
+            export KUBECONFIG=/root/.kube/config &&
+            cd /apps/repository &&
+            chmod +x *.sh &&
+            ./load-secrets.sh &&
+            python /app/api.py
+        volumeMounts:
+          - name: kubeconfig-volume
+            mountPath: /root/.kube
+          - name: empty-dir-volume
+            mountPath: /apps/repository
+        envFrom:
+          - secretRef:
+              name: hcp-credentials
+      volumes:
+      - name: kubeconfig-volume
+        secret:
+          secretName: kubeconfig
+      - name: empty-dir-volume
+        emptyDir:
+          sizeLimit: 1Gi

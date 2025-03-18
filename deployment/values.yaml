@@ -1,0 +1,6 @@
+hcpClientId: ""
+hcpClientSecret: ""
+minikubeIp: ""
+caCert: ""
+clientCert: ""
+clientKey: ""
