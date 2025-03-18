@@ -71,22 +71,23 @@ delete_helm_release() {
 }
 
 # **1. Remove existing resources**
-delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
-delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
-if kubectl get hcpvaultsecretsapp whg-secret -n "$NAMESPACE_DEFAULT" &>/dev/null; then
-  kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
-fi
-delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
-delete_resource "Secret" "hcp-credentials" "$NAMESPACE_VAULT"
-for namespace in $(kubectl get secrets --all-namespaces -o jsonpath='{.items[?(@.metadata.name=="whg-secret")].metadata.namespace}'); do
-  echo "Deleting whg-secret in namespace $namespace..."
-  kubectl delete secret whg-secret -n "$namespace"
-done
-delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
-crds=$(kubectl get crds | grep "secrets.hashicorp.com" | awk '{print $1}')
-if [ -n "$crds" ]; then
-  echo "$crds" | xargs kubectl delete crd
-fi
+#delete_resource "HCPVaultSecretsApp" "whg-secret" "$NAMESPACE_DEFAULT"
+#delete_resource "HCPAuth" "default" "$NAMESPACE_VAULT"
+#if kubectl get hcpvaultsecretsapp whg-secret -n "$NAMESPACE_DEFAULT" &>/dev/null; then
+#  kubectl patch hcpvaultsecretsapp whg-secret -p '{"metadata":{"finalizers":[]}}' --type=merge
+#fi
+#delete_resource "Secret" "vso-sp" "$NAMESPACE_DEFAULT"
+#delete_resource "Secret" "hcp-credentials" "$NAMESPACE_VAULT"
+#delete_resource "Secret" "vso-cc-storage-hmac-key" "$NAMESPACE_VAULT"
+#for namespace in $(kubectl get secrets --all-namespaces -o jsonpath='{.items[?(@.metadata.name=="whg-secret")].metadata.namespace}'); do
+#  echo "Deleting whg-secret in namespace $namespace..."
+#  kubectl delete secret whg-secret -n "$namespace"
+#done
+#delete_helm_release "vault-secrets-operator" "$NAMESPACE_VAULT"
+#crds=$(kubectl get crds | grep "secrets.hashicorp.com" | awk '{print $1}')
+#if [ -n "$crds" ]; then
+#  echo "$crds" | xargs kubectl delete crd
+#fi
 
 # **2. Install the HashiCorp Vault Secrets Operator**
 echo "Installing the HashiCorp Vault Secrets Operator..."
