@@ -36,7 +36,7 @@ spec:
             if [ $? -ne 0 ]; then
               echo "load-secrets.sh failed"
               exit 1
-            fi &&
+            fi
         volumeMounts:
           - name: kubeconfig-volume
             mountPath: /root/.kube
