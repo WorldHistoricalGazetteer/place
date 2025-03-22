@@ -5,6 +5,7 @@ app = FastAPI()
 
 @app.get("/install/{chart_name}")
 def install_chart(chart_name: str, namespace: str = "default"):
+    # TODO: This is as yet only a prototype. See Issue
     command = f"helm install {chart_name} /apps/repository/{chart_name} --namespace {namespace}"
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
 

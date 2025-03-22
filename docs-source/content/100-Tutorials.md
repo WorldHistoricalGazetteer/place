@@ -30,7 +30,7 @@ Choose LP-TSV if:
 
 ## Preparing data for upload
 
-* The simple case
+### The simple case
 
 If you have a list of distinct places with a name or names and basic attributes of the place, like coordinates, and
 place type in a spreadsheet, database table, etc., the task of preparing an upload file for WHG is straightforward. In
@@ -38,7 +38,10 @@ almost all cases your format choice will be LP-TSV, and you can copy/paste colum
 spreadsheet template](https://github.com/LinkedPasts/linked-places-format/raw/main/LP-TSV_template.xlsx), as explained
 in the file itself. See also, "Quick Start" on the "[Upload dataset](https://whgazetteer.org/datasets/validate/)" page.
 
-* The not so simple case: extracting places
+**NOTE: Please do not use Notepad to edit TSV files, because it will not handle the tab characters correctly. Use a
+dedicated spreadsheet program like Excel, Google Sheets, or LibreOffice Calc.**
+
+### The not so simple case: extracting places
 
 However, the data for most spatial historical projects is not only about places or locations, but principally about
 events or artifacts for which location is an important dimension.
@@ -92,7 +95,8 @@ like [this one](https://whgazetteer.org/places/12346428/portal/) for Glasgow.
 
 Records from published datasets make their way into the union index by means of a second reconciliation step, following
 that for the Wikidata+Geonames index. This step is initiated by WHG editorial staff, and when complete the dataset is
-considered fully accessioned. See "Accessioning to the WHG Index" in [Individual datasets](001-Introduction.md#individual-datasets) for details.
+considered fully accessioned. See "Accessioning to the WHG Index"
+in [Individual datasets](001-Introduction.md#individual-datasets) for details.
 
 ### WHG "Pub" index
 
@@ -152,7 +156,8 @@ Remember, the purpose of the assertion is to ensure records that should intuitiv
 
 ## Reviewing accessioning results
 
-Review of results for accessioning to the WHG index is similar to [review for reconciliation](#reviewing-reconciliation-results) but differs in the following
+Review of results for accessioning to the WHG index is similar
+to [review for reconciliation](#reviewing-reconciliation-results) but differs in the following
 ways:
 
 1. Instead of matching to individual records from Wikidata or GeoNames, you are deciding on matches to sets of records
@@ -285,7 +290,8 @@ The workflow in both cases is very similar:
 
 * When a student/participant enters the group code in their _My Data_ dashboard, they get access to the PDF guide you
   have created, with guidelines for this particular exercise—the theme, or goals. **NOTE: Technical instructions for
-  creating a [Place Collection](001-Introduction.md#thematic-place-collections) are covered in site documentation and need not be included in this group guide.**
+  creating a [Place Collection](001-Introduction.md#thematic-place-collections) are covered in site documentation and
+  need not be included in this group guide.**
 * As collections are submitted to the group, they are listed (9) and you can review them and nominate them for inclusion
   in the WHG Student Gallery (in development).
 * Communication between instructor/leader and students/participants is left to normal email and/or course management
