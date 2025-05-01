@@ -196,7 +196,8 @@ spec:
             cd /apps/repository &&
             chmod +x *.sh &&
             ./load-secrets.sh &&
-            python /app/api.py
+            ls -la
+            # python ./deployment/app/api.py
         volumeMounts:
           - name: kubeconfig-volume
             mountPath: /root/.kube
