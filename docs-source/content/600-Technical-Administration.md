@@ -122,107 +122,10 @@ during the initial setup.
 bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/deploy.sh")
 ```
 
-
-
-
-```bash
-# Create the management namespace (idempotent method)
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: management
-EOF
-
-# Create a Secret to pass the kubeconfig to the management pod
-CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
-CLIENT_CERT=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.crt)
-CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.key)
-
-minikube_ip=$(minikube ip)
-
-cp /home/gazetteer/.kube/config /tmp/kubeconfig
-sed -i "s|certificate-authority: .*|certificate-authority-data: $CA_CERT|" /tmp/kubeconfig
-sed -i "s|client-certificate: .*|client-certificate-data: $CLIENT_CERT|" /tmp/kubeconfig
-sed -i "s|client-key: .*|client-key-data: $CLIENT_KEY|" /tmp/kubeconfig
-sed -i "s|server: https://127.0.0.1:[0-9]*|server: https://$minikube_ip:8443|" /tmp/kubeconfig
-
-kubectl create secret generic kubeconfig --from-file=config=/tmp/kubeconfig -n management --dry-run=client -o yaml | kubectl apply -f -
-
-unset CA_CERT CLIENT_CERT CLIENT_KEY
-shred -u /tmp/kubeconfig
-
-# Create a Secret with the HashiCorp credentials
-kubectl create secret generic hcp-credentials \
-  --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" \
-  --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" \
-  -n management \
-  --dry-run=client -o yaml | kubectl apply -f -
-  
-# Create the management deployment
-echo 'apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: management-deployment
-  namespace: management
-  labels:
-    app: gazetteer-management
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: gazetteer-management
-  template:
-    metadata:
-      labels:
-        app: gazetteer-management
-    spec:
-      initContainers:
-      - name: git-clone
-        image: alpine/git:latest
-        command: ["git", "clone", "https://github.com/WorldHistoricalGazetteer/place", "/apps/repository"]
-        volumeMounts:
-          - name: empty-dir-volume
-            mountPath: /apps/repository
-      containers:
-      - name: helm
-        image: dtzar/helm-kubectl:latest
-        command:
-          - "/bin/sh"
-          - "-c"
-          - |
-            apk add --no-cache python3 py3-pip &&
-            python3 -m venv /venv &&
-            . /venv/bin/activate &&
-            pip install fastapi uvicorn &&
-            export KUBECONFIG=/root/.kube/config &&
-            cd /apps/repository &&
-            chmod +x *.sh &&
-            ./load-secrets.sh &&
-            ls -la &&
-            python ./deployment/app/api.py
-        ports:
-          - containerPort: 8000
-        volumeMounts:
-          - name: kubeconfig-volume
-            mountPath: /root/.kube
-          - name: empty-dir-volume
-            mountPath: /apps/repository
-        envFrom:
-          - secretRef:
-              name: hcp-credentials
-      volumes:
-      - name: kubeconfig-volume
-        secret:
-          secretName: kubeconfig
-      - name: empty-dir-volume
-        emptyDir:
-          sizeLimit: 1Gi' | kubectl apply -f -
-```
-
 * To force redeployment of the management pod, delete the existing pod:
 
 ```bash
+MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o jsonpath='{.items[0].metadata.name}')
 kubectl delete pod $MANAGEMENT_POD -n management
 ```
 
@@ -235,3 +138,11 @@ kubectl wait --for=condition=containersready pod/"$MANAGEMENT_POD" -n management
 # Connect to the management pod
 kubectl exec -it "$MANAGEMENT_POD" -n management -c helm -- /bin/sh -c "cd /apps/repository && ls -l && /bin/sh"
 ```
+
+* Access the management API service by visiting
+  `http://localhost:8010/api/v1/namespaces/management/services/http:management-chart-service:8000/proxy/`
+  in your browser.
+
+* To use the helm installation API, visit
+  `http://localhost:8010/api/v1/namespaces/management/services/http:management-chart-service:8000/proxy/install/<chart-name>`
+  in your browser.
