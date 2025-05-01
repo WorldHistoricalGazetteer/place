@@ -151,6 +151,12 @@ DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_P
 SECRET_JSON=$(echo "$SECRET_JSON" | jq --arg db "$(echo -n "$DATABASE_URL" | base64 -w 0)" \
                                       '.data."database-url" = $db')
 
+# Wait for the Vault operator to finish updating the secret
+echo "Waiting for whg-secret to stabilise..."
+while kubectl get events -n default --field-selector involvedObject.name=whg-secret | grep -q "Updated"; do
+  sleep 2
+done
+
 # Apply the modified secret in one atomic update
 echo "$SECRET_JSON" | kubectl apply -f -
 
