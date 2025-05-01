@@ -195,8 +195,10 @@ spec:
             cd /apps/repository &&
             chmod +x *.sh &&
             ./load-secrets.sh &&
-            ls -la
-            # python ./deployment/app/api.py
+            ls -la &&
+            python ./deployment/app/api.py
+        ports:
+          - containerPort: 8000
         volumeMounts:
           - name: kubeconfig-volume
             mountPath: /root/.kube
