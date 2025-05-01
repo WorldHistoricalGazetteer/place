@@ -11,9 +11,15 @@ set -o pipefail  # Catch errors in pipes
 NAMESPACE_VAULT="vault-secrets-operator-system"
 NAMESPACE_DEFAULT="default"
 
+# Check if Vault Secrets Operator is already installed
+if helm list -n "$NAMESPACE_VAULT" | grep -q "vault-secrets-operator"; then
+  echo "Vault Secrets Operator is already installed; exiting script."
+  exit 0
+fi
+
 # **1. Install the HashiCorp Vault Secrets Operator**
 echo "Installing the HashiCorp Vault Secrets Operator..."
-helm upgrade --install vault-secrets-operator ./vault-secrets-operator --namespace "$NAMESPACE_VAULT" --create-namespace
+helm install vault-secrets-operator ./vault-secrets-operator --namespace "$NAMESPACE_VAULT" --create-namespace
 
 # **2. Create Kubernetes Secret for HCP Service Principal credentials**
 echo "Creating Kubernetes Secret for HCP Service Principal..."
@@ -53,12 +59,6 @@ spec:
     labels:
       hvs: "true"
     name: whg-secret
-    namespaces:
-      - management
-      - monitoring
-      - tileserver
-      - whg
-      - wordpress
     transformation:
       excludes:
         - .*
@@ -159,6 +159,15 @@ SECRET_JSON=$(echo "$SECRET_JSON" | jq --arg db "$(echo -n "$DATABASE_URL" | bas
 
 # Apply the modified secret in one atomic update
 echo "$SECRET_JSON" | kubectl apply -f -
+
+# Copy secret to other namespaces
+for namespace in management monitoring tileserver whg wordpress; do
+  # Create namespace if it doesn't exist
+  kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
+  kubectl get secret whg-secret -n default -o json \
+    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
+    | kubectl apply -f -
+done
 
 echo "Secrets have been fetched and files stored in $PRIVATE_DIR."
 ls -l "$PRIVATE_DIR"
