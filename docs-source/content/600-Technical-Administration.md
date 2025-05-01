@@ -183,7 +183,6 @@ spec:
       containers:
       - name: helm
         image: dtzar/helm-kubectl:latest
-        command: ["/bin/sh", "-c", "export KUBECONFIG=/root/.kube/config && cd /apps/repository && chmod +x *.sh && ./load-secrets.sh && sleep infinity"]
         command:
           - "/bin/sh"
           - "-c"
