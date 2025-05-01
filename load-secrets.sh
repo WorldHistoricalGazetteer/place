@@ -53,6 +53,12 @@ spec:
     labels:
       hvs: "true"
     name: whg-secret
+    additionalNamespaces:
+      - management
+      - monitoring
+      - tileserver
+      - whg
+      - wordpress
     transformation:
       excludes:
         - .*
@@ -151,32 +157,8 @@ DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_P
 SECRET_JSON=$(echo "$SECRET_JSON" | jq --arg db "$(echo -n "$DATABASE_URL" | base64 -w 0)" \
                                       '.data."database-url" = $db')
 
-# Avoid race conditions by using a temporary file
-TMP_SECRET=$(mktemp)
-
-# Strip metadata fields that must not be retained
-echo "$SECRET_JSON" \
-  | jq 'del(
-      .metadata.annotations,
-      .metadata.creationTimestamp,
-      .metadata.resourceVersion,
-      .metadata.uid,
-      .metadata.managedFields
-    )' > "$TMP_SECRET"
-
-# Re-apply under same name, forcefully replacing the current one
-kubectl replace --force -f "$TMP_SECRET"
-
-rm -f "$TMP_SECRET"
-
-# Copy secret to other namespaces
-for namespace in management monitoring tileserver whg wordpress; do
-  # Create namespace if it doesn't exist
-  kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -
-  kubectl get secret whg-secret -n default -o json \
-    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$namespace"'"' \
-    | kubectl apply -f -
-done
+# Apply the modified secret in one atomic update
+echo "$SECRET_JSON" | kubectl apply -f -
 
 echo "Secrets have been fetched and files stored in $PRIVATE_DIR."
 ls -l "$PRIVATE_DIR"
