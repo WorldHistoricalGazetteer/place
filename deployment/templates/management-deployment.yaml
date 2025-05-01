@@ -23,6 +23,7 @@ spec:
           - "/bin/sh"
           - "-c"
           - |
+            rm -rf /apps/repository/* /apps/repository/.* 2>/dev/null || true &&
             git clone https://github.com/WorldHistoricalGazetteer/place /apps/repository &&
             export KUBECONFIG=/root/.kube/config &&
             cd /apps/repository &&
