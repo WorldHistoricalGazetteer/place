@@ -8,6 +8,7 @@ cleanup() {
     rm -rf "$REPO_DIR"
   fi
   unset CA_CERT CLIENT_CERT CLIENT_KEY minikube_ip
+  shred -u /tmp/kubeconfig
 }
 
 # Register the cleanup function to be called on exit
@@ -49,10 +50,6 @@ if ! kubectl get secret kubeconfig -n management > /dev/null 2>&1; then
     -n management \
     --dry-run=client -o yaml | kubectl apply -f -
 
-  # Cleanup sensitive files
-  unset CA_CERT CLIENT_CERT CLIENT_KEY
-  shred -u /tmp/kubeconfig
-
 else
   echo "Secret 'kubeconfig' already exists in the 'management' namespace, skipping creation."
 fi
@@ -69,9 +66,11 @@ else
   echo "Secret 'hcp-credentials' already exists in the 'management' namespace, skipping creation."
 fi
 
-# Install Helm chart
+# Install `deployment` Helm chart
 helm upgrade --install management-chart "$REPO_DIR/deployment" \
   --namespace management \
   --create-namespace
 
 echo "Deployment of management helm chart complete!"
+
+# TODO: Continue with other Helm charts using the management pod's API endpoint
