@@ -53,7 +53,7 @@ spec:
     labels:
       hvs: "true"
     name: whg-secret
-    additionalNamespaces:
+    namespaces:
       - management
       - monitoring
       - tileserver
