@@ -13,7 +13,7 @@ NAMESPACE_DEFAULT="default"
 
 # **1. Install the HashiCorp Vault Secrets Operator**
 echo "Installing the HashiCorp Vault Secrets Operator..."
-helm install vault-secrets-operator ./vault-secrets-operator --namespace "$NAMESPACE_VAULT" --create-namespace
+helm upgrade --install vault-secrets-operator ./vault-secrets-operator --namespace "$NAMESPACE_VAULT" --create-namespace
 
 # **2. Create Kubernetes Secret for HCP Service Principal credentials**
 echo "Creating Kubernetes Secret for HCP Service Principal..."

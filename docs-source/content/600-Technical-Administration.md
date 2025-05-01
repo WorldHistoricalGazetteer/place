@@ -95,14 +95,14 @@ during the initial setup.
      nohup kubectl proxy --address=0.0.0.0 --port=8001 --disable-filter=true > kubectl_proxy.log 2>&1 &
      ```
 
-* **Forward the proxy port to your local machine:** After starting the proxy, exit the VM and establish an SSH tunnel
-  from your local machine to forward the proxy port:
+* **Forward the proxy port to your local machine:** After starting the proxy, **exit the VM and establish an SSH tunnel
+  from your local machine** to forward the proxy port:
      ```bash
-     ssh -L 8001:127.0.0.1:8001 <username>@gazetteer.crcd.pitt.edu
+     ssh -L 8010:127.0.0.1:8001 <username>@gazetteer.crcd.pitt.edu
      ```
 
 * Access the Kubernetes dashboard by visiting
-  `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=_all`
+  `http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=_all`
   in your browser.
 
 ## HashiCorp Secrets Management
@@ -189,6 +189,8 @@ spec:
           - "-c"
           - |
             apk add --no-cache python3 py3-pip &&
+            python3 -m venv /venv &&
+            . /venv/bin/activate &&
             pip install fastapi uvicorn &&
             export KUBECONFIG=/root/.kube/config &&
             cd /apps/repository &&
