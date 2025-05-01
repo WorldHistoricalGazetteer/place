@@ -4,73 +4,55 @@ metadata:
   name: management-deployment
   namespace: management
   labels:
-    app: {{ .Values.app.name }}
+    app: gazetteer-management
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Values.app.name }}
+      app: gazetteer-management
   template:
     metadata:
       labels:
-        app: {{ .Values.app.name }}
+        app: gazetteer-management
     spec:
       initContainers:
-      - name: setup
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command:
-          - "/bin/sh"
-          - "-c"
-          - |
-            rm -rf /apps/repository/* /apps/repository/.* 2>/dev/null || true &&
-            git clone https://github.com/WorldHistoricalGazetteer/place /apps/repository &&
-            export KUBECONFIG=/root/.kube/config &&
-            cd /apps/repository &&
-            chmod +x *.sh &&
-            ./remove-secrets.sh &&
-            if [ $? -ne 0 ]; then
-              echo "remove-secrets.sh failed"
-              exit 1
-            fi &&
-            ./load-secrets.sh &&
-            if [ $? -ne 0 ]; then
-              echo "load-secrets.sh failed"
-              exit 1
-            fi
-        volumeMounts:
-          - name: kubeconfig-volume
-            mountPath: /root/.kube
-          - name: empty-dir-volume
-            mountPath: /apps/repository
-        envFrom:
-          - secretRef:
-              name: hcp-credentials
+        - name: git-clone
+          image: alpine/git:latest
+          command: ["git", "clone", "https://github.com/WorldHistoricalGazetteer/place", "/apps/repository"]
+          volumeMounts:
+            - name: empty-dir-volume
+              mountPath: /apps/repository
       containers:
-      - name: helm
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command:
-          - "/bin/sh"
-          - "-c"
-          - |
-            export KUBECONFIG=/root/.kube/config &&
-            cd /apps/repository/deployment/app &&
-            uvicorn api:app --host 0.0.0.0 --port {{ .Values.containerPort }}
-        ports:
-          - containerPort: {{ .Values.containerPort }}
-        volumeMounts:
-          - name: kubeconfig-volume
-            mountPath: /root/.kube
-          - name: empty-dir-volume
-            mountPath: /apps/repository
-        envFrom:
-          - secretRef:
-              name: hcp-credentials
+        - name: helm
+          image: dtzar/helm-kubectl:latest
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              apk add --no-cache python3 py3-pip &&
+              python3 -m venv /venv &&
+              . /venv/bin/activate &&
+              pip install fastapi uvicorn &&
+              export KUBECONFIG=/root/.kube/config &&
+              cd /apps/repository &&
+              chmod +x *.sh &&
+              ./load-secrets.sh &&
+              ls -la &&
+              python ./deployment/app/api.py
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: kubeconfig-volume
+              mountPath: /root/.kube
+            - name: empty-dir-volume
+              mountPath: /apps/repository
+          envFrom:
+            - secretRef:
+                name: hcp-credentials
       volumes:
-      - name: kubeconfig-volume
-        secret:
-          secretName: kubeconfig
-      - name: empty-dir-volume
-        emptyDir:
-          sizeLimit: {{ .Values.sizeLimit }}
+        - name: kubeconfig-volume
+          secret:
+            secretName: kubeconfig
+        - name: empty-dir-volume
+          emptyDir:
+            sizeLimit: 1Gi

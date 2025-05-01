@@ -138,13 +138,17 @@ EOF
 CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
 CLIENT_CERT=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.crt)
 CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.key)
+
+minikube_ip=$(minikube ip)
+
 cp /home/gazetteer/.kube/config /tmp/kubeconfig
 sed -i "s|certificate-authority: .*|certificate-authority-data: $CA_CERT|" /tmp/kubeconfig
 sed -i "s|client-certificate: .*|client-certificate-data: $CLIENT_CERT|" /tmp/kubeconfig
 sed -i "s|client-key: .*|client-key-data: $CLIENT_KEY|" /tmp/kubeconfig
-minikube_ip=$(minikube ip)
 sed -i "s|server: https://127.0.0.1:[0-9]*|server: https://$minikube_ip:8443|" /tmp/kubeconfig
+
 kubectl create secret generic kubeconfig --from-file=config=/tmp/kubeconfig -n management --dry-run=client -o yaml | kubectl apply -f -
+
 unset CA_CERT CLIENT_CERT CLIENT_KEY
 shred -u /tmp/kubeconfig
 
