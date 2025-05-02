@@ -12,6 +12,10 @@ service:
   port: 8000
   nodePort: 30000
 
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+
 sizeLimit: 1Gi
 
 hcpClientId: ""

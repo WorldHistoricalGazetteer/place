@@ -41,6 +41,9 @@ spec:
               python ./deployment/app/api.py
           ports:
             - containerPort: 8000
+          securityContext:
+            runAsUser: {{ .Values.securityContext.runAsUser | default 1001 }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup | default 1001 }}
           volumeMounts:
             - name: kubeconfig-volume
               mountPath: /root/.kube
