@@ -15,6 +15,8 @@ spec:
     readOnly: false
   mountOptions:
     - nfsvers=4.2
+    - uid=65534  # UID for 'nobody'
+    - gid=65534  # GID for 'nobody'
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
