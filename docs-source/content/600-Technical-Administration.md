@@ -129,7 +129,8 @@ MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o j
 kubectl delete pod $MANAGEMENT_POD -n management
 ```
 
-* If the filesystem has not yet been configured:
+* If the filesystem has not yet been configured, run `create-sync-storage.sh` as follows. It is preconfigured to sync
+  legacy files from DigitalOcean VMs, but this can be disabled by first editing the script.
 
 ```bash
 # Wait for the Pod to be ready
