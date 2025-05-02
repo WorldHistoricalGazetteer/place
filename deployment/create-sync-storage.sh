@@ -22,8 +22,9 @@ TMP_DIR=$(mktemp -d)
 trap "rm -rf $TMP_DIR" EXIT
 
 echo "Retrieving SSH private keys from Kubernetes secret..."
-kubectl get secret whg-secret -o json | jq -r '.data["id_rsa_whg"]' | base64 --decode > "$TMP_DIR/id_rsa_whg"
-kubectl get secret whg-secret -o json | jq -r '.data["id_rsa"]' | base64 --decode > "$TMP_DIR/id_rsa"
+BASE64_DECODE() { base64 --decode 2>/dev/null || base64 -d; } # Fallback for BusyBox
+kubectl get secret whg-secret -o json | jq -r '.data["id_rsa_whg"]' | BASE64_DECODE > "$TMP_DIR/id_rsa_whg"
+kubectl get secret whg-secret -o json | jq -r '.data["id_rsa"]' | BASE64_DECODE > "$TMP_DIR/id_rsa"
 
 chmod 600 "$TMP_DIR/id_rsa_whg" "$TMP_DIR/id_rsa"
 

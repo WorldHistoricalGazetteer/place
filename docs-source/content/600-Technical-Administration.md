@@ -129,14 +129,19 @@ MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o j
 kubectl delete pod $MANAGEMENT_POD -n management
 ```
 
-* To log in to the management pod after it has been created:
+* If the filesystem has not yet been configured:
 
 ```bash
 # Wait for the Pod to be ready
 MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o jsonpath='{.items[0].metadata.name}')
 kubectl wait --for=condition=containersready pod/"$MANAGEMENT_POD" -n management --timeout=60s
-# Connect to the management pod
-kubectl exec -it "$MANAGEMENT_POD" -n management -c helm -- /bin/sh -c "cd /apps/repository && ls -l && /bin/sh"
+
+# Connect to the management pod and make create-sync-storage.sh executable, then run it
+kubectl exec -it "$MANAGEMENT_POD" -n management -c helm -- /bin/sh -c "
+  cd /apps/repository/deployment &&
+  ls -l &&
+  chmod +x create-sync-storage.sh &&
+  ./create-sync-storage.sh"
 ```
 
 * Access the management API service by visiting
