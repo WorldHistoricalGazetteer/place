@@ -69,7 +69,8 @@ fi
 # Install `deployment` Helm chart
 helm upgrade --install management-chart "$REPO_DIR/deployment" \
   --namespace management \
-  --create-namespace
+  --create-namespace \
+  --debug
 
 echo "Deployment of management helm chart complete!"
 
