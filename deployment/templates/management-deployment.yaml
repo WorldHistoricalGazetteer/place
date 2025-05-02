@@ -49,8 +49,8 @@ spec:
               mountPath: /root/.kube
             - name: empty-dir-volume
               mountPath: /apps/repository
-            - name: ix1-whcdh-volume
-              mountPath: /ix1/whcdh
+{{/*            - name: ix1-whcdh-volume*/}}
+{{/*              mountPath: /ix1/whcdh*/}}
           envFrom:
             - secretRef:
                 name: hcp-credentials
