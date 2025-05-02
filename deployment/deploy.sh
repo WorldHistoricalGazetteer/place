@@ -8,7 +8,9 @@ cleanup() {
     rm -rf "$REPO_DIR"
   fi
   unset CA_CERT CLIENT_CERT CLIENT_KEY minikube_ip
-  shred -u /tmp/kubeconfig
+  if [ -d "/tmp/kubeconfig" ]; then
+    shred -u /tmp/kubeconfig
+  fi
 }
 
 # Register the cleanup function to be called on exit
