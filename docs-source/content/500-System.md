@@ -136,10 +136,7 @@ To deploy the application with these configurations to a remote server, you will
 - A server running Ubuntu 20.04 LTS
 - The server's IP address
 - A user with sudo privileges
-- Credentials for fetching Secrets
-  from <a href="https://portal.cloud.hashicorp.com/services/secrets/apps/WHG-PLACE/secrets?project_id=be40e446-773e-4069-9913-803be758e6e8" target="_blank">
-  HashiCorp Vault</a>. These may be permanently added to the server's environment variables (
-  `sudo nano /etc/environment`, followed by a reboot).
+- A GitHub **Personal Access Token**, as outlined [here](https://github.com/WorldHistoricalGazetteer/secrets/tree/main?tab=readme-ov-file#setting-up-remote-programmatic-access). 
 
 #### Set the server hostname
 
@@ -246,22 +243,16 @@ sudo systemctl disable ufw
 
 ### Deploy the Application
 
-Run the `deploy.sh` script to deploy the application, including the join command for worker nodes. **Correct functioning
+Follow the directions below to prepare and deploy the application, including the join command for worker nodes. **Correct functioning
 of control nodes is dependent on DNS having been set up to point various subdomains to the server's IP address.**
 
 The script will create and populate the necessary persistent volumes, which are determined by the `K8S_ID` environment
 variable. The most recent backup of the WHG database will be cloned if necessary, and the Django app's `media` and
 `static` directories synchronised with the original WHG server.
 
-#### Set HashiCorp Credentials
+#### Set GitHub Personal Access Token
 
-_Ideally, these should have been added already to the server's environment variables (`sudo nano /etc/environment`,
-followed by a reboot)._
-
-```bash
-export HCP_CLIENT_ID=<HashiCorp Client ID>
-export HCP_CLIENT_SECRET=<HashiCorp Client Secret>
-```
+See [Setting up Remote Programmatic Access](https://github.com/WorldHistoricalGazetteer/secrets/tree/main?tab=readme-ov-file#setting-up-remote-programmatic-access).
 
 #### Enable Cloning (optional)
 

@@ -105,16 +105,25 @@ during the initial setup.
   `http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=_all`
   in your browser.
 
-## HashiCorp Secrets Management
+## Secrets Management
 
-* Passwords and certificates for the Gazetteer services are stored in HashiCorp Vault. These are retrieved automatically
-  during the deployment process, but the access keys for the HCP Client (discoverable by logging in to
-  portal.cloud.hashicorp.com) must first be set as environment variables. Log in to the `gazetteer` service account on
-  the VM, and add the variables to the `~/.bashrc` file:
+* Passwords and certificates for the Gazetteer services are stored in the private WHG `secrets` GitHub repository. These
+  are retrieved automatically during the deployment process, but a GitHub **Personal Access Token** must first be set as
+  an environment variable.
+  See [here](https://github.com/WorldHistoricalGazetteer/secrets?tab=readme-ov-file#setting-up-remote-programmatic-access)
+  for instructions (you must be a member of the _World Historical Gazetteer_ GitHub repository organization to do
+  this).
+* Log in to the `gazetteer` service account on the VM, and add your **Personal Access Token** to the `~/.bashrc` file:
 
   ```bash
-  export HCP_CLIENT_ID=*** HCP_CLIENT_SECRET=***
+  export GITHUB_TOKEN=<github-pat>
   ```
+  
+* After adding the token, run the following command to apply the changes:
+
+  ```bash
+    source ~/.bashrc
+    ```
 
 ## Deploy Services
 

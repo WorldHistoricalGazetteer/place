@@ -56,16 +56,15 @@ else
   echo "Secret 'kubeconfig' already exists in the 'management' namespace, skipping creation."
 fi
 
-# Check if the hcp-credentials secret already exists
-if ! kubectl get secret hcp-credentials -n management > /dev/null 2>&1; then
-  # Create a Secret for HashiCorp credentials
-  kubectl create secret generic hcp-credentials \
-    --from-literal=HCP_CLIENT_ID="$HCP_CLIENT_ID" \
-    --from-literal=HCP_CLIENT_SECRET="$HCP_CLIENT_SECRET" \
+# Check if the github-token secret already exists
+if ! kubectl get secret github-token -n management > /dev/null 2>&1; then
+  # Create a Secret for GitHub token
+  kubectl create secret generic github-token \
+    --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN" \
     -n management \
     --dry-run=client -o yaml | kubectl apply -f -
 else
-  echo "Secret 'hcp-credentials' already exists in the 'management' namespace, skipping creation."
+  echo "Secret 'github-token' already exists in the 'management' namespace, skipping creation."
 fi
 
 # Install `deployment` Helm chart

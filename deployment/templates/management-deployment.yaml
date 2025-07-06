@@ -53,7 +53,7 @@ spec:
 {{/*              mountPath: /ix1/whcdh*/}}
           envFrom:
             - secretRef:
-                name: hcp-credentials
+                name: github-token
       volumes:
         - name: kubeconfig-volume
           secret:
@@ -61,6 +61,6 @@ spec:
         - name: empty-dir-volume
           emptyDir:
             sizeLimit: 1Gi
-{{/*        - name: ix1-whcdh-volume*/}}
-{{/*          persistentVolumeClaim:*/}}
-{{/*            claimName: ix1-whcdh-pvc*/}}
+        - name: ix1-whcdh-volume
+          persistentVolumeClaim:
+            claimName: ix1-whcdh-pvc
