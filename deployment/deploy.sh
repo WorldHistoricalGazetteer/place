@@ -55,9 +55,14 @@ if ! kubectl get secret kubeconfig -n management > /dev/null 2>&1; then
 
   # Create kubeconfig secret
   kubectl create secret generic kubeconfig \
-    --from-file=config=/tmp/kubeconfig \
-    -n management \
-    --dry-run=client -o yaml | kubectl apply -f -
+  --from-file=config=/tmp/kubeconfig \
+  -n management \
+  --dry-run=client -o yaml | \
+  kubectl label -f - --local app.kubernetes.io/managed-by=Helm -o yaml | \
+  kubectl annotate -f - --local \
+    meta.helm.sh/release-name=management-chart \
+    meta.helm.sh/release-namespace=management -o yaml | \
+  kubectl apply -f -
 
 else
   echo "Secret 'kubeconfig' already exists in the 'management' namespace, skipping creation."
@@ -67,9 +72,14 @@ fi
 if ! kubectl get secret github-token -n management > /dev/null 2>&1; then
   # Create a Secret for GitHub token
   kubectl create secret generic github-token \
-    --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN" \
-    -n management \
-    --dry-run=client -o yaml | kubectl apply -f -
+  --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN" \
+  -n management \
+  --dry-run=client -o yaml | \
+  kubectl label -f - --local app.kubernetes.io/managed-by=Helm -o yaml | \
+  kubectl annotate -f - --local \
+    meta.helm.sh/release-name=management-chart \
+    meta.helm.sh/release-namespace=management -o yaml | \
+  kubectl apply -f -
 else
   echo "Secret 'github-token' already exists in the 'management' namespace, skipping creation."
 fi
