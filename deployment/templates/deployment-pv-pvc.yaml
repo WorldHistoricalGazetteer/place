@@ -10,7 +10,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   nfs:
-    path: /ix1/whcdh
+    path: /mnt/tank/crc/whcdh
     server: ix1.crc.pitt.edu
     readOnly: false
   mountOptions:
