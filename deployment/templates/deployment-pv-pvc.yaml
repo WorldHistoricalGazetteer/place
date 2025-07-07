@@ -24,9 +24,10 @@ metadata:
   name: ix1-whcdh-pvc
   namespace: {{ .Release.Namespace }}
 spec:
-    accessModes:
-        - ReadWriteMany
-    resources:
-        requests:
-          storage: 5Ti
-    volumeName: ix1-whcdh-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Ti
+  volumeName: ix1-whcdh-pv
+  storageClassName: ""  # <-- REQUIRED for static binding
