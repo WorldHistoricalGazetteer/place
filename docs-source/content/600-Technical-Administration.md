@@ -124,6 +124,9 @@ during the initial setup.
   ```bash
     source ~/.bashrc
     ```
+  
+* A script will be run during the deployment process to bundle the variable into a Kubernetes secret, which will be
+  used by the management pod to access the private repository.
 
 ## Deploy Services
 

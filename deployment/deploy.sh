@@ -29,6 +29,13 @@ cd "$REPO_DIR"
 git sparse-checkout init --cone
 git sparse-checkout add deployment
 
+if ! kubectl get namespace management >/dev/null 2>&1; then
+  echo "Creating 'management' namespace..."
+  kubectl create namespace management
+else
+  echo "'management' namespace already exists."
+fi
+
 if ! kubectl get secret kubeconfig -n management > /dev/null 2>&1; then
 
   # Base64-encode the certificates
