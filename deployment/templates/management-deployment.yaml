@@ -62,5 +62,8 @@ spec:
           emptyDir:
             sizeLimit: 1Gi
         - name: ix1-whcdh-volume
-          persistentVolumeClaim:
-            claimName: ix1-whcdh-pvc
+{{/*          persistentVolumeClaim:*/}}
+{{/*            claimName: ix1-whcdh-pvc*/}}
+          hostPath:
+            path: /ix1/whcdh
+            type: Directory
