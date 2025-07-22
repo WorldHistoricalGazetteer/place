@@ -15,7 +15,7 @@ service:
 securityContext:
   fsGroup: 53644
   runAsUser: 0 #1001
-  runAsGroup: 1001
+  runAsGroup: 53644 #1001
 
 sizeLimit: 1Gi
 
