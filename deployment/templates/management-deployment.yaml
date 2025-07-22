@@ -31,19 +31,17 @@ spec:
             - "/bin/sh"
             - "-c"
             - |
-{{/*              apk add --no-cache python3 py3-pip rsync &&*/}}
-{{/*              python3 -m venv /venv &&*/}}
-{{/*              . /venv/bin/activate &&*/}}
-{{/*              pip install fastapi uvicorn &&*/}}
-{{/*              export KUBECONFIG=/root/.kube/config &&*/}}
-{{/*              cd /apps/repository &&*/}}
-{{/*              chmod +x *.sh &&*/}}
-{{/*              ./deployment/load-secrets.sh &&*/}}
-{{/*              ls -la &&*/}}
-{{/*              python ./deployment/app/api.py*/}}
-              echo "Listing /ix1/whcdh contents:" &&
               ls -la /ix1/whcdh &&
-              sleep 3600
+              apk add --no-cache python3 py3-pip rsync &&
+              python3 -m venv /venv &&
+              . /venv/bin/activate &&
+              pip install fastapi uvicorn &&
+              export KUBECONFIG=/root/.kube/config &&
+              cd /apps/repository &&
+              chmod +x *.sh &&
+              ./deployment/load-secrets.sh &&
+              ls -la &&
+              python ./deployment/app/api.py
           ports:
             - containerPort: 8000
           securityContext:
