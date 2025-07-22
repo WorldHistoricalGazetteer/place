@@ -1,0 +1,49 @@
+subdomain: "test.whgazetteer.org"
+namespace: "whg-staging"
+
+whgAffinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: whg-site
+              operator: In
+              values:
+                - "true"
+
+# Django configuration
+django:
+  githubBranch: "staging"  # deploy staging branch
+  replicaCount: 1
+  volumes:
+    - name: app
+      persistentVolumeClaim:
+        claimName: django-app-pvc-staging
+    - name: static-files
+      persistentVolumeClaim:
+        claimName: django-static-pvc-staging
+    - name: media-files
+      persistentVolumeClaim:
+        claimName: django-media-pvc-staging
+
+postgres:
+  dbName: "whgv3beta_staging"
+  pv:
+    postgres:
+      storage: 10Gi
+      path: /data/k8s/postgres-staging
+    pgbackrest:
+      storage: 10Gi
+      path: /data/k8s/pgbackrest-staging
+
+redis:
+  replicaCount: 1
+  # optionally change image tag or add PVC for staging if needed
+
+celery:
+  worker:
+    replicaCount: 1
+  beat:
+    replicaCount: 1
+  flower:
+    replicaCount: 1

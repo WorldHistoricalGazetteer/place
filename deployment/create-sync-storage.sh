@@ -1,9 +1,29 @@
 #!/bin/bash
 
-BASE_DIR="/ix1/whcdh"
+# This script prepares the persistent volumes for the WHG project by syncing directories and fetching backups.
+# It would typically be run on the Pitt VM, as outlined in `docs-source/content/600-Technical-Administration.md`
 
-export CLONE_DB=true
-export CLONE_TILES=true
+# Set parameters for cloning the database and tiles
+CLONE_DB=false  # Default to false; set to true if you want to clone the database
+CLONE_TILES=false  # Default to false; set to true if you want to clone the tiles
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --clone-db)
+      CLONE_DB="$2"
+      shift 2
+      ;;
+    --clone-tiles)
+      CLONE_TILES="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      exit 1
+      ;;
+  esac
+done
+
+BASE_DIR="/ix1/whcdh"
 export K8S_ID="PITT"
 
 # Define constants

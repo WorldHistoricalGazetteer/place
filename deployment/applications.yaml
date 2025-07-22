@@ -1,0 +1,10 @@
+# deployment/applications.yaml
+
+# These are the applications that are to be deployed in the cluster
+
+applications:
+  - name: whg
+  - name: whg-staging
+  - name: pgbackrest
+  - name: tileserver
+  - name: vespa

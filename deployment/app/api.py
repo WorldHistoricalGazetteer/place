@@ -1,17 +1,89 @@
-from fastapi import FastAPI
-import subprocess
+# deployment/app/api.py
+
 import logging
+import os
+import subprocess
+from contextlib import asynccontextmanager
+
+import yaml
+from fastapi import FastAPI, Request, Header, HTTPException
+
+from deployment.app.utils import ensure_pv_directories, get_pv_requirements
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+EXPECTED_TOKEN = os.environ.get("DEPLOY_TOKEN")  # Optional; only used for external auth
 
-@app.get("/install/{chart_name}")
-def install_chart(chart_name: str, namespace: str = "default"):
-    # TODO: This is as yet only a prototype. See Issue
-    command = f"helm install {chart_name} /apps/repository/{chart_name} --namespace {namespace}"
-    logger.info(f"Running command: {command}")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    applications_file = "/apps/repository/deployment/applications.yaml"
+
+    if os.path.exists(applications_file):
+        with open(applications_file) as f:
+            config = yaml.safe_load(f)
+
+        for app_entry in config.get("applications", []):
+            name = app_entry.get("name")
+            if name:
+                logger.info(f"Deploying {name} on startup")
+                run_deployment(name)
+    else:
+        logger.warning(f"No applications.yaml found at {applications_file}")
+
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/install/{application}")
+def install_chart(application: str, namespace: str = "default"):
+    """
+    For internal use from inside Pitt VM (no other authentication).
+    """
+    return run_deployment(application, namespace)
+
+
+@app.post("/deploy")
+async def deploy_chart(request: Request, authorization: str = Header(None)):
+    """
+    Secured endpoint for GitHub Actions.
+    """
+    if EXPECTED_TOKEN:
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing or malformed Authorization header")
+        token = authorization.split(" ", 1)[1]
+        if token != EXPECTED_TOKEN:
+            raise HTTPException(status_code=403, detail="Invalid token")
+    else:
+        logger.warning("DEPLOY_TOKEN not set; skipping token validation")
+
+    payload = await request.json()
+    chart = payload.get("application")
+    namespace = payload.get("namespace", "default")
+    return run_deployment(chart, namespace)
+
+
+def run_deployment(application: str, namespace: str = "default"):
+    application, _, version = application.partition("-")
+    path = f"/apps/repository/{application}/values{"-" + version if version else ''}.yaml"
+
+    subprocess.run(["git", "-C", path, "pull"], capture_output=True)
+
+    try:
+        required_volumes = get_pv_requirements(application, path, namespace)
+        if not required_volumes:
+            logger.info(f"No required volumes found in {path}")
+        else:
+            logger.info(f"Required volumes: {required_volumes}")
+            ensure_pv_directories(required_volumes)
+    except Exception as e:
+        return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
+
+    command = f"helm upgrade --install {application} {path} --namespace {namespace}"
+    logger.info(f"Running: {command}")
 
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
@@ -24,7 +96,8 @@ def install_chart(chart_name: str, namespace: str = "default"):
     else:
         return {"status": "error", "message": result.stderr}
 
+
 if __name__ == "__main__":
-    logger.info("Starting FastAPI server...")
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

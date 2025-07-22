@@ -118,17 +118,17 @@ during the initial setup.
   ```bash
   export GITHUB_TOKEN=<github-pat>
   ```
-  
+
 * After adding the token, run the following command to apply the changes:
 
   ```bash
     source ~/.bashrc
     ```
-  
+
 * A script will be run during the deployment process to bundle the variable into a Kubernetes secret, which will be
   used by the management pod to access the private repository.
 
-## Deploy Services
+## Deploy Management Pod
 
 ```bash
 bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/deploy.sh")
@@ -141,8 +141,30 @@ MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o j
 kubectl delete pod $MANAGEMENT_POD -n management
 ```
 
-* If the filesystem has not yet been configured, run `create-sync-storage.sh` as follows. It is preconfigured to sync
-  legacy files from DigitalOcean VMs, but this can be disabled by first editing the script.
+## ONE TIME ONLY: Prepare Storage using `create-sync-storage.sh`
+
+The script prepares persistent storage on the Pitt VM under the `/ix1/whcdh/` root directory, ensuring correct
+directory structure, ownership, and permissions expected by the Kubernetes pods. Anticipating future provision of 
+additional nodes, it selectively includes only those directories relevant to the current environment (`K8S_ID=PITT`).
+
+If remote syncing is enabled via environment variables (`CLONE_DB`, `CLONE_TILES`), the script uses SSH keys stored in
+the `whg-secret` to fetch selected files and directories — including the latest PostgreSQL backup, static/media files,
+and map tiles — from the legacy DigitalOcean hosts.
+
+The host-mounted base directory used for persistent storage at `/ix1/whcdh` is expected to be:
+
+- **Physically attached** or otherwise reliably accessible on the VM.
+- **Writable by Minikube and Kubernetes** via a hostPath volume mount.
+- **Backed up externally**.
+
+Each subdirectory under `/ix1/whcdh` corresponds to a Kubernetes volume mount for a specific service, such as:
+
+- postgres/ for database files
+- django-media/ for user-uploaded content
+- tiles/ and tileserver/ for map tiles
+- vespa-config/ and vespa-ingestion/ for Vespa deployment files
+
+Run this script after logging in to the `gazetteer` service account on the Pitt VM:
 
 ```bash
 # Wait for the Pod to be ready
@@ -154,8 +176,10 @@ kubectl exec -it "$MANAGEMENT_POD" -n management -c helm -- /bin/sh -c "
   cd /apps/repository/deployment &&
   ls -l &&
   chmod +x create-sync-storage.sh &&
-  ./create-sync-storage.sh"
+  ./create-sync-storage.sh --clone-db true --clone-tiles true"
 ```
+
+## Deploy Services
 
 * Access the management API service by visiting
   `http://localhost:8010/api/v1/namespaces/management/services/http:management-chart-service:8000/proxy/`
