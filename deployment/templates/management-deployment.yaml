@@ -31,12 +31,13 @@ spec:
             - "/bin/sh"
             - "-c"
             - |
-              ls -la /ix1/whcdh &&
-              ls -la /bin /usr/bin /usr/local/bin &&
-              which python3 || which python &&
-              which pip3 || which pip &&
-              helm version &&
-              kubectl version --client
+              ls -la /ix1/whcdh
+              echo "Commands in /usr/local/bin:"
+              ls -l /usr/local/bin
+              echo "Commands in /bin:"
+              ls -l /bin
+              echo "BusyBox applets:"
+              busybox --list
 {{/*              apk add --no-cache python3 py3-pip rsync &&*/}}
 {{/*              python3 -m venv /venv &&*/}}
 {{/*              . /venv/bin/activate &&*/}}
