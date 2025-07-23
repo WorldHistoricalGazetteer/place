@@ -18,8 +18,8 @@ upstream.
 | `api.whgazetteer.org`        | Public API                   | `public-api`       | 80    | Public          |
 | `admin.whgazetteer.org`      | Management API               | `management-api`   | 8000  | CI/CD, Pitt VPN |
 | `test.whgazetteer.org`       | Django test instance         | `django-test`      | 80    | Pitt VPN only   |
-| `glitchtip.whgazetteer.org`  | Error tracking               | `glitchtip`        | 3000  | Pitt VPN only   |
-| `plausible.whgazetteer.org`  | Usage analytics              | `plausible`        | 8000  | Pitt VPN only   |
+| `errors.whgazetteer.org`     | Error tracking               | `glitchtip`        | 3000  | Pitt VPN only   |
+| `analytics.whgazetteer.org`  | Usage analytics              | `plausible`        | 8000  | Pitt VPN only   |
 | `monitor.whgazetteer.org`    | Prometheus + Grafana metrics | `grafana`          | 3000  | Pitt VPN only   |
 
 Each of these Services will be exposed in the cluster according to the CRC team's preferred mechanism (e.g. `NodePort`,
