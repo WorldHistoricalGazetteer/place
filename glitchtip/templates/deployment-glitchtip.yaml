@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: plausible-analytics
+  name: glitchtip
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: plausible-analytics
+      app: glitchtip
   template:
     metadata:
       labels:
-        app: plausible-analytics
+        app: glitchtip
     spec:
       containers:
-        - name: plausible-analytics
+        - name: glitchtip
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           envFrom:
@@ -23,7 +23,7 @@ spec:
             - containerPort: 8000
           readinessProbe:
             httpGet:
-              path: /
+              path: /health/
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
