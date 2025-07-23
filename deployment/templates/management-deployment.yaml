@@ -26,7 +26,7 @@ spec:
               mountPath: /apps/repository
       containers:
         - name: helm
-          image: dtzar/helm-kubectl:latest
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           command:
             - "/bin/sh"
             - "-c"
@@ -38,16 +38,15 @@ spec:
               ls -l /bin
               echo "BusyBox applets:"
               busybox --list
-{{/*              apk add --no-cache python3 py3-pip rsync &&*/}}
-{{/*              python3 -m venv /venv &&*/}}
-{{/*              . /venv/bin/activate &&*/}}
-{{/*              pip install fastapi uvicorn &&*/}}
-{{/*              export KUBECONFIG=/root/.kube/config &&*/}}
-{{/*              cd /apps/repository &&*/}}
-{{/*              chmod +x *.sh &&*/}}
-{{/*              ./deployment/load-secrets.sh &&*/}}
-{{/*              ls -la &&*/}}
-{{/*              python ./deployment/app/api.py*/}}
+              python3 -m venv /venv &&
+              . /venv/bin/activate &&
+              pip install fastapi uvicorn &&
+              export KUBECONFIG=/root/.kube/config &&
+              cd /apps/repository &&
+              chmod +x *.sh &&
+              ./deployment/load-secrets.sh &&
+              ls -la &&
+              python ./deployment/app/api.py
           ports:
             - containerPort: 8000
           securityContext:

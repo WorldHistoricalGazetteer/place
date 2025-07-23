@@ -79,6 +79,12 @@ during the initial setup.
 
 * This will display a list of nodes and their status. A `Ready` status indicates that the node is functioning correctly.
 
+* If no nodes are listed, you may need to start Minikube first. You can do this by running:
+
+  ```bash
+  minikube start --nodes=4 --driver=podman --container-runtime=containerd --cpus=2 --memory=6144 --disk-size=8g --mount-string='/ix1/whcdh:/minikube-whcdh' --mount
+  ````
+
 ## Enabling Kubernetes Dashboard and other Addons
 
 * **Enable the required Minikube addons:** First, log in to the VM and run the following commands to enable the
@@ -141,7 +147,9 @@ MANAGEMENT_POD=$(kubectl get pods -n management -l app=gazetteer-management -o j
 kubectl delete pod $MANAGEMENT_POD -n management
 ```
 
-## ONE TIME ONLY: Prepare Storage using `create-sync-storage.sh`
+## Prepare Storage using `create-sync-storage.sh`
+
+> ### **Note:** This is to be deprecated in favour of a per-Deployment method in management pod API.
 
 The script prepares persistent storage on the Pitt VM under the `/ix1/whcdh/` root directory, ensuring correct
 directory structure, ownership, and permissions expected by the Kubernetes pods. Anticipating future provision of 

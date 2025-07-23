@@ -1,0 +1,84 @@
+# Pod for testing NFS mount and environment setup in Minikube
+# Usage:
+# 1. Ensure Minikube is running with NFS enabled.
+# 2. Copy and paste this entire file into a terminal
+
+kubectl delete pod test-pod --ignore-not-found
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod
+spec:
+  securityContext:
+    runAsUser: 1000
+    fsGroup: 53644
+  containers:
+  - name: test-container
+    image: worldhistoricalgazetteer/deployment:0.0.3
+    imagePullPolicy: Always
+    command:
+      - "/bin/sh"
+      - "-c"
+      - |
+        echo "===> Checking UID/GID"
+        id
+
+        echo "===> PATH and tool locations"
+        echo \$PATH
+        command -v helm kubectl jq yq bash python3 pip || true
+
+        echo "===> Helm and kubectl versions"
+        helm version || echo "Helm failed"
+        kubectl version --client || echo "Kubectl failed"
+
+        echo "===> jq/yq smoke tests"
+        echo '{"b":2}' | jq '.b'
+        echo 'a: 1' | yq '.a'
+
+        echo "===> Checking network connectivity"
+        ping -c 1 google.com || echo "Ping failed"
+        nslookup kubernetes.default.svc || echo "DNS resolution failed"
+        curl -s https://kubernetes.default.svc || echo "Cluster API curl failed"
+
+        echo "===> Checking KUBECONFIG"
+        ls -la /root/.kube || echo "/root/.kube does not exist"
+        cat /root/.kube/config || echo "Kubeconfig not found"
+
+        echo "===> Python and pip versions"
+        python3 --version
+        pip --version
+
+        echo "===> Setting up virtualenv"
+        python3 -m venv /venv &&
+        . /venv/bin/activate &&
+        pip install --quiet fastapi uvicorn &&
+        python -c "import fastapi; import uvicorn" &&
+        echo "FastAPI and Uvicorn import succeeded"
+
+        echo "===> Checking NFS mount permissions"
+        ls -ld /mnt/nfs
+        stat /mnt/nfs
+
+        echo "===> Testing NFS write/read lifecycle"
+        echo "Test NFS content \$(date)" > /mnt/nfs/test-write.txt &&
+        cat /mnt/nfs/test-write.txt &&
+        rm /mnt/nfs/test-write.txt || echo "NFS write/read failed"
+
+        echo "===> Simulating cron-style usage"
+        echo "cron test running at \$(date)" >> /mnt/nfs/cron-test.log
+
+        echo "===> Final directory listing"
+        ls -la /mnt/nfs
+
+        echo "===> Pod sleeping indefinitely"
+        tail -f /dev/null
+    volumeMounts:
+    - name: nfs-volume
+      mountPath: /mnt/nfs
+  volumes:
+  - name: nfs-volume
+    hostPath:
+      path: /minikube-whcdh
+      type: Directory
+EOF

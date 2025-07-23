@@ -167,8 +167,8 @@ postgres:
   replicaCount: 1
   image: "worldhistoricalgazetteer/postgis-pgbackrest"
   imageTag: "15-3.4"
-  cronImage: "bitnami/kubectl"
-  cronImageTag: "1.32.0"
+  cronImage: "worldhistoricalgazetteer/deployment"
+  cronImageTag: "0.0.3"
   imagePullPolicy: "IfNotPresent"
   user: 999
   group: 999
