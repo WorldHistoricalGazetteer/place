@@ -36,12 +36,22 @@ during the initial setup.
   command.
 
     ```bash
-    ssh username@gazetteer.crcd.pitt.edu
+    ssh -i /path/to/your/key username@gazetteer.crcd.pitt.edu
     ```
 
+* The `-i /path/to/your/key` can be omitted if you have only a few keys in your `~/.ssh` directory.
 * If you set a passphrase, you'll be prompted to enter it. Otherwise, you'll be logged in directly.
 * If you encounter a prompt regarding RedHat insights, that is normal, and is related to the operating system of the
   remote server.
+* You can simplify login by adding the following to your `~/.ssh/config` file, following which you can log in with just
+  `ssh pitt`:
+
+  ```plaintext
+  Host pitt
+      User username
+      IdentityFile /path/to/your/key
+      IdentitiesOnly yes
+  ```
 
 **4. Automatically Switch to the `gazetteer` Account (Using vi):**
 
@@ -152,7 +162,7 @@ kubectl delete pod $MANAGEMENT_POD -n management
 > ### **Note:** This is to be deprecated in favour of a per-Deployment method in management pod API.
 
 The script prepares persistent storage on the Pitt VM under the `/ix1/whcdh/` root directory, ensuring correct
-directory structure, ownership, and permissions expected by the Kubernetes pods. Anticipating future provision of 
+directory structure, ownership, and permissions expected by the Kubernetes pods. Anticipating future provision of
 additional nodes, it selectively includes only those directories relevant to the current environment (`K8S_ID=PITT`).
 
 If remote syncing is enabled via environment variables (`CLONE_DB`, `CLONE_TILES`), the script uses SSH keys stored in
