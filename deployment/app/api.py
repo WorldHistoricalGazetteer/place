@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import yaml
 from fastapi import FastAPI, Request, Header, HTTPException
 
-from deployment.app.utils import ensure_pv_directories, get_pv_requirements
+from volume_management import ensure_pv_directories, get_pv_requirements
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,7 +68,8 @@ async def deploy_chart(request: Request, authorization: str = Header(None)):
 
 def run_deployment(application: str, namespace: str = "default"):
     application, _, version = application.partition("-")
-    path = f"/apps/repository/{application}/values{"-" + version if version else ''}.yaml"
+    suffix = f"-{version}" if version else ""
+    path = f"/apps/repository/{application}/values{suffix}.yaml"
 
     subprocess.run(["git", "-C", path, "pull"], capture_output=True)
 
