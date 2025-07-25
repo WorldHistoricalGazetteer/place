@@ -4,16 +4,18 @@ import logging
 import os
 import subprocess
 from contextlib import asynccontextmanager
+from typing import Optional, List
 
 import yaml
 from fastapi import FastAPI, Request, Header, HTTPException
+from pydantic import BaseModel
 
 from volume_management import ensure_pv_directories, get_pv_requirements
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-EXPECTED_TOKEN = os.environ.get("DEPLOY_TOKEN")  # Optional; only used for external auth
+EXPECTED_TOKEN = os.getenv("NOTIFY_PITT_TOKEN")
 
 
 @asynccontextmanager
@@ -46,8 +48,17 @@ def install_chart(application: str, namespace: str = "default"):
     return run_deployment(application, namespace)
 
 
+class DeployNotification(BaseModel):
+    repository: str
+    commit: str
+    changed_directories: List[str]
+
+
 @app.post("/deploy")
-async def deploy_chart(request: Request, authorization: str = Header(None)):
+async def deploy_chart(
+        payload: DeployNotification,
+        authorization: Optional[str] = Header(None)
+):
     """
     Secured endpoint for GitHub Actions.
     """
@@ -58,12 +69,17 @@ async def deploy_chart(request: Request, authorization: str = Header(None)):
         if token != EXPECTED_TOKEN:
             raise HTTPException(status_code=403, detail="Invalid token")
     else:
-        logger.warning("DEPLOY_TOKEN not set; skipping token validation")
+        logger.warning("NOTIFY_PITT_TOKEN not set; skipping token validation")
 
-    payload = await request.json()
-    chart = payload.get("application")
-    namespace = payload.get("namespace", "default")
-    return run_deployment(chart, namespace)
+    logger.info(f"Deploy notification from {payload.repository} at {payload.commit}")
+    logger.info(f"Changed directories: {payload.changed_directories}")
+
+    # TODO: Use the appliction list which is parsed in lifespan
+    if "vespa" in payload.changed_directories:
+        return run_deployment("vespa", "default")
+    else:
+        logger.info("No deployment required.")
+        return {"status": "ignored", "reason": "no relevant source changed"}
 
 
 def run_deployment(application: str, namespace: str = "default"):

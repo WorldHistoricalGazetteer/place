@@ -1,0 +1,37 @@
+# .github/workflows/notify-pitt.yml
+name: Notify External Service
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed directories
+        id: dirs
+        run: |
+          changed_dirs=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
+            | grep / \
+            | cut -d/ -f1 \
+            | sort -u \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "changed_dirs=$changed_dirs" >> $GITHUB_OUTPUT
+
+      - name: Notify external service
+        run: |
+          curl -X POST https://admin.whgazetteer.org/deploy \
+            -H "Authorization: Bearer ${{ secrets.NOTIFY_PITT_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "commit": "${{ github.sha }}",
+              "changed_directories": ${{ steps.dirs.outputs.changed_dirs }}
+            }'
