@@ -18,21 +18,34 @@ logger = logging.getLogger(__name__)
 EXPECTED_TOKEN = os.getenv("NOTIFY_PITT_TOKEN")
 
 
+def get_applications():
+    """
+    Reads the applications.yaml file and returns a list of application names.
+    """
+    applications_file = "/apps/repository/deployment/applications.yaml"
+    if not os.path.exists(applications_file):
+        logger.warning(f"No applications.yaml found at {applications_file}")
+        return []
+
+    with open(applications_file) as f:
+        config = yaml.safe_load(f)
+
+    return [app.get("name") for app in config.get("applications", []) if app.get("name")]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    applications_file = "/apps/repository/deployment/applications.yaml"
+    """
+    Lifespan handler that deploys all applications defined in applications.yaml at startup.
+    """
+    application_names = get_applications()
 
-    if os.path.exists(applications_file):
-        with open(applications_file) as f:
-            config = yaml.safe_load(f)
-
-        for app_entry in config.get("applications", []):
-            name = app_entry.get("name")
-            if name:
-                logger.info(f"Deploying {name} on startup")
-                run_deployment(name)
+    if not application_names:
+        logger.warning("No applications to deploy at startup.")
     else:
-        logger.warning(f"No applications.yaml found at {applications_file}")
+        for name in application_names:
+            logger.info(f"Deploying {name} on startup")
+            run_deployment(name)
 
     yield
 
@@ -74,20 +87,28 @@ async def deploy_chart(
     logger.info(f"Deploy notification from {payload.repository} at {payload.commit}")
     logger.info(f"Changed directories: {payload.changed_directories}")
 
-    # TODO: Use the application list which is parsed in lifespan
-    if "vespa" in payload.changed_directories:
-        return run_deployment("vespa", "default")
-    else:
-        logger.info("No deployment required.")
-        return {"status": "ignored", "reason": "no relevant source changed"}
+    predeployed_applications = get_applications()
+    changed_apps = set(predeployed_applications) & set(payload.changed_directories)
+
+    if not changed_apps:
+        logger.info("No deployed applications changed; skipping re-deployment.")
+
+    # Log the applications that will be deployed
+    logger.info(f"Applications to deploy: {changed_apps}")
+
+    for app in changed_apps:
+        logger.info(f"Deploying {app} due to changes in {payload.changed_directories}")
+        result = run_deployment(app)
+        if result.get("status") != "success":
+            logger.error(f"Deployment failed for {app}: {result.get('message')}")
+        else:
+            logger.info(f"Deployment succeeded for {app}: {result.get('message')}")
 
 
 def run_deployment(application: str, namespace: str = "default"):
     application, _, version = application.partition("-")
     suffix = f"-{version}" if version else ""
     path = f"/apps/repository/{application}/values{suffix}.yaml"
-
-    subprocess.run(["git", "-C", path, "pull"], capture_output=True)
 
     try:
         required_volumes = get_pv_requirements(application, path, namespace)

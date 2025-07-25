@@ -15,15 +15,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect changed directories
+      - name: Detect changed directories (with branch suffix if not main)
         id: dirs
         run: |
+          branch_name="${GITHUB_REF##*/}"
           changed_dirs=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
             | grep / \
             | cut -d/ -f1 \
-            | sort -u \
-            | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "changed_dirs=$changed_dirs" >> $GITHUB_OUTPUT
+            | sort -u)
+
+          json=$(echo "$changed_dirs" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
+          echo "changed_dirs=$json" >> "$GITHUB_OUTPUT"
 
       - name: Notify external service
         run: |
@@ -34,7 +37,7 @@ jobs:
             -d '{
               "repository": "${{ github.repository }}",
               "commit": "${{ github.sha }}",
-              "changed_directories": ${{ steps.dirs.outputs.changed_dirs }}
+              "changed_directories": '${{ steps.dirs.outputs.changed_dirs }}'
             }'; then
               echo "::warning ::Notification failed (host unreachable or other error), continuing workflow."
           fi
