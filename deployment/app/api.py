@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from typing import Optional, List
 
 import yaml
-from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi import FastAPI, Request, Header, HTTPException, Query
 from pydantic import BaseModel
 
 from volume_management import ensure_pv_directories, get_pv_requirements
@@ -21,11 +21,11 @@ GITHUB_REPO = "https://github.com/WorldHistoricalGazetteer/place.git"
 CLONE_ROOT = "/apps/repository"
 
 
-def get_applications():
+def get_applications(check_exists = None):
     """
     Reads the applications.yaml file and returns a list of application names.
     """
-    applications_file = "/apps/repository/deployment/applications.yaml"
+    applications_file = f"{CLONE_ROOT}/deployment/applications.yaml"
     if not os.path.exists(applications_file):
         logger.warning(f"No applications.yaml found at {applications_file}")
         return []
@@ -33,7 +33,12 @@ def get_applications():
     with open(applications_file) as f:
         config = yaml.safe_load(f)
 
-    return [app.get("name") for app in config.get("applications", []) if app.get("name")]
+    applications = config.get("applications", [])
+
+    if check_exists:
+        return any(app.get("name") == check_exists for app in applications)
+
+    return [app.get("name") for app in applications if app.get("name")]
 
 
 @asynccontextmanager
@@ -61,7 +66,46 @@ def install_chart(application: str, namespace: str = "default"):
     """
     For internal use from inside Pitt VM (no other authentication).
     """
+    if not get_applications(check_exists=application):
+        return {"status": "error", "message": f"Application {application} not found in applications.yaml"}
+
     return run_deployment(application, namespace)
+
+
+@app.post("/rollback")
+def rollback_chart(
+        application: str,
+        revision: Optional[int] = Query(None, description="Revision number to roll back to"),
+        namespace: str = "default"
+):
+    """
+    Roll back a Helm release to a previous revision.
+    """
+    if not get_applications(check_exists=application):
+        return {"status": "error", "message": f"Application {application} not found in applications.yaml"}
+
+    command = ["helm", "rollback", application]
+    if revision:
+        command.append(str(revision))
+    command.extend(["--namespace", namespace])
+
+    logger.info(f"Rolling back {application} in namespace {namespace} "
+                f"{f'to revision {revision}' if revision else '(to previous revision)'}")
+
+    try:
+        result = subprocess.run(command, capture_output=True, text=True)
+    except Exception as e:
+        logger.error(f"Helm rollback command failed: {e}")
+        return {"status": "error", "message": str(e)}
+
+    logger.info(f"Return code: {result.returncode}")
+    logger.info(f"STDOUT: {result.stdout}")
+    logger.error(f"STDERR: {result.stderr}")
+
+    if result.returncode == 0:
+        return {"status": "success", "message": result.stdout}
+    else:
+        return {"status": "error", "message": result.stderr}
 
 
 class DeployNotification(BaseModel):
@@ -95,6 +139,7 @@ async def deploy_chart(
 
     if not changed_apps:
         logger.info("No deployed applications changed; skipping re-deployment.")
+        return {"status": "skipped", "message": "No matching deployed applications were modified."}
 
     # Log the applications that will be deployed
     logger.info(f"Applications to deploy: {changed_apps}")
@@ -117,25 +162,26 @@ def pull_application_directory(application: str):
 
     os.makedirs(CLONE_ROOT, exist_ok=True)
 
-    # Use sparse checkout to pull just the required directory
-    cmds = [
-        ["git", "init", application],
-        ["git", "-C", application, "remote", "add", "-f", "origin", GITHUB_REPO],
-        ["git", "-C", application, "config", "core.sparseCheckout", "true"],
-        ["bash", "-c", f"echo '{application}/*' > {application}/.git/info/sparse-checkout"],
-        ["git", "-C", application, "pull", "origin", "main"],
-    ]
+    try:
+        subprocess.run([
+            "git", "clone",
+            "--depth", "1",
+            "--filter=blob:none",
+            "--sparse",
+            GITHUB_REPO,
+            application
+        ], cwd=CLONE_ROOT, check=True)
 
-    for cmd in cmds:
-        logger.debug(f"Running command: {' '.join(cmd)}")
-        result = subprocess.run(cmd, cwd=CLONE_ROOT, capture_output=True, text=True)
-        if result.returncode != 0:
-            raise RuntimeError(f"Git command failed: {' '.join(cmd)}\n{result.stderr}")
+        subprocess.run([
+            "git", "-C", application, "sparse-checkout", "set", f"{application}/"
+        ], cwd=CLONE_ROOT, check=True)
 
-    logger.info(f"Successfully pulled application directory: {application}")
+        logger.info(f"Successfully pulled {application}/ into {repo_path}")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Git sparse clone failed: {e.stderr or e.stdout}")
 
 
-def run_deployment(application: str, namespace: str = "default"):
+def run_deployment(application: str, namespace: str = "default") -> dict:
     application, _, version = application.partition("-")
 
     try:
@@ -143,20 +189,21 @@ def run_deployment(application: str, namespace: str = "default"):
     except Exception as e:
         return {"status": "error", "message": f"Git pull failed: {e}"}
 
+    chart_dir = f"{CLONE_ROOT}/{application}"
     suffix = f"-{version}" if version else ""
-    path = f"/apps/repository/{application}/values{suffix}.yaml"
+    values_path = f"{chart_dir}/values{suffix}.yaml"
 
     try:
-        required_volumes = get_pv_requirements(application, path, namespace)
+        required_volumes = get_pv_requirements(application, values_path, namespace)
         if not required_volumes:
-            logger.info(f"No required volumes found in {path}")
+            logger.info(f"No required volumes found in {values_path}")
         else:
             logger.info(f"Required volumes: {required_volumes}")
             ensure_pv_directories(required_volumes)
     except Exception as e:
         return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
 
-    command = f"helm upgrade --install {application} {path} --namespace {namespace}"
+    command = f"helm upgrade --install {application} {chart_dir} -f {values_path} --namespace {namespace}"
     logger.info(f"Running: {command}")
 
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
