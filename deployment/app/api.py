@@ -2,6 +2,7 @@
 
 import logging
 import os
+import shutil
 import subprocess
 from contextlib import asynccontextmanager
 from typing import Optional, List
@@ -16,6 +17,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 EXPECTED_TOKEN = os.getenv("NOTIFY_PITT_TOKEN")
+GITHUB_REPO = "https://github.com/WorldHistoricalGazetteer/place.git"
+CLONE_ROOT = "/apps/repository"
 
 
 def get_applications():
@@ -105,8 +108,41 @@ async def deploy_chart(
             logger.info(f"Deployment succeeded for {app}: {result.get('message')}")
 
 
+def pull_application_directory(application: str):
+    repo_path = os.path.join(CLONE_ROOT, application)
+
+    if os.path.exists(repo_path):
+        logger.info(f"Removing existing directory at {repo_path}")
+        shutil.rmtree(repo_path)
+
+    os.makedirs(CLONE_ROOT, exist_ok=True)
+
+    # Use sparse checkout to pull just the required directory
+    cmds = [
+        ["git", "init", application],
+        ["git", "-C", application, "remote", "add", "-f", "origin", GITHUB_REPO],
+        ["git", "-C", application, "config", "core.sparseCheckout", "true"],
+        ["bash", "-c", f"echo '{application}/*' > {application}/.git/info/sparse-checkout"],
+        ["git", "-C", application, "pull", "origin", "main"],
+    ]
+
+    for cmd in cmds:
+        logger.debug(f"Running command: {' '.join(cmd)}")
+        result = subprocess.run(cmd, cwd=CLONE_ROOT, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"Git command failed: {' '.join(cmd)}\n{result.stderr}")
+
+    logger.info(f"Successfully pulled application directory: {application}")
+
+
 def run_deployment(application: str, namespace: str = "default"):
     application, _, version = application.partition("-")
+
+    try:
+        pull_application_directory(application)
+    except Exception as e:
+        return {"status": "error", "message": f"Git pull failed: {e}"}
+
     suffix = f"-{version}" if version else ""
     path = f"/apps/repository/{application}/values{suffix}.yaml"
 
