@@ -74,7 +74,7 @@ async def deploy_chart(
     logger.info(f"Deploy notification from {payload.repository} at {payload.commit}")
     logger.info(f"Changed directories: {payload.changed_directories}")
 
-    # TODO: Use the appliction list which is parsed in lifespan
+    # TODO: Use the application list which is parsed in lifespan
     if "vespa" in payload.changed_directories:
         return run_deployment("vespa", "default")
     else:

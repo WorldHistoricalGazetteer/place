@@ -27,11 +27,14 @@ jobs:
 
       - name: Notify external service
         run: |
-          curl -X POST https://admin.whgazetteer.org/deploy \
+          echo "Notifying https://admin.whgazetteer.org/deploy..."
+          if ! curl -s -f -X POST https://admin.whgazetteer.org/deploy \
             -H "Authorization: Bearer ${{ secrets.NOTIFY_PITT_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{
               "repository": "${{ github.repository }}",
               "commit": "${{ github.sha }}",
               "changed_directories": ${{ steps.dirs.outputs.changed_dirs }}
-            }'
+            }'; then
+              echo "::warning ::Notification failed (host unreachable or other error), continuing workflow."
+          fi
