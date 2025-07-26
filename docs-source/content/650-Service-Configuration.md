@@ -31,3 +31,6 @@ upstream.
 Each of these Services will be exposed in the cluster according to the CRC team's preferred mechanism (e.g. `NodePort`,
 `LoadBalancer`, or `ClusterIP` behind an internal ingress proxy). We will adjust our service exposure strategy
 accordingly once this is confirmed.
+
+The CI/CD pipeline is a simple secured GitHub Action which polls the management API, causing a pull of the relevant directories
+and re-application of the associated Helm charts (see `.github/workflows/notify-pitt.yml` and `deployment/app/api.py`).
