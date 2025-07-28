@@ -5,8 +5,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import os
 import asyncio
-from .streamer import StreamFetcher
-from .config import REMOTE_DATASET_CONFIGS
+from streamer import StreamFetcher
+from config import REMOTE_DATASET_CONFIGS
 
 logger = logging.getLogger(__name__)
 
