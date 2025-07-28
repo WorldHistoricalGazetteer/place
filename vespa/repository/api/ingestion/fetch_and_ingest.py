@@ -13,6 +13,10 @@ from tqdm import tqdm
 from streamer import StreamFetcher
 from config import REMOTE_DATASET_CONFIGS
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 BASE_DATA_DIR = "/ix1/whcdh/data"
