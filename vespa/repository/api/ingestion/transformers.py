@@ -2,19 +2,19 @@
 import json
 import logging
 
-from .subtransformers.geonames.names import NamesProcessor as GeonamesNamesProcessor
-from .subtransformers.loc.links import LinksProcessor as LOCLinksProcessor
-from .subtransformers.osm.names import NamesProcessor as OSMNamesProcessor
-from .subtransformers.osm.types import TypesProcessor as OSMTypesProcessor
-from .subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
-from .subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
-from .subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
-from .subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
-from .subtransformers.pleiades.years import YearsProcessor as PleiadesYearsProcessor
-from .subtransformers.tgn.linked_art import LinkedArtProcessor
-from .subtransformers.wikidata.locations import LocationsProcessor as WikidataLocationsProcessor
-from .subtransformers.wikidata.names import NamesProcessor as WikidataNamesProcessor
-from .subtransformers.wikidata.types import TypesProcessor as WikidataTypesProcessor
+from subtransformers.geonames.names import NamesProcessor as GeonamesNamesProcessor
+from subtransformers.loc.links import LinksProcessor as LOCLinksProcessor
+from subtransformers.osm.names import NamesProcessor as OSMNamesProcessor
+from subtransformers.osm.types import TypesProcessor as OSMTypesProcessor
+from subtransformers.pleiades.links import LinksProcessor as PleiadesLinksProcessor
+from subtransformers.pleiades.locations import LocationsProcessor as PleiadesLocationsProcessor
+from subtransformers.pleiades.names import NamesProcessor as PleiadesNamesProcessor
+from subtransformers.pleiades.types import TypesProcessor as PleiadesTypesProcessor
+from subtransformers.pleiades.years import YearsProcessor as PleiadesYearsProcessor
+from subtransformers.tgn.linked_art import LinkedArtProcessor
+from subtransformers.wikidata.locations import LocationsProcessor as WikidataLocationsProcessor
+from subtransformers.wikidata.names import NamesProcessor as WikidataNamesProcessor
+from subtransformers.wikidata.types import TypesProcessor as WikidataTypesProcessor
 from ..gis.processor import GeometryProcessor
 from ..gis.utils import geo_to_cartesian
 from ..utils import get_uuid

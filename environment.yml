@@ -22,6 +22,9 @@ dependencies:
   - xmltodict~=0.14.2
   - ijson~=3.3.0
   - tqdm~=4.66.4
+  - duckdb>=0.10.0
+  - uvicorn
+  - aiofiles
   - pip
 
   - pip:
@@ -30,3 +33,5 @@ dependencies:
       - kubernetes==31.0.0
       - pyvespa==0.54.0
       - httpx==0.28.1
+      - msgpack==1.0.8
+      - msgpack_numpy==0.4.8

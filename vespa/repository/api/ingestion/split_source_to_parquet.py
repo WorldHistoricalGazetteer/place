@@ -1,5 +1,9 @@
 import logging
+import re
+import subprocess
 import sys
+from pathlib import Path
+
 import pyarrow as pa
 import pyarrow.parquet as pq
 import os
@@ -14,17 +18,133 @@ logger = logging.getLogger(__name__)
 BATCH_SIZE = 10_000
 BASE_DATA_DIR = "/ix1/whcdh/data"
 
+BATCH_CPUS_PER_TASK = 2  # 2 CPUs for each batch job
+BATCH_MEMORY_PER_TASK = "4G"  # 4GB memory for each batch job
+BATCH_TIME_LIMIT = "01:00:00"  # 1 hour for each batch job
+
 
 def get_dataset_config(name):
     return next(cfg for cfg in REMOTE_DATASET_CONFIGS if cfg["dataset_name"] == name)
+
+
+def extract_job_id_from_output(output):
+    """Extracts the job ID from the SLURM output string."""
+    match = re.search(r"Submitted batch job (\d+)", output)
+    if not match:
+        raise RuntimeError("Failed to extract SLURM job ID")
+    return match.group(1)
+
+
+def submit_slurm_array_job(manifest_path):
+    job_script = f"""#!/bin/bash
+        #SBATCH --job-name=parquet_transform
+        #SBATCH --output=slurm_logs/%x-%A_%a.out
+        #SBATCH --error=slurm_logs/%x-%A_%a.err
+        #SBATCH --time={BATCH_TIME_LIMIT}
+        #SBATCH --cpus-per-task={BATCH_CPUS_PER_TASK}
+        #SBATCH --mem={BATCH_MEMORY_PER_TASK}   
+        #SBATCH --array=0-{{N}}
+    
+        source /home/gazetteer/miniconda/etc/profile.d/conda.sh
+        conda activate vespa-env
+        cd  ~/repository/place/vespa/repository/api/ingestion/slurm
+        
+        batch_file=$(sed -n "${{SLURM_ARRAY_TASK_ID}}p" {manifest_path})
+        db_path="${{batch_file%.parquet}}.duckdb"
+        
+        python process_parquet_batch.py "$batch_file" "$db_path"
+        """
+
+    with open(manifest_path, "r") as f:
+        num_tasks = sum(1 for _ in f)
+
+    if num_tasks == 0:
+        logger.warning("No batch files to submit.")
+        return
+
+    # Write and submit array job
+    os.makedirs("slurm_logs", exist_ok=True)
+    script_path = "slurm_array_job.sh"
+    with open(script_path, "w") as f:
+        f.write(job_script.replace("{N}", str(num_tasks - 1)))
+
+    result = subprocess.run(["sbatch", script_path], capture_output=True, text=True)
+    logger.info(f"Submitted array job: {result.stdout.strip()}")
+
+    # Extract job ID
+    return extract_job_id_from_output(result.stdout)
+
+
+def submit_slurm_merge_db_job(output_dir, dependency_job_id):
+    # Submit a merge job after all batch jobs are done
+    merge_script = f"""#!/bin/bash
+        #SBATCH --job-name=merge_duckdbs
+        #SBATCH --output=slurm_logs/merge-%j.out
+        #SBATCH --error=slurm_logs/merge-%j.err
+        #SBATCH --time={BATCH_TIME_LIMIT}
+        #SBATCH --cpus-per-task={BATCH_CPUS_PER_TASK}
+        #SBATCH --mem={BATCH_MEMORY_PER_TASK}
+        #SBATCH --dependency==afterok:{dependency_job_id}
+        #SBATCH --nice=100
+    
+        source /home/gazetteer/miniconda/etc/profile.d/conda.sh
+        conda activate vespa-env
+        cd  ~/repository/place/vespa/repository/api/ingestion/slurm
+    
+        echo "Merging DuckDB files..."
+        python merge_duckdbs.py "{output_dir}" "{output_dir}/merged.duckdb"
+        
+        echo "Deleting per-batch DuckDBs..."
+        find "{output_dir}" -type f -name "*.duckdb" ! -name "merged.duckdb" -delete
+        """
+
+    merge_script_path = "slurm_merge_duckdbs.sh"
+    with open(merge_script_path, "w") as f:
+        f.write(merge_script)
+
+    result = subprocess.run(["sbatch", merge_script_path])
+    logger.info(f"Submitted SLURM job to merge all DuckDBs into {output_dir}/merged.duckdb: {result.stdout.strip()}")
+
+    # Extract job ID
+    return extract_job_id_from_output(result.stdout)
+
+
+def submit_slurm_ndmsgpack_job(merged_db_path, output_dir, dependency_job_id):
+    ndmsgpack_script = f"""#!/bin/bash
+        #SBATCH --job-name=ndmsgpack_export
+        #SBATCH --output=slurm_logs/ndmsgpack-%j.out
+        #SBATCH --error=slurm_logs/ndmsgpack-%j.err
+        #SBATCH --time={BATCH_TIME_LIMIT}
+        #SBATCH --cpus-per-task={BATCH_CPUS_PER_TASK}
+        #SBATCH --mem={BATCH_MEMORY_PER_TASK}
+        #SBATCH --dependency=afterok:{dependency_job_id}
+        #SBATCH --nice=100
+
+        source /home/gazetteer/miniconda/etc/profile.d/conda.sh
+        conda activate vespa-env
+        cd ~/repository/place/vespa/repository/api/ingestion/slurm
+
+        echo "Generating NDMessagePack from {merged_db_path}..."
+        python export_to_msgpack.py "{merged_db_path}" "{output_dir}/vespa.ndmsgpack"
+    """
+
+    script_path = "slurm_ndmsgpack_export.sh"
+    with open(script_path, "w") as f:
+        f.write(ndmsgpack_script)
+
+    result = subprocess.run(["sbatch", script_path], capture_output=True, text=True)
+    logger.info(f"Submitted SLURM job to export NDMessagePack to {output_dir}/vespa.ndmsgpack: {result.stdout.strip()}")
+
+    return extract_job_id_from_output(result.stdout)
+
 
 
 async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
     cfg = get_dataset_config(dataset_name)
 
     if os.path.exists(output_dir):
-        logger.error(f"Output directory {output_dir} already exists. Please remove it before running.")
-        sys.exit(1)
+        logger.info(f"Output directory {output_dir} already exists. Skipping `fetch_and_split`.")
+        return
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -67,6 +187,38 @@ if __name__ == "__main__":
         print("Usage: python split_source_to_parquet.py <dataset_name> [output_dir]")
         sys.exit(1)
 
-    ds = sys.argv[1]
-    out = sys.argv[2] if len(sys.argv) > 2 else f"{BASE_DATA_DIR}/{ds.lower()}"
-    asyncio.run(fetch_and_split(ds, out))
+    dataset = sys.argv[1]
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else f"{BASE_DATA_DIR}/{dataset.lower()}"
+
+    asyncio.run(fetch_and_split(dataset, output_dir))
+    logger.info(f"Dataset {dataset} split into Parquet files at {output_dir}")
+
+    # Discover all batch files recursively and write to manifest
+    batch_files = list(Path(output_dir).rglob("*.parquet"))
+    manifest_path = Path(output_dir) / "batch_manifest.txt"
+    with open(manifest_path, "w") as f:
+        for path in batch_files:
+            f.write(str(path.resolve()) + "\n")
+
+    if not batch_files:
+        logger.warning("No batch files found. Exiting.")
+        sys.exit(0)
+
+    logger.info(f"Discovered {len(batch_files)} batches. Writing SLURM array job.")
+    array_job_id = submit_slurm_array_job(manifest_path)
+    merge_job_id = submit_slurm_merge_db_job(output_dir, array_job_id)
+    ndmsgpack_job_id = submit_slurm_ndmsgpack_job(f"{output_dir}/merged.duckdb", output_dir, merge_job_id)
+
+    # Discover all NDMessagePack files and write to manifest
+    ndmsgpack_files = list(Path(output_dir).rglob("*.ndmsgpack.gz"))
+    ndmsgpack_manifest_path = Path(output_dir) / "ndmsgpack_manifest.txt"
+    with open(ndmsgpack_manifest_path, "w") as f:
+        for path in ndmsgpack_files:
+            f.write(str(path.resolve()) + "\n")
+
+    if not ndmsgpack_files:
+        logger.warning("No NDMessagePack files found. Exiting.")
+        sys.exit(0)
+
+    logger.info(f"Discovered {len(ndmsgpack_files)} NDMessagePack files. Writing SLURM array job.")
+    # TODO: Implement SLURM job for submission of NDMessagePack files to Vespa
