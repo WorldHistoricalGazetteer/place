@@ -172,11 +172,11 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         pbar = tqdm(desc=f"Processing {label}", unit="items", ncols=80)
 
         async for item in items_iter:
+            pbar.update(1)
             if not is_wanted(item):
                 continue
 
             batch.append(item)
-            pbar.update(1)
             if len(batch) >= batch_size:
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(batch), path)
@@ -215,6 +215,8 @@ if __name__ == "__main__":
     if not batch_files:
         logger.warning("No batch files found. Exiting.")
         sys.exit(0)
+
+    exit(101)  #  Pending enablement of slurm
 
     logger.info(f"Discovered {len(batch_files)} batches. Writing SLURM array job.")
     array_job_id = submit_slurm_array_job(manifest_path)
