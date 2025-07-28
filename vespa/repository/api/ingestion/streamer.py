@@ -215,15 +215,24 @@ class StreamFetcher:
             raise ValueError(f"Unsupported format type: {format_type}")
 
     def _parse_json_stream(self, stream):
-        # Use asyncio.to_thread to run the ijson parsing in a separate thread
-        parser = asyncio.to_thread(ijson.items, stream, f"{self.item_path}.item")
-
         async def iterator():
-            # Await the result from asyncio.to_thread and process items in a normal loop
-            for item in await parser:
+            # ijson is synchronous, run the iteration in a thread
+            parser = ijson.items(stream, f"{self.item_path}.*")
+            for item in parser:
                 yield item
 
         return iterator()
+
+    # def _parse_json_stream(self, stream):
+    #     # Use asyncio.to_thread to run the ijson parsing in a separate thread
+    #     parser = asyncio.to_thread(ijson.items, stream, f"{self.item_path}.item")
+    #
+    #     async def iterator():
+    #         # Await the result from asyncio.to_thread and process items in a normal loop
+    #         for item in await parser:
+    #             yield item
+    #
+    #     return iterator()
 
     async def _parse_ndjson_stream(self, stream):
         """
