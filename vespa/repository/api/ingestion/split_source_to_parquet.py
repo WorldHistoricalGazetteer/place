@@ -4,7 +4,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import os
 import asyncio
-from tqdm.asyncio import tqdm_asyncio
+
+from tqdm import tqdm
 from streamer import StreamFetcher
 from config import REMOTE_DATASET_CONFIGS
 
@@ -32,11 +33,11 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         items_iter = sf.get_items()
         batch, batch_idx = [], 0
 
-        pbar = tqdm_asyncio(desc=f"Processing {label}", unit="items", ncols=80)
+        pbar = tqdm(desc=f"Processing {label}", unit="items", ncols=80)
 
         async for item in items_iter:
             batch.append(item)
-            await pbar.update(1)
+            pbar.update(1)
             if len(batch) >= batch_size:
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(batch), path)
@@ -50,7 +51,7 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
             batch_idx += 1
             batch.clear()
 
-        await pbar.close()
+        pbar.close()
         logger.info(f"Wrote {batch_idx} shard files to {file_out_dir}")
 
 
