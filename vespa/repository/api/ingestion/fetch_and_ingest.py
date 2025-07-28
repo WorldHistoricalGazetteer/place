@@ -15,9 +15,9 @@ from config import REMOTE_DATASET_CONFIGS
 
 logger = logging.getLogger(__name__)
 
-BATCH_SIZE = 10_000
 BASE_DATA_DIR = "/ix1/whcdh/data"
 
+BATCH_SIZE = 10_000
 BATCH_CPUS_PER_TASK = 2  # 2 CPUs for each batch job
 BATCH_MEMORY_PER_TASK = "4G"  # 4GB memory for each batch job
 BATCH_TIME_LIMIT = "01:00:00"  # 1 hour for each batch job
@@ -150,13 +150,17 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
     for file_cfg in cfg["files"]:
         file_name = file_cfg.get("file_name") or os.path.basename(file_cfg["url"])
-        label = os.path.splitext(os.path.basename(file_name))[0]
+        label = Path(file_name).with_suffix('').stem
         file_out_dir = os.path.join(output_dir, label)
         os.makedirs(file_out_dir, exist_ok=True)
 
         sf = StreamFetcher(file_cfg)
         sf.ingestion_path = file_out_dir
         sf.local_name = file_name
+
+        logger.info(f"Fetching {label} from {file_cfg['url']}...")
+        exit(99)
+
         items_iter = sf.get_items()
         batch, batch_idx = [], 0
 
