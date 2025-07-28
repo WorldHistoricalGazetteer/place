@@ -146,8 +146,8 @@ def submit_slurm_ndmsgpack_job(merged_db_path, output_dir, dependency_job_id):
 async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
     cfg = get_dataset_config(dataset_name)
 
-    if os.path.exists(output_dir):
-        logger.info(f"Output directory {output_dir} already exists. Skipping `fetch_and_split`.")
+    if os.path.exists(output_dir) and list(Path(output_dir).rglob("*.parquet")):
+        logger.info(f"Output directory {output_dir} already contains parquet files. Skipping `fetch_and_split`.")
         return
 
     os.makedirs(output_dir, exist_ok=True)
