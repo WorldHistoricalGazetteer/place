@@ -21,6 +21,11 @@ def get_dataset_config(name):
 
 async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
     cfg = get_dataset_config(dataset_name)
+
+    if os.path.exists(output_dir):
+        logger.error(f"Output directory {output_dir} already exists. Please remove it before running.")
+        sys.exit(1)
+
     os.makedirs(output_dir, exist_ok=True)
 
     for file_cfg in cfg["files"]:
@@ -56,6 +61,10 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
 
 if __name__ == "__main__":
-    ds = sys.argv[1] if len(sys.argv) > 1 else "GeoNames"
-    out = sys.argv[2] if len(sys.argv) > 2 else f"{BASE_DATA_DIR}/{ds.lower()}/batches"
+    if len(sys.argv) < 2:
+        print("Usage: python split_source_to_parquet.py <dataset_name> [output_dir]")
+        sys.exit(1)
+
+    ds = sys.argv[1]
+    out = sys.argv[2] if len(sys.argv) > 2 else f"{BASE_DATA_DIR}/{ds.lower()}"
     asyncio.run(fetch_and_split(ds, out))
