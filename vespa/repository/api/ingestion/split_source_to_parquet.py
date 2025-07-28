@@ -36,6 +36,7 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
         sf = StreamFetcher(file_cfg)
         sf.ingestion_path = file_out_dir
+        sf.local_name = file_name
         items_iter = sf.get_items()
         batch, batch_idx = [], 0
 
