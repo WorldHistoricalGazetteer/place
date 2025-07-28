@@ -1,10 +1,10 @@
 import logging
 import sys
-
 import pyarrow as pa
 import pyarrow.parquet as pq
 import os
 import asyncio
+from tqdm.asyncio import tqdm_asyncio
 from streamer import StreamFetcher
 from config import REMOTE_DATASET_CONFIGS
 
@@ -21,26 +21,37 @@ def get_dataset_config(name):
 async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
     cfg = get_dataset_config(dataset_name)
     os.makedirs(output_dir, exist_ok=True)
-    batch, batch_idx = [], 0
 
     for file_cfg in cfg["files"]:
+        label = os.path.splitext(os.path.basename(file_cfg["file_name"]))[0]
+        file_out_dir = os.path.join(output_dir, label)
+        os.makedirs(file_out_dir, exist_ok=True)
+
         sf = StreamFetcher(file_cfg)
+        sf.ingestion_path = file_out_dir
         items_iter = sf.get_items()
+        batch, batch_idx = [], 0
+
+        pbar = tqdm_asyncio(desc=f"Processing {label}", unit="items", ncols=80)
+
         async for item in items_iter:
             batch.append(item)
+            await pbar.update(1)
             if len(batch) >= batch_size:
-                path = os.path.join(output_dir, f"batch_{batch_idx:06}.parquet")
+                path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(batch), path)
                 batch.clear()
                 batch_idx += 1
 
         # flush remaining
         if batch:
-            path = os.path.join(output_dir, f"batch_{batch_idx:06}.parquet")
+            path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
             pq.write_table(pa.Table.from_pylist(batch), path)
             batch_idx += 1
             batch.clear()
-    print(f"Wrote {batch_idx} shard files to {output_dir}")
+
+        await pbar.close()
+        logger.info(f"Wrote {batch_idx} shard files to {file_out_dir}")
 
 
 if __name__ == "__main__":
