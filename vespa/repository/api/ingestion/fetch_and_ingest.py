@@ -162,14 +162,19 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         sf.ingestion_path = file_out_dir
         sf.local_name = file_name
 
+        filters = file_cfg.get("filters", [])
+        def is_wanted(doc):
+            return all(f(doc) for f in filters)
+
         items_iter = sf.get_items()
         batch, batch_idx = [], 0
 
-        logger.info(f"Fetching {len(items_iter)} items...")
-        exit(99)
         pbar = tqdm(desc=f"Processing {label}", unit="items", ncols=80)
 
         async for item in items_iter:
+            if not is_wanted(item):
+                continue
+
             batch.append(item)
             pbar.update(1)
             if len(batch) >= batch_size:
