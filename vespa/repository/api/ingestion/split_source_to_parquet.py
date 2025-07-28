@@ -29,7 +29,7 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
     os.makedirs(output_dir, exist_ok=True)
 
     for file_cfg in cfg["files"]:
-        file_name = file_cfg.get("file_name") or file_cfg.get("local_name") or os.path.basename(file_cfg["url"])
+        file_name = file_cfg.get("file_name") or os.path.basename(file_cfg["url"])
         label = os.path.splitext(os.path.basename(file_name))[0]
         file_out_dir = os.path.join(output_dir, label)
         os.makedirs(file_out_dir, exist_ok=True)
