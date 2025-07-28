@@ -70,7 +70,7 @@ class StreamFetcher:
         self.fieldnames = file.get('fieldnames', None)  # Fieldnames for CSV files
         self.delimiter = file.get('delimiter', '\t')  # Delimiter for CSV files
         self.local_name = file.get('local_name', None)  # Local name for the downloaded file
-        self.ingestion_path = "/ingestion"  # Path to the ingestion folder
+        self.ingestion_path = "/ix1/whcdh/data"  # Path to the ingestion folder
         self.stream = None
 
     def close_stream(self):

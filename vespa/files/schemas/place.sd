@@ -228,7 +228,9 @@ schema place {
         inputs {
             query(query_vector) tensor<float>(x[3])
         }
-        first-phase: closeness(field, cartesian)
+        first-phase {
+            expression: closeness(cartesian)
+        }
     }
 
 }
