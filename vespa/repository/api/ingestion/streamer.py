@@ -12,7 +12,10 @@ import urllib.parse
 import zipfile
 
 import ijson
+import requests
 import xmltodict
+
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -113,19 +116,32 @@ class StreamFetcher:
             return file_path
 
         file_path = self.get_file_path()
-        if not os.path.exists(file_path):
-            self.logger.info(f"Downloading file from {self.file_url} to {file_path}")
-            result = subprocess.run([
-                "aria2c", "--dir", os.path.dirname(file_path), "--out", os.path.basename(file_path), self.file_url
-            ], check=True)
-            if result.returncode == 0:
-                self.logger.info(f"File downloaded successfully to {file_path}")
-            else:
-                self.logger.error(f"Failed to download file from {self.file_url}")
-                raise Exception("File download failed")
-        else:
+        if os.path.exists(file_path):
             self.logger.info(f"File already exists at {file_path}, skipping download.")
-        return file_path
+            return file_path
+
+        self.logger.info(f"Downloading file from {self.file_url} to {file_path}")
+
+        try:
+            with requests.get(self.file_url, stream=True, timeout=30) as r:
+                r.raise_for_status()
+                total = int(r.headers.get('content-length', 0))
+                with open(file_path, 'wb') as f, tqdm(
+                        desc=os.path.basename(file_path),
+                        total=total,
+                        unit='B',
+                        unit_scale=True,
+                        unit_divisor=1024,
+                ) as bar:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                        bar.update(len(chunk))
+            self.logger.info(f"File downloaded successfully to {file_path}")
+            return file_path
+
+        except requests.RequestException as e:
+            self.logger.error(f"Failed to download file: {e}")
+            raise
 
     def get_stream(self):
         try:
