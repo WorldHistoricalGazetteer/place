@@ -25,6 +25,7 @@ dependencies:
   - duckdb>=0.10.0
   - uvicorn
   - aiofiles
+  - jq
   - pip
 
   - pip:
