@@ -1,4 +1,5 @@
 import gzip, json
+from pprint import pprint
 from urllib.request import urlopen
 
 url = 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz'
@@ -14,4 +15,8 @@ with urlopen(url) as r:
                 obj = json.loads(ln)
 
             print(obj['id'], end=' ')
+
+            pprint(obj)
+
+
             if j == 5: break
