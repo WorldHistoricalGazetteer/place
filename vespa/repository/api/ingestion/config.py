@@ -84,7 +84,7 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'Wikidata is a free and open knowledge base that can be read and edited by both humans and machines. https://www.wikidata.org/',
         'files': [
             {
-                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz',  # 133GB
+                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz',  # 148GB
                 'local_name': '/data/k8s/vespa-ingestion/wikidata.json.gz',  # 133GB
                 'file_type': 'json',
                 'item_path': 'entities',

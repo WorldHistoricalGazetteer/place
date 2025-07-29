@@ -67,7 +67,7 @@ class StreamFetcher:
         self.logger = logging.getLogger(__name__)
         self.file_url = file['url']  # URL of the file to fetch
         self.file_type = file['file_type']  # Type of the file (json, csv, xml)
-        self.filter = file.get('filter', None)  # Filter to apply to triples
+        self.filters = file.get('filters', [])  # Filter to apply to triples
         self.file_name = file.get('file_name', None)  # Name of required file inside a ZIP archive
         self.item_path = file.get('item_path', None)  # Path to the items in a JSON file
         self.fieldnames = file.get('fieldnames', None)  # Fieldnames for CSV files
@@ -195,33 +195,40 @@ class StreamFetcher:
         """
         Parse the stream and yield items based on format (json, csv, or xml).
         """
-        self.stream = self.get_stream()
-        format_type = self.file_type
-
-        if format_type in ['json', 'geojson']:
-            return self._parse_json_stream(self.stream)
-        elif format_type == 'ndjson':
-            return self._parse_ndjson_stream(self.stream)
-        elif format_type == 'geojsonseq':
-            return self._parse_geojsonseq_stream(self.stream)
-        elif format_type in ['csv', 'tsv', 'txt']:
-            return self._parse_csv_stream(self.stream)
-        elif format_type == 'xml':
-            return self._parse_xml_stream(self.stream)
-        elif format_type == 'nt':
-            return self._parse_nt_stream(self.stream)
+        # For this specific Wikidata file, use a specialised parsing method
+        if self.file_url == "https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz" and \
+                self.file_type == 'json' and self.item_path == 'entities':
+            return self._parse_wikidata_entities_stream()
         else:
-            self.logger.error(f"Unsupported format type: {format_type}")
-            raise ValueError(f"Unsupported format type: {format_type}")
+            self.stream = self.get_stream()  # Call get_stream for other file types
+            format_type = self.file_type
 
-    def _parse_json_stream(self, stream):
-        async def iterator():
-            # ijson is synchronous, run the iteration in a thread
-            parser = ijson.items(stream, f"{self.item_path}.*")
-            for item in parser:
-                yield item
+            if format_type in ['json', 'geojson']:
+                return self._parse_json_stream(self.stream)
+            elif format_type == 'ndjson':
+                return self._parse_ndjson_stream(self.stream)
+            elif format_type == 'geojsonseq':
+                return self._parse_geojsonseq_stream(self.stream)
+            elif format_type in ['csv', 'tsv', 'txt']:
+                return self._parse_csv_stream(self.stream)
+            elif format_type == 'xml':
+                return self._parse_xml_stream(self.stream)
+            elif format_type == 'nt':
+                return self._parse_nt_stream(self.stream)
+            else:
+                self.logger.error(f"Unsupported format type: {format_type}")
+                raise ValueError(f"Unsupported format type: {format_type}")
 
-        return iterator()
+    async def _parse_json_stream(self, stream):
+        # ijson is synchronous, run the iteration in a thread to avoid blocking the event loop
+        loop = asyncio.get_running_loop()
+        iterator = await loop.run_in_executor(
+            None,  # Use default ThreadPoolExecutor
+            lambda: ijson.items(stream, f"{self.item_path}.*")
+        )
+
+        for item in iterator:
+            yield item
 
     # def _parse_json_stream(self, stream):
     #     # Use asyncio.to_thread to run the ijson parsing in a separate thread
@@ -233,6 +240,69 @@ class StreamFetcher:
     #             yield item
     #
     #     return iterator()
+
+    async def _parse_wikidata_entities_stream(self):
+        """
+        Specialized method to parse the Wikidata latest-all.json.gz using jq and apply filters.
+        """
+        file_path = self._download_file()  # Ensure file is downloaded locally
+
+        # Construct the jq command to decompress and extract entities
+        # `jq -c '.entities | to_entries[] | .value'` extracts each entity as a compact JSON line.
+        cmd = ["gzip", "-dc", file_path, "|", "jq", "-c", ".entities | to_entries[] | .value"]
+
+        self.logger.info(f"Starting jq process: {' '.join(cmd)}")
+        process = None
+        try:
+            # Use shell=True for piping. For untrusted input, prefer separate subprocesses.
+            process = await asyncio.create_subprocess_shell(
+                ' '.join(cmd),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            # Assign the process to self.stream for proper cleanup in close_stream if needed
+            self.stream = process.stdout  # Consider this the stream for closing purposes
+
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                try:
+                    doc = json.loads(line.decode('utf-8'))
+
+                    # Apply all defined filters
+                    should_include = True
+                    for filter_func in self.filters:
+                        if not filter_func(doc):
+                            should_include = False
+                            break  # No need to check other filters if one fails
+
+                    if should_include:
+                        yield doc
+
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Error decoding JSON line from jq output: {line}. Error: {e}")
+                    continue
+
+            # Wait for the process to complete and check for errors
+            stdout, stderr = await process.communicate()
+            if process.returncode != 0:
+                self.logger.error(f"jq command failed with error: {stderr.decode('utf-8')}")
+                raise RuntimeError(f"jq process failed: {stderr.decode('utf-8')}")
+
+        except FileNotFoundError:
+            self.logger.error("`jq` command not found. Please ensure `jq` is installed and in your PATH.")
+            raise
+        except Exception as e:
+            self.logger.error(f"Error running jq for Wikidata parsing: {e}")
+            raise
+        finally:
+            if process and process.returncode is None:  # Process is still running
+                self.logger.warning("Terminating jq process.")
+                process.terminate()
+                await process.wait()  # Wait for it to actually terminate
+            self.close_stream()  # Ensure cleanup even if process failed/finished
 
     async def _parse_ndjson_stream(self, stream):
         """
@@ -284,6 +354,7 @@ class StreamFetcher:
 
         async def async_generator():
             for row in csv_reader:
+                await asyncio.sleep(0) # Yield control to the event loop
                 yield row
 
         return async_generator()
@@ -329,8 +400,11 @@ class StreamFetcher:
             try:
                 # Split N-Triple line into three components (subject, predicate, object)
                 subject, predicate, obj = self._split_triple(line)
-                if self.filter and not predicate in self.filter:
-                    continue
+
+                # TODO: This would work only on a single filter, not a list of filters
+                # if self.filters and not predicate in self.filters:
+                #     continue
+
                 yield {
                     'subject': subject.strip('<>'),
                     'predicate': predicate.strip('<>'),
