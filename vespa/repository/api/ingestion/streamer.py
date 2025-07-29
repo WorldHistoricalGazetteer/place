@@ -243,16 +243,18 @@ class StreamFetcher:
 
     async def _parse_wikidata_entities_stream(self):
         """
-        Specialized method to parse the Wikidata latest-all.json.gz using jq and apply filters.
+        Specialized method to parse the Wikidata latest-all.json.gz using jq and apply filters,
+        with a progress bar.
         """
-        file_path = self._download_file()  # Ensure file is downloaded locally
+        file_path = self._download_file() # Ensure file is downloaded locally
 
         # Construct the jq command to decompress and extract entities
-        # `jq -c '.entities | to_entries[] | .value'` extracts each entity as a compact JSON line.
         cmd = ["gzip", "-dc", file_path, "|", "jq", "-c", ".entities | to_entries[] | .value"]
 
         self.logger.info(f"Starting jq process: {' '.join(cmd)}")
         process = None
+        # Initialize tqdm outside the try block to ensure it's always accessible for closing
+        progress_bar = None
         try:
             # Use shell=True for piping. For untrusted input, prefer separate subprocesses.
             process = await asyncio.create_subprocess_shell(
@@ -261,13 +263,26 @@ class StreamFetcher:
                 stderr=asyncio.subprocess.PIPE
             )
 
-            # Assign the process to self.stream for proper cleanup in close_stream if needed
-            self.stream = process.stdout  # Consider this the stream for closing purposes
+            self.stream = process.stdout # Consider this the stream for closing purposes
+
+            # Initialize tqdm. We don't know the total, so it will show items/sec.
+            # You can set a rough `total` if you have an estimate of the number of entities.
+            # For Wikidata, it's tens of millions. E.g., total=100_000_000
+            progress_bar = tqdm(
+                desc=f"Processing {os.path.basename(file_path)} entities",
+                unit=" entities",
+                unit_scale=True,
+                # Add a very rough estimate for a percentage:
+                total=120_000_000
+            )
 
             while True:
                 line = await process.stdout.readline()
                 if not line:
                     break
+
+                progress_bar.update(1) # Increment the progress bar for each line read from jq
+
                 try:
                     doc = json.loads(line.decode('utf-8'))
 
@@ -276,7 +291,7 @@ class StreamFetcher:
                     for filter_func in self.filters:
                         if not filter_func(doc):
                             should_include = False
-                            break  # No need to check other filters if one fails
+                            break # No need to check other filters if one fails
 
                     if should_include:
                         yield doc
@@ -298,11 +313,13 @@ class StreamFetcher:
             self.logger.error(f"Error running jq for Wikidata parsing: {e}")
             raise
         finally:
-            if process and process.returncode is None:  # Process is still running
+            if progress_bar:
+                progress_bar.close() # Close the tqdm bar when done or on error
+            if process and process.returncode is None: # Process is still running
                 self.logger.warning("Terminating jq process.")
                 process.terminate()
-                await process.wait()  # Wait for it to actually terminate
-            self.close_stream()  # Ensure cleanup even if process failed/finished
+                await process.wait() # Wait for it to actually terminate
+            self.close_stream() # Ensure cleanup even if process failed/finished
 
     async def _parse_ndjson_stream(self, stream):
         """
