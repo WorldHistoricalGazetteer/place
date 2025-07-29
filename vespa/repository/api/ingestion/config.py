@@ -88,6 +88,7 @@ REMOTE_DATASET_CONFIGS = [
                 'local_name': '/data/k8s/vespa-ingestion/wikidata.json.gz',  # 133GB
                 'file_type': 'json',
                 'item_path': 'entities',
+                'item_count': 120_000_000,  # Approximate number of items in the dump
                 'filters': [
                     lambda doc: 'claims' in doc and 'P625' in doc['claims'],
                     # Filter to only include items with coordinates

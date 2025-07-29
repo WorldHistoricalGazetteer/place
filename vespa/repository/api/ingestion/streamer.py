@@ -10,6 +10,7 @@ import os
 import subprocess
 import urllib.parse
 import zipfile
+from urllib.request import urlopen
 
 import ijson
 import requests
@@ -198,7 +199,7 @@ class StreamFetcher:
         # For this specific Wikidata file, use a specialised parsing method
         if self.file_url == "https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz" and \
                 self.file_type == 'json' and self.item_path == 'entities':
-            return self._parse_wikidata_entities_stream()
+            return self._parse_wikidata_stream()
         else:
             self.stream = self.get_stream()  # Call get_stream for other file types
             format_type = self.file_type
@@ -241,85 +242,33 @@ class StreamFetcher:
     #
     #     return iterator()
 
-    async def _parse_wikidata_entities_stream(self):
-        """
-        Specialized method to parse the Wikidata latest-all.json.gz using jq and apply filters,
-        with a progress bar.
-        """
-        file_path = self._download_file() # Ensure file is downloaded locally
+    async def _parse_wikidata_stream(self):
 
-        # Construct the jq command to decompress and extract entities
-        cmd = ["gzip", "-dc", file_path, "|", "jq", "-c", ".entities | to_entries[] | .value"]
+        def iter_wikidata_stream(url):
+            with urlopen(url) as r:
+                with gzip.GzipFile(fileobj=r) as f:
+                    for line in f:
+                        if line in {b'[\n', b']\n'}:
+                            continue
+                        if line.endswith(b',\n'):
+                            line = line[:-2]
+                        obj = json.loads(line)
+                        yield obj
 
-        self.logger.info(f"Starting jq process: {' '.join(cmd)}")
-        process = None
-        # Initialize tqdm outside the try block to ensure it's always accessible for closing
-        progress_bar = None
-        try:
-            # Use shell=True for piping. For untrusted input, prefer separate subprocesses.
-            process = await asyncio.create_subprocess_shell(
-                ' '.join(cmd),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
+        loop = asyncio.get_running_loop()
+        gen = iter_wikidata_stream(self.file_url)
 
-            self.stream = process.stdout # Consider this the stream for closing purposes
+        def next_item():
+            try:
+                return next(gen)
+            except StopIteration:
+                return None
 
-            # Initialize tqdm. We don't know the total, so it will show items/sec.
-            # You can set a rough `total` if you have an estimate of the number of entities.
-            # For Wikidata, it's tens of millions. E.g., total=100_000_000
-            progress_bar = tqdm(
-                desc=f"Processing {os.path.basename(file_path)} entities",
-                unit=" entities",
-                unit_scale=True,
-                # Add a very rough estimate for a percentage:
-                total=120_000_000
-            )
-
-            while True:
-                line = await process.stdout.readline()
-                if not line:
-                    break
-
-                progress_bar.update(1) # Increment the progress bar for each line read from jq
-
-                try:
-                    doc = json.loads(line.decode('utf-8'))
-
-                    # Apply all defined filters
-                    should_include = True
-                    for filter_func in self.filters:
-                        if not filter_func(doc):
-                            should_include = False
-                            break # No need to check other filters if one fails
-
-                    if should_include:
-                        yield doc
-
-                except json.JSONDecodeError as e:
-                    self.logger.error(f"Error decoding JSON line from jq output: {line}. Error: {e}")
-                    continue
-
-            # Wait for the process to complete and check for errors
-            stdout, stderr = await process.communicate()
-            if process.returncode != 0:
-                self.logger.error(f"jq command failed with error: {stderr.decode('utf-8')}")
-                raise RuntimeError(f"jq process failed: {stderr.decode('utf-8')}")
-
-        except FileNotFoundError:
-            self.logger.error("`jq` command not found. Please ensure `jq` is installed and in your PATH.")
-            raise
-        except Exception as e:
-            self.logger.error(f"Error running jq for Wikidata parsing: {e}")
-            raise
-        finally:
-            if progress_bar:
-                progress_bar.close() # Close the tqdm bar when done or on error
-            if process and process.returncode is None: # Process is still running
-                self.logger.warning("Terminating jq process.")
-                process.terminate()
-                await process.wait() # Wait for it to actually terminate
-            self.close_stream() # Ensure cleanup even if process failed/finished
+        while True:
+            item = await loop.run_in_executor(None, next_item)
+            if item is None:
+                break
+            yield item
 
     async def _parse_ndjson_stream(self, stream):
         """

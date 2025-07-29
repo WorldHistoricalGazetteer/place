@@ -169,7 +169,7 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         items_iter = sf.get_items()
         batch, batch_idx = [], 0
 
-        pbar = tqdm(desc=f"Processing {label}", unit="items", ncols=80)
+        pbar = tqdm(desc=f"Processing {label}", unit="items", ncols=80, total=file_cfg.get("item_count"))
 
         async for item in items_iter:
             pbar.update(1)
