@@ -244,19 +244,33 @@ class StreamFetcher:
 
     async def _parse_wikidata_stream(self):
 
-        def iter_wikidata_stream(url):
-            with urlopen(url) as r:
-                with gzip.GzipFile(fileobj=r) as f:
-                    for line in f:
-                        if line in {b'[\n', b']\n'}:
-                            continue
-                        if line.endswith(b',\n'):
-                            line = line[:-2]
-                        obj = json.loads(line)
-                        yield obj
+        def iter_wikidata_stream(file):
+            """
+            Iterates over a Wikidata JSON stream, yielding each item.
+            Handles gzip compression and skips empty lines.
+            """
+            with gzip.open(file, 'rt', encoding='utf-8') as f:
+                for line in f:
+                    if line in {'[\n', ']\n'}:
+                        continue
+                    if line.endswith(',\n'):
+                        line = line[:-2]
+                    obj = json.loads(line)
+                    yield obj
+
+        # def iter_wikidata_stream(url):  # Falls foul of Wikidata's rate limiting
+        #     with urlopen(url) as r:
+        #         with gzip.GzipFile(fileobj=r) as f:
+        #             for line in f:
+        #                 if line in {b'[\n', b']\n'}:
+        #                     continue
+        #                 if line.endswith(b',\n'):
+        #                     line = line[:-2]
+        #                 obj = json.loads(line)
+        #                 yield obj
 
         loop = asyncio.get_running_loop()
-        gen = iter_wikidata_stream(self.file_url)
+        gen = iter_wikidata_stream(self.file_name)
 
         def next_item():
             try:
