@@ -87,7 +87,7 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz',  # 148GB
                 'local_name': '/data/k8s/vespa-ingestion/latest-all.json.gz',
                 'file_name': '/ix1/whcdh/data/wikidata/latest-all/latest-all.json.gz',
-                'file_type': 'json',
+                'file_type': 'wikidata',
                 'item_path': 'entities',
                 'item_count': 120_000_000,  # Approximate number of items in the dump
                 'filters': [

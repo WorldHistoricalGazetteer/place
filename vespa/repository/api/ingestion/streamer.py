@@ -149,6 +149,10 @@ class StreamFetcher:
             file_path = self._download_file()
             self.logger.info(f"Opening stream for {file_path}")
 
+            # For Wikidata, open stream in 'rt' mode:
+            if file_path == '/ix1/whcdh/data/wikidata/latest-all/latest-all.json.gz':
+                return gzip.open(file_path, 'rt', encoding='utf-8')
+
             # Check for gzip compression by inspecting magic bytes
             with open(file_path, 'rb') as file:
                 magic_bytes = file.read(2)
@@ -196,29 +200,27 @@ class StreamFetcher:
         """
         Parse the stream and yield items based on format (json, csv, or xml).
         """
-        # For this specific Wikidata file, use a specialised parsing method
-        if self.file_url == "https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz" and \
-                self.file_type == 'json' and self.item_path == 'entities':
-            return self._parse_wikidata_stream()
-        else:
-            self.stream = self.get_stream()  # Call get_stream for other file types
-            format_type = self.file_type
 
-            if format_type in ['json', 'geojson']:
-                return self._parse_json_stream(self.stream)
-            elif format_type == 'ndjson':
-                return self._parse_ndjson_stream(self.stream)
-            elif format_type == 'geojsonseq':
-                return self._parse_geojsonseq_stream(self.stream)
-            elif format_type in ['csv', 'tsv', 'txt']:
-                return self._parse_csv_stream(self.stream)
-            elif format_type == 'xml':
-                return self._parse_xml_stream(self.stream)
-            elif format_type == 'nt':
-                return self._parse_nt_stream(self.stream)
-            else:
-                self.logger.error(f"Unsupported format type: {format_type}")
-                raise ValueError(f"Unsupported format type: {format_type}")
+        self.stream = self.get_stream()
+        format_type = self.file_type
+
+        if format_type in ['json', 'geojson']:
+            return self._parse_json_stream(self.stream)
+        elif format_type == 'wikidata':
+            return self._parse_wikidata_stream(self.stream)
+        elif format_type == 'ndjson':
+            return self._parse_ndjson_stream(self.stream)
+        elif format_type == 'geojsonseq':
+            return self._parse_geojsonseq_stream(self.stream)
+        elif format_type in ['csv', 'tsv', 'txt']:
+            return self._parse_csv_stream(self.stream)
+        elif format_type == 'xml':
+            return self._parse_xml_stream(self.stream)
+        elif format_type == 'nt':
+            return self._parse_nt_stream(self.stream)
+        else:
+            self.logger.error(f"Unsupported format type: {format_type}")
+            raise ValueError(f"Unsupported format type: {format_type}")
 
     async def _parse_json_stream(self, stream):
         # ijson is synchronous, run the iteration in a thread to avoid blocking the event loop
@@ -242,32 +244,20 @@ class StreamFetcher:
     #
     #     return iterator()
 
-    async def _parse_wikidata_stream(self):
+    async def _parse_wikidata_stream(self, stream):
+        """
+        Parses a Wikidata JSON dump from a pre-opened text stream (e.g., gzip.open(..., 'rt')).
+        Yields individual JSON items.
+        """
 
-        def iter_wikidata_stream(file):
-            """
-            Iterates over a Wikidata JSON stream, yielding each item.
-            Handles gzip compression and skips empty lines.
-            """
-            with gzip.open(file, 'rt', encoding='utf-8') as f:
-                for line in f:
-                    if line in {'[\n', ']\n'}:
-                        continue
-                    if line.endswith(',\n'):
-                        line = line[:-2]
-                    obj = json.loads(line)
-                    yield obj
-
-        # def iter_wikidata_stream(url):  # Falls foul of Wikidata's rate limiting
-        #     with urlopen(url) as r:
-        #         with gzip.GzipFile(fileobj=r) as f:
-        #             for line in f:
-        #                 if line in {b'[\n', b']\n'}:
-        #                     continue
-        #                 if line.endswith(b',\n'):
-        #                     line = line[:-2]
-        #                 obj = json.loads(line)
-        #                 yield obj
+        def iter_wikidata_stream(f):
+            for line in f:
+                if line in {'[\n', ']\n'}:
+                    continue
+                if line.endswith(',\n'):
+                    line = line[:-2]
+                obj = json.loads(line)
+                yield obj
 
         loop = asyncio.get_running_loop()
         gen = iter_wikidata_stream(self.file_name)
