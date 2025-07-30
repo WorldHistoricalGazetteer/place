@@ -76,7 +76,7 @@ REMOTE_DATASET_CONFIGS = [
             },
         ],
     },
-    {  # 2024: 8m+ items classified as places
+    {  # 2024: 8m+ items classified as places with geometry
         'dataset_name': 'Wikidata',
         'namespace': 'wd',
         'vespa_schema': 'place',
@@ -89,7 +89,7 @@ REMOTE_DATASET_CONFIGS = [
                 'file_name': '/ix1/whcdh/data/wikidata/latest-all/latest-all.json.gz',
                 'file_type': 'wikidata',
                 'item_path': 'entities',
-                'item_count': 120_000_000,  # Approximate number of items in the dump
+                'item_count': 120_000_000,  # Approximate number of entities in the dump
                 'filters': [
                     lambda doc: 'claims' in doc and 'P625' in doc['claims'],
                     # Filter to only include items with coordinates
