@@ -154,6 +154,7 @@ class StreamFetcher:
                 return gzip.open(file_path, 'rt', encoding='utf-8')
 
             if self.file_type == 'pleiades':
+                logger.info(f"Opening Pleiades file {file_path} in text mode")
                 return gzip.open(file_path, 'rt', encoding='utf-8')
 
             # Check for gzip compression by inspecting magic bytes
