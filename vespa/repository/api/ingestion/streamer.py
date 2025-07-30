@@ -153,6 +153,9 @@ class StreamFetcher:
             if file_path == '/ix1/whcdh/data/wikidata/latest-all/latest-all.json.gz':
                 return gzip.open(file_path, 'rt', encoding='utf-8')
 
+            if self.file_type == 'pleiades':
+                return gzip.open(file_path, 'rt', encoding='utf-8')
+
             # Check for gzip compression by inspecting magic bytes
             with open(file_path, 'rb') as file:
                 magic_bytes = file.read(2)
