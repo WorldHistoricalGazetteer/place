@@ -154,20 +154,15 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
     os.makedirs(output_dir, exist_ok=True)
 
-    def normalise_batch(batch):
+    def normalise_batch(batch):  # Normalise Pleiades data
         for item in batch:
-            for k, v in item.items():
-                if isinstance(v, list):
-                    continue
-                elif v is None:
-                    continue
-                elif isinstance(v, dict):
-                    continue
-                elif isinstance(v, str):
-                    continue
-                else:
-                    # Wrap any non-scalar values that are intended to be lists
-                    item[k] = [v]
+            for field in ("reprPoint", "bbox"):
+                if field in item:
+                    val = item[field]
+                    if val is None:
+                        item[field] = []
+                    elif not isinstance(val, list):
+                        item[field] = [val]  # Or log a warning if needed
         return batch
 
     for file_cfg in cfg["files"]:
@@ -196,25 +191,17 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
             batch.append(item)
             if len(batch) >= batch_size:
-
-                # Debug
-                field_types = defaultdict(set)
-                for row in batch:
-                    for k, v in row.items():
-                        field_types[k].add(type(v).__name__)
-                for k, v in field_types.items():
-                    if len(v) > 1:
-                        print(f"Inconsistent types for '{k}': {v}")
-
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
-                pq.write_table(pa.Table.from_pylist(normalise_batch(batch)), path)
+                pq.write_table(pa.Table.from_pylist(batch), path)
                 batch.clear()
                 batch_idx += 1
 
         # flush remaining
         if batch:
+            if dataset_name == "Pleiades":
+                batch = normalise_batch(batch)
             path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
-            pq.write_table(pa.Table.from_pylist(normalise_batch(batch)), path)
+            pq.write_table(pa.Table.from_pylist(batch), path)
             batch_idx += 1
             batch.clear()
 
