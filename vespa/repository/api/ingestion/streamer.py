@@ -153,9 +153,9 @@ class StreamFetcher:
             if file_path == '/ix1/whcdh/data/wikidata/latest-all/latest-all.json.gz':
                 return gzip.open(file_path, 'rt', encoding='utf-8')
 
-            if self.file_type == 'pleiades':
-                logger.info(f"Opening Pleiades file {file_path} in text mode")
-                return gzip.open(file_path, 'rt', encoding='utf-8')
+            # if self.file_type == 'pleiades':
+            #     logger.info(f"Opening Pleiades file {file_path} in text mode")
+            #     return gzip.open(file_path, 'rt', encoding='utf-8')
 
             # Check for gzip compression by inspecting magic bytes
             with open(file_path, 'rb') as file:
@@ -210,10 +210,12 @@ class StreamFetcher:
 
         if format_type in ['json', 'geojson']:
             return self._parse_json_stream(self.stream)
-        elif format_type == 'wikidata' or format_type == 'pleiades':
+        elif format_type == 'wikidata':
             return self._parse_wikidata_stream(self.stream)
+        # elif format_type == 'pleiades':
+        #     return self._parse_ndjson_stream(self.stream)
         elif format_type == 'ndjson':
-            return self._parse_ndjson_stream(self.stream)
+            return self._parse_pleiades_stream(self.stream)
         elif format_type == 'geojsonseq':
             return self._parse_geojsonseq_stream(self.stream)
         elif format_type in ['csv', 'tsv', 'txt']:
@@ -226,27 +228,27 @@ class StreamFetcher:
             self.logger.error(f"Unsupported format type: {format_type}")
             raise ValueError(f"Unsupported format type: {format_type}")
 
-    async def _parse_json_stream(self, stream):
-        # ijson is synchronous, run the iteration in a thread to avoid blocking the event loop
-        loop = asyncio.get_running_loop()
-        iterator = await loop.run_in_executor(
-            None,  # Use default ThreadPoolExecutor
-            lambda: ijson.items(stream, f"{self.item_path}.*")
-        )
-
-        for item in iterator:
-            yield item
-
-    # def _parse_json_stream(self, stream):
-    #     # Use asyncio.to_thread to run the ijson parsing in a separate thread
-    #     parser = asyncio.to_thread(ijson.items, stream, f"{self.item_path}.item")
+    # async def _parse_json_stream(self, stream):
+    #     # ijson is synchronous, run the iteration in a thread to avoid blocking the event loop
+    #     loop = asyncio.get_running_loop()
+    #     iterator = await loop.run_in_executor(
+    #         None,  # Use default ThreadPoolExecutor
+    #         lambda: ijson.items(stream, f"{self.item_path}.*")
+    #     )
     #
-    #     async def iterator():
-    #         # Await the result from asyncio.to_thread and process items in a normal loop
-    #         for item in await parser:
-    #             yield item
-    #
-    #     return iterator()
+    #     for item in iterator:
+    #         yield item
+
+    def _parse_json_stream(self, stream):
+        # Use asyncio.to_thread to run the ijson parsing in a separate thread
+        parser = asyncio.to_thread(ijson.items, stream, f"{self.item_path}.item")
+
+        async def iterator():
+            # Await the result from asyncio.to_thread and process items in a normal loop
+            for item in await parser:
+                yield item
+
+        return iterator()
 
     async def _parse_wikidata_stream(self, stream):
         """
