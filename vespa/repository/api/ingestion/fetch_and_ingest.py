@@ -191,6 +191,8 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
             batch.append(item)
             if len(batch) >= batch_size:
+                if dataset_name == "Pleiades":
+                    batch = normalise_batch(batch)
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(batch), path)
                 batch.clear()
