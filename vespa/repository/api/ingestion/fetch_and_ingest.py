@@ -152,6 +152,22 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
     os.makedirs(output_dir, exist_ok=True)
 
+    def normalise_batch(batch):
+        for item in batch:
+            for k, v in item.items():
+                if isinstance(v, list):
+                    continue
+                elif v is None:
+                    continue
+                elif isinstance(v, dict):
+                    continue
+                elif isinstance(v, str):
+                    continue
+                else:
+                    # Wrap any non-scalar values that are intended to be lists
+                    item[k] = [v]
+        return batch
+
     for file_cfg in cfg["files"]:
         file_name = file_cfg.get("file_name") or os.path.basename(file_cfg["url"])
         label = Path(file_name).with_suffix('').stem
@@ -179,14 +195,14 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
             batch.append(item)
             if len(batch) >= batch_size:
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
-                pq.write_table(pa.Table.from_pylist(batch), path)
+                pq.write_table(pa.Table.from_pylist(normalise_batch(batch)), path)
                 batch.clear()
                 batch_idx += 1
 
         # flush remaining
         if batch:
             path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
-            pq.write_table(pa.Table.from_pylist(batch), path)
+            pq.write_table(pa.Table.from_pylist(normalise_batch(batch)), path)
             batch_idx += 1
             batch.clear()
 
