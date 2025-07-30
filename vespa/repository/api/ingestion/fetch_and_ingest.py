@@ -1,4 +1,5 @@
 import logging
+import pprint
 import re
 import subprocess
 import sys
@@ -194,6 +195,16 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
             batch.append(item)
             if len(batch) >= batch_size:
+
+                # Debug
+                for i, row in enumerate(batch):
+                    try:
+                        pa.Table.from_pylist([row])
+                    except pa.ArrowInvalid as e:
+                        print(f"Row {i} failed: {e}")
+                        pprint.pprint(row)
+                        break
+
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(normalise_batch(batch)), path)
                 batch.clear()
