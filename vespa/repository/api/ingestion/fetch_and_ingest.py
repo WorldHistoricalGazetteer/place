@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 from collections import defaultdict
+from decimal import Decimal
 from pathlib import Path
 
 import pyarrow as pa
@@ -155,13 +156,22 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
     os.makedirs(output_dir, exist_ok=True)
 
+    def convert_decimals(obj):
+        if isinstance(obj, dict):
+            return {k: convert_decimals(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_decimals(i) for i in obj]
+        elif isinstance(obj, Decimal):
+            return float(obj)
+        return obj
+
     def prune_pleiades_record(record: dict) -> dict:
-        """Return a single JSON blob with only relevant fields."""
+        """Return a single JSON blob with only relevant fields, safely encoding Decimal values."""
         pruned = {
             k: v for k, v in record.items()
             if k in {"id", "title", "names", "placeTypeURIs", "locations", "connections"}
         }
-        return {"record": json.dumps(pruned, ensure_ascii=False)}
+        return {"record": json.dumps(convert_decimals(pruned), ensure_ascii=False)}
 
     for file_cfg in cfg["files"]:
         file_name = file_cfg.get("file_name") or os.path.basename(file_cfg["url"])
