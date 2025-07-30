@@ -154,6 +154,13 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
 
     os.makedirs(output_dir, exist_ok=True)
 
+    def prune_pleiades_record(record: dict) -> dict:
+        """Retain only fields required for downstream transformation."""
+        return {
+            k: v for k, v in record.items()
+            if k in {"id", "title", "names", "placeTypeURIs", "locations", "connections"}
+        }
+
     def normalise_batch(batch):  # Normalise Pleiades data
         for item in batch:
             for field in ("reprPoint", "bbox"):
@@ -192,17 +199,18 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
             batch.append(item)
             if len(batch) >= batch_size:
                 if dataset_name == "Pleiades":
-                    batch = normalise_batch(batch)
-
-                    # Debugging: Check for inconsistent types in fields
-                    logger.info("Checking for inconsistent field types in batch...")
-                    field_types = defaultdict(set)
-                    for row in batch:
-                        for k, v in row.items():
-                            field_types[k].add(type(v).__name__)
-                    for k, v in field_types.items():
-                        if len(v) > 1:
-                            print(f"Inconsistent types for '{k}': {v}")
+                    batch = [prune_pleiades_record(item) for item in batch]
+                    # batch = normalise_batch(batch)
+                    #
+                    # # Debugging: Check for inconsistent types in fields
+                    # logger.info("Checking for inconsistent field types in batch...")
+                    # field_types = defaultdict(set)
+                    # for row in batch:
+                    #     for k, v in row.items():
+                    #         field_types[k].add(type(v).__name__)
+                    # for k, v in field_types.items():
+                    #     if len(v) > 1:
+                    #         print(f"Inconsistent types for '{k}': {v}")
 
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(batch), path)
@@ -212,7 +220,8 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         # flush remaining
         if batch:
             if dataset_name == "Pleiades":
-                batch = normalise_batch(batch)
+                # batch = normalise_batch(batch)
+                batch = [prune_pleiades_record(item) for item in batch]
             path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
             pq.write_table(pa.Table.from_pylist(batch), path)
             batch_idx += 1
