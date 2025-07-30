@@ -195,6 +195,7 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
                     batch = normalise_batch(batch)
 
                     # Debugging: Check for inconsistent types in fields
+                    logger.info("Checking for inconsistent field types in batch...")
                     field_types = defaultdict(set)
                     for row in batch:
                         for k, v in row.items():
