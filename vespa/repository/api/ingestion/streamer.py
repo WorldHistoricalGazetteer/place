@@ -206,7 +206,7 @@ class StreamFetcher:
 
         if format_type in ['json', 'geojson']:
             return self._parse_json_stream(self.stream)
-        elif format_type == 'wikidata':
+        elif format_type == 'wikidata' or format_type == 'pleiades':
             return self._parse_wikidata_stream(self.stream)
         elif format_type == 'ndjson':
             return self._parse_ndjson_stream(self.stream)

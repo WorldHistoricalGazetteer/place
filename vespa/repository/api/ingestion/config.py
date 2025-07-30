@@ -13,7 +13,7 @@ REMOTE_DATASET_CONFIGS = [
         'files': [
             {
                 'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',  # 104MB
-                'file_type': 'json',
+                'file_type': 'pleiades',
                 'item_path': '@graph',
             }
         ],
