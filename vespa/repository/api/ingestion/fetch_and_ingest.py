@@ -3,6 +3,7 @@ import pprint
 import re
 import subprocess
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import pyarrow as pa
@@ -197,13 +198,13 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
             if len(batch) >= batch_size:
 
                 # Debug
-                for i, row in enumerate(batch):
-                    try:
-                        pa.Table.from_pylist([row])
-                    except pa.ArrowInvalid as e:
-                        print(f"Row {i} failed: {e}")
-                        pprint.pprint(row)
-                        break
+                field_types = defaultdict(set)
+                for row in batch:
+                    for k, v in row.items():
+                        field_types[k].add(type(v).__name__)
+                for k, v in field_types.items():
+                    if len(v) > 1:
+                        print(f"Inconsistent types for '{k}': {v}")
 
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(normalise_batch(batch)), path)
