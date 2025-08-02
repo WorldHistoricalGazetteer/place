@@ -37,3 +37,4 @@ dependencies:
       - httpx==0.28.1
       - msgpack==1.0.8
       - msgpack_numpy==0.4.8
+      - osmium

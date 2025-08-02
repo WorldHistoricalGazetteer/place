@@ -163,7 +163,11 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         return obj
 
     def prune_pleiades_record(record: dict) -> dict:
-        """Return a single JSON blob with only relevant fields, safely encoding Decimal values."""
+        """
+        Return a single JSON blob with only relevant fields, safely encoding Decimal values.
+        This is because Pleiades records have inconsistent structures and so cannot easily be converted to a
+        PyArrow Table.
+        """
         pruned = {
             k: v for k, v in record.items()
             if k in {"id", "title", "names", "placeTypeURIs", "locations", "connections"}

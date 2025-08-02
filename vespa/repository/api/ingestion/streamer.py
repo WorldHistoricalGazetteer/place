@@ -157,6 +157,10 @@ class StreamFetcher:
             #     logger.info(f"Opening Pleiades file {file_path} in text mode")
             #     return gzip.open(file_path, 'rt', encoding='utf-8')
 
+            if file_path.endswith('.osm.pbf'):
+                # Convert to osm.geojsonseq once using osmium
+
+
             # Check for gzip compression by inspecting magic bytes
             with open(file_path, 'rb') as file:
                 magic_bytes = file.read(2)
