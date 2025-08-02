@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo ""
 root="/ix1/whcdh/data"
 
 total_dirs=0
@@ -86,3 +87,4 @@ echo "Summary:"
 echo "  Total directories : $total_dirs"
 echo "  Total files       : $total_files"
 echo "  Total size        : $(format_bytes $total_bytes)"
+echo ""
