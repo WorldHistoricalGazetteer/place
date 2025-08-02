@@ -1,4 +1,4 @@
-name: vespa-env
+name: whg-env
 channels:
   - conda-forge
   - defaults
