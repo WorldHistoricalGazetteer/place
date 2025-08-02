@@ -2,6 +2,7 @@ import sys
 import asyncio
 
 import duckdb
+import pandas as pd
 
 from ..transformers import DocTransformer
 

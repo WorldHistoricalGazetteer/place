@@ -1,21 +1,19 @@
+import asyncio
 import json
 import logging
-import pprint
+import os
 import re
 import subprocess
 import sys
-from collections import defaultdict
 from decimal import Decimal
 from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-import os
-import asyncio
-
 from tqdm import tqdm
-from streamer import StreamFetcher
+
 from config import REMOTE_DATASET_CONFIGS
+from streamer import StreamFetcher
 
 logging.basicConfig(
     level=logging.INFO,
@@ -146,7 +144,6 @@ def submit_slurm_ndmsgpack_job(merged_db_path, output_dir, dependency_job_id):
     return extract_job_id_from_output(result.stdout)
 
 
-
 async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
     cfg = get_dataset_config(dataset_name)
 
@@ -184,6 +181,7 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         sf.local_name = file_name
 
         filters = file_cfg.get("filters", [])
+
         def is_wanted(doc):
             return all(f(doc) for f in filters)
 
@@ -242,7 +240,7 @@ if __name__ == "__main__":
         logger.warning("No batch files found. Exiting.")
         sys.exit(0)
 
-    exit(101)  #  Pending enablement of slurm
+    exit(101)  # Pending enablement of slurm
 
     logger.info(f"Discovered {len(batch_files)} batches. Writing SLURM array job.")
     array_job_id = submit_slurm_array_job(manifest_path)
