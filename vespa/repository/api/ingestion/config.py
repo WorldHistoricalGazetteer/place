@@ -105,8 +105,8 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'OpenStreetMap is open data, licensed under the Open Data Commons Open Database License (ODbL). https://www.openstreetmap.org/',
         'files': [
             {
-                'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',  # 84.7GB
-                'local_name': 'osm.geojsonseq',  # 4.1GB
+                'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',  # 88.1GB
+                'local_name': 'planet-latest.osm.geojsonseq',  # GB
                 'file_type': 'geojsonseq',  # GeoJSON Sequence with Record Separators
                 'filters': [
                     lambda feature: 'name' in (properties := feature['properties']) and
@@ -117,7 +117,8 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
-    {  # Not useful as source of places or toponyms, but can provide links
+    {  # 2025 12m items, 4.39GB: Not useful as source of places or toponyms, but can provide links
+        # c.350k filtered links
         'dataset_name': 'LOC',
         'namespace': 'loc',
         'vespa_schema': 'place',
@@ -201,6 +202,7 @@ REMOTE_DATASET_CONFIGS = [
         'files': [
             {
                 'url': 'https://www.pastplace.org/downloads/GB1900_gazetteer_abridged_july_2018.zip',
+                'file_name': 'GB1900_gazetteer_abridged_july_2018',
                 'file_type': 'csv',
                 'delimiter': ',',
             }
