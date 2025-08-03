@@ -221,9 +221,9 @@ class StreamFetcher:
         elif format_type == 'wikidata':
             return self._parse_wikidata_stream(self.stream)
         # elif format_type == 'pleiades':
-        #     return self._parse_ndjson_stream(self.stream)
+        #     return self._parse_pleiades_stream(self.stream)
         elif format_type == 'ndjson':
-            return self._parse_pleiades_stream(self.stream)
+            return self._parse_ndjson_stream(self.stream)
         elif format_type == 'geojsonseq':
             return self._parse_geojsonseq_stream(self.stream)
         elif format_type in ['csv', 'tsv', 'txt']:
