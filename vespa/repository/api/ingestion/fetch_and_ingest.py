@@ -174,6 +174,9 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         }
         return {"record": json.dumps(convert_decimals(pruned), ensure_ascii=False)}
 
+    def dump_loc_record(record: dict) -> dict:
+        return {"record": json.dumps(convert_decimals(record), ensure_ascii=False)}
+
     for file_cfg in cfg["files"]:
         file_name = file_cfg.get("file_name") or os.path.basename(file_cfg["url"])
         label = Path(file_name).with_suffix('').stem
@@ -203,6 +206,8 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
             if len(batch) >= batch_size:
                 if dataset_name == "Pleiades":
                     batch = [prune_pleiades_record(item) for item in batch]
+                elif dataset_name == "LOC":
+                    batch = [dump_loc_record(item) for item in batch]
 
                 path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
                 pq.write_table(pa.Table.from_pylist(batch), path)
@@ -213,6 +218,8 @@ async def fetch_and_split(dataset_name, output_dir, batch_size=BATCH_SIZE):
         if batch:
             if dataset_name == "Pleiades":
                 batch = [prune_pleiades_record(item) for item in batch]
+            elif dataset_name == "LOC":
+                batch = [dump_loc_record(item) for item in batch]
             path = os.path.join(file_out_dir, f"batch_{batch_idx:06}.parquet")
             pq.write_table(pa.Table.from_pylist(batch), path)
             batch_idx += 1
