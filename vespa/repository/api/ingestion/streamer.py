@@ -7,18 +7,31 @@ import io
 import json
 import logging
 import os
-import subprocess
 import urllib.parse
 import zipfile
-from urllib.request import urlopen
 
 import ijson
 import requests
 import xmltodict
-
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
+
+
+class AsyncLineIterator:
+    def __init__(self, file_obj):
+        self.file_obj = file_obj
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        loop = asyncio.get_running_loop()
+        line = await loop.run_in_executor(None, self.file_obj.readline)
+        if line:
+            return line
+        else:
+            raise StopAsyncIteration
 
 
 class StreamFetcher:
@@ -158,7 +171,7 @@ class StreamFetcher:
             #     return gzip.open(file_path, 'rt', encoding='utf-8')
 
             if file_path.endswith('.osm.pbf'):
-                # Convert to osm.geojsonseq using osmium, using tmux to avoid pipe breakage.
+                # Convert to osm.geojsonseq using osmium, with tmux to avoid pipe breakage.
                 # tmux new -s osmium_export
                 # osmium export /ix1/whcdh/data/osm/planet-latest/planet-latest.osm.pbf -o /ix1/whcdh/data/osm/planet-latest/planet-latest.osm.geojsonseq -i dense_file_array,/ix1/whcdh/data/osm/planet-latest/osmium-index.idx --attribute type,id --add-unique-id=type_id --overwrite --progress --verbose
                 # Detach and leave it running, using `Ctrl-b d`
@@ -292,8 +305,7 @@ class StreamFetcher:
         """
         Asynchronously parses an NDJSON stream and yields each document.
         """
-
-        async for line in stream:
+        async for line in AsyncLineIterator(stream):
             line = line.strip()
             if line:
                 try:
@@ -338,7 +350,7 @@ class StreamFetcher:
 
         async def async_generator():
             for row in csv_reader:
-                await asyncio.sleep(0) # Yield control to the event loop
+                await asyncio.sleep(0)  # Yield control to the event loop
                 yield row
 
         return async_generator()
