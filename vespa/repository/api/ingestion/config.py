@@ -201,7 +201,7 @@ REMOTE_DATASET_CONFIGS = [
         'citation': 'GB1900 Gazetteer: British place names, 1888-1914. https://www.pastplace.org/data/#tabgb1900',
         'files': [
             {
-                'url': '/ix1/whcdh/data/GB1900_gazetteer_abridged_july_2018.zip',  # Has to be downloaded manually due to outdated SSL on remote server
+                'url': '/ix1/whcdh/data/gb1900/GB1900_gazetteer_abridged_july_2018/GB1900_gazetteer_abridged_july_2018.zip',  # Has to be downloaded manually due to outdated SSL on remote server
                 'file_name': 'GB1900_gazetteer_abridged_july_2018',  # Name of file within the zip
                 'file_type': 'csv',
                 'delimiter': ',',
