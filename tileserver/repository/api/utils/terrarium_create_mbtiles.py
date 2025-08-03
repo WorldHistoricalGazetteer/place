@@ -12,8 +12,8 @@ import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 
-LOCAL_DATA_DIR = "/data/k8s/tileserver/data"
-LOCAL_TILES_DIR = "/data/k8s/tiles"
+LOCAL_DATA_DIR = "/ix1/whcdh/data/terrarium"
+LOCAL_TILES_DIR = "/ix1/whcdh/data/terrarium/tiles"
 
 logger = logging.getLogger(__name__)
 
@@ -253,4 +253,4 @@ def terrarium_download(range_start=0, range_end=21):
 
 # Zoom levels 0-10 result in a 110 GB MBTiles file; adding 11 would increase the size to 470 GB
 # Tiles are available up to zoom level 15, but 10 (with upsampling when needed) is sufficient for WHG
-terrarium_download(0, 11)
+terrarium_download(0, 15)
