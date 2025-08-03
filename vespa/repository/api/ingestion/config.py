@@ -202,7 +202,7 @@ REMOTE_DATASET_CONFIGS = [
         'files': [
             {
                 'url': '/ix1/whcdh/data/gb1900/GB1900_gazetteer_abridged_july_2018/GB1900_gazetteer_abridged_july_2018.zip',  # Has to be downloaded manually due to outdated SSL on remote server
-                'file_name': 'GB1900_gazetteer_abridged_july_2018',  # Name of file within the zip
+                'file_name': 'GB1900_gazetteer_abridged_july_2018/gb1900_abridged.csv',  # Name of file within the zip
                 'file_type': 'csv',
                 'delimiter': ',',
             }
