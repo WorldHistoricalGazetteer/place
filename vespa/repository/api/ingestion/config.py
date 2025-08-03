@@ -193,7 +193,7 @@ REMOTE_DATASET_CONFIGS = [
             },
         ],
     },
-    {
+    {  # 2024: c.1.2m places
         'dataset_name': 'GB1900',
         'namespace': 'GB1900',
         'vespa_schema': 'place',

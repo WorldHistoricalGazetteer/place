@@ -137,7 +137,7 @@ class DocTransformer:
             )
         ],
         "Pleiades": [
-            # TODO: Before running this again, delete the cached data download and augment the types dictionary
+            # TODO: Before running this, augment the types dictionary
             lambda data: (
                 {
                     "id": (document_id := get_uuid()),
@@ -184,7 +184,8 @@ class DocTransformer:
                         **({"locations": [{"geometry": point}]} if point else {}),
                         **({"representative_point": {"lat": bbox_sw_lat,
                                                      "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
-                        **({"cartesian": geo_to_cartesian(bbox_sw_lat, bbox_sw_lng)} if bbox_sw_lat and bbox_sw_lng else {}),
+                        **({"cartesian": geo_to_cartesian(bbox_sw_lat,
+                                                          bbox_sw_lng)} if bbox_sw_lat and bbox_sw_lng else {}),
                         **({"classes": classes} if (classes := [data.get("feature_class", "")]) else {}),
                         **({"ccodes": [ccode]} if (ccode := data.get("country_code")) else {}),
                     }
@@ -219,13 +220,14 @@ class DocTransformer:
         ],
         "TGN": [
             lambda data: (
-                 {
+                {
                     "id": linked_art["id"] if (
-                            linked_art := LinkedArtProcessor(data).process()) else None,
+                        linked_art := LinkedArtProcessor(data).process()) else None,
                     "fields": linked_art["place"] if linked_art else {},
-                 },
+                },
                 linked_art["toponyms"] if linked_art else None,
-                linked_art["links"] if linked_art else None # TODO: Implement links for hierarchical relationships between places
+                linked_art["links"] if linked_art else None
+            # TODO: Implement links for hierarchical relationships between places
             )
         ],
         "Wikidata": [  # Depends on GeoNames having been already processed
@@ -292,14 +294,46 @@ class DocTransformer:
                 LOCLinksProcessor(data.get("@graph")).process()
             )
         ],
-        "GB1900": [  # TODO
+        "GB1900": [
+            # All geometries are points
             lambda data: (
                 {
+                    "id": (document_id := data.get("pin_id", get_uuid())),
+                    "fields": {
+                        "record_id": document_id,
+                        "names": [
+                            {"toponym_id": (toponym_id := get_uuid()), "year_start": 1888, "year_end": 1914},
+                        ],
+                        **({"bbox_sw_lat": bbox_sw_lat} if (bbox_sw_lat := float(data.get("latitude"))) else {}),
+                        **({"bbox_sw_lng": bbox_sw_lng} if (bbox_sw_lng := float(data.get("longitude"))) else {}),
+                        **({"bbox_ne_lat": bbox_sw_lat} if bbox_sw_lat else {}),
+                        **({"bbox_ne_lng": bbox_sw_lng} if bbox_sw_lng else {}),
+                        "bbox_antimeridial": False,
+                        **({"convex_hull": point} if (point := json.dumps({
+                            "type": "Point",
+                            "coordinates": [bbox_sw_lng, bbox_sw_lat]
+                        }) if bbox_sw_lng and bbox_sw_lat else None) else {}),
+                        **({"locations": [{"geometry": point}]} if point else {}),
+                        **({"representative_point": {"lat": bbox_sw_lat,
+                                                     "lng": bbox_sw_lng}} if bbox_sw_lat and bbox_sw_lng else {}),
+                        **({"cartesian": geo_to_cartesian(bbox_sw_lat,
+                                                          bbox_sw_lng)} if bbox_sw_lat and bbox_sw_lng else {}),
+                        "ccodes": ["GB"],
+                    }
                 },
                 [
+                    {
+                        "id": toponym_id,
+                        "fields": {
+                            "is_staging": True,
+                            "name_strict": (name := data.get("final_text", "")),
+                            "name": name,
+                            "places": [document_id],
+                            "bcp47_language": "en",
+                        }
+                    }
                 ],
-                [  # No links
-                ]
+                None  # No links
             )
         ],
         "Terrarium": [  # GeoJSON detailing sources of DEM data
