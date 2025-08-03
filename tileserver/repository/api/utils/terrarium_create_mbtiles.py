@@ -9,11 +9,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import boto3
+from tqdm import tqdm
 from botocore import UNSIGNED
 from botocore.config import Config
 
 LOCAL_DATA_DIR = "/ix1/whcdh/data/terrarium"
 LOCAL_TILES_DIR = "/ix1/whcdh/data/terrarium/tiles"
+
+# Ensure the local directories exist
+os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
+os.makedirs(LOCAL_TILES_DIR, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +143,7 @@ def create_metadata_file(output_dir, metadata):
 def dir_to_mbtiles(input_dir, output_file, metadata):
     if os.path.exists(output_file):
         os.remove(output_file)
-        print(f"Deleted existing MBTiles file: {output_file}")
+        logger.info(f"Deleted existing MBTiles file: {output_file}")
 
     # Create the metadata.json file
     create_metadata_file(input_dir, metadata)
@@ -156,22 +161,23 @@ def download_file(s3_client, bucket_name, file_name, local_path, prefix):
     :param local_path: Local path where the file will be saved
     :param prefix: Prefix to be added to the file name in S3
     """
+
     retry_intervals = [60, 300, 3600]  # Retry intervals in seconds (1 min, 5 min, 1 hour)
     attempts = 0
 
     while attempts <= len(retry_intervals):
         try:
             s3_client.download_file(bucket_name, f"{prefix}{file_name}", local_path)
-            print_flush(f"Downloaded {file_name}")
+            # print_flush(f"Downloaded {file_name}")
             return  # Success
         except Exception as e:
             attempts += 1
             if attempts > len(retry_intervals):
-                print_flush(f"Failed to download {file_name} after {attempts} attempts. Halting the script.")
+                logger.error(f"Failed to download {file_name} after {attempts} attempts. Halting the script.")
                 sys.exit(1)  # Exit the entire script
 
             delay = retry_intervals[attempts - 1]
-            print_flush(f"Error downloading {file_name}: {e}. Attempt {attempts} of {len(retry_intervals) + 1}. Retrying in {delay // 60} minutes...")
+            logger.warning(f"Error downloading {file_name}: {e}. Attempt {attempts} of {len(retry_intervals) + 1}. Retrying in {delay // 60} minutes...")
             time.sleep(delay)
 
 
@@ -187,24 +193,25 @@ def download_files(local_path, zoom_range, bucket_name="elevation-tiles-prod", p
         for x in range(2 ** zoom):
             (local_path / str(zoom) / str(x)).mkdir(parents=True, exist_ok=True)
 
+        file_names = [f"{zoom}/{x}/{y}.png" for x in range(2 ** zoom) for y in range(2 ** zoom)]
+
         # Set up ThreadPoolExecutor for concurrent downloads
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = []
-            file_names = [f"{zoom}/{x}/{y}.png" for x in range(2 ** zoom) for y in range(2 ** zoom)]
             for file_name in file_names:
                 file_path = Path.joinpath(local_path, file_name)
                 if not file_path.exists():
                     futures.append(executor.submit(download_file, s3_client, bucket_name, file_name, file_path, prefix))
 
             # Wait for all downloads to complete
-            for future in as_completed(futures):
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"Zoom {zoom}"):
                 try:
                     future.result()  # Raise any exception from the thread
                 except Exception as e:
                     print_flush(f"Error during file download: {e}")
 
 
-def terrarium_download(range_start=0, range_end=21):
+def terrarium_download(range_start=0, range_end=12):
     zoom_range = range(range_start, range_end + 1)  # Inclusive range
 
     # Check that local directories are writable
@@ -253,4 +260,4 @@ def terrarium_download(range_start=0, range_end=21):
 
 # Zoom levels 0-10 result in a 110 GB MBTiles file; adding 11 would increase the size to 470 GB
 # Tiles are available up to zoom level 15, but 10 (with upsampling when needed) is sufficient for WHG
-terrarium_download(0, 15)
+terrarium_download()
