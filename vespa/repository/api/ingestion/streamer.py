@@ -158,8 +158,12 @@ class StreamFetcher:
             #     return gzip.open(file_path, 'rt', encoding='utf-8')
 
             if file_path.endswith('.osm.pbf'):
-                # Convert to osm.geojsonseq once using osmium
-
+                # Convert to osm.geojsonseq using osmium, using tmux to avoid pipe breakage.
+                # tmux new -s osmium_export
+                # osmium export /ix1/whcdh/data/osm/planet-latest/planet-latest.osm.pbf -o /ix1/whcdh/data/osm/planet-latest/planet-latest.osm.geojsonseq -i dense_file_array,/ix1/whcdh/data/osm/planet-latest/osmium-index.idx --attribute type,id --add-unique-id=type_id --overwrite --progress --verbose
+                # Detach and leave it running, using `Ctrl-b d`
+                # Reattach to the tmux session with `tmux attach -t osmium_export`
+                exit("OSM PBF files are not supported. Please convert to geojsonseq format first.")
 
             # Check for gzip compression by inspecting magic bytes
             with open(file_path, 'rb') as file:
