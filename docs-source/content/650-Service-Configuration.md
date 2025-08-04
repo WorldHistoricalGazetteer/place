@@ -34,3 +34,11 @@ accordingly once this is confirmed.
 
 The CI/CD pipeline is a simple secured GitHub Action which polls the management API, causing a pull of the relevant directories
 and re-application of the associated Helm charts (see `.github/workflows/notify-pitt.yml` and `deployment/app/api.py`).
+
+> ### ⚠️ Bot Management
+> To reduce the impact of unwanted bot traffic (e.g. crawlers, scrapers, vulnerability scanners) on public-facing endpoints, we request that basic bot filtering be applied at the ingress layer.
+> 
+> At minimum, this should include:
+> - Blocking requests from known malicious or non-browser user agents
+> - Applying reasonable rate limits per IP address to mitigate brute-force or scanning behaviour (`tileserver.whgazetteer.org` would need a relatively generous allowance)
+> - Preventing unauthenticated access to subdomains not intended for public use
