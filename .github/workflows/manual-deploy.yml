@@ -1,0 +1,46 @@
+name: Manual Deploy Docs to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: pip install -r docs-source/requirements.txt
+
+      - name: Build documentation
+        run: |
+          cd docs-source
+          make clean
+          make html
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload built docs artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-source/_build/html
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Show deployed page URL
+        run: echo "Site deployed at ${{ steps.deployment.outputs.page_url }}"
