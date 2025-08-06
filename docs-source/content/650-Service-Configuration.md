@@ -15,18 +15,18 @@ upstream.
 
 ## Proposed Subdomain Mapping
 
-| Subdomain                    | Purpose                      | Kubernetes Service | Port | Access Scope    |
-|------------------------------|------------------------------|--------------------|------|-----------------|
-| `whgazetteer.org`            | Public-facing frontend       | `frontend`         | 80   | Public          |
-| `docs.whgazetteer.org`       | Public documentation         | `docs`             | 80   | Public          |
-| `blog.whgazetteer.org`       | WordPress blog               | `blog`             | 80   | Public          |
-| `tileserver.whgazetteer.org` | Map tile server              | `tile-server`      | 80   | Public          |
-| `api.whgazetteer.org`        | Public API                   | `public-api`       | 80   | Public          |
-| `admin.whgazetteer.org`      | Management API               | `management-api`   | 8000 | CI/CD, Pitt VPN |
-| `test.whgazetteer.org`       | Django test instance         | `django-test`      | 80   | Pitt VPN only   |
-| `errors.whgazetteer.org`     | Error tracking               | `glitchtip`        | 3000 | Pitt VPN only   |
-| `analytics.whgazetteer.org`  | Usage analytics              | `plausible`        | 8000 | Pitt VPN only   |
-| `monitor.whgazetteer.org`    | Prometheus + Grafana metrics | `grafana`          | 3000 | Pitt VPN only   |
+| Subdomain                    | Purpose                      | Kubernetes Service | Port  | Access Scope    |
+|------------------------------|------------------------------|--------------------|-------|-----------------|
+| `whgazetteer.org`            | Public-facing frontend       | `frontend`         | 443   | Public          |
+| `docs.whgazetteer.org`       | Public documentation         | `docs`             | 443   | Public          |
+| `blog.whgazetteer.org`       | WordPress blog               | `blog`             | 443   | Public          |
+| `tileserver.whgazetteer.org` | Map tile server              | `tile-server`      | 443   | Public          |
+| `api.whgazetteer.org`        | Public API                   | `public-api`       | 443   | Public          |
+| `admin.whgazetteer.org`      | Management API               | `management-api`   | 8000  | CI/CD, Pitt VPN |
+| `test.whgazetteer.org`       | Django test instance         | `django-test`      | 8443  | Pitt VPN only   |
+| `errors.whgazetteer.org`     | Error tracking               | `glitchtip`        | 3000  | Pitt VPN only   |
+| `analytics.whgazetteer.org`  | Usage analytics              | `plausible`        | 8000  | Pitt VPN only   |
+| `monitor.whgazetteer.org`    | Prometheus + Grafana metrics | `grafana`          | 3000  | Pitt VPN only   |
 
 Each of these Services will be exposed in the cluster according to the CRC team's preferred mechanism (e.g. `NodePort`,
 `LoadBalancer`, or `ClusterIP` behind an internal ingress proxy). We will adjust our service exposure strategy
