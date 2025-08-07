@@ -55,6 +55,7 @@ PG_USER_PASSWORD=$(get_secret "postgresql-user-password")
 PG_REPL_PASSWORD=$(get_secret "postgresql-replication-password")
 DO_API_TOKEN=$(get_secret "digitalocean-pat")
 UNIX_PASSWORD=$(get_secret "unix-password")
+NOTIFY_PITT_TOKEN=$(get_secret "notify-pitt-token")
 
 # === Construct DATABASE_URL ===
 VALUES_FILE="$HOME/deployment-repo/values.yaml"
@@ -75,6 +76,7 @@ kubectl create secret generic "$SECRET_NAME" \
   --from-literal=postgresql-replication-password="$PG_REPL_PASSWORD" \
   --from-literal=kubernetes-cluster-issuer="$DO_API_TOKEN" \
   --from-literal=user-password="$UNIX_PASSWORD" \
+  --from-literal=notify-pitt-token="$NOTIFY_PITT_TOKEN" \
   --from-literal=database-url="$DATABASE_URL" \
   --from-file=ca_cert="$TARGET_DIR/ca-cert.pem" \
   --from-file=env_template.py="$TARGET_DIR/env_template.py" \
