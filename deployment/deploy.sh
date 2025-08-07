@@ -3,13 +3,11 @@
 # This would normally be called on the Pitt VM via:
 # bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/deploy.sh")
 
+REPO_DIR="$HOME/deployment-repo"
+
 set -e # Ensure the script exits on error
 
 cleanup() {
-  echo "Cleaning up temporary directory: $REPO_DIR"
-  if [ -d "$REPO_DIR" ]; then
-    rm -rf "$REPO_DIR"
-  fi
   unset CA_CERT CLIENT_CERT CLIENT_KEY minikube_ip
   if [ -d "/tmp/kubeconfig" ]; then
     shred -u /tmp/kubeconfig
@@ -18,19 +16,6 @@ cleanup() {
 
 # Register the cleanup function to be called on exit
 trap cleanup EXIT
-
-# Git repository details
-REPO_URL="https://github.com/WorldHistoricalGazetteer/place.git"
-REPO_DIR="/home/gazetteer/deployment-temp" # Temporary directory
-
-# Create the temporary directory if necessary
-mkdir -p "$REPO_DIR"
-
-# Clone only the deploy/management directory (shallow clone)
-git clone --depth 1 --filter=blob:none --sparse "$REPO_URL" "$REPO_DIR"
-cd "$REPO_DIR"
-git sparse-checkout init --cone
-git sparse-checkout add deployment
 
 if ! kubectl get namespace management >/dev/null 2>&1; then
   echo "Creating 'management' namespace..."
@@ -88,8 +73,6 @@ else
 fi
 
 # Fetch remote secrets and create Kubernetes secrets
-ls -la "$REPO_DIR"
-ls -la "$REPO_DIR/deployment"
 source "$REPO_DIR/deployment/load-secrets.sh"
 
 # Install `deployment` Helm chart
