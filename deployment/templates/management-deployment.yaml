@@ -44,7 +44,6 @@ spec:
               export KUBECONFIG=/root/.kube/config &&
               cd /apps/repository &&
               chmod +x *.sh &&
-              ./deployment/load-secrets.sh &&
               ls -la &&
               python ./deployment/app/api.py
           ports:
