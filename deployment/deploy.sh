@@ -88,7 +88,7 @@ else
 fi
 
 # Fetch remote secrets and create Kubernetes secrets
-source "$SCRIPT_DIR/load-secrets.sh"
+source "$REPO_DIR/deployment/load-secrets.sh"
 
 # Install `deployment` Helm chart
 helm upgrade --install management-chart "$REPO_DIR/deployment" \
