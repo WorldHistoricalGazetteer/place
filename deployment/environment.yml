@@ -45,7 +45,6 @@ dependencies:
   - conda-forge/linux-64::geos==3.13.1=h97f6797_0
   - conda-forge/linux-64::gflags==2.2.2=h5888daf_1005
   - jq
-  - conda-forge::yq
   - conda-forge/linux-64::keyutils==1.6.1=h166bdaf_0
   - conda-forge/linux-64::lerc==4.0.0=h0aef613_1
   - conda-forge/linux-64::libabseil==20240722.0=cxx17_hbbce691_4
