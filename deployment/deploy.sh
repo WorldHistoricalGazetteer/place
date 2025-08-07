@@ -87,6 +87,9 @@ else
   echo "Secret 'github-token' already exists in the 'management' namespace, skipping creation."
 fi
 
+# Fetch remote secrets and create Kubernetes secrets
+source "$SCRIPT_DIR/load-secrets.sh"
+
 # Install `deployment` Helm chart
 helm upgrade --install management-chart "$REPO_DIR/deployment" \
   --namespace management \
@@ -487,7 +490,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Install HashiCorp utilities; fetch remote secrets and create Kubernetes secrets
+# Fetch remote secrets and create Kubernetes secrets
 source "$SCRIPT_DIR/load-secrets.sh"
 
 # Create required directories for persistent storage; clone WHG database
