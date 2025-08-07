@@ -43,8 +43,8 @@ if ! kubectl get secret kubeconfig -n management > /dev/null 2>&1; then
 
   # Base64-encode the certificates
   CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
-  CLIENT_CERT=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.crt)
-  CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.key)
+  CLIENT_CERT=$(base64 -w0 /home/gazetteer/.minikube/profiles/whg/client.crt)
+  CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/whg/client.key)
 
   # Get the Minikube IP
   minikube_ip=$(minikube ip)
