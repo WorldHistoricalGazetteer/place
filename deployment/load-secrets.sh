@@ -57,7 +57,7 @@ DO_API_TOKEN=$(get_secret "digitalocean-pat")
 UNIX_PASSWORD=$(get_secret "unix-password")
 
 # === Construct DATABASE_URL ===
-VALUES_FILE="$SCRIPT_DIR/whg/values.yaml"
+VALUES_FILE="$HOME/deployment-repo/values.yaml"
 DB_USER=$(yq e '.postgres.dbUser' "$VALUES_FILE")
 DB_NAME=$(yq e '.postgres.dbName' "$VALUES_FILE")
 POSTGRES_PORT=$(yq e '.postgres.port' "$VALUES_FILE")
