@@ -96,4 +96,3 @@ echo "✅ Secret '$SECRET_NAME' created and copied to namespaces."
 echo "📁 Files stored in: $TARGET_DIR"
 ls -l "$TARGET_DIR"
 
-exit 0
