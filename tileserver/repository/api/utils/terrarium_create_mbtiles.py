@@ -53,9 +53,9 @@ def mbtiles_connect(mbtiles_file):
 
 
 def optimize_connection(cur):
-    cur.execute("""PRAGMA synchronous=0""")
-    cur.execute("""PRAGMA locking_mode=EXCLUSIVE""")
-    cur.execute("""PRAGMA journal_mode=DELETE""")
+    cur.execute("PRAGMA journal_mode=WAL;")
+    cur.execute("PRAGMA synchronous=OFF;")
+    cur.execute("PRAGMA cache_size=10000;")
 
 
 def optimize_database(cur):
@@ -79,9 +79,6 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
     try:
         # Performance optimisations
         optimize_connection(cur)
-        cur.execute("PRAGMA journal_mode=WAL;")
-        cur.execute("PRAGMA synchronous=OFF;")
-        cur.execute("PRAGMA cache_size=10000;")
 
         mbtiles_setup(cur)
         image_format = 'png'
@@ -273,5 +270,5 @@ def terrarium_download(range_start=0, range_end=12):
     dir_to_mbtiles(data_dir, os.path.join(LOCAL_TILES_DIR, "terrarium.mbtiles"), metadata)
 
 # Zoom levels 0-10 result in a 110 GB MBTiles file; adding 11 would increase the size to 470 GB
-# Tiles are available up to zoom level 15, but 10 (with upsampling when needed) is sufficient for WHG
+# Tiles are available up to zoom level 15, but 12 (with upsampling when needed) is sufficient for WHG
 terrarium_download()
