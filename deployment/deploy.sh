@@ -88,6 +88,8 @@ else
 fi
 
 # Fetch remote secrets and create Kubernetes secrets
+ls -la "$REPO_DIR"
+ls -la "$REPO_DIR/deployment"
 source "$REPO_DIR/deployment/load-secrets.sh"
 
 # Install `deployment` Helm chart
