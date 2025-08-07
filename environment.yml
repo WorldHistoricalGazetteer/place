@@ -102,7 +102,7 @@ dependencies:
   - conda-forge/linux-64::libgrpc==1.67.1=h25350d4_2
   - conda-forge/linux-64::liblapack==3.9.0=32_h7ac8fdf_openblas
   - conda-forge/linux-64::libllvm17==17.0.6=ha7bfdaf_3
-  - python=3.14
+  - python=3.11
   - conda-forge/linux-64::rdma-core==58.0=h5888daf_0
   - conda-forge/linux-64::sqlite==3.50.3=heff268d_1
   - aiofiles
