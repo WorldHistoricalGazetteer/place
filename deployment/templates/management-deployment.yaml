@@ -35,8 +35,8 @@ spec:
             - "-c"
             - |
               echo "ID: $(id)" &&
-              echo "Directory listing of /ix1/whcdh/data:" &&
-              ls -la /ix1/whcdh/data
+              # echo "Directory listing of /ix1/whcdh/data:" &&
+              # ls -la /ix1/whcdh/data
               echo "Touching a test file in /ix1/whcdh/data" &&
               touch /ix1/whcdh/data/test-file.txt &&
               ls -la /ix1/whcdh/data
