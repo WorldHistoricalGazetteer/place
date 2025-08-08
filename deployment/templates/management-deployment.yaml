@@ -37,6 +37,9 @@ spec:
               echo "ID: $(id)" &&
               echo "Directory listing of /ix1/whcdh/data:" &&
               ls -la /ix1/whcdh/data
+              echo "Touching a test file in /ix1/whcdh/data" &&
+              touch /ix1/whcdh/data/test-file.txt &&
+              ls -la /ix1/whcdh/data
               export KUBECONFIG=/root/.kube/config &&
               cd /apps/repository &&
               chmod +x *.sh &&
