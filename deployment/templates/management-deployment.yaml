@@ -32,15 +32,6 @@ spec:
             - "-c"
             - |
               ls -la /ix1/whcdh
-              echo "Commands in /usr/local/bin:"
-              ls -l /usr/local/bin
-              echo "Commands in /bin:"
-              ls -l /bin
-              echo "BusyBox applets:"
-              busybox --list
-              python3 -m venv /venv &&
-              . /venv/bin/activate &&
-              pip install fastapi uvicorn &&
               export KUBECONFIG=/root/.kube/config &&
               cd /apps/repository &&
               chmod +x *.sh &&
