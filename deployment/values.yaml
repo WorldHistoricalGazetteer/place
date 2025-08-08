@@ -13,8 +13,12 @@ service:
   nodePort: 30080
 
 securityContext:
-  runAsUser: 53644 # 1001
-  runAsGroup: 1001
+#  runAsUser: 1001
+#  runAsGroup: 1001
+#  fsGroup: 16604
+#  fsGroupChangePolicy: "Always"
+  runAsUser: 11001
+  runAsGroup: 16604
   fsGroup: 16604
   fsGroupChangePolicy: "Always"
 
