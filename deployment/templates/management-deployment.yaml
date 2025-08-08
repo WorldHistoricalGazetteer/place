@@ -21,6 +21,9 @@ spec:
         - name: git-clone
           image: alpine/git:latest
           command: ["git", "clone", "https://github.com/WorldHistoricalGazetteer/place", "/apps/repository"]
+          securityContext:
+            runAsUser: {{ .Values.securityContext.runAsUser | default 1001 }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup | default 1001 }}
           volumeMounts:
             - name: empty-dir-volume
               mountPath: /apps/repository
