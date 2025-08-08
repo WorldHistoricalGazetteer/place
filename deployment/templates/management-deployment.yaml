@@ -16,7 +16,7 @@ spec:
         app: gazetteer-management
     spec:
       securityContext:
-        fsGroup: {{ .Values.securityContext.fsGroup | default 53644 }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
       initContainers:
         - name: git-clone
           image: alpine/git:latest
