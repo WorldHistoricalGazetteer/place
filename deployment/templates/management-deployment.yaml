@@ -31,9 +31,12 @@ spec:
             - "/bin/sh"
             - "-c"
             - |
+              echo "Directory listing of /ix1/whcdh:" &&
               ls -la /ix1/whcdh
               export KUBECONFIG=/root/.kube/config &&
               cd /apps/repository &&
+              echo "Directory listing of /apps/repository:" &&
+              ls -la &&
               chmod +x *.sh &&
               ls -la &&
               python ./deployment/app/api.py
