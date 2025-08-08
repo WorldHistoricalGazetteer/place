@@ -11,6 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   hostPath:
     path: /minikube-whcdh
+    type: Directory
 {{/*  nfs:*/}}
 {{/*    path: /mnt/tank/crc/whcdh*/}}
 {{/*    server: ix1.crc.pitt.edu*/}}
