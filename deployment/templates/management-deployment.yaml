@@ -16,9 +16,10 @@ spec:
         app: gazetteer-management
     spec:
       securityContext:
-        fsGroup: {{ .Values.securityContext.fsGroup }}
         runAsUser: {{ .Values.securityContext.runAsUser | default 1001 }}
         runAsGroup: {{ .Values.securityContext.runAsGroup | default 1001 }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+        fsGroupChangePolicy: {{ .Values.securityContext.fsGroupChangePolicy | default "Always" }}
       initContainers:
         - name: git-clone
           image: alpine/git:latest
@@ -34,8 +35,8 @@ spec:
             - "-c"
             - |
               echo "ID: $(id)" &&
-              echo "Directory listing of /ix1/whcdh:" &&
-              ls -la /ix1/whcdh
+              echo "Directory listing of /ix1/whcdh/data:" &&
+              ls -la /ix1/whcdh/data
               export KUBECONFIG=/root/.kube/config &&
               cd /apps/repository &&
               chmod +x *.sh &&
