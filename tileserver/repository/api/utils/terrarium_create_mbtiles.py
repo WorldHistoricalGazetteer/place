@@ -67,75 +67,110 @@ def optimize_database(cur):
 
 
 def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
-    logger.info("Importing disk to MBTiles")
-    sys.stdout.write(f"Importing disk to MBTiles: {directory_path} --> {mbtiles_file}\n")
+    logger.info("Importing disk to MBTiles (streaming with ETA, no pre-count)")
+
+    sys.stdout.write(f"Importing: {directory_path} --> {mbtiles_file}\n")
     scheme = kwargs.get('scheme', 'tms')
     sys.stdout.write(f"Using {'XYZ' if scheme == 'xyz' else 'TMS'} scheme\n")
 
-    logger.debug("%s --> %s" % (directory_path, mbtiles_file))
     con = mbtiles_connect(mbtiles_file)
     cur = con.cursor()
-    count = None
-    try:
-        # Performance optimisations
-        optimize_connection(cur)
 
+    optimize_connection(cur)
+
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='tiles'")
+    new_db = cur.fetchone() is None
+
+    if new_db:
+        logger.info("No existing tiles table found – creating new one.")
         mbtiles_setup(cur)
-        image_format = 'png'
-        grid_warning = True
+    else:
+        logger.info("Existing MBTiles detected — will skip tiles that already exist.")
 
-        # Load metadata.json if present
-        metadata_path = os.path.join(directory_path, 'metadata.json')
-        if os.path.isfile(metadata_path):
-            try:
-                with open(metadata_path, 'r') as f:
-                    metadata = json.load(f)
-                    image_format = metadata.get('format', 'png')
-                    for name, value in metadata.items():
-                        cur.execute('INSERT INTO metadata (name, value) VALUES (?, ?)', (name, value))
-                logger.info('Metadata from metadata.json restored')
-            except Exception as e:
-                logger.warning(f'Failed to load metadata.json: {e}')
-        else:
-            logger.warning('metadata.json not found')
+    image_format = 'png'
+    metadata_path = os.path.join(directory_path, 'metadata.json')
+    if new_db and os.path.isfile(metadata_path):
+        try:
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+                image_format = metadata.get('format', 'png')
+                for name, value in metadata.items():
+                    cur.execute(
+                        'INSERT INTO metadata (name, value) VALUES (?, ?)',
+                        (name, value)
+                    )
+            logger.info('Metadata loaded from metadata.json')
+        except Exception as e:
+            logger.warning(f'Failed to load metadata.json: {e}')
 
-        # Insert tiles
-        count = 0
-        start_time = time.time()
-        for r1, zs, _ in os.walk(directory_path):
-            for z in zs:
-                for r2, xs, _ in os.walk(os.path.join(r1, z)):
-                    for x in xs:
-                        for r3, _, ys in os.walk(os.path.join(r1, z, x)):
-                            for y_file in ys:
-                                y, ext = y_file.rsplit('.', 1)
-                                if ext == image_format:
-                                    tile_path = os.path.join(r1, z, x, y_file)
-                                    with open(tile_path, 'rb') as f:
-                                        tile_data = f.read()
-                                    y_index = flip_y(int(z), int(y)) if scheme == 'xyz' else int(y)
-                                    cur.execute(
-                                        """INSERT INTO tiles (zoom_level, tile_column, tile_row, tile_data)
-                                           VALUES (?, ?, ?, ?)""",
-                                        (int(z), int(x), y_index, sqlite3.Binary(tile_data))
-                                    )
-                                    count += 1
-                                    if count % 1000 == 0:
-                                        con.commit()
-                                        sys.stdout.write(f"\r{count} tiles inserted ({round(count / (time.time() - start_time))} tiles/sec)")
-                                        sys.stdout.flush()
-                                elif ext == 'grid.json' and grid_warning:
-                                    logger.warning('grid.json interactivity import not yet supported\n')
-                                    grid_warning = False
+    exists_stmt = "SELECT 1 FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=? LIMIT 1"
+    batch_size = kwargs.get('batch_size', 50000)
+    inserted = 0
+    processed = 0
+    start_time = time.time()
 
-        # Final commit
-        con.commit()
-        logger.debug('Tiles inserted.')
+    for r1, zs, _ in os.walk(directory_path):
+        for z in zs:
+            z_dir = os.path.join(r1, z)
+            for r2, xs, _ in os.walk(z_dir):
+                for x in xs:
+                    x_dir = os.path.join(z_dir, x)
+                    for r3, _, ys in os.walk(x_dir):
+                        for y_file in ys:
+                            if '.' not in y_file:
+                                continue
+                            y, ext = y_file.rsplit('.', 1)
+                            if ext != image_format:
+                                continue
+
+                            y_index = flip_y(int(z), int(y)) if scheme == 'xyz' else int(y)
+                            tile_path = os.path.join(x_dir, y_file)
+
+                            cur.execute(exists_stmt, (int(z), int(x), y_index))
+                            if cur.fetchone():
+                                processed += 1
+                                continue
+
+                            try:
+                                with open(tile_path, 'rb') as fh:
+                                    tile_data = fh.read()
+                                cur.execute(
+                                    """INSERT INTO tiles
+                                       (zoom_level, tile_column, tile_row, tile_data)
+                                       VALUES (?, ?, ?, ?)""",
+                                    (int(z), int(x), y_index, sqlite3.Binary(tile_data))
+                                )
+                                inserted += 1
+                            except sqlite3.IntegrityError:
+                                pass
+                            except Exception as e:
+                                logger.exception(f"Failed to insert {tile_path}: {e}")
+
+                            processed += 1
+                            if inserted > 0 and inserted % batch_size == 0:
+                                con.commit()
+                                elapsed = time.time() - start_time
+                                rate = inserted / elapsed if elapsed > 0 else 0
+                                # ETA based on processed tiles assuming all are potential inserts
+                                eta = (processed / rate - elapsed) if rate > 0 else 0
+                                logger.info(
+                                    f"{inserted:,} new tiles inserted, {processed:,} processed "
+                                    f"({rate:.1f} tiles/sec, ETA {eta/3600:.2f}h remaining)"
+                                )
+
+    con.commit()
+    elapsed = time.time() - start_time
+    final_rate = inserted / elapsed if elapsed > 0 else 0
+    logger.info(
+        f"Inserted {inserted:,} new tiles, processed {processed:,} total in {elapsed/3600:.2f}h "
+        f"({final_rate:.1f} tiles/sec)"
+    )
+
+    if new_db:
         optimize_database(con)
 
-    finally:
-        con.close()
-        logger.info(f"Import complete. {count} tiles written. Database connection closed.")
+    con.close()
+    logger.info("Import complete. Database connection closed.")
 
 
 
@@ -153,11 +188,10 @@ def create_metadata_file(output_dir, metadata):
 
 def dir_to_mbtiles(input_dir, output_file, metadata):
     if os.path.exists(output_file):
-        os.remove(output_file)
-        logger.info(f"Deleted existing MBTiles file: {output_file}")
-
-    # Create the metadata.json file
-    create_metadata_file(input_dir, metadata)
+        logger.info(f"MBTiles file exists, resuming: {output_file}")
+    else:
+        # Create the metadata.json file
+        create_metadata_file(input_dir, metadata)
 
     disk_to_mbtiles(input_dir, output_file, scheme='xyz')
 
@@ -192,7 +226,7 @@ def download_file(s3_client, bucket_name, file_name, local_path, prefix):
             time.sleep(delay)
 
 
-def download_files(local_path, zoom_range, bucket_name="elevation-tiles-prod", prefix="terrarium/"):
+def download_files(local_path, zoom_range, bucket_name="elevation-tiles-prod", prefix="terrarium/", skip_existing_zoom=True):
     # Set up S3 client with no-sign-request option
     print_flush("Setting up S3 client...")
     s3_client = boto3.client('s3', config=Config(signature_version=UNSIGNED))
@@ -200,6 +234,11 @@ def download_files(local_path, zoom_range, bucket_name="elevation-tiles-prod", p
     local_path = Path(local_path)
 
     for zoom in zoom_range:
+
+        if skip_existing_zoom and (local_path / str(zoom)).exists():
+            print_flush(f"Skipping zoom level {zoom} as it already exists.")
+            continue
+
         # First, create the subfolders for each zoom level
         for x in range(2 ** zoom):
             (local_path / str(zoom) / str(x)).mkdir(parents=True, exist_ok=True)
