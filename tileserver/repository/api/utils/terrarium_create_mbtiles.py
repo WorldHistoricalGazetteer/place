@@ -73,9 +73,11 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
     scheme = kwargs.get('scheme', 'tms')
     sys.stdout.write(f"Using {'XYZ' if scheme == 'xyz' else 'TMS'} scheme\n")
 
+    max_zoom = kwargs.get('max_zoom', None)
+    batch_size = kwargs.get('batch_size', 50000)
+
     con = mbtiles_connect(mbtiles_file)
     cur = con.cursor()
-
     optimize_connection(cur)
 
     cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='tiles'")
@@ -103,62 +105,70 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
         except Exception as e:
             logger.warning(f'Failed to load metadata.json: {e}')
 
+    check_exists = not new_db
     exists_stmt = "SELECT 1 FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=? LIMIT 1"
-    batch_size = kwargs.get('batch_size', 50000)
     inserted = 0
     processed = 0
     start_time = time.time()
 
-    for r1, zs, _ in os.walk(directory_path):
-        for z in zs:
-            z_dir = os.path.join(r1, z)
-            for r2, xs, _ in os.walk(z_dir):
-                for x in xs:
-                    x_dir = os.path.join(z_dir, x)
-                    for r3, _, ys in os.walk(x_dir):
-                        for y_file in ys:
-                            if '.' not in y_file:
-                                continue
-                            y, ext = y_file.rsplit('.', 1)
-                            if ext != image_format:
-                                continue
+    # Get numeric zoom directories in ascending order
+    zoom_dirs = sorted(
+        [d for d in os.listdir(directory_path) if d.isdigit()],
+        key=int
+    )
+    if max_zoom is not None:
+        zoom_dirs = [z for z in zoom_dirs if int(z) <= max_zoom]
 
-                            y_index = flip_y(int(z), int(y)) if scheme == 'xyz' else int(y)
-                            tile_path = os.path.join(x_dir, y_file)
+    for z in zoom_dirs:
+        z_dir = os.path.join(directory_path, z)
+        for x in sorted([d for d in os.listdir(z_dir) if d.isdigit()], key=int):
+            x_dir = os.path.join(z_dir, x)
+            for y_file in os.listdir(x_dir):
+                if '.' not in y_file:
+                    continue
+                y, ext = y_file.rsplit('.', 1)
+                if ext != image_format:
+                    continue
 
-                            cur.execute(exists_stmt, (int(z), int(x), y_index))
-                            if cur.fetchone():
-                                processed += 1
-                                continue
+                y_index = flip_y(int(z), int(y)) if scheme == 'xyz' else int(y)
+                tile_path = os.path.join(x_dir, y_file)
 
-                            try:
-                                with open(tile_path, 'rb') as fh:
-                                    tile_data = fh.read()
-                                cur.execute(
-                                    """INSERT INTO tiles
-                                       (zoom_level, tile_column, tile_row, tile_data)
-                                       VALUES (?, ?, ?, ?)""",
-                                    (int(z), int(x), y_index, sqlite3.Binary(tile_data))
-                                )
-                                inserted += 1
-                            except sqlite3.IntegrityError:
-                                pass
-                            except Exception as e:
-                                logger.exception(f"Failed to insert {tile_path}: {e}")
+                if check_exists:
+                    cur.execute(exists_stmt, (int(z), int(x), y_index))
+                    if cur.fetchone():
+                        processed += 1
+                        continue
 
-                            processed += 1
-                            if inserted > 0 and inserted % batch_size == 0:
-                                con.commit()
-                                elapsed = time.time() - start_time
-                                rate = inserted / elapsed if elapsed > 0 else 0
-                                # ETA based on processed tiles assuming all are potential inserts
-                                eta = (processed / rate - elapsed) if rate > 0 else 0
-                                logger.info(
-                                    f"{inserted:,} new tiles inserted, {processed:,} processed "
-                                    f"({rate:.1f} tiles/sec, ETA {eta/3600:.2f}h remaining)"
-                                )
+                try:
+                    with open(tile_path, 'rb') as fh:
+                        tile_data = fh.read()
+                    cur.execute(
+                        """INSERT INTO tiles
+                           (zoom_level, tile_column, tile_row, tile_data)
+                           VALUES (?, ?, ?, ?)""",
+                        (int(z), int(x), y_index, sqlite3.Binary(tile_data))
+                    )
+                    inserted += 1
+                except sqlite3.IntegrityError:
+                    pass
+                except Exception as e:
+                    logger.exception(f"Failed to insert {tile_path}: {e}")
 
-    con.commit()
+                processed += 1
+                if inserted > 0 and inserted % batch_size == 0:
+                    con.commit()
+                    elapsed = time.time() - start_time
+                    rate = inserted / elapsed if elapsed > 0 else 0
+                    eta = (processed / rate - elapsed) if rate > 0 else 0
+                    logger.info(
+                        f"{inserted:,} new tiles inserted, {processed:,} processed "
+                        f"({rate:.1f} tiles/sec, ETA {eta/3600:.2f}h remaining)"
+                    )
+
+        # Commit after finishing each zoom level
+        con.commit()
+        logger.info(f"Finished zoom level {z}, committed progress.")
+
     elapsed = time.time() - start_time
     final_rate = inserted / elapsed if elapsed > 0 else 0
     logger.info(
