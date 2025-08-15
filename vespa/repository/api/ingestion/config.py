@@ -106,7 +106,7 @@ REMOTE_DATASET_CONFIGS = [
         'files': [
             {
                 'url': 'https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf',  # 88.1GB
-                'local_name': 'planet-latest.osm.geojsonseq',  # GB
+                'local_name': 'planet-latest-full.osm.geojsonseq',  # 909GB
                 'file_type': 'geojsonseq',  # GeoJSON Sequence with Record Separators
                 'filters': [
                     lambda feature: 'name' in (properties := feature['properties']) and

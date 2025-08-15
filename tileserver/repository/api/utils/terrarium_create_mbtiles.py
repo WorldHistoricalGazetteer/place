@@ -73,8 +73,10 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
     scheme = kwargs.get('scheme', 'tms')
     sys.stdout.write(f"Using {'XYZ' if scheme == 'xyz' else 'TMS'} scheme\n")
 
+    min_zoom = kwargs.get('min_zoom', None)
     max_zoom = kwargs.get('max_zoom', None)
-    batch_size = kwargs.get('batch_size', 50000)
+    batch_size = kwargs.get('batch_size', 1000)
+    skip_check = kwargs.get('skip_check', False)
 
     con = mbtiles_connect(mbtiles_file)
     cur = con.cursor()
@@ -116,8 +118,12 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
         [d for d in os.listdir(directory_path) if d.isdigit()],
         key=int
     )
+    if min_zoom is not None:
+        zoom_dirs = [z for z in zoom_dirs if int(z) >= min_zoom]
     if max_zoom is not None:
         zoom_dirs = [z for z in zoom_dirs if int(z) <= max_zoom]
+
+    tile_buffer = []
 
     for z in zoom_dirs:
         z_dir = os.path.join(directory_path, z)
@@ -133,7 +139,7 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
                 y_index = flip_y(int(z), int(y)) if scheme == 'xyz' else int(y)
                 tile_path = os.path.join(x_dir, y_file)
 
-                if check_exists:
+                if check_exists and not skip_check:
                     cur.execute(exists_stmt, (int(z), int(x), y_index))
                     if cur.fetchone():
                         processed += 1
@@ -142,32 +148,42 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
                 try:
                     with open(tile_path, 'rb') as fh:
                         tile_data = fh.read()
-                    cur.execute(
+                    tile_buffer.append((int(z), int(x), y_index, sqlite3.Binary(tile_data)))
+                    inserted += 1
+                except Exception as e:
+                    logger.exception(f"Failed to read {tile_path}: {e}")
+
+                processed += 1
+
+                if len(tile_buffer) >= batch_size:
+                    cur.executemany(
                         """INSERT INTO tiles
                            (zoom_level, tile_column, tile_row, tile_data)
                            VALUES (?, ?, ?, ?)""",
-                        (int(z), int(x), y_index, sqlite3.Binary(tile_data))
+                        tile_buffer
                     )
-                    inserted += 1
-                except sqlite3.IntegrityError:
-                    pass
-                except Exception as e:
-                    logger.exception(f"Failed to insert {tile_path}: {e}")
-
-                processed += 1
-                if inserted > 0 and inserted % batch_size == 0:
                     con.commit()
+                    tile_buffer.clear()
+
                     elapsed = time.time() - start_time
                     rate = inserted / elapsed if elapsed > 0 else 0
                     eta = (processed / rate - elapsed) if rate > 0 else 0
                     logger.info(
                         f"{inserted:,} new tiles inserted, {processed:,} processed "
-                        f"({rate:.1f} tiles/sec, ETA {eta/3600:.2f}h remaining)"
+                        f"({rate:.1f} tiles/sec, ETA {eta / 3600:.2f}h remaining)"
                     )
 
-        # Commit after finishing each zoom level
-        con.commit()
-        logger.info(f"Finished zoom level {z}, committed progress.")
+        # Commit remaining tiles in buffer after finishing each zoom
+        if tile_buffer:
+            cur.executemany(
+                """INSERT INTO tiles
+                   (zoom_level, tile_column, tile_row, tile_data)
+                   VALUES (?, ?, ?, ?)""",
+                tile_buffer
+            )
+            con.commit()
+            tile_buffer.clear()
+            logger.info(f"Finished zoom level {z}, committed remaining tiles.")
 
     elapsed = time.time() - start_time
     final_rate = inserted / elapsed if elapsed > 0 else 0
@@ -203,7 +219,7 @@ def dir_to_mbtiles(input_dir, output_file, metadata):
         # Create the metadata.json file
         create_metadata_file(input_dir, metadata)
 
-    disk_to_mbtiles(input_dir, output_file, scheme='xyz')
+    disk_to_mbtiles(input_dir, output_file, scheme='xyz', skip_check=True, min_zoom=9, max_zoom=11)
 
 
 def download_file(s3_client, bucket_name, file_name, local_path, prefix):
