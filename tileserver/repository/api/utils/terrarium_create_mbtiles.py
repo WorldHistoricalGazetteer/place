@@ -20,6 +20,11 @@ LOCAL_TILES_DIR = "/ix1/whcdh/data/terrarium/tiles"
 os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
 os.makedirs(LOCAL_TILES_DIR, exist_ok=True)
 
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,   # send to stdout (default is stderr)
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -69,13 +74,13 @@ def optimize_database(cur):
 def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
     logger.info("Importing disk to MBTiles (streaming with ETA, no pre-count)")
 
-    sys.stdout.write(f"Importing: {directory_path} --> {mbtiles_file}\n")
+    logger.info(f"Importing: {directory_path} --> {mbtiles_file}\n")
     scheme = kwargs.get('scheme', 'tms')
-    sys.stdout.write(f"Using {'XYZ' if scheme == 'xyz' else 'TMS'} scheme\n")
+    logger.info(f"Using {'XYZ' if scheme == 'xyz' else 'TMS'} scheme\n")
 
     min_zoom = kwargs.get('min_zoom', None)
     max_zoom = kwargs.get('max_zoom', None)
-    batch_size = kwargs.get('batch_size', 1000)
+    batch_size = kwargs.get('batch_size', 10_000)
     skip_check = kwargs.get('skip_check', False)
 
     con = mbtiles_connect(mbtiles_file)
@@ -219,7 +224,7 @@ def dir_to_mbtiles(input_dir, output_file, metadata):
         # Create the metadata.json file
         create_metadata_file(input_dir, metadata)
 
-    disk_to_mbtiles(input_dir, output_file, scheme='xyz', skip_check=True, min_zoom=9, max_zoom=11)
+    disk_to_mbtiles(input_dir, output_file, scheme='xyz', skip_check=True, min_zoom=12, max_zoom=12)
 
 
 def download_file(s3_client, bucket_name, file_name, local_path, prefix):
