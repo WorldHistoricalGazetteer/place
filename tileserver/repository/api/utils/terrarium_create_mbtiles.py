@@ -292,7 +292,7 @@ def download_files(local_path, zoom_range, bucket_name="elevation-tiles-prod", p
                     print_flush(f"Error during file download: {e}")
 
 
-def terrarium_download(range_start=0, range_end=12):
+def terrarium_download(range_start=12, range_end=12):
     zoom_range = range(range_start, range_end + 1)  # Inclusive range
 
     # Check that local directories are writable
