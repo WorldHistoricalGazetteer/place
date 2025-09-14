@@ -36,7 +36,7 @@ data matching on the Web. It is compatible with **OpenRefine**.
   - Alternative names
   - Match score (normalized 0–100)
   - Exact match flag
-  - Full geometries in GeoJSON format
+- Always returns a **top-level GeoJSON FeatureCollection** of candidate geometries for visual disambiguation.
 - Batch requests are supported, with a configurable limit (`batch_size`).
 - Authentication via API token (`Authorization: Bearer <token>`) or session/CSRF.
 - **Parameter usage:** *[Placeholder: describe how to set search parameters like fuzzy match, phonetic similarity, spatial filters, temporal ranges, etc.]*
