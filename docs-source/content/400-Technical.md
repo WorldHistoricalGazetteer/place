@@ -39,7 +39,71 @@ data matching on the Web. It is compatible with **OpenRefine**.
 - Always returns a **top-level GeoJSON FeatureCollection** of candidate geometries for visual disambiguation.
 - Batch requests are supported, with a configurable limit (`batch_size`).
 - Authentication via API token (`Authorization: Bearer <token>`) or session/CSRF.
-- **Parameter usage:** *[Placeholder: describe how to set search parameters like fuzzy match, phonetic similarity, spatial filters, temporal ranges, etc.]*
+
+---
+
+### Parameter usage
+
+Each query object in the `queries` payload supports the following parameters:
+
+| Parameter     | Type       | Description |
+|---------------|------------|-------------|
+| `query`       | string     | Free-text search string (required). |
+| `mode`        | string     | Search mode: `"default"` (multi-match), `"fuzzy"` (edit distance), `"starts"` (prefix match), or `"in"` (substring/wildcard match). Defaults to `"default"`. |
+| `fclasses`    | array      | Restrict to specific feature classes (e.g. `["PPL","ADM1"]`). `"X"` (unknown) is always included automatically. |
+| `start`       | integer    | Start year for temporal filtering. |
+| `end`         | integer    | End year for temporal filtering (defaults to current year if omitted). |
+| `undated`     | boolean    | If `true`, include results with no temporal metadata in addition to those matching the range. |
+| `countries`   | array      | Restrict results to country codes (ISO 2-letter). |
+| `bounds`      | object     | GeoJSON geometry collection restricting results spatially (e.g. a bounding polygon). |
+| `userareas`   | array      | One or more IDs of user-defined stored areas; geometries are resolved server-side and used as spatial filters. |
+| `size`        | integer    | Maximum number of results per query (default: 100). |
+
+---
+
+### Example requests
+
+```bash
+curl -X POST https://whgazetteer.org/reconcile/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "User-Agent: notbot" \
+  -d '{
+    "queries": {
+      "q1": {
+        "query": "London",
+        "mode": "fuzzy",
+        "fclasses": ["A","P"],
+        "start": 1200,
+        "end": 2050,
+        "undated": true,
+        "countries": ["GB","US"],
+        "bounds": {
+          "geometries": [{
+            "type": "Polygon",
+            "coordinates": [[
+              [-1.0,51.0],
+              [-1.0,52.0],
+              [0.5,52.0],
+              [0.5,51.0],
+              [-1.0,51.0]
+            ]]
+          }]
+        }
+      }
+    }
+  }'
+```
+
+```python
+import requests
+
+url = "https://whgazetteer.org/reconcile/"
+headers = {"Authorization": "Bearer <API_TOKEN>", "Content-Type": "application/json"}
+payload = {"queries": {"q1": {"query": "Glasgow"}}}
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
 
 #### `/reconcile/extend/propose`
 - Accepts **POST** requests with candidate places.
@@ -58,26 +122,6 @@ data matching on the Web. It is compatible with **OpenRefine**.
 #### `/suggest`
 - Accepts **POST** requests to suggest entities, properties, or types.
 - Currently **not implemented** (returns HTTP 501).
-
-### Programmatic Examples
-
-```bash
-curl -X POST https://whgazetteer.org/reconcile/ \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <API_TOKEN>" \
-     -H "User-Agent: notbot" \
-     -d '{"queries":{"q1":{"query":"Glasgow"}}}'
-```
-
-```python
-import requests
-
-url = "https://whgazetteer.org/reconcile/"
-headers = {"Authorization": "Bearer <API_TOKEN>", "Content-Type": "application/json"}
-payload = {"queries": {"q1": {"query": "Glasgow"}}}
-response = requests.post(url, json=payload, headers=headers)
-print(response.json())
-```
 
 ### Notes
 - Geometries are always returned to allow visual disambiguation of candidates.
