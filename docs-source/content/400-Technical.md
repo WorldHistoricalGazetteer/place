@@ -46,18 +46,22 @@ data matching on the Web. It is compatible with **OpenRefine**.
 
 Each query object in the `queries` payload supports the following parameters:
 
-| Parameter     | Type       | Description |
-|---------------|------------|-------------|
-| `query`       | string     | Free-text search string (required). |
-| `mode`        | string     | Search mode: `"default"` (multi-match), `"fuzzy"` (edit distance), `"starts"` (prefix match), or `"in"` (substring/wildcard match). Defaults to `"default"`. |
-| `fclasses`    | array      | Restrict to specific feature classes (e.g. `["PPL","ADM1"]`). `"X"` (unknown) is always included automatically. |
-| `start`       | integer    | Start year for temporal filtering. |
-| `end`         | integer    | End year for temporal filtering (defaults to current year if omitted). |
-| `undated`     | boolean    | If `true`, include results with no temporal metadata in addition to those matching the range. |
-| `countries`   | array      | Restrict results to country codes (ISO 2-letter). |
-| `bounds`      | object     | GeoJSON geometry collection restricting results spatially (e.g. a bounding polygon). |
-| `userareas`   | array      | One or more IDs of user-defined stored areas; geometries are resolved server-side and used as spatial filters. |
-| `size`        | integer    | Maximum number of results per query (default: 100). |
+| Parameter     | Type       | Description                                                                                                                                                                               |
+|---------------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `query`       | string     | Free-text search string. Required if no spatial (`bounds` or `lat`/`lng`/`radius`) or dataset filters are provided.                                                                     |
+| `mode`        | string     | Search mode: `"default"` (multi-match), `"fuzzy"` (edit distance), `"starts"` (prefix match), or `"in"` (substring/wildcard match). Defaults to `"default"`.                              |
+| `fclasses`    | array      | Restrict to specific [feature classes](https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html) (e.g. `["A","L"]`). `"X"` (unknown) is always included automatically. |
+| `start`       | integer    | Start year for temporal filtering.                                                                                                                                                        |
+| `end`         | integer    | End year for temporal filtering (defaults to current year if omitted).                                                                                                                    |
+| `undated`     | boolean    | If `true`, include results with no temporal metadata in addition to those matching the range.                                                                                             |
+| `countries`   | array      | Restrict results to country codes ([ISO 2-letter](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)).                                                                                     |
+| `bounds`      | object     | GeoJSON geometry collection restricting results spatially (e.g. a bounding polygon).                                                                                                      |
+| `lat`         | float      | Latitude of the centre for a circular "nearby" search (required together with `lng` and `radius`).                                                                                        |
+| `lng`         | float      | Longitude of the centre for a circular "nearby" search (required together with `lat` and `radius`).                                                                                       |
+| `radius`      | float      | Radius in kilometres for a circular "nearby" search (required together with `lat` and `lng`).                                                                                               |
+| `userareas`   | array      | One or more IDs of user-defined stored areas; geometries are resolved server-side and used as spatial filters.                                                                            |
+| `dataset`     | integer    | Restrict results to a specific dataset ID.                                                                                                                                                |
+| `size`        | integer    | Maximum number of results per query (default: 100).                                                                                                                                          |
 
 ---
 
