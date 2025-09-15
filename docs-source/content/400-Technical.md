@@ -126,6 +126,37 @@ print(response.json())
 #### `/suggest`
 - Accepts **POST** requests to suggest entities or properties.
 
+#### `/preview/`
+- Accepts **POST** requests with reconciliation results (JSON payload from /reconcile/).
+- Returns rendered HTML showing candidate geometries on a map (Point, LineString, Polygon).
+- Supports **OpenRefine** preview.
+- Example:
+
+  ```bash
+  curl -X POST https://whgazetteer.org/reconcile/ \
+    -H "Content-Type: application/json" \
+    -H "Accept: text/html" \
+    -H "Authorization: Bearer <token>" \
+    -H "User-Agent: notbot" \
+    -d '{
+         "results": {
+           "q1": {
+             "result": [
+               ...
+             ],
+             "geojson": {
+               "type": "FeatureCollection",
+               "features": [
+                 {"type":"Feature","properties":{"name":"Test Point"},"geometry":{"type":"Point","coordinates":[0,0]}},
+                 {"type":"Feature","properties":{"name":"Test Line"},"geometry":{"type":"LineString","coordinates":[[-10,0],[10,0]]}},
+                 {"type":"Feature","properties":{"name":"Test Polygon"},"geometry":{"type":"Polygon","coordinates":[[[-5,-5],[-5,5],[5,5],[5,-5],[-5,-5]]]}}
+               ]
+             }
+           }
+         }
+       }'
+  ```         
+
 ### Notes
 - Geometries are always returned to allow visual disambiguation of candidates.
 - This API is compatible with **OpenRefine** using the Reconciliation Service API protocol.
