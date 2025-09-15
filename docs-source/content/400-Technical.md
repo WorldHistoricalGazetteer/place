@@ -111,9 +111,9 @@ print(response.json())
 ```
 
 #### `/reconcile/extend/propose`
-- Accepts **POST** requests with candidate places.
-- Returns a list of suggested additional properties that clients may request
-  for each candidate, such as:
+- Accepts **POST** requests.
+- Returns suggested additional properties that clients may request
+  for each candidate:
   - Temporal range (years)
   - Source dataset
   - Country codes
@@ -121,17 +121,16 @@ print(response.json())
 
 #### `/reconcile/extend`
 - Accepts **POST** requests with candidate places.
-- Intended to compute and return values for additional properties.
-- Currently **not implemented** (returns HTTP 501).
+- Computes and returns values for additional properties.
 
 #### `/suggest`
-- Accepts **POST** requests to suggest entities, properties, or types.
-- Currently **not implemented** (returns HTTP 501).
+- Accepts **POST** requests to suggest entities or properties.
 
 ### Notes
 - Geometries are always returned to allow visual disambiguation of candidates.
 - This API is compatible with **OpenRefine** using the Reconciliation Service API protocol.
-- Suggest endpoints for entity, property, and type will be implemented separately.
+- The extended reconciliation results use the WHG Place schema, which is available at:
+  [https://whgazetteer.org/static/whg_place_schema.jsonld](https://whgazetteer.org/static/whg_place_schema.jsonld)
 
 
 ## Code Repositories
