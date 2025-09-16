@@ -27,6 +27,14 @@ data matching on the Web. It is compatible with **OpenRefine**.
 > 
 >Endpoints, fields, and behaviours are only very partially implemented, and are subject to change.
 
+### OpenRefine
+
+Registered users can generate an API token from their Profile page. Alongside the token, the Profile page also provides
+a preconfigured OpenRefine reconciliation service URL, which can be copied and pasted into OpenRefine's reconciliation dialog, 
+under "Add Standard Service".
+
+![img_22.png](img_22.png)
+
 ### Endpoints
 
 #### `/reconcile/`
