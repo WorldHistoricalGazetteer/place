@@ -85,8 +85,8 @@ stages of development, include:
 * "A Historical Gazetteer of Ukraine," so far with five datasets from several time periods;
 * "Indigenous Place Names in North America," so far with four datasets for distinct regions, and a fifth covering all of
   North America;
-* "A Historical Gazetteer of Central Asia" — an ambitious undertaking with, so far, 13 disparate datasets drawn from
-  many sources for this huge and ill-defined region.
+* "A Historical Gazetteer of Central Asia" — an ambitious undertaking with 10 disparate datasets drawn from
+  many sources for this huge and ill-defined region. 
 
 Published Dataset Collections can be browsed in a rich publication page including an explanatory essay, and in the near
 future will be independently searchable via the WHG API — for example as a resource in annotation software. See this
