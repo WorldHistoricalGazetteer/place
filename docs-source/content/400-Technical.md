@@ -3,7 +3,7 @@
 ## API
 
 Development of a more complete and well-documented Reconciliation API is in progress (see below). We are refining options and adding
-endpoints in response to community feedback. Our intention is eventually to offer a Swagger interface like the (unrelated!) example [here](https://petstore.swagger.io/).
+endpoints in response to community feedback.
 
 In the meantime, the endpoints illustrated here are available for use, but are liable to change without notice.
 
@@ -16,141 +16,24 @@ In the meantime, the endpoints illustrated here are available for use, but are l
 ![img_17.png](img_17.png)
 
 
-## Reconciliation API
+### API Tokens
 
-The WHG Reconciliation API provides standardised endpoints for reconciling
-place names and exploring additional properties of candidate places. It implements
-portions of the **[Reconciliation Service API v0.2](https://w3c.github.io/cg-reports/reconciliation/CG-FINAL-specs-0.2-20230410/)**, a widely-used protocol for
-data matching on the Web. It is compatible with **OpenRefine**.
+**Tokens are required for access to most WHG API endpoints.**
 
-> ⚠️ **Work in progress:** This API will require API tokens for authentication. Registered Users will be able to generate a token through their Profile page.
-> 
->Endpoints, fields, and behaviours are only very partially implemented, and are subject to change.
+> ⚠️ **Work in progress:** Tokens are not yet available. For now, the following describes only the intended functionality.
 
-### OpenRefine
-
-Registered users can generate an API token from their Profile page. Alongside the token, the Profile page also provides
-a preconfigured OpenRefine reconciliation service URL, which can be copied and pasted into OpenRefine's reconciliation dialog, 
+Registered users can generate an API token from their Profile page. 
+Alongside the token, the Profile page also provides a preconfigured [OpenRefine](https://openrefine.org/) reconciliation service URL, which can be copied and pasted into OpenRefine's reconciliation dialog, 
 under "Add Standard Service".
 
 ![img_22.png](img_22.png)
 
-### Endpoints
 
-#### `/reconcile/`
-- Accepts **POST** requests with one or more place name queries.
-- Returns candidate matches for each query, including:
-  - Canonical name
-  - Alternative names
-  - Match score (normalized 0–100)
-  - Exact match flag
-- Always returns a **top-level GeoJSON FeatureCollection** of candidate geometries for visual disambiguation.
-- Batch requests are supported, with a configurable limit (`batch_size`).
-- Authentication via API token (`Authorization: Bearer <token>`) or session/CSRF.
+### Swagger / OpenAPI Documentation
 
----
+> ⚠️ **Work in progress:** Prototype documentation is available [here](https://dev.whgazetteer.org/api/schema/swagger-ui/).
 
-### Parameter usage
-
-Each query object in the `queries` payload supports the following parameters:
-
-| Parameter     | Type       | Description                                                                                                                                                                                                                                   |
-|---------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `query`       | string     | Free-text search string. Required if no spatial (`bounds` or `lat`/`lng`/`radius`) or dataset filters are provided.                                                                                                                           |
-| `mode`        | string     | Search mode: `"exact"` (multi-match), `"fuzzy"` ("AUTO", prefix_length=2), `"starts"` (prefix match), or `"in"` (substring/wildcard match). Defaults to `"fuzzy"`.                                                                            |
-|               |            | For a configured fuzzy search, you may instead specify the `mode` as `"prefix_length\|fuzziness"` (e.g., `"2\|1"`), where `prefix_length` is the number of initial characters that must match, and `fuzziness` is `"AUTO"` or an integer ≤ 2. |                                                                                                         |1"`), where `prefix_length` is the number of initial characters that must match, and `fuzziness` is `"AUTO"` or an integer ≤ 2. |
-|               |            | **Coming soon**: Phonetic place-name matching.                                                                                                                             |
-| `fclasses`    | array      | Restrict to specific [feature classes](https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html) (e.g. `["A","L"]`). `"X"` (unknown) is always included automatically.                                                     |
-| `start`       | integer    | Start year for temporal filtering.                                                                                                                                                                                                            |
-| `end`         | integer    | End year for temporal filtering (defaults to current year if omitted).                                                                                                                                                                        |
-| `undated`     | boolean    | If `true`, include results with no temporal metadata in addition to those matching the range.                                                                                                                                                 |
-| `countries`   | array      | Restrict results to country codes ([ISO 2-letter](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)).                                                                                                                                         |
-| `bounds`      | object     | GeoJSON geometry collection restricting results spatially (e.g. a bounding polygon).                                                                                                                                                          |
-| `lat`         | float      | Latitude of the centre for a circular "nearby" search (required together with `lng` and `radius`).                                                                                                                                            |
-| `lng`         | float      | Longitude of the centre for a circular "nearby" search (required together with `lat` and `radius`).                                                                                                                                           |
-| `radius`      | float      | Radius in kilometres for a circular "nearby" search (required together with `lat` and `lng`).                                                                                                                                                 |
-| `userareas`   | array      | One or more IDs of user-defined stored areas; geometries are resolved server-side and used as spatial filters.                                                                                                                                |
-| `dataset`     | integer    | Restrict results to a specific dataset ID.                                                                                                                                                                                                    |
-| `size`        | integer    | Maximum number of results per query (default: 100).                                                                                                                                                                                           |
-
----
-
-### Example requests
-
-```bash
-curl -X POST https://whgazetteer.org/reconcile/ \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -H "User-Agent: notbot" \
-  -d '{
-    "queries": {
-      "q1": {
-        "query": "London",
-        "mode": "fuzzy",
-        "fclasses": ["A","P"],
-        "start": 1200,
-        "end": 2050,
-        "undated": true,
-        "countries": ["GB","US"],
-        "bounds": {
-          "geometries": [{
-            "type": "Polygon",
-            "coordinates": [[
-              [-1.0,51.0],
-              [-1.0,52.0],
-              [0.5,52.0],
-              [0.5,51.0],
-              [-1.0,51.0]
-            ]]
-          }]
-        }
-      }
-    }
-  }'
-```
-
-```python
-import requests
-
-url = "https://whgazetteer.org/reconcile/"
-headers = {"Authorization": "Bearer <API_TOKEN>", "Content-Type": "application/json"}
-payload = {"queries": {"q1": {"query": "Glasgow"}}}
-response = requests.post(url, json=payload, headers=headers)
-print(response.json())
-```
-
-#### `/reconcile/extend/propose`
-- Accepts **POST** requests.
-- Returns suggested additional properties that clients may request
-  for each candidate:
-  - Temporal range (years)
-  - Source dataset
-  - Country codes
-  - Alternative names
-
-#### `/reconcile/extend`
-- Accepts **POST** requests with candidate places.
-- Computes and returns values for additional properties.
-
-#### `/suggest/entity` and `/suggest/property`
-- Accept **GET** requests to suggest entities or properties.
-
-#### `/preview/`
-- Accepts GET requests.
-- Returns a small HTML snippet summarising a single place.
-- Designed for embedding in tools such as **OpenRefine**.
-- At present, the WHG implementation provides a simple textual summary only (no map rendering yet).
-- Example:
-
-  ```bash
-  curl "https://whgazetteer.org/preview/?id=whg:123&token=<API_TOKEN>" \
-  -H "Accept: text/html"
-  ```         
-
-### Notes
-- This API is compatible with **OpenRefine** using the Reconciliation Service API protocol.
-- The extended reconciliation results use the WHG Place schema, which is available at:
-  [https://whgazetteer.org/static/whg_place_schema.jsonld](https://whgazetteer.org/static/whg_place_schema.jsonld)
+Full, interactive documentation of WHG API endpoints is available at https://whgazetteer.org/api/schema/swagger-ui/
 
 
 ## Code Repositories
