@@ -2,7 +2,8 @@
 
 ## API
 
-Development of a more complete and well-documented Reconciliation API is in progress (see below). We are refining options and adding
+Development of a more complete and well-documented Reconciliation API is in progress (see below). We are refining
+options and adding
 endpoints in response to community feedback.
 
 In the meantime, the endpoints illustrated here are available for use, but are liable to change without notice.
@@ -15,26 +16,69 @@ In the meantime, the endpoints illustrated here are available for use, but are l
 
 ![img_17.png](img_17.png)
 
-
 ### API Tokens
 
 **Tokens are required for access to most WHG API endpoints.**
 
-> ⚠️ **Work in progress:** Tokens are not yet available. For now, the following describes only the intended functionality.
+> ⚠️ **Work in progress:** Tokens are not yet available. For now, the following describes only the intended
+> functionality.
 
-Registered users can generate an API token from their Profile page. 
-Alongside the token, the Profile page also provides a preconfigured [OpenRefine](https://openrefine.org/) reconciliation service URL, which can be copied and pasted into OpenRefine's reconciliation dialog, 
+Registered users can generate an API token from their Profile page.
+Alongside the token, the Profile page also provides a preconfigured [OpenRefine](https://openrefine.org/) reconciliation
+service URL, which can be copied and pasted into OpenRefine's reconciliation dialog,
 under "Add Standard Service".
 
 ![img_22.png](img_22.png)
 
+#### Using an API Token
+
+The simplest way to use an API token is to include it as a query parameter in the request URL. For example:
+
+```bash
+https://whgazetteer.org/reconcile/?token=<token>
+```
+
+Otherwise, it may be included in the `Authorization` header, using the `Bearer` schema. Requests **must** also include a suitable
+`User-Agent` to avoid bot-filters. For example:
+
+```bash
+curl -X POST https://whgazetteer.org/reconcile/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "User-Agent: notbot" \
+  -d '{
+    "queries": {
+      "q1": {
+        "query": "London",
+        "mode": "fuzzy",
+        "fclasses": ["A","P"],
+        "start": 1200,
+        "end": 2050,
+        "undated": true,
+        "countries": ["GB","US"],
+        "bounds": {
+          "geometries": [{
+            "type": "Polygon",
+            "coordinates": [[
+              [-1.0,51.0],
+              [-1.0,52.0],
+              [0.5,52.0],
+              [0.5,51.0],
+              [-1.0,51.0]
+            ]]
+          }]
+        }
+      }
+    }
+  }'
+```
 
 ### Swagger / OpenAPI Documentation
 
-> ⚠️ **Work in progress:** Prototype documentation is available [here](https://dev.whgazetteer.org/api/schema/swagger-ui/).
+> ⚠️ **Work in progress:** Prototype documentation is
+> available [here](https://dev.whgazetteer.org/api/schema/swagger-ui/).
 
 Full, interactive documentation of WHG API endpoints is available at https://whgazetteer.org/api/schema/swagger-ui/
-
 
 ## Code Repositories
 
