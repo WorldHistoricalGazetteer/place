@@ -1,20 +1,24 @@
 # Technical
 
-## API
+## APIs (Application Programming Interfaces)
 
-Development of a more complete and well-documented Reconciliation API is in progress (see below). We are refining
-options and adding
-endpoints in response to community feedback.
+> ⚠️ **Work in progress:** The APIs are currently undergoing testing prior to public release.
 
-In the meantime, the endpoints illustrated here are available for use, but are liable to change without notice.
+The World Historical Gazetteer (WHG) provides two complementary APIs:
 
-![img_20.png](img_20.png)
+### Entity API
+- Access canonical representations of our entities: **Places**, **Datasets**, **Collections**, **Areas**, and **[PeriodO](https://perio.do/) Periods**.
+- Retrieve full metadata, names, types, geometries, temporal bounds, authority info, and linked resources.
+- Machine-readable feature endpoints support Linked Places Format (LPF) for GIS and reconciliation tools.
+ 
+### Reconciliation Service API
+- Compatible with [OpenRefine](https://openrefine.org/).
+- Supports both Place and [PeriodO](https://perio.do/) suggestions, batch reconciliation, and property enrichment.
+- **Data Extension** is supported, allowing users to enrich their tables with properties like **Geometry**, **Alternative Names**, **Temporal Range**, and **Country Codes** after reconciliation.
 
-![img_19.png](img_19.png)
+### Documentation
 
-![img_18.png](img_18.png)
-
-![img_17.png](img_17.png)
+Full, interactive documentation is available at https://whgazetteer.org/api/schema/swagger-ui/
 
 ### API Tokens
 
@@ -72,13 +76,6 @@ curl -X POST https://whgazetteer.org/reconcile/ \
     }
   }'
 ```
-
-### Swagger / OpenAPI Documentation
-
-> ⚠️ **Work in progress:** Prototype documentation is
-> available [here](https://dev.whgazetteer.org/api/schema/swagger-ui/).
-
-Full, interactive documentation of WHG API endpoints is available at https://whgazetteer.org/api/schema/swagger-ui/
 
 ## Code Repositories
 
