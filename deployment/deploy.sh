@@ -1,11 +1,28 @@
 #!/bin/bash
+set -euo pipefail
 
 # This would normally be called on the Pitt VM via:
 # bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/deploy.sh")
 
 REPO_DIR="$HOME/deployment-repo"
+REPO_URL="https://github.com/WorldHistoricalGazetteer/place.git"
+BRANCH="main"
 
-set -e # Ensure the script exits on error
+if [ ! -d "$REPO_DIR/.git" ]; then
+  echo "Cloning WHG repository (sparse checkout of deployment/)..."
+  rm -rf "$REPO_DIR"
+  mkdir -p "$REPO_DIR"
+  git clone --filter=blob:none --no-checkout "$REPO_URL" "$REPO_DIR"
+  cd "$REPO_DIR"
+  git sparse-checkout init --cone
+  git sparse-checkout set deployment
+  git checkout "$BRANCH"
+else
+  echo "Updating WHG repository (sparse checkout)..."
+  cd "$REPO_DIR"
+  git fetch origin
+  git reset --hard "origin/$BRANCH"
+fi
 
 cleanup() {
   unset CA_CERT CLIENT_CERT CLIENT_KEY minikube_ip
