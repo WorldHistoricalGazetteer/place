@@ -21,13 +21,6 @@ spec:
         fsGroup: {{ .Values.securityContext.fsGroup }}
         fsGroupChangePolicy: {{ .Values.securityContext.fsGroupChangePolicy | default "Always" }}
       initContainers:
-        - name: test-write
-          image: busybox
-          command: ["/bin/sh", "-c"]
-          args: ["touch /apps/repository/testfile"]
-          volumeMounts:
-            - name: empty-dir-volume
-              mountPath: /apps/repository
         - name: git-clone
           image: alpine/git:latest
           command: ["/bin/sh", "-c"]
