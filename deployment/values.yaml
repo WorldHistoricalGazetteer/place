@@ -1,25 +1,70 @@
+# -----------------------------------------------------------------------------
+# Container image settings
+# -----------------------------------------------------------------------------
 image:
-  repository: worldhistoricalgazetteer/deployment
-  pullPolicy: IfNotPresent
-  tag: "0.0.3"
+  repository: worldhistoricalgazetteer/deployment  # Docker image repo
+  pullPolicy: IfNotPresent                           # When to pull the image
+  tag: "0.0.3"                                      # Image version/tag
 
+# -----------------------------------------------------------------------------
+# Application-specific settings
+# -----------------------------------------------------------------------------
 app:
-  name: gazetteer-management
+  name: gazetteer-management  # Name of the deployment/application
 
-containerPort: 8000
+containerPort: 8000           # Port the container listens on
 
+# -----------------------------------------------------------------------------
+# Kubernetes service settings
+# -----------------------------------------------------------------------------
 service:
-  port: 8000
-  nodePort: 30080
+  port: 8000                  # Target port inside the cluster
+  nodePort: 30080             # NodePort to expose externally (if using NodePort service type)
 
+# -----------------------------------------------------------------------------
+# Pod security context
+# -----------------------------------------------------------------------------
 securityContext:
-  runAsUser: 1001 # 53644
-  runAsGroup: 1001
-  fsGroup: 16604
-  fsGroupChangePolicy: "Always"
+  runAsUser: 1001             # UID the container runs as inside the pod
+  runAsGroup: 1001            # GID the container runs as inside the pod
+  fsGroup: 16604              # Filesystem group for NFS mount (whcdh group on ix1)
+  fsGroupChangePolicy: "Always" # Ensure fsGroup ownership is applied to mounted volumes
 
-sizeLimit: 1Gi
+# -----------------------------------------------------------------------------
+# Storage limits (for ephemeral volumes or PVC requests)
+# -----------------------------------------------------------------------------
+sizeLimit: 1Gi                 # Example resource limit for ephemeral storage
 
+# -----------------------------------------------------------------------------
+# NFS / PersistentVolume configuration
+# -----------------------------------------------------------------------------
+nfs:
+  server: ix1.crc.pitt.edu     # NFS server hostname
+  path: /mnt/tank/crc/whcdh    # Path exported by NFS server
+  readOnly: false               # Mount read/write or read-only
+  mountOptions: # Mount options for NFS volume
+    - nfsvers=4.2               # Use NFSv4.2 protocol
+    - rsize=1048576             # Read buffer size
+    - wsize=1048576             # Write buffer size
+    - hard                      # Hard mount, retry on failure
+    - intr                      # Allow interrupts during mount operations
+
+  # PersistentVolume settings
+  pv:
+    name: ix1-whcdh-pv          # Name of the PV in Kubernetes
+    capacity: 5Ti               # Requested storage size
+    accessModes: # PV access mode(s)
+      - ReadWriteMany           # Allow multiple pods to read/write
+    reclaimPolicy: Retain       # PV is not deleted when PVC is removed
+
+  # PersistentVolumeClaim settings
+  pvc:
+    name: ix1-whcdh-pvc         # Name of the PVC in Kubernetes
+    storageClassName: ""        # Empty string required for static PV binding
+
+# -----------------------------------------------------------------------------
+# Optional / external credentials (for things like minikube, HCP, TLS)
+# -----------------------------------------------------------------------------
 hcpClientId: ""
 hcpClientSecret: ""
 minikubeIp: ""
