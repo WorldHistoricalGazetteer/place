@@ -1,33 +1,30 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: ix1-whcdh-pv
+  name: {{ .Values.nfs.pv.name }}
 spec:
   capacity:
-    storage: 5Ti
+    storage: {{ .Values.nfs.pv.capacity }}
   volumeMode: Filesystem
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-{{/*  hostPath:*/}}
-{{/*    path: /minikube-whcdh*/}}
+  accessModes: {{ .Values.nfs.pv.accessModes }}
+  persistentVolumeReclaimPolicy: {{ .Values.nfs.pv.reclaimPolicy }}
   nfs:
-    path: /mnt/tank/crc/whcdh
-    server: ix1.crc.pitt.edu
-    readOnly: false
-  mountOptions:
-    - nfsvers=4.2
+    server: {{ .Values.nfs.server }}
+    path: {{ .Values.nfs.path }}
+    readOnly: {{ .Values.nfs.readOnly }}
+  mountOptions: {{ .Values.nfs.mountOptions }}
+
 ---
+
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ix1-whcdh-pvc
+  name: {{ .Values.nfs.pvc.name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  accessModes:
-    - ReadWriteMany
+  accessModes: {{ .Values.nfs.pv.accessModes }}
   resources:
     requests:
-      storage: 5Ti
-  volumeName: ix1-whcdh-pv
-  storageClassName: ""  # <-- REQUIRED for static binding
+      storage: {{ .Values.nfs.pv.capacity }}
+  volumeName: {{ .Values.nfs.pv.name }}
+  storageClassName: {{ .Values.nfs.pvc.storageClassName }}
