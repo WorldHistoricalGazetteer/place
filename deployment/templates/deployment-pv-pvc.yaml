@@ -8,7 +8,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
 {{ toYaml .Values.nfs.pv.accessModes | indent 4 }}
-  persistentVolumeReclaimPolicy: {{ .Values.nfs.pv.reclaimPolicy | default "Retain" }}
+  persistentVolumeReclaimPolicy: {{ .Values.nfs.pv.reclaimPolicy }}
   hostPath:
     path: {{ .Values.nfs.pv.hostPath }}
 ---
@@ -24,4 +24,4 @@ spec:
     requests:
       storage: {{ .Values.nfs.pv.capacity }}  # Match PV size
   volumeName: {{ .Values.nfs.pv.name }}  # <-- REQUIRED for static binding
-  storageClassName: {{ .Values.nfs.pvc.storageClassName | default "" }}  # <-- REQUIRED for static binding
+  storageClassName: {{ .Values.nfs.pvc.storageClassName }}  # <-- REQUIRED for static binding
