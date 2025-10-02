@@ -23,7 +23,10 @@ spec:
       initContainers:
         - name: git-clone
           image: alpine/git:latest
-          command: ["git", "clone", "https://github.com/WorldHistoricalGazetteer/place", "/apps/repository"]
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              git clone https://github.com/WorldHistoricalGazetteer/place /apps/repository || true
           volumeMounts:
             - name: empty-dir-volume
               mountPath: /apps/repository
