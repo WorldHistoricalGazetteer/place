@@ -40,14 +40,6 @@ sizeLimit: 1Gi                 # Example resource limit for ephemeral storage
 # -----------------------------------------------------------------------------
 nfs:
   server: ix1.crc.pitt.edu     # NFS server hostname
-  path: /mnt/tank/crc/whcdh    # Path exported by NFS server
-  readOnly: false               # Mount read/write or read-only
-  mountOptions: # Mount options for NFS volume
-    - nfsvers=4.2               # Use NFSv4.2 protocol
-    - rsize=1048576             # Read buffer size
-    - wsize=1048576             # Write buffer size
-    - hard                      # Hard mount, retry on failure
-    - intr                      # Allow interrupts during mount operations
 
   # PersistentVolume settings
   pv:
@@ -56,6 +48,7 @@ nfs:
     accessModes: # PV access mode(s)
       - ReadWriteMany           # Allow multiple pods to read/write
     reclaimPolicy: Retain       # PV is not deleted when PVC is removed
+    hostPath: /minikube-whcdh   # hostPath required for minikube NFS workaround (rather than actual NFS config)
 
   # PersistentVolumeClaim settings
   pvc:
