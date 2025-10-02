@@ -6,25 +6,26 @@ spec:
   capacity:
     storage: {{ .Values.nfs.pv.capacity }}
   volumeMode: Filesystem
-  accessModes: {{ .Values.nfs.pv.accessModes }}
+  accessModes:
+{{ toYaml .Values.nfs.pv.accessModes | indent 4 }}
   persistentVolumeReclaimPolicy: {{ .Values.nfs.pv.reclaimPolicy }}
   nfs:
     server: {{ .Values.nfs.server }}
     path: {{ .Values.nfs.path }}
     readOnly: {{ .Values.nfs.readOnly }}
-  mountOptions: {{ .Values.nfs.mountOptions }}
-
+  mountOptions:
+{{ toYaml .Values.nfs.mountOptions | indent 4 }}
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.nfs.pvc.name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  accessModes: {{ .Values.nfs.pv.accessModes }}
+  accessModes:
+{{ toYaml .Values.nfs.pv.accessModes | indent 4 }}
   resources:
     requests:
       storage: {{ .Values.nfs.pv.capacity }}
   volumeName: {{ .Values.nfs.pv.name }}
-  storageClassName: {{ .Values.nfs.pvc.storageClassName }}
+  storageClassName: {{ .Values.nfs.pvc.storageClassName | quote }}
