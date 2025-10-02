@@ -24,4 +24,4 @@ spec:
     requests:
       storage: {{ .Values.nfs.pv.capacity }}  # Match PV size
   volumeName: {{ .Values.nfs.pv.name }}  # <-- REQUIRED for static binding
-  storageClassName: {{ .Values.nfs.pvc.storageClassName }}  # <-- REQUIRED for static binding
+  storageClassName: ""  # <-- REQUIRED for static binding
