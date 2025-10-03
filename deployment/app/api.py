@@ -16,7 +16,6 @@ from volume_management import ensure_pv_directories, get_pv_requirements
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-EXPECTED_TOKEN = os.getenv("NOTIFY_PITT_TOKEN")
 GITHUB_REPO = "https://github.com/WorldHistoricalGazetteer/place.git"
 CLONE_ROOT = "/apps/repository"
 
@@ -119,17 +118,7 @@ async def deploy_chart(
         payload: DeployNotification,
         authorization: Optional[str] = Header(None)
 ):
-    """
-    Secured endpoint for GitHub Actions.
-    """
-    if EXPECTED_TOKEN:
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Missing or malformed Authorization header")
-        token = authorization.split(" ", 1)[1]
-        if token != EXPECTED_TOKEN:
-            raise HTTPException(status_code=403, detail="Invalid token")
-    else:
-        logger.warning("NOTIFY_PITT_TOKEN not set; skipping token validation")
+    # TODO: This endpoint was developed for use with GitHUb Action-based CI/CD, and may not be required for ArgoCD-based deployments.
 
     logger.info(f"Deploy notification from {payload.repository} at {payload.commit}")
     logger.info(f"Changed directories: {payload.changed_directories}")
