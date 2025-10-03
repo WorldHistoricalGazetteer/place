@@ -60,12 +60,6 @@ spec:
           envFrom:
             - secretRef:
                 name: github-token
-          env:
-            - name: NOTIFY_PITT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: whg-secret
-                  key: notify-pitt-token
       volumes:
         - name: kubeconfig-volume
           secret:
