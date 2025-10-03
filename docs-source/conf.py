@@ -47,3 +47,14 @@ html_logo = "_static/whg_logo.png"
 html_css_files = [
     'css/custom.css',
 ]
+
+# Plausible Analytics tracking
+PLAUSIBLE_DOMAIN = "whgazetteer.org"
+PLAUSIBLE_BASE_URL = "https://analytics.whgazetteer.org"
+
+html_context = globals().get("html_context", {})
+html_context.update({
+    "plausible_script": f"""
+    <script async defer data-domain="{PLAUSIBLE_DOMAIN}" src="{PLAUSIBLE_BASE_URL}/js/plausible.js"></script>
+    """
+})
