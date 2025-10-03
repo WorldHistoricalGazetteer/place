@@ -52,12 +52,8 @@ html_css_files = [
 PLAUSIBLE_DOMAIN = "whgazetteer.org"
 PLAUSIBLE_BASE_URL = "https://analytics.whgazetteer.org"
 PLAUSIBLE_SNIPPET = """
-<script defer data-domain="whgazetteer.org" src="https://analytics.whgazetteer.org/js/script.file-downloads.hash.outbound-links.pageview-props.tagged-events.js"></script>
-<script>
-window.plausible = window.plausible || function() { 
-    (window.plausible.q = window.plausible.q || []).push(arguments) 
-}
-</script>
+<script defer data-domain="docs.whgazetteer.org" src="https://analytics.whgazetteer.org/js/script.hash.outbound-links.js"></script>
+<script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
 """
 
 html_context = globals().get("html_context", {})
