@@ -11,6 +11,7 @@ import yaml
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
 
+from deployment.app.remote_sync import sync_resource
 from volume_management import ensure_pv_directories, get_pv_requirements
 
 logging.basicConfig(level=logging.DEBUG)
@@ -222,6 +223,19 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
     except Exception as e:
         logger.error(f"Pre-deployment volume check failed: {e}")
         return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
+
+    try:
+        logger.info(f"Syncing resources for {application}")
+        sync_result = sync_resource(application, namespace)
+        if sync_result["status"] == "error":
+            logger.error(f"Resource sync failed: {sync_result['message']}")
+            return sync_result
+        elif sync_result["status"] == "partial":
+            logger.warning(f"Partial sync: {sync_result['message']}")
+        # If "skipped", just continue
+    except Exception as e:
+        logger.error(f"Pre-deployment resource sync failed: {e}")
+        return {"status": "error", "message": f"Pre-deployment resource sync failed: {e}"}
 
     command = f"helm upgrade --install {application} {chart_dir} -f {values_file} --namespace {namespace}"
     logger.info(f"Running: {command}")
