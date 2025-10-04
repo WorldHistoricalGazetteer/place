@@ -65,30 +65,66 @@ DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@postgres:${POSTGRES_PORT}/${D
 
 # === Create Kubernetes Secret ===
 echo "🔐 Creating/updating $SECRET_NAME secret in $SECRET_NAMESPACE..."
-kubectl create secret generic "$SECRET_NAME" \
-  --namespace "$SECRET_NAMESPACE" \
-  --from-literal=secret-key="$DJANGO_SECRET_KEY" \
-  --from-literal=db-password="$DB_PASSWORD" \
-  --from-literal=postgres-password="$PG_ADMIN_PASSWORD" \
-  --from-literal=postgresql-admin-password="$PG_ADMIN_PASSWORD" \
-  --from-literal=postgresql-user-password="$PG_USER_PASSWORD" \
-  --from-literal=postgresql-replication-password="$PG_REPL_PASSWORD" \
-  --from-literal=kubernetes-cluster-issuer="$DO_API_TOKEN" \
-  --from-literal=user-password="$UNIX_PASSWORD" \
-  --from-literal=database-url="$DATABASE_URL" \
-  --from-file=ca_cert="$TARGET_DIR/ca-cert.pem" \
-  --from-file=env_template.py="$TARGET_DIR/env_template.py" \
-  --from-file=local_settings.py="$TARGET_DIR/local_settings.py" \
-  --from-file=id_rsa="$TARGET_DIR/id_rsa" \
-  --from-file=id_rsa_whg="$TARGET_DIR/id_rsa_whg" \
-  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $SECRET_NAME
+  namespace: $SECRET_NAMESPACE
+type: Opaque
+data:
+  secret-key: $(echo -n "$DJANGO_SECRET_KEY" | base64)
+  db-password: $(echo -n "$DB_PASSWORD" | base64)
+  postgresql-admin-password: $(echo -n "$PG_ADMIN_PASSWORD" | base64)
+  postgresql-user-password: $(echo -n "$PG_USER_PASSWORD" | base64)
+  postgresql-replication-password: $(echo -n "$PG_REPL_PASSWORD" | base64)
+  kubernetes-cluster-issuer: $(echo -n "$DO_API_TOKEN" | base64)
+  user-password: $(echo -n "$UNIX_PASSWORD" | base64)
+  database-url: $(echo -n "$DATABASE_URL" | base64)
+  ca_cert: $(base64 -w0 "$TARGET_DIR/ca-cert.pem")
+  env_template.py: $(base64 -w0 "$TARGET_DIR/env_template.py")
+  local_settings.py: $(base64 -w0 "$TARGET_DIR/local_settings.py")
+  id_rsa: $(base64 -w0 "$TARGET_DIR/id_rsa")
+  id_rsa_whg: $(base64 -w0 "$TARGET_DIR/id_rsa_whg")
+EOF
+
+#kubectl create secret generic "$SECRET_NAME" \
+#  --namespace "$SECRET_NAMESPACE" \
+#  --from-literal=secret-key="$DJANGO_SECRET_KEY" \
+#  --from-literal=db-password="$DB_PASSWORD" \
+#  --from-literal=postgres-password="$PG_ADMIN_PASSWORD" \
+#  --from-literal=postgresql-admin-password="$PG_ADMIN_PASSWORD" \
+#  --from-literal=postgresql-user-password="$PG_USER_PASSWORD" \
+#  --from-literal=postgresql-replication-password="$PG_REPL_PASSWORD" \
+#  --from-literal=kubernetes-cluster-issuer="$DO_API_TOKEN" \
+#  --from-literal=user-password="$UNIX_PASSWORD" \
+#  --from-literal=database-url="$DATABASE_URL" \
+#  --from-file=ca_cert="$TARGET_DIR/ca-cert.pem" \
+#  --from-file=env_template.py="$TARGET_DIR/env_template.py" \
+#  --from-file=local_settings.py="$TARGET_DIR/local_settings.py" \
+#  --from-file=id_rsa="$TARGET_DIR/id_rsa" \
+#  --from-file=id_rsa_whg="$TARGET_DIR/id_rsa_whg" \
+#  --dry-run=client -o yaml | kubectl apply -f -
+
+## === Copy the secret to other namespaces ===
+#echo "📦 Copying $SECRET_NAME to other namespaces..."
+#for ns in "${COPY_TO_NAMESPACES[@]}"; do
+#  kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f -
+#  kubectl get secret "$SECRET_NAME" -n "$SECRET_NAMESPACE" -o json \
+#    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$ns"'"' \
+#    | kubectl apply -f -
+#done
 
 # === Copy the secret to other namespaces ===
 echo "📦 Copying $SECRET_NAME to other namespaces..."
 for ns in "${COPY_TO_NAMESPACES[@]}"; do
+  # ensure namespace exists
   kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f -
+
+  # get secret JSON, clear fields that prevent overwrite
   kubectl get secret "$SECRET_NAME" -n "$SECRET_NAMESPACE" -o json \
-    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$ns"'"' \
+    | jq "del(.metadata.ownerReferences, .metadata.resourceVersion, .metadata.uid) | .metadata.namespace = \"$ns\"" \
     | kubectl apply -f -
 done
 
