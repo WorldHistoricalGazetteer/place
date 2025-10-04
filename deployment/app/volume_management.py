@@ -62,6 +62,7 @@ def get_pv_requirements(
 
     # Final minimal requirements list
     required_volumes = []
+    seen_paths = set()
 
     for doc in rendered_docs:
         if not isinstance(doc, dict):
@@ -100,8 +101,11 @@ def get_pv_requirements(
                 pv_name = pvc_to_pv.get((ns, claim_name))
                 pv_path = pv_paths.get(pv_name) if pv_name else None
                 if not pv_path:
-                    # Skip unbound PVCs or PVs without hostPath/local
                     continue
+
+                if pv_path in seen_paths:
+                    continue  # skip duplicates
+                seen_paths.add(pv_path)
 
                 required_volumes.append({
                     "pv_path": pv_path,
