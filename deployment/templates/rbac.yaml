@@ -17,7 +17,7 @@ rules:
   # Pod subresources
   - apiGroups: [""]
     resources: ["pods/exec", "pods/log", "pods/portforward"]
-    verbs: ["create", "get", "list"]
+    verbs: ["create", "get", "list", "watch", "delete"]
 
   # Apps resources
   - apiGroups: ["apps"]
