@@ -196,19 +196,19 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
         logger.error(f"Pre-deployment volume check failed: {e}")
         return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
 
-    # command = f"helm upgrade --install {application} {chart_dir} -f {values_file} --namespace {namespace}"
-    # logger.info(f"Running: {command}")
-    #
-    # result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    #
-    # logger.info(f"Return code: {result.returncode}")
-    # logger.info(f"STDOUT: {result.stdout}")
-    # logger.error(f"STDERR: {result.stderr}")
-    #
-    # if result.returncode == 0:
-    #     return {"status": "success", "message": result.stdout}
-    # else:
-    #     return {"status": "error", "message": result.stderr}
+    command = f"helm upgrade --install {application} {chart_dir} -f {values_file} --namespace {namespace}"
+    logger.info(f"Running: {command}")
+
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+    logger.info(f"Return code: {result.returncode}")
+    logger.info(f"STDOUT: {result.stdout}")
+    logger.error(f"STDERR: {result.stderr}")
+
+    if result.returncode == 0:
+        return {"status": "success", "message": result.stdout}
+    else:
+        return {"status": "error", "message": result.stderr}
 
 
 if __name__ == "__main__":
