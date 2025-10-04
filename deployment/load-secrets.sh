@@ -89,33 +89,6 @@ data:
   id_rsa_whg: $(base64 -w0 "$TARGET_DIR/id_rsa_whg")
 EOF
 
-#kubectl create secret generic "$SECRET_NAME" \
-#  --namespace "$SECRET_NAMESPACE" \
-#  --from-literal=secret-key="$DJANGO_SECRET_KEY" \
-#  --from-literal=db-password="$DB_PASSWORD" \
-#  --from-literal=postgres-password="$PG_ADMIN_PASSWORD" \
-#  --from-literal=postgresql-admin-password="$PG_ADMIN_PASSWORD" \
-#  --from-literal=postgresql-user-password="$PG_USER_PASSWORD" \
-#  --from-literal=postgresql-replication-password="$PG_REPL_PASSWORD" \
-#  --from-literal=kubernetes-cluster-issuer="$DO_API_TOKEN" \
-#  --from-literal=user-password="$UNIX_PASSWORD" \
-#  --from-literal=database-url="$DATABASE_URL" \
-#  --from-file=ca_cert="$TARGET_DIR/ca-cert.pem" \
-#  --from-file=env_template.py="$TARGET_DIR/env_template.py" \
-#  --from-file=local_settings.py="$TARGET_DIR/local_settings.py" \
-#  --from-file=id_rsa="$TARGET_DIR/id_rsa" \
-#  --from-file=id_rsa_whg="$TARGET_DIR/id_rsa_whg" \
-#  --dry-run=client -o yaml | kubectl apply -f -
-
-## === Copy the secret to other namespaces ===
-#echo "📦 Copying $SECRET_NAME to other namespaces..."
-#for ns in "${COPY_TO_NAMESPACES[@]}"; do
-#  kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f -
-#  kubectl get secret "$SECRET_NAME" -n "$SECRET_NAMESPACE" -o json \
-#    | jq 'del(.metadata.ownerReferences) | .metadata.namespace = "'"$ns"'"' \
-#    | kubectl apply -f -
-#done
-
 # === Copy the secret to other namespaces ===
 echo "📦 Copying $SECRET_NAME to other namespaces..."
 for ns in "${COPY_TO_NAMESPACES[@]}"; do

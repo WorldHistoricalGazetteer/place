@@ -51,7 +51,7 @@ spec:
             - |
               echo "ID: $(id)" &&
               ls -la $PV_MOUNT_ROOT/data &&
-{{/*              cd /apps/repository &&*/}}
+              cd /apps/repository &&
 {{/*              chmod +x *.sh &&*/}}
               python ./deployment/app/api.py
           ports:
