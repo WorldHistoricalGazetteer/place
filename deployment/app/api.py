@@ -178,7 +178,7 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
     except Exception as e:
         return {"status": "error", "message": f"Git pull failed: {e}"}
 
-    chart_dir = f"{CLONE_ROOT}/{application}"
+    chart_dir = f"{CLONE_ROOT}/{application}/{application}"  # Git duplicates name in path
     suffix = f"-{version}" if version else ""
     values_path = f"{chart_dir}/values{suffix}.yaml"
 
