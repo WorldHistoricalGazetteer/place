@@ -3,9 +3,9 @@
 # These are the applications that are to be deployed in the cluster
 
 applications:
-#  - name: whg
-#  - name: whg-staging
-#  - name: tileserver
-#  - name: vespa
+  - name: whg
+  - name: whg-staging
+  - name: tileserver
+  - name: vespa
   - name: wordpress
 #  - name: plausible
