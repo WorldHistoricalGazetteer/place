@@ -39,6 +39,9 @@ spec:
           volumeMounts:
             - name: empty-dir-volume
               mountPath: /apps/repository
+          envFrom:
+            - secretRef:
+                name: github-token
       containers:
         - name: helm
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -61,9 +64,9 @@ spec:
           env:
             - name: PV_MOUNT_ROOT
               value: {{ .Values.nfs.mountRoot }}
-          envFrom:
-            - secretRef:
-                name: github-token
+{{/*          envFrom:*/}}
+{{/*            - secretRef:*/}}
+{{/*                name: github-token*/}}
       volumes:
         - name: empty-dir-volume
           emptyDir:
