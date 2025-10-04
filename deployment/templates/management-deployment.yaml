@@ -31,14 +31,14 @@ spec:
           volumeMounts:
             - name: empty-dir-volume
               mountPath: /apps/repository
-{{/*        - name: load-secrets*/}}
-{{/*          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}*/}}
-{{/*          command: ["/bin/sh", "-c"]*/}}
-{{/*          args:*/}}
-{{/*            - cd /apps/repository && chmod +x load-secrets.sh && ./load-secrets.sh*/}}
-{{/*          volumeMounts:*/}}
-{{/*            - name: empty-dir-volume*/}}
-{{/*              mountPath: /apps/repository*/}}
+        - name: load-secrets
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - cd /apps/repository/deployment && chmod +x load-secrets.sh && ./load-secrets.sh
+          volumeMounts:
+            - name: empty-dir-volume
+              mountPath: /apps/repository
       containers:
         - name: helm
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -47,14 +47,9 @@ spec:
             - "-c"
             - |
               echo "ID: $(id)" &&
-              echo "Creating a test file in $PV_MOUNT_ROOT/data" &&
-              touch $PV_MOUNT_ROOT/data/test-file.txt &&
               ls -la $PV_MOUNT_ROOT/data &&
-              echo "Deleting that test file in $PV_MOUNT_ROOT/data" &&
-              rm $PV_MOUNT_ROOT/data/test-file.txt &&
-              ls -la $PV_MOUNT_ROOT/data &&
-              cd /apps/repository &&
-              chmod +x *.sh &&
+{{/*              cd /apps/repository &&*/}}
+{{/*              chmod +x *.sh &&*/}}
               python ./deployment/app/api.py
           ports:
             - containerPort: 8000
