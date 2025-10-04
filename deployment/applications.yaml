@@ -4,8 +4,8 @@
 
 applications:
   - name: whg
-  - name: whg-staging
-  - name: tileserver
-  - name: vespa
-  - name: wordpress
+#  - name: whg-staging
+#  - name: tileserver
+#  - name: vespa
+#  - name: wordpress
 #  - name: plausible
