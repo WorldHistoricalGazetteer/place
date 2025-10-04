@@ -5,7 +5,7 @@
 applications:
 #  - name: whg
 #  - name: whg-staging
-#  - name: tileserver
+  - name: tileserver
 #  - name: vespa
-  - name: wordpress
+#  - name: wordpress
 #  - name: plausible
