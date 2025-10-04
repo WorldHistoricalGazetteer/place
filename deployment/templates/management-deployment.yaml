@@ -55,7 +55,7 @@ spec:
               mountPath: /root/.kube
             - name: empty-dir-volume
               mountPath: /apps/repository
-            - name: ix1-whcdh-volume
+            - name: {{ .Values.nfs.pvc.name }}-volume
               mountPath: {{ .Values.nfs.mountRoot }}
           env:
             - name: PV_MOUNT_ROOT
@@ -70,6 +70,6 @@ spec:
         - name: empty-dir-volume
           emptyDir:
             sizeLimit: 1Gi
-        - name: ix1-whcdh-volume
+        - name: {{ .Values.nfs.pvc.name }}-volume
           persistentVolumeClaim:
-            claimName: ix1-whcdh-pvc
+            claimName: {{ .Values.nfs.pvc.name }}
