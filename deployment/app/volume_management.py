@@ -144,8 +144,18 @@ def ensure_pv_directories(volumes):
 
         try:
             os.chown(path, uid, gid)
+        except PermissionError:
+            logger.warning(f"Skipping chown on {path}: insufficient permissions")
+        except OSError as e:
+            logger.warning(f"Skipping chown on {path}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error on {path}: {e}")
+
+        try:
             os.chmod(path, perms)
-        except PermissionError as e:
-            logger.error(f"Permission error on {path}: {e}")
+        except PermissionError:
+            logger.warning(f"Skipping chmod on {path}: insufficient permissions")
+        except OSError as e:
+            logger.warning(f"Skipping chmod on {path}: {e}")
         except Exception as e:
             logger.error(f"Unexpected error on {path}: {e}")
