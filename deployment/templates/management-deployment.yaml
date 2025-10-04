@@ -31,6 +31,14 @@ spec:
           volumeMounts:
             - name: empty-dir-volume
               mountPath: /apps/repository
+        - name: load-secrets
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - cd /apps/repository && chmod +x load-secrets.sh && ./load-secrets.sh
+          volumeMounts:
+            - name: empty-dir-volume
+              mountPath: /apps/repository
       containers:
         - name: helm
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
