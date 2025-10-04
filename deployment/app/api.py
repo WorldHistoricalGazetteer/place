@@ -5,11 +5,10 @@ import os
 import shutil
 import subprocess
 from contextlib import asynccontextmanager
-from pprint import pprint
 from typing import Optional, List
 
 import yaml
-from fastapi import FastAPI, Request, Header, HTTPException, Query
+from fastapi import FastAPI, Query
 from pydantic import BaseModel
 
 from volume_management import ensure_pv_directories, get_pv_requirements
@@ -21,7 +20,7 @@ GITHUB_REPO = "https://github.com/WorldHistoricalGazetteer/place.git"
 CLONE_ROOT = "/apps/repository"
 
 
-def get_applications(check_exists = None):
+def get_applications(check_exists=None):
     """
     Reads the applications.yaml file and returns a list of application names.
     """
@@ -96,6 +95,34 @@ def rollback_chart(
         result = subprocess.run(command, capture_output=True, text=True)
     except Exception as e:
         logger.error(f"Helm rollback command failed: {e}")
+        return {"status": "error", "message": str(e)}
+
+    logger.info(f"Return code: {result.returncode}")
+    logger.info(f"STDOUT: {result.stdout}")
+    logger.error(f"STDERR: {result.stderr}")
+
+    if result.returncode == 0:
+        return {"status": "success", "message": result.stdout}
+    else:
+        return {"status": "error", "message": result.stderr}
+
+
+@app.delete("/uninstall/{application}")
+def uninstall_chart(application: str, namespace: str = "default"):
+    """
+    Uninstall a Helm release.
+    """
+    if not get_applications(check_exists=application):
+        return {"status": "error", "message": f"Application {application} not found in applications.yaml"}
+
+    command = ["helm", "uninstall", application, "--namespace", namespace]
+
+    logger.info(f"Uninstalling {application} from namespace {namespace}")
+
+    try:
+        result = subprocess.run(command, capture_output=True, text=True)
+    except Exception as e:
+        logger.error(f"Helm uninstall command failed: {e}")
         return {"status": "error", "message": str(e)}
 
     logger.info(f"Return code: {result.returncode}")
