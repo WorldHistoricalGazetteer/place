@@ -11,7 +11,7 @@ import yaml
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
 
-from deployment.app.remote_sync import sync_resource
+from remote_sync import sync_resource
 from volume_management import ensure_pv_directories, get_pv_requirements
 
 logging.basicConfig(level=logging.DEBUG)
