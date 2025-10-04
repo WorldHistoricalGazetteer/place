@@ -32,6 +32,10 @@ RUN apt-get update && \
     chmod +x /usr/local/bin/yq && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Add a user for UID 1001 (to match Kubernetes runAsUser/runAsGroup)
+RUN groupadd -g 1001 appgroup && \
+    useradd -m -u 1001 -g appgroup appuser
+
 COPY requirements.txt .
 RUN pip install --prefix=/install --no-cache-dir -r requirements.txt
 
@@ -46,6 +50,10 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash curl git jq wget zip iputils-ping dnsutils rsync openssh-client && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Add a user for UID 1001 (to match Kubernetes runAsUser/runAsGroup)
+RUN groupadd -g 1001 appgroup && \
+    useradd -m -u 1001 -g appgroup appuser
 
 # Create a writable location for virtualenv
 RUN mkdir -p /venv && chmod 777 /venv
