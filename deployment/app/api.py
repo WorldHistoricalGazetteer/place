@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 from contextlib import asynccontextmanager
+from pprint import pprint
 from typing import Optional, List
 
 import yaml
@@ -183,13 +184,14 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
     values_file = f"{chart_dir}/values{suffix}.yaml"
 
     try:
-        logger.debug(f"Getting PV requirements for {application} from {values_file} in namespace {namespace}")
+        logger.info(f"Getting PV requirements for {application} from {values_file} in namespace {namespace}")
         required_volumes = get_pv_requirements(application, chart_dir, values_file, namespace)
-        logger.debug(f"Required volumes: {required_volumes}")
+
+
         if not required_volumes:
             logger.info(f"No required volumes found in {values_file}")
         else:
-            logger.info(f"Required volumes: {required_volumes}")
+            pprint(required_volumes)
             ensure_pv_directories(required_volumes)
     except Exception as e:
         logger.error(f"Pre-deployment volume check failed: {e}")
