@@ -33,6 +33,10 @@ spec:
       containers:
         - name: helm
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          securityContext:
+            runAsUser: {{ .Values.securityContext.runAsUser | default 1001 }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup | default 1001 }}
+            allowPrivilegeEscalation: true
           command:
             - "/bin/sh"
             - "-c"
