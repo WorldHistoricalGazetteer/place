@@ -15,6 +15,7 @@ spec:
       labels:
         app: gazetteer-management
     spec:
+      serviceAccountName: helm-manager
       securityContext:
         runAsUser: {{ .Values.securityContext.runAsUser | default 1001 }}
         runAsGroup: {{ .Values.securityContext.runAsGroup | default 1001 }}
@@ -50,8 +51,6 @@ spec:
           ports:
             - containerPort: 8000
           volumeMounts:
-            - name: kubeconfig-volume
-              mountPath: /apps/repository/.kube
             - name: empty-dir-volume
               mountPath: /apps/repository
             - name: {{ .Values.nfs.pvc.name }}-volume
@@ -59,15 +58,10 @@ spec:
           env:
             - name: PV_MOUNT_ROOT
               value: {{ .Values.nfs.mountRoot }}
-            - name: KUBECONFIG
-              value: /apps/repository/.kube/config
           envFrom:
             - secretRef:
                 name: github-token
       volumes:
-        - name: kubeconfig-volume
-          secret:
-            secretName: kubeconfig
         - name: empty-dir-volume
           emptyDir:
             sizeLimit: 1Gi
