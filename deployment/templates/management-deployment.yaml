@@ -38,12 +38,12 @@ spec:
             - "-c"
             - |
               echo "ID: $(id)" &&
-              echo "Creating a test file in /ix1/whcdh/data" &&
-              touch /ix1/whcdh/data/test-file.txt &&
-              ls -la /ix1/whcdh/data &&
-              echo "Deleting that test file in /ix1/whcdh/data" &&
-              rm /ix1/whcdh/data/test-file.txt &&
-              ls -la /ix1/whcdh/data
+              echo "Creating a test file in $PV_MOUNT_ROOT/data" &&
+              touch $PV_MOUNT_ROOT/data/test-file.txt &&
+              ls -la $PV_MOUNT_ROOT/data &&
+              echo "Deleting that test file in $PV_MOUNT_ROOT/data" &&
+              rm $PV_MOUNT_ROOT/data/test-file.txt &&
+              ls -la $PV_MOUNT_ROOT/data &&
               export KUBECONFIG=/root/.kube/config &&
               cd /apps/repository &&
               chmod +x *.sh &&
@@ -56,7 +56,10 @@ spec:
             - name: empty-dir-volume
               mountPath: /apps/repository
             - name: ix1-whcdh-volume
-              mountPath: /ix1/whcdh
+              mountPath: {{ .Values.nfs.mountRoot }}
+          env:
+            - name: PV_MOUNT_ROOT
+              value: {{ .Values.nfs.mountRoot }}
           envFrom:
             - secretRef:
                 name: github-token

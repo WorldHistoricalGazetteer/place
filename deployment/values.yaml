@@ -40,6 +40,7 @@ sizeLimit: 1Gi                 # Example resource limit for ephemeral storage
 # -----------------------------------------------------------------------------
 nfs:
   server: ix1.crc.pitt.edu     # NFS server hostname
+  mountRoot: /ix1/whcdh
 
   # PersistentVolume settings
   pv:
