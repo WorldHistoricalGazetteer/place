@@ -7,15 +7,18 @@ from pprint import pprint
 
 import yaml
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
 def get_pv_requirements(application: str, chart_path: str, namespace: str = "default", default_uid=1000,
                                       default_gid=1000, default_perms="755"):
     """Renders a Helm chart and extracts required volume mount paths and permissions."""
-    command = ["sudo", "helm", "template", application, chart_path, "--namespace", namespace]
-    result = subprocess.run(command, capture_output=True, text=True)
+    command = ["helm", "template", application, chart_path, "--namespace", namespace]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True)
+    except Exception as e:
+        raise RuntimeError(f"Helm command failed: {e}")
 
     if result.returncode != 0:
         raise RuntimeError(f"Helm template failed: {result.stderr}")
