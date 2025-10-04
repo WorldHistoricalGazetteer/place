@@ -4,7 +4,7 @@
 image:
   repository: worldhistoricalgazetteer/deployment  # Docker image repo
   pullPolicy: IfNotPresent                           # When to pull the image
-  tag: "0.0.3"                                      # Image version/tag
+  tag: "0.0.4"                                      # Image version/tag
 
 # -----------------------------------------------------------------------------
 # Application-specific settings
