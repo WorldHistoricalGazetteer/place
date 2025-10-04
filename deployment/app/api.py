@@ -191,7 +191,7 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
             logger.info(f"No required volumes found in {values_file}")
         else:
             logger.info(f"Ensuring required PV directories exist: {required_volumes}")
-            # ensure_pv_directories(required_volumes)
+            ensure_pv_directories(required_volumes)
     except Exception as e:
         logger.error(f"Pre-deployment volume check failed: {e}")
         return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
