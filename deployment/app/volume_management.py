@@ -131,6 +131,11 @@ def ensure_pv_directories(volumes):
             try:
                 os.makedirs(path, mode=perms, exist_ok=True)
                 logger.info(f"Created {path} with perms {vol['perms']}")
+                """                
+                drwxr-xr-x.  2 root root  2 Oct  4 12:04 django-app
+                drwxr-xr-x.  2 root root  2 Oct  4 12:04 postgres-staging
+                drwxr-xr-x.  2 root root  2 Oct  4 12:04 vespa-ingestion
+                """
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
@@ -142,3 +147,5 @@ def ensure_pv_directories(volumes):
             os.chmod(path, perms)
         except PermissionError as e:
             logger.error(f"Permission error on {path}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error on {path}: {e}")
