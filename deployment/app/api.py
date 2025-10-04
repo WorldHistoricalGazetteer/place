@@ -113,33 +113,33 @@ class DeployNotification(BaseModel):
     changed_directories: List[str]
 
 
-@app.post("/deploy")
-async def deploy_chart(
-        payload: DeployNotification,
-        authorization: Optional[str] = Header(None)
-):
-    # TODO: This endpoint was developed for use with GitHUb Action-based CI/CD, and may not be required for ArgoCD-based deployments.
-
-    logger.info(f"Deploy notification from {payload.repository} at {payload.commit}")
-    logger.info(f"Changed directories: {payload.changed_directories}")
-
-    predeployed_applications = get_applications()
-    changed_apps = set(predeployed_applications) & set(payload.changed_directories)
-
-    if not changed_apps:
-        logger.info("No deployed applications changed; skipping re-deployment.")
-        return {"status": "skipped", "message": "No matching deployed applications were modified."}
-
-    # Log the applications that will be deployed
-    logger.info(f"Applications to deploy: {changed_apps}")
-
-    for app in changed_apps:
-        logger.info(f"Deploying {app} due to changes in {payload.changed_directories}")
-        result = run_deployment(app)
-        if result.get("status") != "success":
-            logger.error(f"Deployment failed for {app}: {result.get('message')}")
-        else:
-            logger.info(f"Deployment succeeded for {app}: {result.get('message')}")
+# @app.post("/deploy")
+# async def deploy_chart(
+#         payload: DeployNotification,
+#         authorization: Optional[str] = Header(None)
+# ):
+#     # TODO: This endpoint was developed for use with GitHUb Action-based CI/CD, and may not be required for ArgoCD-based deployments.
+#
+#     logger.info(f"Deploy notification from {payload.repository} at {payload.commit}")
+#     logger.info(f"Changed directories: {payload.changed_directories}")
+#
+#     predeployed_applications = get_applications()
+#     changed_apps = set(predeployed_applications) & set(payload.changed_directories)
+#
+#     if not changed_apps:
+#         logger.info("No deployed applications changed; skipping re-deployment.")
+#         return {"status": "skipped", "message": "No matching deployed applications were modified."}
+#
+#     # Log the applications that will be deployed
+#     logger.info(f"Applications to deploy: {changed_apps}")
+#
+#     for app in changed_apps:
+#         logger.info(f"Deploying {app} due to changes in {payload.changed_directories}")
+#         result = run_deployment(app)
+#         if result.get("status") != "success":
+#             logger.error(f"Deployment failed for {app}: {result.get('message')}")
+#         else:
+#             logger.info(f"Deployment succeeded for {app}: {result.get('message')}")
 
 
 def pull_application_directory(application: str):
@@ -183,13 +183,16 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
     values_path = f"{chart_dir}/values{suffix}.yaml"
 
     try:
+        logger.debug(f"Getting PV requirements for {application} from {values_path} in namespace {namespace}")
         required_volumes = get_pv_requirements(application, values_path, namespace)
+        logger.debug(f"Required volumes: {required_volumes}")
         if not required_volumes:
             logger.info(f"No required volumes found in {values_path}")
         else:
             logger.info(f"Required volumes: {required_volumes}")
             ensure_pv_directories(required_volumes)
     except Exception as e:
+        logger.error(f"Pre-deployment volume check failed: {e}")
         return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
 
     command = f"helm upgrade --install {application} {chart_dir} -f {values_path} --namespace {namespace}"
