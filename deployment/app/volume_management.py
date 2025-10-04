@@ -20,7 +20,7 @@ def get_pv_requirements(
     default_gid=1000,
     default_perms="755"
 ):
-    """Renders a Helm chart and extracts required volume mount paths and permissions."""
+    """Renders a Helm chart and extracts only PV directory requirements (pv_path, uid, gid, perms)."""
     command = [
         "helm", "template", application, chart_dir,
         "--namespace", namespace,
@@ -36,12 +36,10 @@ def get_pv_requirements(
 
     rendered_docs = list(yaml.safe_load_all(result.stdout))
 
-    # Collect PV name -> host path
+    # PV name -> host path
     pv_paths = {}
     for doc in rendered_docs:
-        if not isinstance(doc, dict):
-            continue
-        if doc.get("kind") == "PersistentVolume":
+        if isinstance(doc, dict) and doc.get("kind") == "PersistentVolume":
             name = doc.get("metadata", {}).get("name")
             spec = doc.get("spec", {})
             path = None
@@ -52,31 +50,27 @@ def get_pv_requirements(
             if name and path:
                 pv_paths[name] = path
 
-    # Collect PVC -> PV mapping
+    # PVC -> PV mapping
     pvc_to_pv = {}
     for doc in rendered_docs:
-        if not isinstance(doc, dict):
-            continue
-        if doc.get("kind") == "PersistentVolumeClaim":
+        if isinstance(doc, dict) and doc.get("kind") == "PersistentVolumeClaim":
             ns = doc.get("metadata", {}).get("namespace", namespace)
             pvc_name = doc.get("metadata", {}).get("name")
             vol_name = doc.get("spec", {}).get("volumeName")
             if pvc_name and vol_name:
                 pvc_to_pv[(ns, pvc_name)] = vol_name
 
-    # Final resolved volumes
+    # Final minimal requirements list
     required_volumes = []
 
     for doc in rendered_docs:
         if not isinstance(doc, dict):
             continue
-        kind = doc.get("kind")
-        if kind not in ("Deployment", "StatefulSet", "DaemonSet"):
+        if doc.get("kind") not in ("Deployment", "StatefulSet", "DaemonSet"):
             continue
 
         metadata = doc.get("metadata", {})
         ns = metadata.get("namespace", namespace)
-        deployment_name = metadata.get("name")
         pod_spec = doc.get("spec", {}).get("template", {}).get("spec", {})
         if not pod_spec:
             continue
@@ -89,38 +83,31 @@ def get_pv_requirements(
         volume_map = {v.get("name"): v for v in volumes}
 
         for container in pod_spec.get("containers", []):
-            container_name = container.get("name")
             container_sec_ctx = container.get("securityContext", {})
             c_run_as_user = container_sec_ctx.get("runAsUser", run_as_user)
             c_fs_group = container_sec_ctx.get("runAsGroup", fs_group)
 
             for mount in container.get("volumeMounts", []):
-                vol_name = mount.get("name")
-                mount_path = mount.get("mountPath")
-
-                vol = volume_map.get(vol_name, {})
-                pv_path = None
-
+                vol = volume_map.get(mount.get("name"), {})
                 pvc_ref = vol.get("persistentVolumeClaim")
-                if pvc_ref:
-                    claim_name = pvc_ref.get("claimName")
-                    if claim_name:
-                        pv_name = pvc_to_pv.get((ns, claim_name))
-                        if pv_name:
-                            pv_path = pv_paths.get(pv_name)
+                if not pvc_ref:
+                    continue
+
+                claim_name = pvc_ref.get("claimName")
+                if not claim_name:
+                    continue
+
+                pv_name = pvc_to_pv.get((ns, claim_name))
+                pv_path = pv_paths.get(pv_name) if pv_name else None
+                if not pv_path:
+                    # Skip unbound PVCs or PVs without hostPath/local
+                    continue
 
                 required_volumes.append({
-                    "container": container_name,
-                    "deployment_kind": kind,
-                    "deployment_name": deployment_name,
-                    "namespace": ns,
-                    "volume_name": vol_name,
-                    "mount_path": mount_path,
-                    "perms": default_perms,
+                    "pv_path": pv_path,
                     "uid": c_run_as_user,
                     "gid": c_fs_group,
-                    "pv_claim_name": pvc_ref.get("claimName") if pvc_ref else None,
-                    "pv_path": pv_path,
+                    "perms": default_perms,
                 })
 
     return required_volumes
@@ -129,11 +116,7 @@ def get_pv_requirements(
 def ensure_pv_directories(volumes):
     """Create any missing PV directories and set ownership and permissions."""
     for vol in volumes:
-        path = vol.get("pv_path")
-        if not path:
-            logger.debug(f"Skipping volume {vol['volume_name']} (no pv_path)")
-            continue
-
+        path = vol["pv_path"]
         uid = vol["uid"]
         gid = vol["gid"]
         perms = int(vol["perms"], 8)
@@ -153,4 +136,3 @@ def ensure_pv_directories(volumes):
             os.chmod(path, perms)
         except PermissionError as e:
             logger.error(f"Permission error on {path}: {e}")
-
