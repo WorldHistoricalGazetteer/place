@@ -44,7 +44,7 @@ WORKDIR /app
 
 # Install runtime dependencies (bash, curl, git, jq, wget, zip)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash curl git jq wget zip iputils-ping dnsutils rsync && \
+    bash curl git jq wget zip iputils-ping dnsutils rsync openssh-client && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create a writable location for virtualenv
