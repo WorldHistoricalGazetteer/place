@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from volume_management import ensure_pv_directories, get_pv_requirements
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 GITHUB_REPO = "https://github.com/WorldHistoricalGazetteer/place.git"
