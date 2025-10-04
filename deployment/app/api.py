@@ -187,29 +187,28 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
         logger.info(f"Getting PV requirements for {application} from {values_file} in namespace {namespace}")
         required_volumes = get_pv_requirements(application, chart_dir, values_file, namespace)
 
-
         if not required_volumes:
             logger.info(f"No required volumes found in {values_file}")
         else:
             logger.info(f"Ensuring required PV directories exist: {required_volumes}")
-            ensure_pv_directories(required_volumes)
+            # ensure_pv_directories(required_volumes)
     except Exception as e:
         logger.error(f"Pre-deployment volume check failed: {e}")
         return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
 
-    command = f"helm upgrade --install {application} {chart_dir} -f {values_file} --namespace {namespace}"
-    logger.info(f"Running: {command}")
-
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-
-    logger.info(f"Return code: {result.returncode}")
-    logger.info(f"STDOUT: {result.stdout}")
-    logger.error(f"STDERR: {result.stderr}")
-
-    if result.returncode == 0:
-        return {"status": "success", "message": result.stdout}
-    else:
-        return {"status": "error", "message": result.stderr}
+    # command = f"helm upgrade --install {application} {chart_dir} -f {values_file} --namespace {namespace}"
+    # logger.info(f"Running: {command}")
+    #
+    # result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    #
+    # logger.info(f"Return code: {result.returncode}")
+    # logger.info(f"STDOUT: {result.stdout}")
+    # logger.error(f"STDERR: {result.stderr}")
+    #
+    # if result.returncode == 0:
+    #     return {"status": "success", "message": result.stdout}
+    # else:
+    #     return {"status": "error", "message": result.stderr}
 
 
 if __name__ == "__main__":
