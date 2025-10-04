@@ -10,6 +10,8 @@ import yaml
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+MOUNT_ROOT = os.environ.get("PV_MOUNT_ROOT", "/ix1/whcdh")
+
 
 def get_pv_requirements(
     application: str,
@@ -108,7 +110,7 @@ def get_pv_requirements(
                 seen_paths.add(pv_path)
 
                 required_volumes.append({
-                    "pv_path": pv_path,
+                    "pv_path": os.path.join(MOUNT_ROOT, pv_path.lstrip("/")),
                     "uid": c_run_as_user,
                     "gid": c_fs_group,
                     "perms": default_perms,
