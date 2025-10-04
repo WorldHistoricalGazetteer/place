@@ -27,7 +27,7 @@ service:
 securityContext:
   runAsUser: 1001             # UID the container runs as inside the pod
   runAsGroup: 1001            # GID the container runs as inside the pod
-  fsGroup: 16604              # Filesystem group for NFS mount (whcdh group on ix1): ALL PODS MUST RUN AS THIS GID TO ACCESS NFS
+  fsGroup: 16604              # Filesystem group for NFS mount (whcdh group on ix1): ideal, but not strictly required due to exceptional NFS permissions
   fsGroupChangePolicy: "Always" # Ensure fsGroup ownership is applied to mounted volumes
 
 # -----------------------------------------------------------------------------
