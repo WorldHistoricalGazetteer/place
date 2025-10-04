@@ -180,14 +180,14 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
 
     chart_dir = f"{CLONE_ROOT}/{application}/{application}"  # Git duplicates name in path
     suffix = f"-{version}" if version else ""
-    values_path = f"{chart_dir}/values{suffix}.yaml"
+    values_file = f"{chart_dir}/values{suffix}.yaml"
 
     try:
-        logger.debug(f"Getting PV requirements for {application} from {values_path} in namespace {namespace}")
-        required_volumes = get_pv_requirements(application, values_path, namespace)
+        logger.debug(f"Getting PV requirements for {application} from {values_file} in namespace {namespace}")
+        required_volumes = get_pv_requirements(application, chart_dir, values_file, namespace)
         logger.debug(f"Required volumes: {required_volumes}")
         if not required_volumes:
-            logger.info(f"No required volumes found in {values_path}")
+            logger.info(f"No required volumes found in {values_file}")
         else:
             logger.info(f"Required volumes: {required_volumes}")
             ensure_pv_directories(required_volumes)
@@ -195,7 +195,7 @@ def run_deployment(application: str, namespace: str = "default") -> dict:
         logger.error(f"Pre-deployment volume check failed: {e}")
         return {"status": "error", "message": f"Pre-deployment check failed: {e}"}
 
-    command = f"helm upgrade --install {application} {chart_dir} -f {values_path} --namespace {namespace}"
+    command = f"helm upgrade --install {application} {chart_dir} -f {values_file} --namespace {namespace}"
     logger.info(f"Running: {command}")
 
     result = subprocess.run(command, shell=True, capture_output=True, text=True)

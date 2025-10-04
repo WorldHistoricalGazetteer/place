@@ -11,10 +11,14 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-def get_pv_requirements(application: str, chart_path: str, namespace: str = "default", default_uid=1000,
+def get_pv_requirements(application: str, chart_dir: str, values_file: str, namespace: str = "default", default_uid=1000,
                                       default_gid=1000, default_perms="755"):
     """Renders a Helm chart and extracts required volume mount paths and permissions."""
-    command = ["helm", "template", application, chart_path, "--namespace", namespace]
+    command = [
+        "helm", "template", application, chart_dir,
+        "--namespace", namespace,
+        "-f", values_file
+    ]
     try:
         result = subprocess.run(command, capture_output=True, text=True)
     except Exception as e:
