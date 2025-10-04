@@ -9,39 +9,49 @@ kind: ClusterRole
 metadata:
   name: helm-manager
 rules:
-  # Helm needs to manage releases
+  # Core resources
   - apiGroups: [""]
-    resources: ["secrets", "configmaps", "services", "pods", "persistentvolumeclaims", "persistentvolumes"]
+    resources: ["secrets", "configmaps", "services", "pods", "persistentvolumeclaims", "persistentvolumes", "nodes"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  # For deployments, statefulsets, daemonsets, etc.
+  # Apps resources
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  # For jobs and cronjobs
+  # Batch resources
   - apiGroups: ["batch"]
     resources: ["jobs", "cronjobs"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  # For ingress
+  # Networking resources
   - apiGroups: ["networking.k8s.io"]
-    resources: ["ingresses"]
+    resources: ["ingresses", "networkpolicies"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  # For RBAC resources (if your charts create them)
+  # Storage resources
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses", "volumeattachments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # RBAC resources
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  # For service accounts
+  # Service accounts
   - apiGroups: [""]
     resources: ["serviceaccounts"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  # For namespaces (if needed)
+  # Namespaces
   - apiGroups: [""]
     resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Events (useful for debugging)
+  - apiGroups: [""]
+    resources: ["events"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
