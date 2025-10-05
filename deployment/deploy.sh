@@ -17,13 +17,13 @@ MINIKUBE_CPUS=2
 MINIKUBE_MEMORY=6144
 MINIKUBE_DISK="8g"
 HOST_MOUNT="/ix1/whcdh:/minikube-whcdh"
-DEPLOYMENT_NAME="management-deployment"
-NAMESPACE="whg"
 
 # -----------------------------------------
 # Start Minikube if not running
 # -----------------------------------------
-if ! minikube status -p "$MINIKUBE_PROFILE" >/dev/null 2>&1; then
+MINIKUBE_STATUS=$(minikube status -p "$MINIKUBE_PROFILE" --output json 2>/dev/null | jq -r '.Host' || echo "NotFound")
+
+if [ "$MINIKUBE_STATUS" != "Running" ]; then
   echo "Starting Minikube with $MINIKUBE_NODES nodes..."
   minikube start \
     -p "$MINIKUBE_PROFILE" \
@@ -36,8 +36,11 @@ if ! minikube status -p "$MINIKUBE_PROFILE" >/dev/null 2>&1; then
     --mount-string="$HOST_MOUNT" \
     --mount
 else
-  echo "Minikube already running."
+  echo "✅ Minikube already running."
 fi
+
+echo MINIKUBE_STATUS
+exit 0
 
 # -----------------------------------------
 # Wait until all nodes are Ready
