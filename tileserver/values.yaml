@@ -4,8 +4,6 @@ namespace: "tileserver"
 securityContext:
   runAsUser: 999
   runAsGroup: 999
-  fsGroup: 16604  # Filesystem group for NFS mount (whcdh group on ix1): ideal, but not strictly required due to exceptional NFS permissions
-  fsGroupChangePolicy: "Always"  # Ensure fsGroup ownership is applied to mounted volumes
 
 service:
   type: "LoadBalancer" # May be overridden by Helm argument
