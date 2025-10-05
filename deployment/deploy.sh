@@ -11,7 +11,7 @@ REPO_DIR="$HOME/deployment-repo"
 REPO_URL="https://github.com/WorldHistoricalGazetteer/place.git"
 BRANCH="main"
 KPROXY_PORT=8001
-MINIKUBE_PROFILE="whg-minikube"
+MINIKUBE_PROFILE="minikube"
 MINIKUBE_NODES=4
 MINIKUBE_CPUS=2
 MINIKUBE_MEMORY=6144
@@ -38,9 +38,6 @@ if [ "$MINIKUBE_STATUS" != "Running" ]; then
 else
   echo "✅ Minikube already running."
 fi
-
-echo MINIKUBE_STATUS
-exit 0
 
 # -----------------------------------------
 # Wait until all nodes are Ready
@@ -94,8 +91,9 @@ fi
 # Enable Minikube addons idempotently
 # -----------------------------------------
 echo "Enabling required Minikube addons..."
-for addon in csi-hostpath-driver dashboard metallb metrics-server volumesnapshots; do
-  if ! minikube addons list | grep -q "^$addon: enabled"; then
+for addon in dashboard metrics-server metallb; do
+  status=$(minikube addons list --output=table | awk -v a="$addon" '$1 == a {print $3}')
+  if [ "$status" != "enabled" ]; then
     echo "Enabling addon $addon..."
     minikube addons enable "$addon"
   else
