@@ -92,6 +92,24 @@ else
 fi
 
 # -----------------------------------------
+# Configure metalLB if not already configured
+# -----------------------------------------
+
+# Get the Minikube IP and derive a reasonable IP range
+MINIKUBE_IP=$(minikube ip)
+SUBNET_PREFIX=$(echo "$MINIKUBE_IP" | awk -F. '{print $1"."$2"."$3}')
+METALLB_RANGE_START="${SUBNET_PREFIX}.200"
+METALLB_RANGE_END="${SUBNET_PREFIX}.250"
+
+# Configure MetalLB if not already configured
+if ! kubectl get configmap -n metallb-system config >/dev/null 2>&1; then
+  echo "Configuring MetalLB address pool..."
+  minikube addons configure metallb --ip-range="${METALLB_RANGE_START}-${METALLB_RANGE_END}"
+else
+  echo "MetalLB already configured."
+fi
+
+# -----------------------------------------
 # Enable Minikube addons idempotently
 # -----------------------------------------
 echo "Enabling required Minikube addons..."
