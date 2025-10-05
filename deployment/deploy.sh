@@ -103,7 +103,8 @@ METALLB_RANGE_END="${SUBNET_PREFIX}.250"
 METALLB_NAMESPACE="metallb-system"
 
 echo "Configuring MetalLB address pool..."
-cat <<EOF | kubectl apply -f -
+
+kubectl apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -115,7 +116,7 @@ data:
     - name: default
       protocol: layer2
       addresses:
-      - ${METALLB_RANGE_START}-${METALLB_RANGE_END}
+      - $METALLB_RANGE_START-$METALLB_RANGE_END
 EOF
 
 echo "✅ MetalLB ConfigMap applied/updated."
