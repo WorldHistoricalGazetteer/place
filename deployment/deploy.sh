@@ -100,19 +100,25 @@ MINIKUBE_IP=$(minikube ip)
 SUBNET_PREFIX=$(echo "$MINIKUBE_IP" | awk -F. '{print $1"."$2"."$3}')
 METALLB_RANGE_START="${SUBNET_PREFIX}.200"
 METALLB_RANGE_END="${SUBNET_PREFIX}.250"
+METALLB_NAMESPACE="metallb-system"
 
-# Configure MetalLB if not already configured
-if ! kubectl get configmap -n metallb-system config >/dev/null 2>&1; then
-  echo "Configuring MetalLB address pool..."
-  minikube addons configure metallb --ip-range="${METALLB_RANGE_START}-${METALLB_RANGE_END}"
-else
-  echo "Patching existing MetalLB ConfigMap..."
-  kubectl patch configmap config -n metallb-system --type merge -p "{
-    \"data\": {
-      \"config\": \"address-pools:\n- name: default\n  protocol: layer2\n  addresses:\n  - ${METALLB_RANGE_START}-${METALLB_RANGE_END}\"
-    }
-  }"
-fi
+echo "Configuring MetalLB address pool..."
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: $METALLB_NAMESPACE
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: default
+      protocol: layer2
+      addresses:
+      - ${METALLB_RANGE_START}-${METALLB_RANGE_END}
+EOF
+
+echo "✅ MetalLB ConfigMap applied/updated."
 
 # -----------------------------------------
 # Enable Minikube addons idempotently
