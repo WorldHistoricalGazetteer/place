@@ -1,4 +1,4 @@
-namespace: epitran
+namespace: whg
 
 replicaCount: 1
 
@@ -32,4 +32,4 @@ resources:
     cpu: "500m"
 
 vespa:
-  namespace: vespa
+  namespace: whg

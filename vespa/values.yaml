@@ -1,4 +1,4 @@
-namespace: vespa
+namespace: whg
 
 replicaCounts:
   # Ensure quorum for ZooKeeper: if you increase this value, you must create additional directories for PVs

@@ -11,8 +11,8 @@ SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 TARGET_DIR="$SCRIPT_DIR/whg/files/private"
 MISC_FILE="$TEMP_SECRETS_DIR/miscellaneous/place.md"
 SECRET_NAME="whg-secret"
-SECRET_NAMESPACE="default"
-COPY_TO_NAMESPACES=(management monitoring tileserver whg wordpress)
+SECRET_NAMESPACE="whg"
+#COPY_TO_NAMESPACES=(management monitoring tileserver whg wordpress)
 
 # === Ensure cleanup of temporary directory ===
 cleanup() {
@@ -89,19 +89,21 @@ data:
   id_rsa_whg: $(base64 -w0 "$TARGET_DIR/id_rsa_whg")
 EOF
 
-# === Copy the secret to other namespaces ===
-echo "📦 Copying $SECRET_NAME to other namespaces..."
-for ns in "${COPY_TO_NAMESPACES[@]}"; do
-  # ensure namespace exists
-  kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f -
+echo "✅ Secret '$SECRET_NAME' created."
 
-  # get secret JSON, clear fields that prevent overwrite
-  kubectl get secret "$SECRET_NAME" -n "$SECRET_NAMESPACE" -o json \
-    | jq "del(.metadata.ownerReferences, .metadata.resourceVersion, .metadata.uid) | .metadata.namespace = \"$ns\"" \
-    | kubectl apply -f -
-done
+## === Copy the secret to other namespaces ===
+#echo "📦 Copying $SECRET_NAME to other namespaces..."
+#for ns in "${COPY_TO_NAMESPACES[@]}"; do
+#  # ensure namespace exists
+#  kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f -
+#
+#  # get secret JSON, clear fields that prevent overwrite
+#  kubectl get secret "$SECRET_NAME" -n "$SECRET_NAMESPACE" -o json \
+#    | jq "del(.metadata.ownerReferences, .metadata.resourceVersion, .metadata.uid) | .metadata.namespace = \"$ns\"" \
+#    | kubectl apply -f -
+#done
+#echo "✅ Secret '$SECRET_NAME' copied to namespaces."
 
-echo "✅ Secret '$SECRET_NAME' created and copied to namespaces."
 echo "📁 Files stored in: $TARGET_DIR"
 ls -l "$TARGET_DIR"
 

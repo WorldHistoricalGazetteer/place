@@ -1,5 +1,5 @@
 subdomain: "map.whgazetteer.org"
-namespace: "tileserver"
+namespace: "whg"
 
 securityContext:
   runAsUser: 999
@@ -54,7 +54,7 @@ tippecanoe:
   imagePullPolicy: "IfNotPresent"
 
 vespa:
-  namespace: "vespa"
+  namespace: "whg"
 
 pv:
   tiles:

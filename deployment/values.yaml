@@ -69,7 +69,3 @@ nfs:
   # PersistentVolumeClaim settings
   pvc:
     name: ishi-pvc         # Name of the PVC in Kubernetes
-    nameSpaces:            # Namespaces where the PVC should be created
-      - management
-      - tileserver
-      - whg

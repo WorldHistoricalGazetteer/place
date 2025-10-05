@@ -12,19 +12,16 @@ spec:
   hostPath:
     path: {{ .Values.nfs.pv.hostPath }}
 ---
-{{- range .Values.nfs.pvc.nameSpaces }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ishi-pvc
-  namespace: {{ . }}
+  name: {{ .Values.nfs.pvc.name }}
+  namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
-{{ toYaml $.Values.nfs.pv.accessModes | indent 4 }}
+{{ toYaml .Values.nfs.pv.accessModes | indent 4 }}
   resources:
     requests:
-      storage: {{ $.Values.nfs.pv.capacity }}
-  volumeName: {{ $.Values.nfs.pv.name }}
-  storageClassName: ""
----
-{{- end }}
+      storage: {{ .Values.nfs.pv.capacity }}  # Match PV size
+  volumeName: {{ .Values.nfs.pv.name }}  # <-- REQUIRED for static binding
+  storageClassName: ""  # <-- REQUIRED for static binding (template substitution doesn't work here)
