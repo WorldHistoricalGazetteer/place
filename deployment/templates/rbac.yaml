@@ -70,4 +70,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: helm-manager
-    namespace: management
+    namespace: {{ .Release.Namespace }}
