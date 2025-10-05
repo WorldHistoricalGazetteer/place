@@ -119,7 +119,7 @@ data:
       - $METALLB_RANGE_START-$METALLB_RANGE_END
 EOF
 
-echo "✅ MetalLB ConfigMap applied/updated."
+echo "✅ MetalLB ConfigMap applied/updated with range $METALLB_RANGE_START-$METALLB_RANGE_END."
 
 # -----------------------------------------
 # Enable Minikube addons idempotently
