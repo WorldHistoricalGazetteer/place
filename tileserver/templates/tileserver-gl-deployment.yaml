@@ -39,8 +39,8 @@ spec:
             git reset --hard origin/main && \
             chmod -R 775 /mnt/tileserver
           volumeMounts:
-            - name: tileserver
-              mountPath: /mnt/tileserver
+            - name: {{ .Values.pv.repository.name }}
+              mountPath: {{ .Values.pv.repository.mountPath }}
             - name: tiles
               mountPath: /mnt/data/tiles
               subPath: tiles
@@ -62,8 +62,8 @@ spec:
         - name: tiles
           mountPath: /mnt/data/tiles
           subPath: tiles
-        - name: tileserver
-          mountPath: /mnt/tileserver
+        - name: {{ .Values.pv.repository.name }}
+          mountPath: {{ .Values.pv.repository.mountPath }}
         resources: {{ toYaml .Values.tileserver.resources | nindent 10 }}
         livenessProbe:
           httpGet:
@@ -107,11 +107,11 @@ spec:
         - name: tiles
           mountPath: /mnt/data/tiles
           subPath: tiles
-        - name: tileserver
-          mountPath: /mnt/tileserver
+        - name: {{ .Values.pv.repository.name }}
+          mountPath: {{ .Values.pv.repository.mountPath }}
       volumes:
       - name: tiles
         persistentVolumeClaim:
           claimName: ishi-pvc
-      - name: tileserver
+      - name: {{ .Values.pv.repository.name }}
         emptyDir: {}

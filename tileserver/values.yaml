@@ -61,24 +61,27 @@ pv:
     storage: 50Gi
     path: /data/k8s/tiles
     mountPath: /mnt/data/tiles
-  tileserver:
-    storage: 10Gi
-    path: /data/k8s/tileserver
-    api:
-      mountPath: /opt/api
-      subPath: src/tileserver/repository/api
-    configs:
-      mountPath: /mnt/data/configs
-      subPath: configs
-    reconfiguration:
-      mountPath: /opt/reconfiguration
-      subPath: src/tileserver/repository/reconfiguration
-    assets:
-      mountPath: /mnt/data/assets
-      subPath: src/tileserver/repository/assets
-    mapdata:
-      mountPath: /mnt/data/mapdata
-      subPath: mapdata
+  repository:
+    name: tileserver-repository
+    mountPath: /mnt/tileserver
+#  tileserver:
+#    storage: 10Gi
+#    path: /data/k8s/tileserver
+#    api:
+#      mountPath: /opt/api
+#      subPath: src/tileserver/repository/api
+#    configs:
+#      mountPath: /mnt/data/configs
+#      subPath: configs
+#    reconfiguration:
+#      mountPath: /opt/reconfiguration
+#      subPath: src/tileserver/repository/reconfiguration
+#    assets:
+#      mountPath: /mnt/data/assets
+#      subPath: src/tileserver/repository/assets
+#    mapdata:
+#      mountPath: /mnt/data/mapdata
+#      subPath: mapdata
 
 affinity:
   nodeAffinity:
