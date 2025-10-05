@@ -34,14 +34,14 @@ cleanup() {
 # Register the cleanup function to be called on exit
 trap cleanup EXIT
 
-if ! kubectl get namespace management >/dev/null 2>&1; then
-  echo "Creating 'management' namespace..."
-  kubectl create namespace management
+if ! kubectl get namespace whg >/dev/null 2>&1; then
+  echo "Creating 'whg' namespace..."
+  kubectl create namespace whg
 else
-  echo "'management' namespace already exists."
+  echo "'whg' namespace already exists."
 fi
 
-if ! kubectl get secret kubeconfig -n management > /dev/null 2>&1; then
+if ! kubectl get secret kubeconfig -n whg > /dev/null 2>&1; then
 
   # Base64-encode the certificates
   CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
@@ -61,35 +61,35 @@ if ! kubectl get secret kubeconfig -n management > /dev/null 2>&1; then
   # Create kubeconfig secret
   kubectl create secret generic kubeconfig \
   --from-file=config=/tmp/kubeconfig \
-  -n management \
+  -n whg \
   --dry-run=client -o yaml | \
   kubectl label -f - --local app.kubernetes.io/managed-by=Helm -o yaml | \
   kubectl annotate -f - --local \
     meta.helm.sh/release-name=management-chart \
-    meta.helm.sh/release-namespace=management -o yaml | \
+    meta.helm.sh/release-namespace=whg -o yaml | \
   kubectl apply -f -
 
 else
-  echo "Secret 'kubeconfig' already exists in the 'management' namespace, skipping creation."
+  echo "Secret 'kubeconfig' already exists in the 'whg' namespace, skipping creation."
 fi
 
 # Check if the github-token secret already exists
-if ! kubectl get secret github-token -n management > /dev/null 2>&1; then
+if ! kubectl get secret github-token -n whg > /dev/null 2>&1; then
   # Create a Secret for GitHub token
   kubectl create secret generic github-token \
   --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN" \
-  -n management \
+  -n whg \
   --dry-run=client -o yaml | \
   kubectl label -f - --local app.kubernetes.io/managed-by=Helm -o yaml | \
   kubectl annotate -f - --local \
     meta.helm.sh/release-name=management-chart \
-    meta.helm.sh/release-namespace=management -o yaml | \
+    meta.helm.sh/release-namespace=whg -o yaml | \
   kubectl apply -f -
 else
-  echo "Secret 'github-token' already exists in the 'management' namespace, skipping creation."
+  echo "Secret 'github-token' already exists in the 'whg' namespace, skipping creation."
 fi
 
-if ! kubectl get secret whg-secret -n management > /dev/null 2>&1; then
+if ! kubectl get secret whg-secret -n whg > /dev/null 2>&1; then
   # Fetch remote secrets and create Kubernetes secrets
   source "$REPO_DIR/deployment/load-secrets.sh"
 fi
@@ -120,7 +120,7 @@ echo "Node labelling complete!"
 
 # Install `deployment` Helm chart
 helm upgrade --install management-chart "$REPO_DIR/deployment" \
-  --namespace management \
+  --namespace whg \
   --create-namespace \
   --debug
 
