@@ -36,18 +36,19 @@ SYNC_PATHS = {
             "host": "main_host"
         }
     ],
-    "tileserver": [
-        {
-            "remote": "/srv/tileserver/configs",
-            "local": f"{PV_MOUNT_ROOT}/tileserver/configs",
-            "host": "tiler_host"
-        },
-        {
-            "remote": "/srv/tileserver/tiles",
-            "local": f"{PV_MOUNT_ROOT}/tiles",
-            "host": "tiler_host"
-        }
-    ]
+    # These are commented out because tiles have already been synced and augmented locally
+    # "tileserver": [
+    #     {
+    #         "remote": "/srv/tileserver/configs",
+    #         "local": f"{PV_MOUNT_ROOT}/tileserver/configs",
+    #         "host": "tiler_host"
+    #     },
+    #     {
+    #         "remote": "/srv/tileserver/tiles",
+    #         "local": f"{PV_MOUNT_ROOT}/tiles",
+    #         "host": "tiler_host"
+    #     }
+    # ]
 }
 
 BACKUP_CONFIG = {
@@ -122,7 +123,7 @@ def rsync_directory(remote_path: str, local_path: str, ssh_key: str,
         command = [
             "rsync",
             "-avz",
-            "--delete",
+            # "--delete",  # BEWARE: Uncommenting this would delete local files not present on remote, including locally-augmented terrarium.mbtiles
             "-e", f"ssh -i {ssh_key} -o StrictHostKeyChecking=no",
             remote_source,
             local_path

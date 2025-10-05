@@ -14,7 +14,7 @@ from botocore import UNSIGNED
 from botocore.config import Config
 
 LOCAL_DATA_DIR = "/ix1/whcdh/data/terrarium"
-LOCAL_TILES_DIR = "/ix1/whcdh/data/terrarium/tiles"
+LOCAL_TILES_DIR = "/ix1/whcdh/tiles"  # This is the directory to which other tiles are synchronised from remote on tileserver initialisation
 
 # Ensure the local directories exist
 os.makedirs(LOCAL_DATA_DIR, exist_ok=True)

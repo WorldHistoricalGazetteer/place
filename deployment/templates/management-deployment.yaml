@@ -52,7 +52,6 @@ spec:
               echo "ID: $(id)" &&
               ls -la $PV_MOUNT_ROOT/data &&
               cd /apps/repository &&
-{{/*              chmod +x *.sh &&*/}}
               python ./deployment/app/api.py
           ports:
             - containerPort: 8000
@@ -64,9 +63,6 @@ spec:
           env:
             - name: PV_MOUNT_ROOT
               value: {{ .Values.nfs.mountRoot }}
-{{/*          envFrom:*/}}
-{{/*            - secretRef:*/}}
-{{/*                name: github-token*/}}
       volumes:
         - name: empty-dir-volume
           emptyDir:
