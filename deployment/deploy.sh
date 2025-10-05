@@ -96,13 +96,7 @@ fi
 # -----------------------------------------
 echo "Enabling required Minikube addons..."
 for addon in dashboard metrics-server metallb; do
-  status=$(minikube addons list --output=table | awk -v a="$addon" '$1 == a {print $3}')
-  if [ "$status" != "enabled" ]; then
-    echo "Enabling addon $addon..."
     minikube addons enable "$addon"
-  else
-    echo "Addon $addon already enabled."
-  fi
 done
 
 # -----------------------------------------
