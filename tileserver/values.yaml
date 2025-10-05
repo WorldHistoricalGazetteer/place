@@ -65,24 +65,6 @@ pv:
     name: tileserver-repository
     mountPath: /mnt/tileserver-repository
     gitFolder: /tileserver/repository   # 👈 relative subfolder within repo
-#  tileserver:
-#    storage: 10Gi
-#    path: /data/k8s/tileserver
-#    api:
-#      mountPath: /opt/api
-#      subPath: src/tileserver/repository/api
-#    configs:
-#      mountPath: /mnt/data/configs
-#      subPath: configs
-#    reconfiguration:
-#      mountPath: /opt/reconfiguration
-#      subPath: src/tileserver/repository/reconfiguration
-#    assets:
-#      mountPath: /mnt/data/assets
-#      subPath: src/tileserver/repository/assets
-#    mapdata:
-#      mountPath: /mnt/data/mapdata
-#      subPath: mapdata
 
 affinity:
   nodeAffinity:

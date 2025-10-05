@@ -5,7 +5,7 @@
       "fonts": "fonts",
       "sprites": "sprites",
       "styles": "styles",
-      "mbtiles": "tiles"
+      "mbtiles": "/mnt/data/tiles"
     }
   },
   "serveAllFonts": true,
