@@ -1,13 +1,57 @@
 #!/bin/bash
 set -euo pipefail
 
+# =========================================
+# WHG Deployment Script for Minikube
+# =========================================
 # This would normally be called on the Pitt VM via:
 # bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/deploy.sh")
 
 REPO_DIR="$HOME/deployment-repo"
 REPO_URL="https://github.com/WorldHistoricalGazetteer/place.git"
 BRANCH="main"
+KPROXY_PORT=8001
+MINIKUBE_PROFILE="whg-minikube"
+MINIKUBE_NODES=4
+MINIKUBE_CPUS=2
+MINIKUBE_MEMORY=6144
+MINIKUBE_DISK="8g"
+HOST_MOUNT="/ix1/whcdh:/minikube-whcdh"
+DEPLOYMENT_NAME="management-deployment"
+NAMESPACE="whg"
 
+# -----------------------------------------
+# Start Minikube if not running
+# -----------------------------------------
+if ! minikube status -p "$MINIKUBE_PROFILE" >/dev/null 2>&1; then
+  echo "Starting Minikube with $MINIKUBE_NODES nodes..."
+  minikube start \
+    -p "$MINIKUBE_PROFILE" \
+    --nodes="$MINIKUBE_NODES" \
+    --driver=podman \
+    --container-runtime=containerd \
+    --cpus="$MINIKUBE_CPUS" \
+    --memory="$MINIKUBE_MEMORY" \
+    --disk-size="$MINIKUBE_DISK" \
+    --mount-string="$HOST_MOUNT" \
+    --mount
+else
+  echo "Minikube already running."
+fi
+
+# -----------------------------------------
+# Wait until all nodes are Ready
+# -----------------------------------------
+echo "Waiting for all Minikube nodes to be Ready..."
+until kubectl get nodes | grep -q "Ready"; do
+  echo "Waiting for nodes..."
+  sleep 5
+done
+echo "All nodes Ready."
+
+# -----------------------------------------
+# Clone or update the WHG repository
+# -----------------------------------------
 if [ ! -d "$REPO_DIR/.git" ]; then
   echo "Cloning WHG repository (sparse checkout of deployment/)..."
   rm -rf "$REPO_DIR"
@@ -24,16 +68,18 @@ else
   git reset --hard "origin/$BRANCH"
 fi
 
+# -----------------------------------------
+# Cleanup function for sensitive files
+# -----------------------------------------
 cleanup() {
   unset CA_CERT CLIENT_CERT CLIENT_KEY minikube_ip
-  if [ -d "/tmp/kubeconfig" ]; then
-    shred -u /tmp/kubeconfig
-  fi
+  [ -d "/tmp/kubeconfig" ] && shred -u /tmp/kubeconfig
 }
-
-# Register the cleanup function to be called on exit
 trap cleanup EXIT
 
+# -----------------------------------------
+# Ensure 'whg' namespace exists
+# -----------------------------------------
 if ! kubectl get namespace whg >/dev/null 2>&1; then
   echo "Creating 'whg' namespace..."
   kubectl create namespace whg
@@ -41,72 +87,103 @@ else
   echo "'whg' namespace already exists."
 fi
 
-if ! kubectl get secret kubeconfig -n whg > /dev/null 2>&1; then
+# -----------------------------------------
+# Enable Minikube addons idempotently
+# -----------------------------------------
+echo "Enabling required Minikube addons..."
+for addon in csi-hostpath-driver dashboard metallb metrics-server volumesnapshots; do
+  if ! minikube addons list | grep -q "^$addon: enabled"; then
+    echo "Enabling addon $addon..."
+    minikube addons enable "$addon"
+  else
+    echo "Addon $addon already enabled."
+  fi
+done
 
-  # Base64-encode the certificates
+# -----------------------------------------
+# Start kubectl proxy if not already running
+# -----------------------------------------
+if ! lsof -iTCP:$KPROXY_PORT -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "Starting kubectl proxy on port $KPROXY_PORT..."
+  nohup kubectl proxy --address=0.0.0.0 --port=$KPROXY_PORT --disable-filter=true \
+    > "$HOME/kubectl_proxy.log" 2>&1 &
+else
+  echo "kubectl proxy already running on port $KPROXY_PORT"
+fi
+
+echo "To access the Kubernetes dashboard from your local machine:"
+echo "  ssh -L 8010:127.0.0.1:$KPROXY_PORT <username>@gazetteer.crcd.pitt.edu"
+echo "Then visit:"
+echo "  http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=_all"
+
+# -----------------------------------------
+# Create kubeconfig secret if missing
+# -----------------------------------------
+if ! kubectl get secret kubeconfig -n whg >/dev/null 2>&1; then
+  echo "Creating kubeconfig secret..."
   CA_CERT=$(base64 -w0 /home/gazetteer/.minikube/ca.crt)
   CLIENT_CERT=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.crt)
   CLIENT_KEY=$(base64 -w0 /home/gazetteer/.minikube/profiles/minikube/client.key)
-
-  # Get the Minikube IP
   minikube_ip=$(minikube ip)
 
-  # Prepare kubeconfig
   cp /home/gazetteer/.kube/config /tmp/kubeconfig
   sed -i "s|certificate-authority: .*|certificate-authority-data: $CA_CERT|" /tmp/kubeconfig
   sed -i "s|client-certificate: .*|client-certificate-data: $CLIENT_CERT|" /tmp/kubeconfig
   sed -i "s|client-key: .*|client-key-data: $CLIENT_KEY|" /tmp/kubeconfig
   sed -i "s|server: https://127.0.0.1:[0-9]*|server: https://$minikube_ip:8443|" /tmp/kubeconfig
 
-  # Create kubeconfig secret
   kubectl create secret generic kubeconfig \
-  --from-file=config=/tmp/kubeconfig \
-  -n whg \
-  --dry-run=client -o yaml | \
+    --from-file=config=/tmp/kubeconfig \
+    -n whg \
+    --dry-run=client -o yaml | \
   kubectl label -f - --local app.kubernetes.io/managed-by=Helm -o yaml | \
   kubectl annotate -f - --local \
     meta.helm.sh/release-name=management-chart \
     meta.helm.sh/release-namespace=whg -o yaml | \
   kubectl apply -f -
-
 else
-  echo "Secret 'kubeconfig' already exists in the 'whg' namespace, skipping creation."
+  echo "Secret 'kubeconfig' already exists."
 fi
 
-# Check if the github-token secret already exists
-if ! kubectl get secret github-token -n whg > /dev/null 2>&1; then
-  # Create a Secret for GitHub token
+# -----------------------------------------
+# Create GitHub token secret if missing
+# -----------------------------------------
+if ! kubectl get secret github-token -n whg >/dev/null 2>&1; then
+  echo "Creating github-token secret..."
   kubectl create secret generic github-token \
-  --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN" \
-  -n whg \
-  --dry-run=client -o yaml | \
+    --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN" \
+    -n whg \
+    --dry-run=client -o yaml | \
   kubectl label -f - --local app.kubernetes.io/managed-by=Helm -o yaml | \
   kubectl annotate -f - --local \
     meta.helm.sh/release-name=management-chart \
     meta.helm.sh/release-namespace=whg -o yaml | \
   kubectl apply -f -
 else
-  echo "Secret 'github-token' already exists in the 'whg' namespace, skipping creation."
+  echo "Secret 'github-token' already exists."
 fi
 
-if ! kubectl get secret whg-secret -n whg > /dev/null 2>&1; then
-  # Fetch remote secrets and create Kubernetes secrets
+# -----------------------------------------
+# Load remote WHG secrets if needed
+# -----------------------------------------
+if ! kubectl get secret whg-secret -n whg >/dev/null 2>&1; then
+  echo "Fetching and creating 'whg-secret'..."
   source "$REPO_DIR/deployment/load-secrets.sh"
+else
+  echo "Secret 'whg-secret' already exists."
 fi
 
-# Apply consistent labels by node name pattern
+# -----------------------------------------
+# Apply consistent node labels from values.yaml
+# -----------------------------------------
 echo "Applying node labels from values.yaml..."
 NODE_CONFIG_FILE="$REPO_DIR/deployment/values.yaml"
 
 if yq e '.nodes' "$NODE_CONFIG_FILE" >/dev/null; then
   nodes=$(yq e '.nodes | keys | .[]' "$NODE_CONFIG_FILE")
-
   for node in $nodes; do
     echo "Processing node: $node"
-
-    # Get labels as separate key=value strings
     labels=$(yq e ".nodes.\"$node\" | to_entries | .[] | \"\(.key)=\(.value)\"" "$NODE_CONFIG_FILE")
-
     for label in $labels; do
       echo "  Applying label $label to $node"
       kubectl label --overwrite "node/$node" $label
@@ -116,12 +193,13 @@ else
   echo "No 'nodes' section found in values.yaml; skipping node labeling."
 fi
 
-echo "Node labelling complete!"
-
-# Install `deployment` Helm chart
+# -----------------------------------------
+# Install/upgrade the management Helm chart
+# -----------------------------------------
+echo "Deploying Helm chart..."
 helm upgrade --install management-chart "$REPO_DIR/deployment" \
   --namespace whg \
   --create-namespace \
   --debug
 
-echo "Deployment of management helm chart complete!"
+echo "WHG deployment complete!"
