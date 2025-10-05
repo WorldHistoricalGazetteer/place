@@ -29,15 +29,17 @@ spec:
           - sh
           - -c
           - |
-            git init /mnt/tileserver && \
-            git config --global --add safe.directory /mnt/tileserver && \
-            cd /mnt/tileserver && \
-            git remote get-url origin || git remote add origin {{ .Values.tileserver.git.url }} && \
-            git config core.sparseCheckout true && \
-            echo "{{ .Values.tileserver.git.sourceFolder }}/" >> .git/info/sparse-checkout && \
-            git fetch origin main && \
-            git reset --hard origin/main && \
-            chmod -R 775 /mnt/tileserver
+            set -eux
+            REPO_DIR="{{ .Values.pv.repository.mountPath }}"
+            git init "$REPO_DIR"
+            git config --global --add safe.directory "$REPO_DIR"
+            cd "$REPO_DIR"
+            git remote get-url origin || git remote add origin {{ .Values.tileserver.git.url }}
+            git config core.sparseCheckout true
+            echo "{{ .Values.tileserver.git.sourceFolder }}/" > .git/info/sparse-checkout
+            git fetch --depth 1 origin main
+            git reset --hard origin/main
+            chmod -R 775 "$REPO_DIR"
           volumeMounts:
             - name: {{ .Values.pv.repository.name }}
               mountPath: {{ .Values.pv.repository.mountPath }}
@@ -51,10 +53,23 @@ spec:
         securityContext: {{ toYaml .Values.securityContext | nindent 10 }}
         command: ["bash", "-c"]
         args:
-        - |
-          ls -la /mnt/tileserver /mnt/data/tiles
-          node /mnt/tileserver/reconfiguration/merge-config.js /mnt/tileserver/reconfiguration/base-config.json /mnt/tileserver/configs/config.json /mnt/data/tiles
-          node /usr/src/app/src/main.js --config /mnt/tileserver/configs/config.json --verbose
+          - |
+            set -eux
+            echo "🔍 Checking repository contents:"
+            ls -la {{ .Values.pv.repository.mountPath }}
+            echo "🔍 Checking tiles contents:"
+            ls -la {{ .Values.pv.tiles.mountPath }}
+
+            echo "🧩 Merging configs..."
+            node {{ .Values.pv.repository.mountPath }}/reconfiguration/merge-config.js \
+                 {{ .Values.pv.repository.mountPath }}/reconfiguration/base-config.json \
+                 {{ .Values.pv.repository.mountPath }}/configs/config.json \
+                 {{ .Values.pv.tiles.mountPath }}
+
+            echo "🚀 Starting Tileserver-GL..."
+            node /usr/src/app/src/main.js \
+                 --config {{ .Values.pv.repository.mountPath }}/configs/config.json \
+                 --verbose
         workingDir: /usr/src/app
         ports:
         - containerPort: {{ .Values.service.tileserver.port }}
