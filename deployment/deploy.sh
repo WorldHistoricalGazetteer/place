@@ -21,7 +21,11 @@ HOST_MOUNT="/ix1/whcdh:/minikube-whcdh"
 # -----------------------------------------
 # Start Minikube if not running
 # -----------------------------------------
-MINIKUBE_STATUS=$(minikube status -p "$MINIKUBE_PROFILE" --output json 2>/dev/null | jq -r '.Host' || echo "NotFound")
+if minikube status -p "$MINIKUBE_PROFILE" &>/dev/null; then
+  MINIKUBE_STATUS=$(minikube status -p "$MINIKUBE_PROFILE" -o json | jq -r '.[0].Host // "Stopped"' 2>/dev/null || echo "Stopped")
+else
+  MINIKUBE_STATUS="Stopped"
+fi
 
 if [ "$MINIKUBE_STATUS" != "Running" ]; then
   echo "Starting Minikube with $MINIKUBE_NODES nodes..."
