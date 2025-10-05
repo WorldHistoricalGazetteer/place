@@ -95,14 +95,27 @@ if ! kubectl get secret whg-secret -n management > /dev/null 2>&1; then
 fi
 
 # Apply consistent labels by node name pattern
-echo "Applying labels to Minikube nodes..."
+echo "Applying node labels from values.yaml..."
 NODE_CONFIG_FILE="$REPO_DIR/deployment/values.yaml"
-nodes=$(yq e '.nodes | keys | .[]' "$NODE_CONFIG_FILE")
-for node in $nodes; do
-  labels=$(yq e ".nodes.$node | to_entries | map(\"\(.key)=\(.value)\") | join(\",\")" "$NODE_CONFIG_FILE")
-  echo "Labeling $node with: $labels"
-  kubectl label --overwrite "node/$node" $labels
-done
+
+if yq e '.nodes' "$NODE_CONFIG_FILE" >/dev/null; then
+  nodes=$(yq e '.nodes | keys | .[]' "$NODE_CONFIG_FILE")
+
+  for node in $nodes; do
+    echo "Processing node: $node"
+
+    # Get labels as separate key=value strings
+    labels=$(yq e ".nodes.\"$node\" | to_entries | .[] | \"\(.key)=\(.value)\"" "$NODE_CONFIG_FILE")
+
+    for label in $labels; do
+      echo "  Applying label $label to $node"
+      kubectl label --overwrite "node/$node" $label
+    done
+  done
+else
+  echo "No 'nodes' section found in values.yaml; skipping node labeling."
+fi
+
 echo "Node labelling complete!"
 
 # Install `deployment` Helm chart
