@@ -106,7 +106,12 @@ if ! kubectl get configmap -n metallb-system config >/dev/null 2>&1; then
   echo "Configuring MetalLB address pool..."
   minikube addons configure metallb --ip-range="${METALLB_RANGE_START}-${METALLB_RANGE_END}"
 else
-  echo "MetalLB already configured."
+  echo "Patching existing MetalLB ConfigMap..."
+  kubectl patch configmap config -n metallb-system --type merge -p "{
+    \"data\": {
+      \"config\": \"address-pools:\n- name: default\n  protocol: layer2\n  addresses:\n  - ${METALLB_RANGE_START}-${METALLB_RANGE_END}\"
+    }
+  }"
 fi
 
 # -----------------------------------------
