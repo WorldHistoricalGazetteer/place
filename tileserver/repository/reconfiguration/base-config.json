@@ -7,7 +7,6 @@
       "icons": "./assets/icons",
       "styles": "./assets/styles",
       "mbtiles": "/mnt/data/tiles",
-      "files": "./mapdata",
       "images": "/usr/src/app/public/resources/images"
     }
   },
