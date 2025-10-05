@@ -3,17 +3,16 @@
   "id": "openstreetmap",
   "name": "OpenStreetMap",
   "metadata": {
-  	"whg:backgroundcolour": "#c3ddec"
+    "whg:backgroundcolour": "#c3ddec"
   },
   "sources": {
     "basemap": {
       "type": "raster",
       "maxzoom": 6,
-      "url": "mbtiles://{natural-earth-2-landcover}"
+      "url": "https://tiles.whgazetteer.org/data/natural-earth-2-landcover.json"
     },
     "openmaptiles": {
-      "url": "mbtiles://{open-map-tiles}",
-      "maxzoom": 14,
+      "url": "https://api.maptiler.com/tiles/v3-openmaptiles/tiles.json?key=rgrrQKVDtFRvuAyGD1lO",
       "type": "vector"
     }
   },
@@ -66,9 +65,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -93,9 +90,7 @@
         "fill-color": "hsl(129, 24%, 73%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -123,9 +118,7 @@
         "fill-color": "hsl(0, 75%, 95%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -153,9 +146,7 @@
         "fill-color": "hsl(311, 29%, 89%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -183,9 +174,7 @@
         "fill-color": "hsl(53, 21%, 84%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -213,9 +202,7 @@
         "fill-color": "hsl(0, 0%, 68%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -243,9 +230,7 @@
         "fill-color": "hsl(0, 0%, 83%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -274,9 +259,7 @@
         "fill-opacity": 1,
         "fill-outline-color": "hsl(309, 14%, 74%)"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -304,9 +287,7 @@
         "fill-color": "hsl(7, 100%, 91%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -335,9 +316,7 @@
         "fill-opacity": 1,
         "fill-outline-color": "hsl(2, 49%, 90%)"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -365,9 +344,7 @@
         "fill-color": "hsl(60, 100%, 95%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -410,9 +387,7 @@
         },
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "==",
         "$type",
@@ -444,9 +419,7 @@
         },
         "fill-antialias": false
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -481,9 +454,7 @@
         },
         "fill-antialias": false
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -518,9 +489,7 @@
         },
         "fill-antialias": false
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -555,9 +524,7 @@
         },
         "fill-antialias": false
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -592,9 +559,7 @@
         },
         "fill-antialias": false
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -629,9 +594,7 @@
         },
         "fill-antialias": false
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -698,9 +661,7 @@
         "fill-color": "hsl(157, 47%, 77%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -729,9 +690,7 @@
         "fill-color": "hsl(126, 100%, 92%)",
         "fill-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1274,9 +1233,7 @@
           ""
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1377,9 +1334,7 @@
         "fill-color": "hsl(180, 28%, 90%)",
         "fill-antialias": false
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1504,9 +1459,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1554,9 +1507,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1601,9 +1552,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1652,9 +1601,7 @@
           3
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1686,9 +1633,7 @@
         "fill-color": "hsl(205, 91%, 83%)",
         "fill-opacity": 0.85
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1709,9 +1654,7 @@
       "paint": {
         "fill-color": "hsl(194, 45%, 77%)"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1803,9 +1746,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1846,9 +1787,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -1909,9 +1848,7 @@
           "hsla(0, 0%, 0%, 0)"
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2154,9 +2091,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      }
+      "metadata": {}
     },
     {
       "id": "Highway link tunnel outline",
@@ -2215,9 +2150,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2270,9 +2203,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2322,9 +2253,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2389,9 +2318,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2462,9 +2389,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2534,9 +2459,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2608,9 +2531,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2671,9 +2592,7 @@
           0
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2745,9 +2664,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2806,9 +2723,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2867,9 +2782,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2924,9 +2837,7 @@
           0.5
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -2986,9 +2897,7 @@
           0
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3046,9 +2955,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3119,9 +3026,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3197,9 +3102,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3290,9 +3193,7 @@
           0.25
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3350,9 +3251,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3410,9 +3309,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3461,9 +3358,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3513,9 +3408,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3564,9 +3457,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3630,9 +3521,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3700,9 +3589,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3779,9 +3666,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3862,9 +3747,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -3946,9 +3829,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4034,9 +3915,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4128,9 +4007,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4215,9 +4092,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4272,9 +4147,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4333,9 +4206,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4378,9 +4249,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4439,9 +4308,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4469,9 +4336,7 @@
         "fill-color": "hsl(42, 49%, 93%)",
         "fill-antialias": true
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4511,9 +4376,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4541,9 +4404,7 @@
         "fill-color": "hsl(0, 0%, 72%)",
         "fill-antialias": true
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4569,9 +4430,7 @@
       "paint": {
         "fill-color": "hsl(0, 0%, 73%)"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4606,9 +4465,7 @@
       "paint": {
         "fill-color": "hsl(240, 19%, 89%)"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4670,9 +4527,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4747,9 +4602,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4824,9 +4677,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4906,9 +4757,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -4984,9 +4833,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5064,9 +4911,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5150,9 +4995,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5236,9 +5079,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5322,9 +5163,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5413,9 +5252,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5483,9 +5320,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5667,9 +5502,7 @@
         },
         "line-opacity": 0.6
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5730,9 +5563,7 @@
         },
         "line-opacity": 0.6
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5806,9 +5637,7 @@
         },
         "line-opacity": 0.6
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5877,9 +5706,7 @@
         },
         "line-opacity": 0.6
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -5954,9 +5781,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6028,9 +5853,7 @@
           0.5
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6094,9 +5917,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6177,9 +5998,7 @@
           1
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6262,9 +6081,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6339,9 +6156,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6424,9 +6239,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6494,9 +6307,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6564,9 +6375,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6634,9 +6443,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6709,9 +6516,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6810,9 +6615,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -6922,9 +6725,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7010,9 +6811,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7106,9 +6905,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7198,9 +6995,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7290,9 +7085,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7387,9 +7180,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7484,9 +7275,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7585,9 +7374,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7650,9 +7437,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7720,9 +7505,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7771,9 +7554,7 @@
           1.2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7831,9 +7612,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7877,9 +7656,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7940,9 +7717,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -7990,9 +7765,7 @@
           4
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8145,9 +7918,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8195,9 +7966,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8246,9 +8015,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8308,9 +8075,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8368,9 +8133,7 @@
           0
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8432,9 +8195,7 @@
           0
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8500,9 +8261,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8543,9 +8302,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8613,9 +8370,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8671,9 +8426,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8717,9 +8470,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8777,9 +8528,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8850,9 +8599,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -8928,9 +8675,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9010,9 +8755,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9061,9 +8804,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9112,9 +8853,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9163,9 +8902,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9209,9 +8946,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9260,9 +8995,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9327,9 +9060,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9376,9 +9107,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9447,9 +9176,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9496,9 +9223,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9562,9 +9287,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9624,9 +9347,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9674,9 +9395,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9731,9 +9450,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9796,9 +9513,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9861,9 +9576,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -9922,9 +9635,7 @@
           2
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10053,9 +9764,7 @@
           3
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10103,9 +9812,7 @@
         },
         "line-opacity": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10156,9 +9863,7 @@
           3
         ]
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10217,9 +9922,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.8)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10261,9 +9964,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.7)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10295,9 +9996,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10502,9 +10201,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "any",
         [
@@ -10579,9 +10276,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10648,9 +10343,7 @@
         "icon-translate-anchor": "map",
         "text-translate-anchor": "viewport"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10710,9 +10403,7 @@
         "icon-translate-anchor": "map",
         "text-translate-anchor": "viewport"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10777,9 +10468,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10846,9 +10535,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 0.2
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -10917,9 +10604,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11002,9 +10687,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11074,9 +10757,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11154,9 +10835,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11231,9 +10910,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "==",
         "class",
@@ -11351,9 +11028,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11520,9 +11195,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11590,9 +11263,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11678,9 +11349,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11744,9 +11413,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11813,9 +11480,7 @@
         "icon-translate-anchor": "map",
         "text-translate-anchor": "viewport"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11879,9 +11544,7 @@
         "icon-translate-anchor": "map",
         "text-translate-anchor": "viewport"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -11946,9 +11609,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 0.3
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -12012,9 +11673,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -12083,9 +11742,7 @@
         "icon-translate-anchor": "map",
         "text-translate-anchor": "viewport"
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -12336,9 +11993,7 @@
         "text-halo-color": "hsl(195, 45%, 77%)",
         "text-halo-width": 2
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -12407,9 +12062,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.97)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -12974,9 +12627,7 @@
           ]
         }
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -13180,9 +12831,7 @@
         "text-halo-color": "hsl(0, 0%, 100%)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -13334,9 +12983,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.8)",
         "text-halo-width": 1.2
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -13394,9 +13041,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.8)",
         "text-halo-width": 1.2
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -13451,9 +13096,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.7)",
         "text-halo-width": 0.8
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -13546,9 +13189,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.8)",
         "text-halo-width": 1
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -13632,9 +13273,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.8)",
         "text-halo-width": 1.2
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "all",
         [
@@ -13736,9 +13375,7 @@
         "text-halo-color": "hsla(0, 0%, 100%, 0.8)",
         "text-halo-width": 0.8
       },
-      "metadata": {
-        
-      },
+      "metadata": {},
       "filter": [
         "==",
         "class",
