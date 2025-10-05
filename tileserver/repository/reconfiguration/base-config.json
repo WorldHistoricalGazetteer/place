@@ -6,7 +6,7 @@
       "sprites": "./assets/sprites",
       "icons": "./assets/icons",
       "styles": "./assets/styles",
-      "mbtiles": "./tiles",
+      "mbtiles": "/mnt/data/tiles",
       "files": "./mapdata",
       "images": "/usr/src/app/public/resources/images"
     }
