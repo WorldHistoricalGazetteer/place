@@ -63,7 +63,8 @@ pv:
     mountPath: /mnt/data/tiles
   repository:
     name: tileserver-repository
-    mountPath: /mnt/tileserver
+    mountPath: /mnt/tileserver-repository
+    gitFolder: /tileserver   # 👈 relative subfolder within repo
 #  tileserver:
 #    storage: 10Gi
 #    path: /data/k8s/tileserver

@@ -44,7 +44,7 @@ spec:
             - name: {{ .Values.pv.repository.name }}
               mountPath: {{ .Values.pv.repository.mountPath }}
             - name: tiles
-              mountPath: /mnt/data/tiles
+              mountPath: {{ .Values.pv.tiles.mountPath }}
               subPath: tiles
       containers:
       - name: tileserver-gl
@@ -55,20 +55,23 @@ spec:
         args:
           - |
             set -eux
+            REPO_PATH="{{ .Values.pv.repository.mountPath }}{{ .Values.pv.repository.gitFolder }}"
+            TILE_PATH="{{ .Values.pv.tiles.mountPath }}"
+
             echo "🔍 Checking repository contents:"
-            ls -la {{ .Values.pv.repository.mountPath }}
+            ls -la "$REPO_PATH"
             echo "🔍 Checking tiles contents:"
-            ls -la {{ .Values.pv.tiles.mountPath }}
+            ls -la "$TILE_PATH"
 
             echo "🧩 Merging configs..."
-            node {{ .Values.pv.repository.mountPath }}/reconfiguration/merge-config.js \
-                 {{ .Values.pv.repository.mountPath }}/reconfiguration/base-config.json \
-                 {{ .Values.pv.repository.mountPath }}/configs/config.json \
-                 {{ .Values.pv.tiles.mountPath }}
+            node "$REPO_PATH/reconfiguration/merge-config.js" \
+                 "$REPO_PATH/reconfiguration/base-config.json" \
+                 "$REPO_PATH/configs/config.json" \
+                 "$TILE_PATH"
 
             echo "🚀 Starting Tileserver-GL..."
             node /usr/src/app/src/main.js \
-                 --config {{ .Values.pv.repository.mountPath }}/configs/config.json \
+                 --config "$REPO_PATH/configs/config.json" \
                  --verbose
         workingDir: /usr/src/app
         ports:
