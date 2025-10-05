@@ -92,7 +92,15 @@ else
 fi
 
 # -----------------------------------------
-# Configure metalLB if not already configured
+# Enable Minikube addons idempotently
+# -----------------------------------------
+echo "Enabling required Minikube addons..."
+for addon in dashboard metrics-server metallb; do
+    minikube addons enable "$addon"
+done
+
+# -----------------------------------------
+# Configure metalLB
 # -----------------------------------------
 
 # Get the Minikube IP and derive a reasonable IP range
@@ -120,14 +128,6 @@ data:
 EOF
 
 echo "✅ MetalLB ConfigMap applied/updated with range $METALLB_RANGE_START-$METALLB_RANGE_END."
-
-# -----------------------------------------
-# Enable Minikube addons idempotently
-# -----------------------------------------
-echo "Enabling required Minikube addons..."
-for addon in dashboard metrics-server metallb; do
-    minikube addons enable "$addon"
-done
 
 # -----------------------------------------
 # Start kubectl proxy if not already running
