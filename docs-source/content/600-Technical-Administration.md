@@ -147,6 +147,7 @@ during the initial setup.
 ## Deploy Management Pod
 
 ```bash
+kubectl delete deployment management-deployment -n management --ignore-not-found && \
 bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/deploy.sh")
 ```
 
