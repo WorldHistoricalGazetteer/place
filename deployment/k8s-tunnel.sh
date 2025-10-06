@@ -131,7 +131,7 @@ case "$1" in
         echo "========================================================================"
         echo "  🔑 To access all services from your local machine, run this command:"
         echo "========================================================================"
-        echo "ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
+        echo "pkill -f 'ssh -fN -L'; sleep 1; ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
         echo " "
         echo "  - **-fN**: Runs SSH in the background and suppresses command execution."
         echo "  - **-L**: Specifies the local port forwarding rules."
