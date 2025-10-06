@@ -141,15 +141,11 @@ else
 fi
 
 # -----------------------------------------
-# Start kubectl proxy if not already running
+# Start kubectl proxy (kill first if already running)
 # -----------------------------------------
-if ! lsof -iTCP:$KPROXY_PORT -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Starting kubectl proxy on port $KPROXY_PORT..."
-  nohup kubectl proxy --address=0.0.0.0 --port=$KPROXY_PORT --disable-filter=true \
-    > "$HOME/kubectl_proxy.log" 2>&1 &
-else
-  echo "kubectl proxy already running on port $KPROXY_PORT"
-fi
+pkill -f "kubectl proxy.*$KPROXY_PORT"
+echo "Starting kubectl proxy on port $KPROXY_PORT..."
+nohup kubectl proxy --address=0.0.0.0 --port=$KPROXY_PORT --disable-filter=true > "$HOME/kubectl_proxy.log" 2>&1 &
 
 echo "To access the Kubernetes dashboard from your local machine:"
 echo "  ssh -L 8010:127.0.0.1:$KPROXY_PORT <username>@gazetteer.crcd.pitt.edu"
