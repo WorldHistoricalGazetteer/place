@@ -143,10 +143,35 @@ fi
 # -----------------------------------------
 # Start kubectl proxy (kill first if already running)
 # -----------------------------------------
-pkill -f "kubectl proxy.*$KPROXY_PORT"
-echo "Starting kubectl proxy on port $KPROXY_PORT..."
-nohup kubectl proxy --address=0.0.0.0 --port=$KPROXY_PORT --disable-filter=true > "$HOME/kubectl_proxy.log" 2>&1 &
 
+# Kill any stale kubectl proxy processes on this port
+pkill -f "kubectl proxy.*$KPROXY_PORT" 2>/dev/null || true
+
+# Wait a moment to ensure the port is released
+sleep 1
+
+# Check if the port is free
+if lsof -iTCP:$KPROXY_PORT -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "Error: port $KPROXY_PORT is still in use. Check for lingering processes:"
+  lsof -iTCP:$KPROXY_PORT -sTCP:LISTEN
+  exit 1
+fi
+
+# Start kubectl proxy in the background and log output
+echo "Starting kubectl proxy on port $KPROXY_PORT..."
+nohup kubectl proxy --address=0.0.0.0 --port=$KPROXY_PORT --disable-filter=true \
+  > "$HOME/kubectl_proxy.log" 2>&1 &
+
+# Wait a moment and check if it started
+sleep 1
+if ! lsof -iTCP:$KPROXY_PORT -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "kubectl proxy failed to start. Check logs:"
+  tail -n 20 "$HOME/kubectl_proxy.log"
+  exit 1
+fi
+
+echo "✅ kubectl proxy started on port $KPROXY_PORT"
+echo
 echo "To access the Kubernetes dashboard from your local machine:"
 echo "  ssh -L 8010:127.0.0.1:$KPROXY_PORT <username>@gazetteer.crcd.pitt.edu"
 echo "Then visit:"
