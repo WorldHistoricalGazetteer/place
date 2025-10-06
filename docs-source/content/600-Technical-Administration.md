@@ -103,8 +103,7 @@ Here's how to generate an SSH key, copy it to a remote server, and log in withou
 
 The deployment script handles all setup automatically, including:
 - Starting/verifying Minikube
-- Enabling required addons (dashboard, metrics-server, metallb)
-- Starting the kubectl proxy
+- Enabling required addons (dashboard, metrics-server)
 - Creating necessary secrets
 - Deploying the management Helm chart
 
@@ -124,18 +123,18 @@ Download the tunnel setup script for forwarding the necessary ports to your loca
 curl -s -o k8s-tunnel.sh "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/k8s-tunnel.sh" && chmod +x k8s-tunnel.sh
 ```
 
-Run the script to set up the SSH tunnel:
+Run the script to set up the kubectl proxy and SSH tunnel:
 
 ```bash
 ./k8s-tunnel.sh start
 ```
 
 The script will:
-- request your remote SSH user name
-- print a command which you will need to run in a separate LOCAL terminal window
-- list the services available and their local URLs
+- Request your remote SSH user name
+- Print a local port forwarding command which you will need to run in a separate LOCAL terminal window
+- List the services available and their local URLs, including the Kubernetes dashboard at http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=whg
 
-When you have finished, you can stop the tunnel on the remote machine by running:
+When you have finished, you can stop the proxy and tunnel on the remote machine by running:
 
 ```bash
 ./k8s-tunnel.sh kill
@@ -146,22 +145,6 @@ To terminate the local port forwarding on your local machine, run:
 ```bash
 pkill -f "ssh -fN -L"
 ```
-
-## Accessing the Kubernetes Dashboard
-
-The deployment script automatically starts the kubectl proxy on port 8001. To access the dashboard:
-
-* **Forward the proxy port to your local machine** by establishing an SSH tunnel:
-     ```bash
-     ssh -fN -L 8010:127.0.0.1:8001 <username>@gazetteer.crcd.pitt.edu
-     ```
-  
-* **Stop forwarding** by killing matching SSH processes:
-     ```bash
-     pkill -f "ssh -fN -L
-     ```
-
-* Access the Kubernetes dashboard by visiting `http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=whg` in your browser.
 
 ## Deploying Services
 

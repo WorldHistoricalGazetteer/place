@@ -141,22 +141,6 @@ else
 fi
 
 # -----------------------------------------
-# Start kubectl proxy if not already running
-# -----------------------------------------
-if ! lsof -iTCP:$KPROXY_PORT -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Starting kubectl proxy on port $KPROXY_PORT..."
-  nohup kubectl proxy --address=0.0.0.0 --port=$KPROXY_PORT --disable-filter=true \
-    > "$HOME/kubectl_proxy.log" 2>&1 &
-else
-  echo "kubectl proxy already running on port $KPROXY_PORT"
-fi
-
-echo "To access the Kubernetes dashboard from your local machine:"
-echo "  ssh -L 8010:127.0.0.1:$KPROXY_PORT <username>@gazetteer.crcd.pitt.edu"
-echo "Then visit:"
-echo "  http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=whg"
-
-# -----------------------------------------
 # Create kubeconfig secret if missing
 # -----------------------------------------
 if ! kubectl get secret kubeconfig -n whg >/dev/null 2>&1; then
