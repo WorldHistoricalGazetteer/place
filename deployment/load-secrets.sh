@@ -44,7 +44,7 @@ chmod 644 "$TARGET_DIR/ca-cert.pem" "$TARGET_DIR/env_template.py" "$TARGET_DIR/l
 
 # === Function to extract secret from markdown block ===
 get_secret() {
-  awk "/^## $1\$/ {getline; getline; print}" "$MISC_FILE"
+  awk "/^## $1\$/ {getline; print}" "$MISC_FILE"
 }
 
 # === Extract secrets from markdown ===
