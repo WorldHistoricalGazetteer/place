@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: wordpress
+  namespace: {{ .Values.namespace }}
 spec:
   type: {{ .Values.wordpress.service.type }}
   ports:
@@ -17,8 +18,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mariadb
+  namespace: {{ .Values.namespace }}
 spec:
-  ports:
-    - port: 3306
+  type: {{ .Values.mariadb.service.type }}
   selector:
     app: mariadb
+  ports:
+    - port: {{ .Values.mariadb.service.port }}
+      targetPort: {{ .Values.mariadb.service.targetPort }}

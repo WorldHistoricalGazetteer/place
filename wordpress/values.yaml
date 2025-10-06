@@ -24,6 +24,10 @@ mariadb:
   image: mariadb:11.3
   imagePullPolicy: IfNotPresent
   replicas: 1
+  service:
+    type: ClusterIP
+    port: 3306
+    targetPort: 3306
   persistentVolume:
     name: pv-mariadb
     persistentVolumeReclaimPolicy: Retain
