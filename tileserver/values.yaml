@@ -10,11 +10,11 @@ service:
   tileapi:
     port: 8081
     targetPort: 8081
-    servicePort: 30081
+    servicePort: 30082
   tileserver:
     port: 8080
     targetPort: 8080
-    servicePort: 30080
+    servicePort: 30081
 
 replicaCount: 1
 
