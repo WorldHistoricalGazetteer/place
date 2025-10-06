@@ -16,12 +16,10 @@ spec:
       containers:
       - name: wordpress
         image: {{ .Values.wordpress.image }}
+        env: {{ toYaml .Values.env | nindent 10 }}
         imagePullPolicy: {{ .Values.wordpress.imagePullPolicy }}
         ports:
           - containerPort: 80
-        envFrom:
-          - secretRef:
-              name: {{ .Values.secretName }}
         volumeMounts:
           - name: wp-content
             mountPath: /var/www/html/wp-content
@@ -47,10 +45,8 @@ spec:
       containers:
       - name: mariadb
         image: {{ .Values.mariadb.image }}
+        env: {{ toYaml .Values.env | nindent 10 }}
         imagePullPolicy: {{ .Values.mariadb.imagePullPolicy }}
-        envFrom:
-          - secretRef:
-              name: {{ .Values.secretName }}
         volumeMounts:
           - name: mariadb-data
             mountPath: /var/lib/mysql
