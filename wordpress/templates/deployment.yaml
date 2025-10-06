@@ -14,8 +14,8 @@ spec:
         app: wordpress
     spec:
       securityContext:
-        runAsUser: 33  # WordPress container UID/GID
-        runAsGroup: 33 # WordPress container UID/GID
+        runAsUser: 11001
+        runAsGroup: 16604
         fsGroup: 33  # WordPress container UID/GID
       containers:
       - name: wordpress
@@ -50,8 +50,8 @@ spec:
         app: mariadb
     spec:
       securityContext:
-        runAsUser: 1001  # MariaDB container UID/GID
-        runAsGroup: 1001 # MariaDB container UID/GID
+        runAsUser: 11001
+        runAsGroup: 16604
         fsGroup: 1001 # MariaDB container UID/GID
       containers:
       - name: mariadb
