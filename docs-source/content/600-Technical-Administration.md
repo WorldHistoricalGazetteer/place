@@ -121,8 +121,7 @@ The script may safely be re-run to update the deployment or apply any changes.
 Download the tunnel setup script for forwarding the necessary ports to your local machine:
 
 ```bash
-curl -s -o k8s-tunnel.sh "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/k8s-tunnel.sh"
-chmod +x k8s-tunnel.sh
+curl -s -o k8s-tunnel.sh "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/k8s-tunnel.sh" && chmod +x k8s-tunnel.sh
 ```
 
 Run the script to set up the SSH tunnel:

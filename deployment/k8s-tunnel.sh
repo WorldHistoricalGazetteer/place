@@ -1,8 +1,19 @@
 #!/bin/bash
 
 # Configuration
+SERVICES=(
+    "whg/svc/tileserver-gl/8080:8080"
+    # Example of an added service:
+    # "default/svc/my-backend/9000:8080"
+)
 KPROXY_PORT=8001  # Default port for kubectl proxy
+
 PID_FILE="$HOME/k8s_tunnels.pid"
+
+# ANSI Escape Codes for Terminal Formatting
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color/Reset
 
 # Array to hold all final SSH tunnel mappings (e.g., 8010:127.0.0.1:8001)
 TUNNEL_MAPPINGS=()
@@ -41,17 +52,17 @@ start_service_forwarding() {
     echo "--- Service Port-Forwarding ---"
 
     # Define services to forward: (namespace, service_name, remote_loopback_port, service_port)
-    local services=(
-        "whg/svc/tileserver-gl/8080:8080"
-        # Example of an added service:
-        # "default/svc/my-backend/9000:8080"
-    )
+#    local services=(
+#        "whg/svc/tileserver-gl/8080:8080"
+#        # Example of an added service:
+#        # "default/svc/my-backend/9000:8080"
+#    )
 
     # Base port for local SSH tunnels for services (starting from 8011)
     local SSH_LOCAL_PORT_BASE=8011
     local CURRENT_SSH_PORT=$SSH_LOCAL_PORT_BASE
 
-    for svc_spec in "${services[@]}"; do
+    for svc_spec in "${SERVICES[@]}"; do
         IFS='/' read -r NAMESPACE SERVICE_TYPE SERVICE_NAME PORT_MAPPING <<< "$svc_spec"
         IFS=':' read -r LOCAL_PORT REMOTE_PORT <<< "$PORT_MAPPING"
 
@@ -129,22 +140,34 @@ case "$1" in
 
         echo ""
         echo "========================================================================"
-        echo "  🔑 To access all services from your local machine, run this command:"
+        echo -e " ${BOLD}${BLUE}🔑 To access all services from your local machine, run this **single,**${NC}"
+        echo -e " ${BOLD}${BLUE}   chained command to kill old tunnels and start the new one:${NC}"
         echo "========================================================================"
-        echo "pkill -f 'ssh -fN -L'; sleep 1; ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
-        echo " "
-        echo "  - **-fN**: Runs SSH in the background and suppresses command execution."
-        echo "  - **-L**: Specifies the local port forwarding rules."
-        echo " "
 
-        # Dynamic Access Points Output
-        echo "  **Access Points (Local Browser):**"
+        # Single, chained command for the user to copy/paste on their local machine
+        echo "pkill -f 'ssh -fN -L'; sleep 1; ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
+
+        sleep 1
+
+        echo ""
+        echo -e "  ${BOLD}Explanation:${NC}"
+        echo -e "  - ${BOLD}pkill -f 'ssh -fN -L'${NC}: Kills any existing background SSH tunnels."
+        echo -e "  - ${BOLD}sleep 1${NC}: Provides a brief pause for cleanup."
+        echo -e "  - ${BOLD}ssh -fN...${NC}: Starts the new chained tunnel in the background."
+
+        echo ""
+
+        # Dynamic Access Points Output - using BOLD for the labels
+        echo -e "  ${BOLD}Access Points (Local Browser):${NC}"
         for instruction in "${ACCESS_INSTRUCTIONS[@]}"; do
-            echo "$instruction"
+            # Replace Markdown bold (**) with ANSI BOLD in the instructions array entries
+            # e.g., "  - **K8s Dashboard**: ..." -> "  - \033[1mK8s Dashboard\033[0m: ..."
+            FORMATTED_INSTRUCTION=$(echo "$instruction" | sed "s/\*\*\(.*\)\*\*/${BOLD}\1${NC}/g")
+            echo -e "$FORMATTED_INSTRUCTION"
         done
 
-        echo " "
-        echo "  *Note: Services are mapped to local ports starting at 8010.*"
+        echo ""
+        echo -e "  ${BLUE}Note: Services are mapped to local ports starting at ${BOLD}8010${NC}${BLUE}.${NC}"
         echo "========================================================================"
         ;;
     kill)
