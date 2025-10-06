@@ -7,6 +7,9 @@ spec:
   ports:
     - port: {{ .Values.wordpress.service.port }}
       targetPort: 80
+      {{- if eq .Values.wordpress.service.type "NodePort" }}
+      nodePort: {{ .Values.wordpress.service.nodePort }}
+      {{- end }}
   selector:
     app: wordpress
 ---

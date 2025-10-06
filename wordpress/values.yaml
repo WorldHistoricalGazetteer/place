@@ -3,8 +3,10 @@ wordpress:
   imagePullPolicy: IfNotPresent
   replicas: 1
   service:
-    type: ClusterIP
+    type: NodePort
     port: 80
+    targetPort: 8082
+    nodePort: 30083
   volumeSize: 1Gi
 
 mariadb:

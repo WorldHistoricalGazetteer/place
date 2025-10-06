@@ -24,10 +24,11 @@ spec:
         volumeMounts:
           - name: wp-content
             mountPath: /var/www/html/wp-content
+            subPath: wordpress/wp-content
       volumes:
         - name: wp-content
           persistentVolumeClaim:
-            claimName: wp-content-pvc
+            claimName: ishi-pvc
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -52,7 +53,8 @@ spec:
         volumeMounts:
           - name: mariadb-data
             mountPath: /var/lib/mysql
+            subPath: wordpress/mariadb
       volumes:
         - name: mariadb-data
           persistentVolumeClaim:
-            claimName: mariadb-pvc
+            claimName: ishi-pvc
