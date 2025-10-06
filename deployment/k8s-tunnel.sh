@@ -66,7 +66,7 @@ start_service_forwarding() {
             echo "Starting port-forwarding for $SERVICE_NAME ($NAMESPACE) on 127.0.0.1:$LOCAL_PORT..."
 
             # Run in the background and capture PID
-            kubectl port-forward -n "$NAMESPACE" "$SERVICE_TYPE/$SERVICE_NAME" "$LOCAL_PORT:$REMOTE_PORT" \
+            nohup kubectl port-forward -n "$NAMESPACE" "$SERVICE_TYPE/$SERVICE_NAME" "$LOCAL_PORT:$REMOTE_PORT" \
                 > "$HOME/${SERVICE_NAME}_pf.log" 2>&1 &
             PF_PID=$!
             echo $PF_PID >> "$PID_FILE"
