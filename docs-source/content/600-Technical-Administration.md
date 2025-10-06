@@ -122,7 +122,12 @@ The deployment script automatically starts the kubectl proxy on port 8001. To ac
 
 * **Forward the proxy port to your local machine** by establishing an SSH tunnel:
      ```bash
-     ssh -L 8010:127.0.0.1:8001 <username>@gazetteer.crcd.pitt.edu
+     ssh -fN -L 8010:127.0.0.1:8001 <username>@gazetteer.crcd.pitt.edu
+     ```
+  
+* **Stop forwarding** by killing matching SSH processes:
+     ```bash
+     pkill -f "ssh -fN -L
      ```
 
 * Access the Kubernetes dashboard by visiting `http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=whg` in your browser.

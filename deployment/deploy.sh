@@ -18,6 +18,8 @@ MINIKUBE_MEMORY=6144
 MINIKUBE_DISK="8g"
 HOST_MOUNT="/ix1/whcdh:/minikube-whcdh"
 
+CONFIGURE_METALLB=false
+
 # -----------------------------------------
 # Start Minikube if not running
 # -----------------------------------------
@@ -96,7 +98,7 @@ fi
 # Enable Minikube addons idempotently
 # -----------------------------------------
 echo "Enabling required Minikube addons..."
-for addon in dashboard metrics-server metallb; do
+for addon in dashboard metrics-server; do
     minikube addons enable "$addon"
 done
 
@@ -104,16 +106,20 @@ done
 # Configure metalLB
 # -----------------------------------------
 
-# Get the Minikube IP and derive a reasonable IP range
-MINIKUBE_IP=$(minikube ip)
-SUBNET_PREFIX=$(echo "$MINIKUBE_IP" | awk -F. '{print $1"."$2"."$3}')
-METALLB_RANGE_START="${SUBNET_PREFIX}.200"
-METALLB_RANGE_END="${SUBNET_PREFIX}.250"
-METALLB_NAMESPACE="metallb-system"
+if [ "$CONFIGURE_METALLB" = true ]; then
 
-echo "Configuring MetalLB address pool..."
+  minikube addons enable metallb
 
-kubectl apply -f - <<EOF
+  # Get the Minikube IP and derive a reasonable IP range
+  MINIKUBE_IP=$(minikube ip)
+  SUBNET_PREFIX=$(echo "$MINIKUBE_IP" | awk -F. '{print $1"."$2"."$3}')
+  METALLB_RANGE_START="${SUBNET_PREFIX}.200"
+  METALLB_RANGE_END="${SUBNET_PREFIX}.250"
+  METALLB_NAMESPACE="metallb-system"
+
+  echo "Configuring MetalLB address pool..."
+
+  kubectl apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -128,7 +134,11 @@ data:
       - $METALLB_RANGE_START-$METALLB_RANGE_END
 EOF
 
-echo "✅ MetalLB ConfigMap applied/updated with range $METALLB_RANGE_START-$METALLB_RANGE_END."
+  echo "✅ MetalLB ConfigMap applied/updated with range $METALLB_RANGE_START-$METALLB_RANGE_END."
+
+else
+  echo "Skipping MetalLB configuration."
+fi
 
 # -----------------------------------------
 # Start kubectl proxy if not already running
@@ -144,7 +154,7 @@ fi
 echo "To access the Kubernetes dashboard from your local machine:"
 echo "  ssh -L 8010:127.0.0.1:$KPROXY_PORT <username>@gazetteer.crcd.pitt.edu"
 echo "Then visit:"
-echo "  http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=_all"
+echo "  http://localhost:8010/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=whg"
 
 # -----------------------------------------
 # Create kubeconfig secret if missing
