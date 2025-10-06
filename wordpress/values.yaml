@@ -36,22 +36,22 @@ mariadb:
     name: pvc-mariadb
 
 env:
-  - name: WORDPRESS_DB_HOST
+  - name: DB_HOST
     valueFrom:
-      secretKeyRef:
-        name: whg-secret
-        key: wordpress-db-host
-  - name: WORDPRESS_DB_USER
+        secretKeyRef:
+          name: whg-secret
+          key: wordpress-db-host
+  - name: DB_USER
     valueFrom:
       secretKeyRef:
         name: whg-secret
         key: wordpress-db-user
-  - name: WORDPRESS_DB_PASSWORD
+  - name: DB_PASSWORD
     valueFrom:
       secretKeyRef:
         name: whg-secret
         key: wordpress-db-password
-  - name: WORDPRESS_DB_NAME
+  - name: DB_NAME
     valueFrom:
       secretKeyRef:
         name: whg-secret
