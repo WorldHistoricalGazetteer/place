@@ -125,6 +125,7 @@ case "$1" in
         start_service_forwarding
 
         echo "✅ All required Kubernetes processes are running in the background."
+        echo ""
 
         # --- Final SSH Command Generation ---
         SSH_HOST="gazetteer.crcd.pitt.edu"
@@ -133,18 +134,16 @@ case "$1" in
         SSH_COMMAND_MAPPINGS=$(IFS=' '; echo "${TUNNEL_MAPPINGS[*]}")
 
         echo ""
-        echo "========================================================================"
-        echo -e " ${BOLD}${BLUE}🔑 To access all services from your local machine, run this **single,**${NC}"
-        echo -e " ${BOLD}${BLUE}   chained command to kill old tunnels and start the new one:${NC}"
-        echo "========================================================================"
+        echo -e " ${BOLD}${BLUE}To access all services from your local machine, run this${NC}"
+        echo -e " ${BOLD}${BLUE}chained command in a LOCAL terminal to kill old tunnels and start the new one:${NC}"
+        echo ""
 
         # Single, chained command for the user to copy/paste on their local machine
         SSH_COMMAND="pkill -f 'ssh -fN -L'; sleep 1; ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
         echo -e "${GREEN}${SSH_COMMAND}${NC}"
+        echo ""
 
-        sleep 1
-
-        # Dynamic Access Points Output - using BOLD for the labels
+        # Dynamic Access Points Output
         echo -e "  ${BOLD}Access Points (Local Browser):${NC}"
         for instruction in "${ACCESS_INSTRUCTIONS[@]}"; do
             FORMATTED_INSTRUCTION=$(echo "$instruction" | sed 's/\*\*\(.*\)\*\*/\n\t\033[1m\1\033[0m/g')
@@ -158,7 +157,7 @@ case "$1" in
 
         echo ""
         echo -e "  ${BLUE}Note: Services are mapped to local ports starting at ${BOLD}8010${NC}${BLUE}.${NC}"
-        echo "========================================================================"
+        echo ""
         ;;
     kill)
         kill_tunnels
