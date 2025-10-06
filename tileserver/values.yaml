@@ -6,7 +6,7 @@ securityContext:
   runAsGroup: 999
 
 service:
-  type: "LoadBalancer" # May be overridden by Helm argument
+  type: "NodePort" # May be overridden by Helm argument
   tileapi:
     port: 8081
     targetPort: 8081
