@@ -52,8 +52,8 @@ start_service_forwarding() {
     local CURRENT_SSH_PORT=$SSH_LOCAL_PORT_BASE
 
     for svc_spec in "${services[@]}"; do
-        # Split the spec: NAMESPACE/SERVICE_TYPE/SERVICE_NAME/LOCAL_PORT/REMOTE_PORT
-        IFS='/' read -r NAMESPACE SERVICE_TYPE SERVICE_NAME LOCAL_PORT REMOTE_PORT <<< "$svc_spec"
+        IFS='/' read -r NAMESPACE SERVICE_TYPE SERVICE_NAME PORT_MAPPING <<< "$svc_spec"
+        IFS=':' read -r LOCAL_PORT REMOTE_PORT <<< "$PORT_MAPPING"
 
         # Check if the remote machine's port is already in use by the port-forward
         if ! lsof -iTCP:$LOCAL_PORT -sTCP:LISTEN >/dev/null 2>&1; then

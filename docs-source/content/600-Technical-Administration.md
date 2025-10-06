@@ -116,6 +116,32 @@ bash <(curl -s "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place
 
 The script may safely be re-run to update the deployment or apply any changes.
 
+## Accessing Kubernetes Dashboard and Services Locally
+
+Download the tunnel setup script for forwarding the necessary ports to your local machine:
+
+```bash
+curl -s -o k8s-tunnel.sh "https://raw.githubusercontent.com/WorldHistoricalGazetteer/place/main/deployment/k8s-tunnel.sh"
+chmod +x k8s-tunnel.sh
+```
+
+Run the script to set up the SSH tunnel:
+
+```bash
+./k8s-tunnel.sh start
+```
+
+The script will:
+- request your remote SSH user name
+- print a command which you will need to run in a separate LOCAL terminal window
+- list the services available and their local URLs
+
+When you have finished, you can stop the tunnel by running:
+
+```bash
+./k8s-tunnel.sh kill
+```
+
 ## Accessing the Kubernetes Dashboard
 
 The deployment script automatically starts the kubectl proxy on port 8001. To access the dashboard:
