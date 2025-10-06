@@ -52,13 +52,6 @@ start_dashboard_proxy() {
 start_service_forwarding() {
     echo "--- Service Port-Forwarding ---"
 
-    # Define services to forward: (namespace, service_name, remote_loopback_port, service_port)
-#    local services=(
-#        "whg/svc/tileserver-gl/8080:8080"
-#        # Example of an added service:
-#        # "default/svc/my-backend/9000:8080"
-#    )
-
     # Base port for local SSH tunnels for services (starting from 8011)
     local SSH_LOCAL_PORT_BASE=8011
     local CURRENT_SSH_PORT=$SSH_LOCAL_PORT_BASE
@@ -147,24 +140,9 @@ case "$1" in
 
         # Single, chained command for the user to copy/paste on their local machine
         SSH_COMMAND="pkill -f 'ssh -fN -L'; sleep 1; ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
-        BOX_WIDTH=$((${#SSH_COMMAND} + 4))
-        printf "${GREEN}"
-        printf "╔%.0s" $(seq 1 $BOX_WIDTH)
-        printf "╗\n"
-        printf "║  ${SSH_COMMAND}  ║\n"
-        printf "╚%.0s" $(seq 1 $BOX_WIDTH)
-        printf "╝\n"
-        printf "${NC}"
+        echo -e "${GREEN}${SSH_COMMAND}${NC}"
 
         sleep 1
-
-        echo ""
-        echo -e "  ${BOLD}Explanation:${NC}"
-        echo -e "  - ${BOLD}pkill -f 'ssh -fN -L'${NC}: Kills any existing background SSH tunnels."
-        echo -e "  - ${BOLD}sleep 1${NC}: Provides a brief pause for cleanup."
-        echo -e "  - ${BOLD}ssh -fN...${NC}: Starts the new chained tunnel in the background."
-
-        echo ""
 
         # Dynamic Access Points Output - using BOLD for the labels
         echo -e "  ${BOLD}Access Points (Local Browser):${NC}"
