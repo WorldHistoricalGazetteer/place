@@ -135,10 +135,16 @@ The script will:
 - print a command which you will need to run in a separate LOCAL terminal window
 - list the services available and their local URLs
 
-When you have finished, you can stop the tunnel by running:
+When you have finished, you can stop the tunnel on the remote machine by running:
 
 ```bash
 ./k8s-tunnel.sh kill
+```
+
+To terminate the local port forwarding on your local machine, run:
+
+```bash
+pkill -f "ssh -fN -L"
 ```
 
 ## Accessing the Kubernetes Dashboard

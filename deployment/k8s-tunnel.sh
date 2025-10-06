@@ -161,7 +161,7 @@ case "$1" in
         ;;
     kill)
         kill_tunnels
-        echo "🛑 Tunnel and proxy processes stopped."
+        echo "🛑 Tunnel processes stopped."
         ;;
     *)
         echo "Usage: $0 {start|kill}"
