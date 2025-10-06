@@ -13,6 +13,8 @@ spec:
       labels:
         app: wordpress
     spec:
+      securityContext:
+        fsGroup: 33  # WordPress container UID/GID
       containers:
       - name: wordpress
         image: {{ .Values.wordpress.image }}
@@ -45,6 +47,8 @@ spec:
       labels:
         app: mariadb
     spec:
+      securityContext:
+        fsGroup: 1001
       containers:
       - name: mariadb
         image: {{ .Values.mariadb.image }}
