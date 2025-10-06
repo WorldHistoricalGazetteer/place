@@ -14,6 +14,8 @@ spec:
         app: wordpress
     spec:
       securityContext:
+        runAsUser: 33  # WordPress container UID/GID
+        runAsGroup: 33 # WordPress container UID/GID
         fsGroup: 33  # WordPress container UID/GID
       containers:
       - name: wordpress
@@ -48,7 +50,9 @@ spec:
         app: mariadb
     spec:
       securityContext:
-        fsGroup: 1001
+        runAsUser: 1001  # MariaDB container UID/GID
+        runAsGroup: 1001 # MariaDB container UID/GID
+        fsGroup: 1001 # MariaDB container UID/GID
       containers:
       - name: mariadb
         image: {{ .Values.mariadb.image }}
