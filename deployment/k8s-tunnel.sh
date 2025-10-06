@@ -13,6 +13,7 @@ PID_FILE="$HOME/k8s_tunnels.pid"
 # ANSI Escape Codes for Terminal Formatting
 BLUE='\033[0;34m'
 BOLD='\033[1m'
+GREEN='\033[0;32m'
 NC='\033[0m' # No Color/Reset
 
 # Array to hold all final SSH tunnel mappings (e.g., 8010:127.0.0.1:8001)
@@ -145,7 +146,15 @@ case "$1" in
         echo "========================================================================"
 
         # Single, chained command for the user to copy/paste on their local machine
-        echo "pkill -f 'ssh -fN -L'; sleep 1; ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
+        SSH_COMMAND="pkill -f 'ssh -fN -L'; sleep 1; ssh -fN ${SSH_COMMAND_MAPPINGS} ${SSH_USERNAME}@${SSH_HOST}"
+        BOX_WIDTH=$((${#SSH_COMMAND} + 4))
+        printf "${GREEN}"
+        printf "╔%.0s" $(seq 1 $BOX_WIDTH)
+        printf "╗\n"
+        printf "║  ${SSH_COMMAND}  ║\n"
+        printf "╚%.0s" $(seq 1 $BOX_WIDTH)
+        printf "╝\n"
+        printf "${NC}"
 
         sleep 1
 
@@ -160,10 +169,13 @@ case "$1" in
         # Dynamic Access Points Output - using BOLD for the labels
         echo -e "  ${BOLD}Access Points (Local Browser):${NC}"
         for instruction in "${ACCESS_INSTRUCTIONS[@]}"; do
-            # Replace Markdown bold (**) with ANSI BOLD in the instructions array entries
-            # e.g., "  - **K8s Dashboard**: ..." -> "  - \033[1mK8s Dashboard\033[0m: ..."
+            FORMATTED_INSTRUCTION=$(echo "$instruction" | sed 's/\*\*\(.*\)\*\*/\n\t\033[1m\1\033[0m/g')
             FORMATTED_INSTRUCTION=$(echo "$instruction" | sed "s/\*\*\(.*\)\*\*/${BOLD}\1${NC}/g")
-            echo -e "$FORMATTED_INSTRUCTION"
+            CLEAN_INSTRUCTION=$(echo "$instruction" | sed 's/\*\*//g')
+            FORMATTED_INSTRUCTION=$(echo -e "$CLEAN_INSTRUCTION" | sed "s/\(.*\):/${BOLD}\1${NC}:/")
+            LABEL=$(echo "$instruction" | cut -d':' -f1 | sed 's/\*\*//g' | sed 's/ - //g')
+            URL=$(echo "$instruction" | cut -d':' -f2-)
+            echo -e "  - ${BOLD}${LABEL}${NC}:${URL}"
         done
 
         echo ""
