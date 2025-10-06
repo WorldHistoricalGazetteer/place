@@ -2,8 +2,8 @@
 
 # Configuration
 SERVICES=(
-    "whg/svc/tileserver-gl/8080:8080",
-#    "whg/svc/wordpress/8082:8082",
+    "whg/svc/tileserver-gl/8080:8080"
+    "whg/svc/wordpress/8082:80"
     # Example of an added service:
     # "default/svc/my-backend/9000:8080"
 )
