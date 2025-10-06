@@ -108,7 +108,7 @@ def rollback_chart(
         return {"status": "error", "message": result.stderr}
 
 
-@app.delete("/uninstall/{application}")
+@app.get("/uninstall/{application}")
 def uninstall_chart(application: str, namespace: str = "default"):
     """
     Uninstall a Helm release.

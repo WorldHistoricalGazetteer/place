@@ -13,10 +13,6 @@ spec:
       labels:
         app: wordpress
     spec:
-      securityContext:
-        runAsUser: 11001
-        runAsGroup: 16604
-        fsGroup: 33  # WordPress container UID/GID
       containers:
       - name: wordpress
         image: {{ .Values.wordpress.image }}
@@ -29,11 +25,10 @@ spec:
         volumeMounts:
           - name: wp-content
             mountPath: /var/www/html/wp-content
-            subPath: wordpress/wp-content
       volumes:
         - name: wp-content
           persistentVolumeClaim:
-            claimName: ishi-pvc
+            claimName: {{ .Values.wordpress.PersistentVolumeClaim.name }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -49,10 +44,6 @@ spec:
       labels:
         app: mariadb
     spec:
-      securityContext:
-        runAsUser: 11001
-        runAsGroup: 16604
-        fsGroup: 1001 # MariaDB container UID/GID
       containers:
       - name: mariadb
         image: {{ .Values.mariadb.image }}
@@ -63,8 +54,7 @@ spec:
         volumeMounts:
           - name: mariadb-data
             mountPath: /var/lib/mysql
-            subPath: wordpress/mariadb
       volumes:
         - name: mariadb-data
           persistentVolumeClaim:
-            claimName: ishi-pvc
+            claimName: {{ .Values.mariadb.PersistentVolumeClaim.name }}

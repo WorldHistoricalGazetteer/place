@@ -9,11 +9,30 @@ wordpress:
     port: 80
     targetPort: 8082
     nodePort: 30083
-  volumeSize: 1Gi
+  persistentVolume:
+    name: pv-wordpress
+    persistentVolumeReclaimPolicy: Retain
+    volumeSize: 1Gi
+    hostPath: /home/gazetteer/localdata/pv/wordpress
+    storageClassName: local-storage
+    accessModes:
+      - ReadWriteOnce
+  PersistentVolumeClaim:
+    name: pvc-wordpress
 
 mariadb:
   image: mariadb:11.3
   imagePullPolicy: IfNotPresent
-  volumeSize: 1Gi
+  replicas: 1
+  persistentVolume:
+    name: pv-mariadb
+    persistentVolumeReclaimPolicy: Retain
+    volumeSize: 1Gi
+    hostPath: /home/gazetteer/localdata/pv/mariadb
+    storageClassName: local-storage
+    accessModes:
+      - ReadWriteOnce
+  PersistentVolumeClaim:
+    name: pvc-mariadb
 
 secretName: whg-secret
