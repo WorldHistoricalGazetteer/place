@@ -29,6 +29,7 @@ fi
 
 if [ "$MINIKUBE_STATUS" != "Running" ]; then
   echo "Starting Minikube with $MINIKUBE_NODES nodes..."
+  minikube config set rootless true
   minikube start \
     -p "$MINIKUBE_PROFILE" \
     --nodes="$MINIKUBE_NODES" \
