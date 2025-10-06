@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wordpress
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.wordpress.replicas }}
   selector:
@@ -34,6 +35,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mariadb
+  namespace: {{ .Values.namespace }}
 spec:
   selector:
     matchLabels:

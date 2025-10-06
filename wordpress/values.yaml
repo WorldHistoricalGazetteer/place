@@ -1,3 +1,5 @@
+namespace: "whg"
+
 wordpress:
   image: wordpress:6.5-apache
   imagePullPolicy: IfNotPresent
