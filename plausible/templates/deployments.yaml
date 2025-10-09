@@ -187,7 +187,7 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secret.existingSecretName }}
                 key: plausible-smtp-host-port
-          - name: SMTP_USER
+          - name: SMTP_USER_NAME
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.secret.existingSecretName }}
