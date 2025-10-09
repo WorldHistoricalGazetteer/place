@@ -191,7 +191,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.secret.existingSecretName }}
-                key: plausible-smtp-user
+                key: plausible-smtp-user-name
           - name: SMTP_USER_PWD
             valueFrom:
               secretKeyRef:
