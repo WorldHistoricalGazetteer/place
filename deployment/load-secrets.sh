@@ -105,8 +105,8 @@ data:
   plausible-secret-key-base: "$(echo -n "$PLAUSIBLE_SECRET_KEY_BASE" | base64 | tr -d '\n')"
   plausible-admin-user-pwd: "$(echo -n "$PLAUSIBLE_ADMIN_USER_PWD" | base64 | tr -d '\n')"
   plausible-smtp-user-pwd: "$(echo -n "$PLAUSIBLE_SMTP_USER_PWD" | base64 | tr -d '\n')"
-  plausible-database-url: "$(echo -n "PLAUSIBLE_DATABASE_URL" | base64 | tr -d '\n')"
-  plausible-clickhouse-url: "$(echo -n "PLAUSIBLE_CLICKHOUSE_URL" | base64 | tr -d '\n')"
+  plausible-database-url: "$(echo -n "$PLAUSIBLE_DATABASE_URL" | base64 | tr -d '\n')"
+  plausible-clickhouse-url: "$(echo -n "$PLAUSIBLE_CLICKHOUSE_URL" | base64 | tr -d '\n')"
 EOF
 
 echo "✅ Secret '$SECRET_NAME' created."
