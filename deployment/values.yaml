@@ -59,7 +59,7 @@ nfs:
 
   # PersistentVolume settings
   pv:
-    name: ishi-pv          # Name of the PV in Kubernetes
+    name: nfs-pv          # Name of the PV in Kubernetes
     capacity: 5Ti               # Requested storage size
     accessModes: # PV access mode(s)
       - ReadWriteMany           # Allow multiple pods to read/write
@@ -68,4 +68,4 @@ nfs:
 
   # PersistentVolumeClaim settings
   pvc:
-    name: ishi-pvc         # Name of the PVC in Kubernetes
+    name: nfs-pvc         # Name of the PVC in Kubernetes

@@ -130,6 +130,6 @@ spec:
       volumes:
       - name: tiles
         persistentVolumeClaim:
-          claimName: ishi-pvc
+          claimName: nfs-pvc
       - name: {{ .Values.pv.repository.name }}
         emptyDir: {}
