@@ -37,7 +37,7 @@ spec:
                 name: {{ .Values.secret.existingSecretName }}
                 key: plausible-postgres-password
         ports:
-          - containerPort: {{ .Values.postgres.port }}
+          - containerPort: {{ .Values.postgres.service.port }}
         volumeMounts:
           - name: pgdata
             mountPath: /var/lib/postgresql/data
