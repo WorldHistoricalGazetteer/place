@@ -35,10 +35,6 @@ spec:
         securityContext:
           runAsUser: 11001   # your host UID
           runAsGroup: 16604  # your host GID
-        # Set a null command to override the entrypoint script
-        command:
-          - sleep
-          - "infinity"
         envFrom:
           - configMapRef:
               name: plausible-config
