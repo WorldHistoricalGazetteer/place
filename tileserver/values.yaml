@@ -1,4 +1,4 @@
-subdomain: "map.whgazetteer.org"
+#subdomain: "tiles.whgazetteer.org"
 namespace: "whg"
 
 securityContext:
