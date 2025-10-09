@@ -1,6 +1,0 @@
-apiVersion: v2
-name: plausible-analytics
-description: A Helm chart for deploying Plausible Analytics with PostgreSQL and Redis
-type: application
-version: 0.1.0
-appVersion: "latest"

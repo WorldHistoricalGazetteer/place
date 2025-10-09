@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: plausible
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.plausible.service.type }}
+  selector:
+    app: plausible
+  ports:
+    - name: http
+      port: {{ .Values.plausible.service.port }}
+      targetPort: {{ .Values.plausible.service.targetPort }}
+      {{- if eq .Values.plausible.service.type "NodePort" }}
+      nodePort: {{ .Values.plausible.service.nodePort }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plausible-postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.postgres.service.type }}
+  selector:
+    app: plausible-postgres
+  ports:
+    - port: {{ .Values.postgres.service.port }}
+      targetPort: {{ .Values.postgres.service.targetPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plausible-clickhouse
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.clickhouse.service.type }}
+  selector:
+    app: plausible-clickhouse
+  ports:
+    - port: {{ .Values.clickhouse.service.port }}
+      targetPort: {{ .Values.clickhouse.service.targetPort }}

@@ -1,0 +1,81 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.postgres.persistentVolume.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  capacity:
+    storage: {{ .Values.postgres.persistentVolume.volumeSize }}
+  accessModes: {{ toYaml .Values.postgres.persistentVolume.accessModes | nindent 4 }}
+  persistentVolumeReclaimPolicy: {{ .Values.postgres.persistentVolume.persistentVolumeReclaimPolicy }}
+  storageClassName: {{ .Values.postgres.persistentVolume.storageClassName }}
+  hostPath:
+    path: {{ .Values.postgres.persistentVolume.hostPath }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.postgres.PersistentVolumeClaim.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: {{ toYaml .Values.postgres.persistentVolume.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.postgres.persistentVolume.volumeSize }}
+  storageClassName: {{ .Values.postgres.persistentVolume.storageClassName }}
+  volumeName: {{ .Values.postgres.persistentVolume.name }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.clickhouse.persistentVolume.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  capacity:
+    storage: {{ .Values.clickhouse.persistentVolume.volumeSize }}
+  accessModes: {{ toYaml .Values.clickhouse.persistentVolume.accessModes | nindent 4 }}
+  persistentVolumeReclaimPolicy: {{ .Values.clickhouse.persistentVolume.persistentVolumeReclaimPolicy }}
+  storageClassName: {{ .Values.clickhouse.persistentVolume.storageClassName }}
+  hostPath:
+    path: {{ .Values.clickhouse.persistentVolume.hostPath }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.clickhouse.PersistentVolumeClaim.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: {{ toYaml .Values.clickhouse.persistentVolume.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.clickhouse.persistentVolume.volumeSize }}
+  storageClassName: {{ .Values.clickhouse.persistentVolume.storageClassName }}
+  volumeName: {{ .Values.clickhouse.persistentVolume.name }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.plausible.persistentVolume.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  capacity:
+    storage: {{ .Values.plausible.persistentVolume.volumeSize }}
+  accessModes: {{ toYaml .Values.plausible.persistentVolume.accessModes | nindent 4 }}
+  persistentVolumeReclaimPolicy: {{ .Values.plausible.persistentVolume.persistentVolumeReclaimPolicy }}
+  storageClassName: {{ .Values.plausible.persistentVolume.storageClassName }}
+  hostPath:
+    path: {{ .Values.plausible.persistentVolume.hostPath }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.plausible.PersistentVolumeClaim.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: {{ toYaml .Values.plausible.persistentVolume.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.plausible.persistentVolume.volumeSize }}
+  storageClassName: {{ .Values.plausible.persistentVolume.storageClassName }}
+  volumeName: {{ .Values.plausible.persistentVolume.name }}
