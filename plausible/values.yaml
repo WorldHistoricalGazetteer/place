@@ -13,7 +13,7 @@ plausible:
     type: NodePort
     port: 8000        # NodePort service port
     targetPort: 8000  # container port (plausible's HTTP_PORT)
-    nodePort: 30080
+    nodePort: 30100
   persistentVolume:
     name: pv-plausible
     persistentVolumeReclaimPolicy: Retain
