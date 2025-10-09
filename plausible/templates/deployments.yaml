@@ -14,6 +14,18 @@ spec:
       labels:
         app: plausible-postgres
     spec:
+      {{- if .Values.pod.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.pod.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.affinity }}
+      affinity:
+        {{- toYaml .Values.pod.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.tolerations }}
+      tolerations:
+        {{- toYaml .Values.pod.tolerations | nindent 8 }}
+      {{- end }}
       containers:
       - name: postgres
         image: {{ .Values.postgres.image }}
@@ -46,6 +58,18 @@ spec:
       labels:
         app: plausible-clickhouse
     spec:
+      {{- if .Values.pod.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.pod.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.affinity }}
+      affinity:
+        {{- toYaml .Values.pod.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.tolerations }}
+      tolerations:
+        {{- toYaml .Values.pod.tolerations | nindent 8 }}
+      {{- end }}
       containers:
       - name: clickhouse
         image: {{ .Values.clickhouse.image }}
@@ -87,6 +111,18 @@ spec:
       labels:
         app: plausible
     spec:
+      {{- if .Values.pod.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.pod.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.affinity }}
+      affinity:
+        {{- toYaml .Values.pod.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.tolerations }}
+      tolerations:
+        {{- toYaml .Values.pod.tolerations | nindent 8 }}
+      {{- end }}
       containers:
       - name: plausible
         image: {{ .Values.plausible.image }}

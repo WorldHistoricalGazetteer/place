@@ -70,7 +70,19 @@ clickhouse:
 
 # Optionally set nodeSelector, tolerations, resources here
 pod:
-  nodeSelector: {}
+  nodeSelector:
+    role: backend
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              # Prefer to avoid tileserver node if possible
+              - key: tileserver
+                operator: NotIn
+                values:
+                  - "true"
   tolerations: []
   resources: {}
 
