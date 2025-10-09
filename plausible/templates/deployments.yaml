@@ -33,6 +33,10 @@ spec:
         securityContext:
           runAsUser: 999 # essential to prevent failure through attempted chown of NFS
           runAsGroup: 999
+        # Set a null command to override the entrypoint script
+        command:
+          - sleep
+          - "infinity"
         envFrom:
           - configMapRef:
               name: plausible-config
