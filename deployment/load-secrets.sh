@@ -73,6 +73,9 @@ PLAUSIBLE_SMTP_USER_NAME=$(get_secret "plausible-smtp-user-name")
 PLAUSIBLE_SMTP_USER_PWD=$(get_secret "plausible-smtp-user-pwd")
 PLAUSIBLE_SMTP_HOST_SSL_ENABLED=$(get_secret "plausible-smtp-host-ssl-enabled")
 PLAUSIBLE_DISABLE_REGISTRATION=$(get_secret "plausible-disable-registration")
+PLAUSIBLE_CRON_ENABLED=$(get_secret "plausible-cron-enabled")
+PLAUSIBLE_MAILER_EMAIL=$(get_secret "plausible-mailer-email")
+PLAUSIBLE_MAILER_NAME=$(get_secret "plausible-mailer-name")
 
 # === Construct DATABASE_URL ===
 VALUES_FILE="$SCRIPT_DIR/values.yaml"
@@ -122,6 +125,9 @@ data:
   plausible-smtp-user-pwd: "$(echo -n "$PLAUSIBLE_SMTP_USER_PWD" | base64 | tr -d '\n')"
   plausible-smtp-host-ssl-enabled: "$(echo -n "$PLAUSIBLE_SMTP_HOST_SSL_ENABLED" | base64 | tr -d '\n')"
   plausible-disable-registration: "$(echo -n "$PLAUSIBLE_DISABLE_REGISTRATION" | base64 | tr -d '\n')"
+  plausible-cron-enabled: "$(echo -n "$PLAUSIBLE_CRON_ENABLED" | base64 | tr -d '\n')"
+  plausible-mailer-email: "$(echo -n "$PLAUSIBLE_MAILER_EMAIL" | base64 | tr -d '\n')"
+  plausible-mailer-name: "$(echo -n "$PLAUSIBLE_MAILER_NAME" | base64 | tr -d '\n')"
 EOF
 
 echo "✅ Secret '$SECRET_NAME' created."

@@ -202,6 +202,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secret.existingSecretName }}
                 key: plausible-disable-registration
+          - name: CRON_ENABLED
+            valueFrom:
+              secretKeyRef:
+                name: whg-secret
+                key: plausible-cron-enabled
         ports:
           - containerPort: {{ .Values.plausible.service.targetPort }}
             name: http
