@@ -8,4 +8,4 @@ applications:
   - name: tileserver
 #  - name: vespa
 #  - name: wordpress
-#  - name: plausible
+  - name: plausible

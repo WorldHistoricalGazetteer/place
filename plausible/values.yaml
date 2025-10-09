@@ -14,16 +14,6 @@ plausible:
     port: 8000        # NodePort service port
     targetPort: 8000  # container port (plausible's HTTP_PORT)
     nodePort: 30100
-  persistentVolume:
-    name: pv-plausible
-    persistentVolumeReclaimPolicy: Retain
-    volumeSize: 1Gi
-    hostPath: /home/gazetteer/localdata/pv/plausible
-    storageClassName: local-storage
-    accessModes:
-      - ReadWriteOnce
-  PersistentVolumeClaim:
-    name: pvc-plausible
 
 postgres:
   image: postgres:16-alpine
@@ -33,16 +23,6 @@ postgres:
     type: ClusterIP
     port: 5432
     targetPort: 5432
-  persistentVolume:
-    name: pv-plausible-db
-    persistentVolumeReclaimPolicy: Retain
-    volumeSize: 1Gi
-    hostPath: /home/gazetteer/localdata/pv/plausible-postgres
-    storageClassName: local-storage
-    accessModes:
-      - ReadWriteOnce
-  PersistentVolumeClaim:
-    name: pvc-plausible-db
 
 clickhouse:
   image: clickhouse/clickhouse-server:24.12-alpine
@@ -59,16 +39,6 @@ clickhouse:
     type: ClusterIP
     port: 8123    # HTTP interface used by Plausible's CLICKHOUSE_DATABASE_URL
     targetPort: 8123
-  persistentVolume:
-    name: pv-plausible-clickhouse
-    persistentVolumeReclaimPolicy: Retain
-    volumeSize: 5Gi
-    hostPath: /home/gazetteer/localdata/pv/plausible-clickhouse
-    storageClassName: local-storage
-    accessModes:
-      - ReadWriteOnce
-  PersistentVolumeClaim:
-    name: pvc-plausible-clickhouse
 
 # Optionally set nodeSelector, tolerations, resources here
 pod:

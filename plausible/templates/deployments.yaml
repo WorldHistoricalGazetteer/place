@@ -39,12 +39,13 @@ spec:
         ports:
           - containerPort: {{ .Values.postgres.service.port }}
         volumeMounts:
-          - name: pgdata
+          - name: nfs-volume
+            subPath: plausible/postgres
             mountPath: /var/lib/postgresql/data
       volumes:
-        - name: pgdata
+        - name: nfs-volume
           persistentVolumeClaim:
-            claimName: {{ .Values.postgres.PersistentVolumeClaim.name }}
+            claimName: nfs-pvc
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -91,7 +92,8 @@ spec:
         ports:
           - containerPort: 8123
         volumeMounts:
-          - name: clickhouse-data
+          - name: nfs-volume
+            subPath: plausible/clickhouse
             mountPath: /var/lib/clickhouse
           - name: clickhouse-logs
             mountPath: /var/log/clickhouse-server
@@ -99,9 +101,9 @@ spec:
             mountPath: /etc/clickhouse-server/config.d
             readOnly: true
       volumes:
-        - name: clickhouse-data
+        - name: nfs-volume
           persistentVolumeClaim:
-            claimName: {{ .Values.clickhouse.PersistentVolumeClaim.name }}
+            claimName: nfs-pvc
         - name: clickhouse-logs
           emptyDir: {}  # ephemeral logs (K8s handles retention)
         - name: clickhouse-config
@@ -166,9 +168,10 @@ spec:
           - containerPort: {{ .Values.plausible.service.targetPort }}
             name: http
         volumeMounts:
-          - name: plausible-data
+          - name: nfs-volume
+            subPath: plausible/plausible
             mountPath: /var/lib/plausible
       volumes:
-        - name: plausible-data
+        - name: nfs-volume
           persistentVolumeClaim:
-            claimName: {{ .Values.plausible.PersistentVolumeClaim.name }}
+            claimName: nfs-pvc

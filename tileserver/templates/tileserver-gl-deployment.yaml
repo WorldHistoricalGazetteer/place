@@ -44,8 +44,8 @@ spec:
             - name: {{ .Values.pv.repository.name }}
               mountPath: {{ .Values.pv.repository.mountPath }}
             - name: nfs-volume
-              mountPath: {{ .Values.pv.tiles.mountPath }}
               subPath: tiles
+              mountPath: {{ .Values.pv.tiles.mountPath }}
       containers:
       - name: tileserver-gl
         image: {{ .Values.tileserver.image }}:{{ .Values.tileserver.imageTag }}
@@ -78,8 +78,8 @@ spec:
         - containerPort: {{ .Values.service.tileserver.port }}
         volumeMounts:
         - name: nfs-volume
-          mountPath: /mnt/data/tiles
           subPath: tiles
+          mountPath: /mnt/data/tiles
         - name: {{ .Values.pv.repository.name }}
           mountPath: {{ .Values.pv.repository.mountPath }}
         resources: {{ toYaml .Values.tileserver.resources | nindent 10 }}
@@ -123,8 +123,8 @@ spec:
         resources: {{ toYaml .Values.tileapi.resources | nindent 10 }}
         volumeMounts:
         - name: nfs-volume
-          mountPath: /mnt/data/tiles
           subPath: tiles
+          mountPath: /mnt/data/tiles
         - name: {{ .Values.pv.repository.name }}
           mountPath: {{ .Values.pv.repository.mountPath }}
       volumes:
