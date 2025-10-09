@@ -26,6 +26,8 @@ spec:
       tolerations:
         {{- toYaml .Values.pod.tolerations | nindent 8 }}
       {{- end }}
+      securityContext:
+        fsGroup: 999  # Postgres GID inside the container
       containers:
       - name: postgres
         image: {{ .Values.postgres.image }}
