@@ -50,6 +50,7 @@ data:
                 <max_download_threads>1</max_download_threads>
                 <input_format_parallel_parsing>0</input_format_parallel_parsing>
                 <output_format_parallel_formatting>0</output_format_parallel_formatting>
+                <background_pool_size>1</background_pool_size>
             </default>
         </profile>
     </clickhouse>
