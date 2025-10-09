@@ -30,9 +30,6 @@ spec:
       - name: postgres
         image: {{ .Values.postgres.image }}
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
-        securityContext:
-          runAsUser: 11001 # essential to prevent failure through attempted chown of NFS
-          runAsGroup: 16604
         envFrom:
           - configMapRef:
               name: plausible-config
