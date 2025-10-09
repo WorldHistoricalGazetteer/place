@@ -63,7 +63,9 @@ UNIX_PASSWORD=$(get_secret "unix-password")
 PLAUSIBLE_SECRET_KEY_BASE=$(get_secret "plausible-secret-key-base")
 PLAUSIBLE_ADMIN_USER_PWD=$(get_secret "plausible-admin-user-pwd")
 PLAUSIBLE_SMTP_USER_PWD=$(get_secret "plausible-smtp-user-pwd")
-PLAUSIBLE_POSTGRES_PASSWORD=$(get_secret "plausible-postgres-password")
+PLAUSIBLE_DATABASE_URL=$(get_secret "plausible-database-url")
+PLAUSIBLE_CLICKHOUSE_URL=$(get_secret "plausible-clickhouse-url")
+
 
 # === Construct DATABASE_URL ===
 VALUES_FILE="$SCRIPT_DIR/values.yaml"
@@ -103,7 +105,8 @@ data:
   plausible-secret-key-base: "$(echo -n "$PLAUSIBLE_SECRET_KEY_BASE" | base64 | tr -d '\n')"
   plausible-admin-user-pwd: "$(echo -n "$PLAUSIBLE_ADMIN_USER_PWD" | base64 | tr -d '\n')"
   plausible-smtp-user-pwd: "$(echo -n "$PLAUSIBLE_SMTP_USER_PWD" | base64 | tr -d '\n')"
-  plausible-postgres-password: "$(echo -n "$PLAUSIBLE_POSTGRES_PASSWORD" | base64 | tr -d '\n')"
+  plausible-database-url: "$(echo -n "PLAUSIBLE_DATABASE_URL" | base64 | tr -d '\n')"
+  plausible-clickhouse-url: "$(echo -n "PLAUSIBLE_CLICKHOUSE_URL" | base64 | tr -d '\n')"
 EOF
 
 echo "✅ Secret '$SECRET_NAME' created."
