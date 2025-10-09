@@ -45,10 +45,14 @@ spec:
           - name: nfs-volume
             subPath: plausible/postgres
             mountPath: /var/lib/postgresql/data
+          - name: run
+            mountPath: /var/run/postgresql
       volumes:
         - name: nfs-volume
           persistentVolumeClaim:
             claimName: nfs-pvc
+        - name: run
+          emptyDir: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
