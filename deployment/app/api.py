@@ -35,6 +35,10 @@ def get_applications(check_exists=None):
 
     applications = config.get("applications", [])
 
+    if not applications:
+        logger.warning("No applications defined in applications.yaml")
+        return []
+
     if check_exists:
         return any(app.get("name") == check_exists for app in applications)
 
