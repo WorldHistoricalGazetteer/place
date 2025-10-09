@@ -53,6 +53,13 @@ clickhouse:
   image: clickhouse/clickhouse-server:24.12-alpine
   imagePullPolicy: IfNotPresent
   replicas: 1
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1
+    limits:
+      memory: 4Gi
+      cpu: 2
   service:
     type: ClusterIP
     port: 8123    # HTTP interface used by Plausible's CLICKHOUSE_DATABASE_URL

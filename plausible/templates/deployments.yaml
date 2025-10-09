@@ -74,6 +74,8 @@ spec:
       - name: clickhouse
         image: {{ .Values.clickhouse.image }}
         imagePullPolicy: {{ .Values.clickhouse.imagePullPolicy }}
+        resources:
+          {{- toYaml .Values.clickhouse.resources | nindent 10 }}
         env:
           - name: CLICKHOUSE_SKIP_USER_SETUP
             value: "1"
@@ -86,6 +88,7 @@ spec:
             mountPath: /var/log/clickhouse-server
           - name: clickhouse-config
             mountPath: /etc/clickhouse-server/config.d
+            readOnly: true
       volumes:
         - name: clickhouse-data
           persistentVolumeClaim:
