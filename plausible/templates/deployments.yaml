@@ -33,8 +33,8 @@ spec:
         image: {{ .Values.postgres.image }}
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
         securityContext:
-          runAsUser: 999 # essential to prevent failure through attempted chown of NFS
-          runAsGroup: 999
+          runAsUser: 11001   # your host UID
+          runAsGroup: 16604  # your host GID
         # Set a null command to override the entrypoint script
         command:
           - sleep
