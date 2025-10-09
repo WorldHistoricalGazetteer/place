@@ -14,5 +14,7 @@ data:
   SMTP_USER_NAME: "no.reply.whgazetteer@gmail.com"
   SMTP_HOST_SSL_ENABLED: "true"
   BASE_URL: "https://analytics.whgazetteer.org"
+  CLICKHOUSE_RUN_AS_ROOT: "1"
+  CLICKHOUSE_DO_NOT_CHOWN: "1"
   CLICKHOUSE_SKIP_USER_SETUP: "1"
   DISABLE_REGISTRATION: "true"

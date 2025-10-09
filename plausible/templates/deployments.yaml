@@ -30,6 +30,9 @@ spec:
       - name: postgres
         image: {{ .Values.postgres.image }}
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
+        securityContext:
+          runAsUser: 999 # UID of 'postgres' user inside image: essential to prevent failure through attempted chown of NFS
+          runAsGroup: 999
         env:
           - name: DATABASE_URL
             valueFrom:
