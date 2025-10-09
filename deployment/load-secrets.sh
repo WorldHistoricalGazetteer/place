@@ -92,36 +92,36 @@ metadata:
   namespace: $SECRET_NAMESPACE
 type: Opaque
 data:
-  secret-key: $(echo -n "$DJANGO_SECRET_KEY" | base64)
-  db-password: $(echo -n "$DB_PASSWORD" | base64)
-  postgresql-admin-password: $(echo -n "$PG_ADMIN_PASSWORD" | base64)
-  postgresql-user-password: $(echo -n "$PG_USER_PASSWORD" | base64)
-  postgresql-replication-password: $(echo -n "$PG_REPL_PASSWORD" | base64)
-  wordpress-db-host: $(echo -n "$WORDPRESS_DB_HOST" | base64)
-  wordpress-db-user: $(echo -n "$WORDPRESS_DB_USER" | base64)
-  wordpress-db-password: $(echo -n "$WORDPRESS_DB_PASSWORD" | base64)
-  wordpress-db-name: $(echo -n "$WORDPRESS_DB_NAME" | base64)
-  kubernetes-cluster-issuer: $(echo -n "$DO_API_TOKEN" | base64)
-  user-password: $(echo -n "$UNIX_PASSWORD" | base64)
-  database-url: $(echo -n "$DATABASE_URL" | base64)
-  ca_cert: $(base64 -w0 "$TARGET_DIR/ca-cert.pem")
-  env_template.py: $(base64 -w0 "$TARGET_DIR/env_template.py")
-  local_settings.py: $(base64 -w0 "$TARGET_DIR/local_settings.py")
-  id_rsa: $(base64 -w0 "$TARGET_DIR/id_rsa")
-  id_rsa_whg: $(base64 -w0 "$TARGET_DIR/id_rsa_whg")
-  plausible-database-url: $(echo -n "$PLAUSIBLE_DATABASE_URL" | base64)
-  plausible-clickhouse-database-url: $(echo -n "$PLAUSIBLE_CLICKHOUSE_DATABASE_URL" | base64)
-  plausible-secret-key-base: $(echo -n "$PLAUSIBLE_SECRET_KEY_BASE" | base64)
-  plausible-admin-user-email: $(echo -n "$PLAUSIBLE_ADMIN_USER_EMAIL" | base64)
-  plausible-admin-user-name: $(echo -n "$PLAUSIBLE_ADMIN_USER_NAME" | base64)
-  plausible-admin-user-pwd: $(echo -n "$PLAUSIBLE_ADMIN_USER_PWD" | base64)
-  plausible-base-url: $(echo -n "$PLAUSIBLE_BASE_URL" | base64)
-  plausible-smtp-host-addr: $(echo -n "$PLAUSIBLE_SMTP_HOST_ADDR" | base64)
-  plausible-smtp-host-port: $(echo -n "$PLAUSIBLE_SMTP_HOST_PORT" | base64)
-  plausible-smtp-user-name: $(echo -n "$PLAUSIBLE_SMTP_USER_NAME" | base64)
-  plausible-smtp-user-pwd: $(echo -n "$PLAUSIBLE_SMTP_USER_PWD" | base64)
-  plausible-smtp-host-ssl-enabled: $(echo -n "$PLAUSIBLE_SMTP_HOST_SSL_ENABLED" | base64)
-  plausible-disable-registration: $(echo -n "$PLAUSIBLE_DISABLE_REGISTRATION" | base64)
+  secret-key: "$(echo -n "$DJANGO_SECRET_KEY" | base64 | tr -d '\n')"
+  db-password: "$(echo -n "$DB_PASSWORD" | base64 | tr -d '\n')"
+  postgresql-admin-password: "$(echo -n "$PG_ADMIN_PASSWORD" | base64 | tr -d '\n')"
+  postgresql-user-password: "$(echo -n "$PG_USER_PASSWORD" | base64 | tr -d '\n')"
+  postgresql-replication-password: "$(echo -n "$PG_REPL_PASSWORD" | base64 | tr -d '\n')"
+  wordpress-db-host: "$(echo -n "$WORDPRESS_DB_HOST" | base64 | tr -d '\n')"
+  wordpress-db-user: "$(echo -n "$WORDPRESS_DB_USER" | base64 | tr -d '\n')"
+  wordpress-db-password: "$(echo -n "$WORDPRESS_DB_PASSWORD" | base64 | tr -d '\n')"
+  wordpress-db-name: "$(echo -n "$WORDPRESS_DB_NAME" | base64 | tr -d '\n')"
+  kubernetes-cluster-issuer: "$(echo -n "$DO_API_TOKEN" | base64 | tr -d '\n')"
+  user-password: "$(echo -n "$UNIX_PASSWORD" | base64 | tr -d '\n')"
+  database-url: "$(echo -n "$DATABASE_URL" | base64 | tr -d '\n')"
+  ca_cert: "$(base64 -w0 "$TARGET_DIR/ca-cert.pem")"
+  env_template.py: "$(base64 -w0 "$TARGET_DIR/env_template.py")"
+  local_settings.py: "$(base64 -w0 "$TARGET_DIR/local_settings.py")"
+  id_rsa: "$(base64 -w0 "$TARGET_DIR/id_rsa")"
+  id_rsa_whg: "$(base64 -w0 "$TARGET_DIR/id_rsa_whg")"
+  plausible-database-url: "$(echo -n "$PLAUSIBLE_DATABASE_URL" | base64 | tr -d '\n')"
+  plausible-clickhouse-database-url: "$(echo -n "$PLAUSIBLE_CLICKHOUSE_DATABASE_URL" | base64 | tr -d '\n')"
+  plausible-secret-key-base: "$(echo -n "$PLAUSIBLE_SECRET_KEY_BASE" | base64 | tr -d '\n')"
+  plausible-admin-user-email: "$(echo -n "$PLAUSIBLE_ADMIN_USER_EMAIL" | base64 | tr -d '\n')"
+  plausible-admin-user-name: "$(echo -n "$PLAUSIBLE_ADMIN_USER_NAME" | base64 | tr -d '\n')"
+  plausible-admin-user-pwd: "$(echo -n "$PLAUSIBLE_ADMIN_USER_PWD" | base64 | tr -d '\n')"
+  plausible-base-url: "$(echo -n "$PLAUSIBLE_BASE_URL" | base64 | tr -d '\n')"
+  plausible-smtp-host-addr: "$(echo -n "$PLAUSIBLE_SMTP_HOST_ADDR" | base64 | tr -d '\n')"
+  plausible-smtp-host-port: "$(echo -n "$PLAUSIBLE_SMTP_HOST_PORT" | base64 | tr -d '\n')"
+  plausible-smtp-user-name: "$(echo -n "$PLAUSIBLE_SMTP_USER_NAME" | base64 | tr -d '\n')"
+  plausible-smtp-user-pwd: "$(echo -n "$PLAUSIBLE_SMTP_USER_PWD" | base64 | tr -d '\n')"
+  plausible-smtp-host-ssl-enabled: "$(echo -n "$PLAUSIBLE_SMTP_HOST_SSL_ENABLED" | base64 | tr -d '\n')"
+  plausible-disable-registration: "$(echo -n "$PLAUSIBLE_DISABLE_REGISTRATION" | base64 | tr -d '\n')"
 EOF
 
 echo "✅ Secret '$SECRET_NAME' created."
