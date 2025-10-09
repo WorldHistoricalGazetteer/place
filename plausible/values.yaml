@@ -43,11 +43,6 @@ postgres:
       - ReadWriteOnce
   PersistentVolumeClaim:
     name: pvc-plausible-db
-  # Postgres credentials used to construct DATABASE_URL. You can override here.
-  user: postgres
-  db: postgres
-  password: postgres
-  port: 5432
 
 clickhouse:
   image: clickhouse/clickhouse-server:24.12-alpine

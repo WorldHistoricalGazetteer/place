@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plausible-config
+  namespace: {{ .Values.namespace }}
+data:
+  CRON_ENABLED: "true"
+  MAILER_EMAIL: "no.reply.whgazetteer@gmail.com"
+  MAILER_NAME: "WHG Plausible Analytics"
+  ADMIN_USER_EMAIL: "whgazetteer@gmail.com"
+  ADMIN_USER_NAME: "WHG Admin"
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SMTP_USER_NAME: "no.reply.whgazetteer@gmail.com"
+  SMTP_HOST_SSL_ENABLED: "true"
+  BASE_URL: "https://analytics.whgazetteer.org"
+  POSTGRES_USER: "postgres"
+  POSTGRES_DB: "postgres"
+  POSTGRES_HOST: "plausible-postgres"
+  POSTGRES_PORT: "5432"
+  CLICKHOUSE_HOST: "plausible-clickhouse"
+  CLICKHOUSE_PORT: "8123"
+  CLICKHOUSE_DB: "plausible_events_db"
+  CLICKHOUSE_USER: "default"
+  CLICKHOUSE_PASSWORD: "" # leave blank (no password necessary in this context)
+  CLICKHOUSE_SKIP_USER_SETUP: "1"
+  DISABLE_REGISTRATION: "true"

@@ -32,7 +32,10 @@ spec:
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
         env:
           - name: POSTGRES_PASSWORD
-            value: "{{ .Values.postgres.password }}"
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secret.existingSecretName }}
+                key: plausible-postgres-password
         ports:
           - containerPort: {{ .Values.postgres.port }}
         volumeMounts:
@@ -76,9 +79,9 @@ spec:
         imagePullPolicy: {{ .Values.clickhouse.imagePullPolicy }}
         resources:
           {{- toYaml .Values.clickhouse.resources | nindent 10 }}
-        env:
-          - name: CLICKHOUSE_SKIP_USER_SETUP
-            value: "1"
+        envFrom:
+          - configMapRef:
+              name: plausible-config
         ports:
           - containerPort: 8123
         volumeMounts:
@@ -134,82 +137,25 @@ spec:
           - sh
           - -c
           - "/entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+        envFrom:
+          - configMapRef:
+              name: plausible-config
         env:
-          - name: BASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-base-url
           - name: SECRET_KEY_BASE
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.secret.existingSecretName }}
                 key: plausible-secret-key-base
-          - name: DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-database-url
-          - name: CLICKHOUSE_DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-clickhouse-database-url
-          - name: ADMIN_USER_EMAIL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-admin-user-email
-          - name: ADMIN_USER_NAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-admin-user-name
           - name: ADMIN_USER_PWD
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.secret.existingSecretName }}
                 key: plausible-admin-user-pwd
-          - name: MAILER_EMAIL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-mailer-email
-          - name: MAILER_NAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-mailer-name
-          - name: SMTP_HOST
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-smtp-host-addr
-          - name: SMTP_PORT
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-smtp-host-port
-          - name: SMTP_USER_NAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-smtp-user-name
           - name: SMTP_USER_PWD
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.secret.existingSecretName }}
                 key: plausible-smtp-user-pwd
-          - name: DISABLE_REGISTRATION
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-disable-registration
-          - name: CRON_ENABLED
-            valueFrom:
-              secretKeyRef:
-                name: whg-secret
-                key: plausible-cron-enabled
         ports:
           - containerPort: {{ .Values.plausible.service.targetPort }}
             name: http

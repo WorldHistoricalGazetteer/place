@@ -60,22 +60,10 @@ DO_API_TOKEN=$(get_secret "digitalocean-pat")
 UNIX_PASSWORD=$(get_secret "unix-password")
 
 # === Plausible secrets ===
-PLAUSIBLE_DATABASE_URL=$(get_secret "plausible-database-url")
-PLAUSIBLE_CLICKHOUSE_DATABASE_URL=$(get_secret "plausible-clickhouse-database-url")
 PLAUSIBLE_SECRET_KEY_BASE=$(get_secret "plausible-secret-key-base")
-PLAUSIBLE_ADMIN_USER_EMAIL=$(get_secret "plausible-admin-user-email")
-PLAUSIBLE_ADMIN_USER_NAME=$(get_secret "plausible-admin-user-name")
 PLAUSIBLE_ADMIN_USER_PWD=$(get_secret "plausible-admin-user-pwd")
-PLAUSIBLE_BASE_URL=$(get_secret "plausible-base-url")
-PLAUSIBLE_SMTP_HOST_ADDR=$(get_secret "plausible-smtp-host-addr")
-PLAUSIBLE_SMTP_HOST_PORT=$(get_secret "plausible-smtp-host-port")
-PLAUSIBLE_SMTP_USER_NAME=$(get_secret "plausible-smtp-user-name")
 PLAUSIBLE_SMTP_USER_PWD=$(get_secret "plausible-smtp-user-pwd")
-PLAUSIBLE_SMTP_HOST_SSL_ENABLED=$(get_secret "plausible-smtp-host-ssl-enabled")
-PLAUSIBLE_DISABLE_REGISTRATION=$(get_secret "plausible-disable-registration")
-PLAUSIBLE_CRON_ENABLED=$(get_secret "plausible-cron-enabled")
-PLAUSIBLE_MAILER_EMAIL=$(get_secret "plausible-mailer-email")
-PLAUSIBLE_MAILER_NAME=$(get_secret "plausible-mailer-name")
+PLAUSIBLE_POSTGRES_PASSWORD=$(get_secret "plausible-postgres-password")
 
 # === Construct DATABASE_URL ===
 VALUES_FILE="$SCRIPT_DIR/values.yaml"
@@ -112,22 +100,10 @@ data:
   local_settings.py: "$(base64 -w0 "$TARGET_DIR/local_settings.py")"
   id_rsa: "$(base64 -w0 "$TARGET_DIR/id_rsa")"
   id_rsa_whg: "$(base64 -w0 "$TARGET_DIR/id_rsa_whg")"
-  plausible-database-url: "$(echo -n "$PLAUSIBLE_DATABASE_URL" | base64 | tr -d '\n')"
-  plausible-clickhouse-database-url: "$(echo -n "$PLAUSIBLE_CLICKHOUSE_DATABASE_URL" | base64 | tr -d '\n')"
   plausible-secret-key-base: "$(echo -n "$PLAUSIBLE_SECRET_KEY_BASE" | base64 | tr -d '\n')"
-  plausible-admin-user-email: "$(echo -n "$PLAUSIBLE_ADMIN_USER_EMAIL" | base64 | tr -d '\n')"
-  plausible-admin-user-name: "$(echo -n "$PLAUSIBLE_ADMIN_USER_NAME" | base64 | tr -d '\n')"
   plausible-admin-user-pwd: "$(echo -n "$PLAUSIBLE_ADMIN_USER_PWD" | base64 | tr -d '\n')"
-  plausible-base-url: "$(echo -n "$PLAUSIBLE_BASE_URL" | base64 | tr -d '\n')"
-  plausible-smtp-host-addr: "$(echo -n "$PLAUSIBLE_SMTP_HOST_ADDR" | base64 | tr -d '\n')"
-  plausible-smtp-host-port: "$(echo -n "$PLAUSIBLE_SMTP_HOST_PORT" | base64 | tr -d '\n')"
-  plausible-smtp-user-name: "$(echo -n "$PLAUSIBLE_SMTP_USER_NAME" | base64 | tr -d '\n')"
   plausible-smtp-user-pwd: "$(echo -n "$PLAUSIBLE_SMTP_USER_PWD" | base64 | tr -d '\n')"
-  plausible-smtp-host-ssl-enabled: "$(echo -n "$PLAUSIBLE_SMTP_HOST_SSL_ENABLED" | base64 | tr -d '\n')"
-  plausible-disable-registration: "$(echo -n "$PLAUSIBLE_DISABLE_REGISTRATION" | base64 | tr -d '\n')"
-  plausible-cron-enabled: "$(echo -n "$PLAUSIBLE_CRON_ENABLED" | base64 | tr -d '\n')"
-  plausible-mailer-email: "$(echo -n "$PLAUSIBLE_MAILER_EMAIL" | base64 | tr -d '\n')"
-  plausible-mailer-name: "$(echo -n "$PLAUSIBLE_MAILER_NAME" | base64 | tr -d '\n')"
+  plausible-postgres-password: "$(echo -n "$PLAUSIBLE_POSTGRES_PASSWORD" | base64 | tr -d '\n')"
 EOF
 
 echo "✅ Secret '$SECRET_NAME' created."
