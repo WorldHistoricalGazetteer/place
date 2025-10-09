@@ -30,12 +30,6 @@ spec:
       - name: postgres
         image: {{ .Values.postgres.image }}
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
-        command:
-          - bash
-          - -c
-          - |
-            sed -i '1i set +e' /usr/local/bin/docker-entrypoint.sh
-            exec docker-entrypoint.sh postgres
         securityContext:
           runAsUser: 11001 # essential to prevent failure through attempted chown of NFS
           runAsGroup: 16604
