@@ -43,6 +43,7 @@ data:
     <!-- https://clickhouse.com/docs/en/operations/tips#using-less-than-16gb-of-ram -->
     <clickhouse>
         <mark_cache_size>524288000</mark_cache_size>
+        <max_thread_pool_size>2</max_thread_pool_size>
         <profile>
             <default>
                 <max_threads>1</max_threads>
