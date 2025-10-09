@@ -33,6 +33,9 @@ spec:
         securityContext:
           runAsUser: 999 # UID of 'postgres' user inside image: essential to prevent failure through attempted chown of NFS
           runAsGroup: 999
+        envFrom:
+          - configMapRef:
+              name: plausible-config
         env:
           - name: DATABASE_URL
             valueFrom:
