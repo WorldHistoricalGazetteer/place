@@ -40,12 +40,6 @@ spec:
         envFrom:
           - configMapRef:
               name: plausible-config
-        env:
-          - name: DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secret.existingSecretName }}
-                key: plausible-database-url
         ports:
           - containerPort: {{ .Values.postgres.service.port }}
         volumeMounts:
