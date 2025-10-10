@@ -31,6 +31,7 @@ spec:
       containers:
       - name: postgres
         image: {{ .Values.postgres.image }}
+        command: ["sleep", "infinity"]
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
         securityContext:
           runAsUser: 11001   # your host UID
