@@ -375,6 +375,9 @@ _main() {
 		export PG_OOM_ADJUST_FILE="/dev/null"
 	fi
 
+  echo "DEBUG: Final command: exec \$@" >&2
+  echo "DEBUG: PG_OOM_ADJUST_FILE is: $PG_OOM_ADJUST_FILE" >&2
+
 	exec "$@"
 }
 
