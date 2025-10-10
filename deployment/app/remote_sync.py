@@ -296,7 +296,7 @@ def restore_database_backup(namespace: str = "whg") -> Dict[str, str]:
             os.remove(ssh_key)
 
 
-def sync_resource(application: str, namespace: str = "default") -> Dict[str, str]:
+def sync_resource(application: str, namespace: str = "whg") -> Dict[str, str]:
     """
     Sync all resources for a specific application.
     """
