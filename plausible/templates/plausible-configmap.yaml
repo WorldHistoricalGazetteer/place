@@ -16,6 +16,7 @@ data:
   BASE_URL: "https://analytics.whgazetteer.org"
   POSTGRES_PASSWORD: "postgres" # Security is not a concern here since DB is not exposed
   POSTGRES_INITDB_ARGS: "--nosync"
+  POSTGRES_INITDB_SKIP_CHOWN: "1"
   PGDATA: "/var/lib/postgresql/data"
   CLICKHOUSE_RUN_AS_ROOT: "1"
   CLICKHOUSE_DO_NOT_CHOWN: "1"
