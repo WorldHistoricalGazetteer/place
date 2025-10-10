@@ -308,29 +308,30 @@ _main() {
 		# Check if running as UID 0 (root) AND the current username is *not* 'postgres'
 		if [ "$(id -u)" = '0' ]; then
 
-			# Add a diagnostic log and force it to be written before gosu
-			echo "INFO: Running as root (UID 0). Modifying /etc/passwd and switching to 'postgres' user for validation..."
+			# Check for the flag. If it's set, we've already done the gosu switch.
+			if [ -z "${PG_USER_SWAP_DONE:-}" ]; then
 
-			# 1. Modify /etc/passwd to make postgres user have UID 0 (root)
-			sed -i 's/^postgres:x:[0-9]*:[0-9]*/postgres:x:0:0/' /etc/passwd 2>/dev/null || true
-			sed -i 's/^postgres:x:[0-9]*/postgres:x:0/' /etc/group 2>/dev/null || true
+				# Add a diagnostic log
+				echo "INFO: Running as root (UID 0). Modifying /etc/passwd and switching to 'postgres' user for validation..."
 
-			# 2. Check if we are ALREADY the 'postgres' user (from a previous gosu execution)
-			#    If we are, skip the gosu command to prevent the loop.
-			if [ "$(id -un)" != 'postgres' ]; then
+				# 1. Modify /etc/passwd to make postgres user have UID 0 (root)
+				sed -i 's/^postgres:x:[0-9]*:[0-9]*/postgres:x:0:0/' /etc/passwd 2>/dev/null || true
+				sed -i 's/^postgres:x:[0-9]*/postgres:x:0/' /etc/group 2>/dev/null || true
 
-				# 3. Switch to "postgres" (UID 0) and restart the script, WITHOUT 'exec' for now
-				#    This allows us to see if the gosu command itself fails.
-				gosu postgres "$BASH_SOURCE" "$@"
+				# 2. Set a flag *before* exec/gosu to prevent the loop
+				export PG_USER_SWAP_DONE=1
 
-				# 4. If gosu returns (i.e., it exited, did not exec), the switch failed or the script crashed.
-				#    Exit the current script instance so we don't proceed with the wrong user/state.
-				echo "FATAL: gosu failed to switch user or the wrapped script failed immediately." >&2
-				exit $? # Exit with the return code of gosu
+				# 3. Switch to "postgres" (UID 0) and restart the script using 'exec gosu'
+				#    The exec is necessary to replace the current shell process.
+				exec gosu postgres "$BASH_SOURCE" "$@"
+
+				# The script should not reach here. If it does, gosu failed.
+				echo "FATAL: gosu command failed or returned." >&2
+				exit 1
+			else
+				# This is the second run, after gosu. Proceed with initialization.
+				echo "INFO: Successfully switched to 'postgres' (UID 0) via gosu. Proceeding with initialization."
 			fi
-
-			# We are now running as 'postgres' (UID 0) on the second iteration, or we were already 'postgres'.
-			echo "INFO: Successfully switched to 'postgres' (UID 0). Proceeding with initialization."
 		fi
 
 		if [ -z "$DATABASE_ALREADY_EXISTS" ]; then
