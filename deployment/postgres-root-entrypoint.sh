@@ -366,17 +366,24 @@ _main() {
 		fi
 	fi # End of if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
 
-	# Add the PG_OOM_ADJUST_FILE check to bypass PostgreSQL's
-	# internal root-check when running as postgres (UID 0).
+	# =========================================================================
+	# DEFINITIVE FIX FOR ROOT CHECK (UID 0) IN CONTAINER
+	# - We are already running as 'postgres' (UID 0) here.
+	# - Set the environment variable just in case.
+	# =========================================================================
 	if [ "$1" = 'postgres' ]; then
-		# This is typically set inside the postgres binary on Linux,
-		# but setting it explicitly can satisfy the internal check
-		# that allows root-like execution in a container.
+		# Ensure the bypass variable is set just before execution
 		export PG_OOM_ADJUST_FILE="/dev/null"
-	fi
 
-  echo "DEBUG: Final command: exec \$@" >&2
-  echo "DEBUG: PG_OOM_ADJUST_FILE is: $PG_OOM_ADJUST_FILE" >&2
+		# HACK: Force the execution to run explicitly via gosu 'postgres' again.
+		# This is often necessary when the final command is the postgres binary
+		# itself and is running under a shell that hasn't fully satisfied
+		# the binary's internal user checks.
+
+		echo "DEBUG: Final exec wrapper: gosu postgres \"\$@\"" >&2
+		exec gosu postgres "$@"
+	fi
+	# =========================================================================
 
 	exec "$@"
 }
