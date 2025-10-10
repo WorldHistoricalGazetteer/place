@@ -35,8 +35,8 @@ spec:
         command: ["/custom-entrypoint/postgres-root-entrypoint.sh"]
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
         securityContext:
-          runAsUser: 0
-          runAsGroup: 0
+          runAsUser: 999
+          runAsGroup: 999
         envFrom:
           - configMapRef:
               name: plausible-config
