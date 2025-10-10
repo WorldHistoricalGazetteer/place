@@ -301,27 +301,18 @@ _main() {
 		docker_setup_env
 		docker_create_db_directories
 
-#		# MODIFIED: For NFS root-squash scenarios where files appear as root-owned
-#		# We need to actually run as root, but PostgreSQL refuses this.
-#		# Solution: Create a fake postgres user entry matching root's UID
-#		if [ "$(id -u)" = '0' ]; then
-#			# Modify /etc/passwd to make postgres user have UID 0 (root)
-#			# This allows postgres binary to think it's running as postgres user
-#			sed -i 's/^postgres:x:[0-9]*:[0-9]*/postgres:x:0:0/' /etc/passwd 2>/dev/null || true
-#			sed -i 's/^postgres:x:[0-9]*/postgres:x:0/' /etc/group 2>/dev/null || true
-#
-#			# Now switch to "postgres" user (which is actually UID 0)
-#			exec gosu postgres "$BASH_SOURCE" "$@"
-#		fi
-
+		# MODIFIED: For NFS root-squash scenarios where files appear as root-owned
+		# We need to actually run as root, but PostgreSQL refuses this.
+		# Solution: Create a fake postgres user entry matching root's UID
 		if [ "$(id -u)" = '0' ]; then
-        # Fake the postgres user so Postgres internal check passes
-        sed -i 's/^postgres:x:[0-9]*:[0-9]*/postgres:x:0:0/' /etc/passwd 2>/dev/null || true
-        sed -i 's/^postgres:x:[0-9]*/postgres:x:0/' /etc/group 2>/dev/null || true
+			# Modify /etc/passwd to make postgres user have UID 0 (root)
+			# This allows postgres binary to think it's running as postgres user
+			sed -i 's/^postgres:x:[0-9]*:[0-9]*/postgres:x:0:0/' /etc/passwd 2>/dev/null || true
+			sed -i 's/^postgres:x:[0-9]*/postgres:x:0/' /etc/group 2>/dev/null || true
 
-        # Run postgres binary as the postgres user
-        exec gosu postgres postgres "$@"
-    fi
+			# Now switch to "postgres" user (which is actually UID 0)
+			exec gosu postgres "$BASH_SOURCE" "$@"
+		fi
 
 		if [ -z "$DATABASE_ALREADY_EXISTS" ]; then
 			docker_verify_minimum_env
