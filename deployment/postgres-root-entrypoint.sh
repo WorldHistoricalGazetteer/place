@@ -304,7 +304,9 @@ _main() {
 		# MODIFIED: For NFS root-squash scenarios where files appear as root-owned
 		# We need to actually run as root, but PostgreSQL refuses this.
 		# Solution: Create a fake postgres user entry matching root's UID
-		if [ "$(id -u)" = '0' ]; then
+
+		# Check if running as UID 0 (root) AND the current username is *not* 'postgres'
+		if [ "$(id -u)" = '0' ] && [ "$(id -un)" != 'postgres' ]; then
 			# Modify /etc/passwd to make postgres user have UID 0 (root)
 			# This allows postgres binary to think it's running as postgres user
 			sed -i 's/^postgres:x:[0-9]*:[0-9]*/postgres:x:0:0/' /etc/passwd 2>/dev/null || true
