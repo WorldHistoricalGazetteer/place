@@ -388,8 +388,19 @@ _main() {
 
 				export LD_PRELOAD="$wrapper" NSS_WRAPPER_PASSWD NSS_WRAPPER_GROUP
 
-				# Cleanly execute the original command using the loaded wrapper
-				exec "$@"
+				# ==========================================================
+        # CRITICAL FIX: Explicitly call the binary using su-exec/gosu
+        # ==========================================================
+        local postgres_binary='/usr/local/bin/postgres' # Adjust path if necessary
+        local args=("$@")
+        args=("${args[@]:1}") # Strip 'postgres' from the front
+
+        echo "DEBUG: Final NSS Wrapper command: gosu postgres $postgres_binary ${args[@]}" >&2
+
+        # Use gosu (or su-exec if available) to ensure a clean execution context
+        # The gosu utility will be PID 1 and execute the postgres binary directly.
+        exec gosu postgres "$postgres_binary" "${args[@]}"
+        # ==========================================================
 			fi
 		done
 
@@ -401,7 +412,7 @@ _main() {
 	fi
 	# =========================================================================
 
-	exec "$@"
+#	exec "$@"
 }
 
 if ! _is_sourced; then

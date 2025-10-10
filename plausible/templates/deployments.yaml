@@ -27,6 +27,7 @@ spec:
         {{- toYaml .Values.pod.tolerations | nindent 8 }}
       {{- end }}
       securityContext:
+        runAsUser: 0
         fsGroup: 0
       containers:
       - name: postgres
@@ -38,6 +39,8 @@ spec:
           runAsUser: 0
           runAsGroup: 0
           allowPrivilegeEscalation: true
+          capabilities:
+            add: [ "SYS_RESOURCE" ]
         envFrom:
           - configMapRef:
               name: plausible-config
