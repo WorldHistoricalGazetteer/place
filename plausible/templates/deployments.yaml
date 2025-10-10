@@ -32,6 +32,7 @@ spec:
       - name: postgres
         image: {{ .Values.postgres.image }}
 {{/*        command: ["sleep", "infinity"]*/}}
+        command: ["/custom-entrypoint/postgres-root-entrypoint.sh"]
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
         securityContext:
           runAsUser: 0
@@ -48,12 +49,19 @@ spec:
         ports:
           - containerPort: {{ .Values.postgres.service.port }}
         volumeMounts:
+          - name: postgres-root-entrypoint
+            mountPath: /custom-entrypoint
+            readOnly: true
           - name: nfs-volume
             subPath: plausible/db-data
             mountPath: /var/lib/postgresql/data
           - name: run
             mountPath: /var/run/postgresql
       volumes:
+        - name: postgres-root-entrypoint
+          configMap:
+            name: postgres-root-entrypoint
+            defaultMode: 0755
         - name: nfs-volume
           persistentVolumeClaim:
             claimName: nfs-pvc
