@@ -36,18 +36,19 @@ SYNC_PATHS = {
             "host": "main_host"
         }
     ],
-    "plausible": [
-        {
-            "remote": "/var/lib/docker/volumes/plausible-ce_db-data/_data/",
-            "local": f"{PV_MOUNT_ROOT}/plausible/db-data/",
-            "host": "main_host"
-        },
-        {
-            "remote": "/var/lib/docker/volumes/plausible-ce_event-data/_data/",
-            "local": f"{PV_MOUNT_ROOT}/plausible/event-data/",
-            "host": "main_host"
-        }
-    ]
+    # These are commented out because a snapshot has been synced for testing purposes. Uncomment to refresh before commissioning.
+    # "plausible": [
+    #     {
+    #         "remote": "/var/lib/docker/volumes/plausible-ce_db-data/_data/",
+    #         "local": f"{PV_MOUNT_ROOT}/plausible/db-data/",
+    #         "host": "main_host"
+    #     },
+    #     {
+    #         "remote": "/var/lib/docker/volumes/plausible-ce_event-data/_data/",
+    #         "local": f"{PV_MOUNT_ROOT}/plausible/event-data/",
+    #         "host": "main_host"
+    #     }
+    # ]
     # These are commented out because tiles have already been synced and augmented locally
     # "tileserver": [
     #     {
