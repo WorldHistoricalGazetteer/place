@@ -15,8 +15,9 @@ data:
   SMTP_HOST_SSL_ENABLED: "true"
   BASE_URL: "https://analytics.whgazetteer.org"
   POSTGRES_PASSWORD: "postgres" # Security is not a concern here since DB is not exposed
-  POSTGRES_INITDB_ARGS: "--nosync"
+  POSTGRES_INITDB_ARGS: "--nosync --allow-group-access --auth-host=scram-sha-256 --auth-local=trust"
   POSTGRES_INITDB_SKIP_CHOWN: "1"
+  PGUSER: "root"
   PGDATA: "/var/lib/postgresql/data"
   CLICKHOUSE_RUN_AS_ROOT: "1"
   CLICKHOUSE_DO_NOT_CHOWN: "1"
