@@ -364,6 +364,15 @@ _main() {
 
 			EOM
 		fi
+	fi # End of if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
+
+	# Add the PG_OOM_ADJUST_FILE check to bypass PostgreSQL's
+	# internal root-check when running as postgres (UID 0).
+	if [ "$1" = 'postgres' ]; then
+		# This is typically set inside the postgres binary on Linux,
+		# but setting it explicitly can satisfy the internal check
+		# that allows root-like execution in a container.
+		export PG_OOM_ADJUST_FILE="/dev/null"
 	fi
 
 	exec "$@"
