@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Adapted from postgres:16-alpine entrypoint script
-# Seeks to overcome issues with NFS root-squash by removing all chown commands
-# and allowing the container to run as root throughout
-
 set -Eeo pipefail
 
 # usage: file_env VAR [DEFAULT]
@@ -277,7 +273,12 @@ _main() {
 	if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
 		docker_setup_env
 		docker_create_db_directories
-		# MODIFIED: Removed the gosu exec that would switch to postgres user
+
+		# MODIFIED: Switch to postgres user for actual postgres execution
+		# but skip chown operations (already removed from docker_create_db_directories)
+		if [ "$(id -u)" = '0' ]; then
+			exec gosu postgres "$BASH_SOURCE" "$@"
+		fi
 
 		if [ -z "$DATABASE_ALREADY_EXISTS" ]; then
 			docker_verify_minimum_env
