@@ -392,17 +392,21 @@ _main() {
         # CRITICAL FIX: Explicitly call the binary using su-exec/gosu
         # ==========================================================
         local postgres_binary='/usr/local/bin/postgres' # Adjust path if necessary
-        local args=("$@")
-        args=("${args[@]:1}") # Strip 'postgres' from the front
 
-        # Attempt to use su-exec with a specific fake UID:GID
-        # We use the fake UID 999 and GID 999 defined in NSS_WRAPPER_PASSWD/GROUP
+        # 1. Strip 'postgres' from the front
+        local args=("$@")
+        args=("${args[@]:1}")
+
+        # 2. INJECT THE OWNERSHIP BYPASS FLAG
+        args=("-C" "data_directory_ownership_check=off" "${args[@]}")
+
+        echo "DEBUG: Final NSS Wrapper command: su-exec 999:999 $postgres_binary ${args[@]}" >&2
+
+        # Use su-exec (or gosu fallback) to execute the command
         if command -v su-exec &>/dev/null; then
-            echo "DEBUG: Final NSS Wrapper command: su-exec 999:999 $postgres_binary ${args[@]}" >&2
             exec su-exec 999:999 "$postgres_binary" "${args[@]}"
         else
             # Fallback to gosu
-            echo "DEBUG: Final NSS Wrapper command (gosu fallback): gosu postgres $postgres_binary ${args[@]}" >&2
             exec gosu postgres "$postgres_binary" "${args[@]}"
         fi
         # ==========================================================
