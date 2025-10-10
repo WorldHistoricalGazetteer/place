@@ -367,21 +367,29 @@ _main() {
 	fi # End of if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
 
 	# =========================================================================
-	# DEFINITIVE FIX FOR ROOT CHECK (UID 0) IN CONTAINER
-	# - We are already running as 'postgres' (UID 0) here.
-	# - Set the environment variable just in case.
+	# DEFINITIVE FINAL FIX: Explicit Binary Execution with Root Bypass
 	# =========================================================================
 	if [ "$1" = 'postgres' ]; then
-		# Ensure the bypass variable is set just before execution
+		# Ensure the bypass variable is set
 		export PG_OOM_ADJUST_FILE="/dev/null"
 
-		# HACK: Force the execution to run explicitly via gosu 'postgres' again.
-		# This is often necessary when the final command is the postgres binary
-		# itself and is running under a shell that hasn't fully satisfied
-		# the binary's internal user checks.
+		# Assume postgres binary path; adjust if necessary for your image
+		local postgres_binary='/usr/local/bin/postgres'
 
-		echo "DEBUG: Final exec wrapper: gosu postgres \"\$@\"" >&2
-		exec gosu postgres "$@"
+		# Reconstruct the arguments for explicit execution
+		local args=("$@")
+		args=("${args[@]:1}") # Strip 'postgres' from the front
+
+		echo "DEBUG: Final command: su-exec postgres $postgres_binary ${args[@]}" >&2
+
+		# Use su-exec if available, otherwise fall back to gosu
+		if command -v su-exec &>/dev/null; then
+		    # Use su-exec to launch the binary directly, forcing the user context
+		    exec su-exec postgres "$postgres_binary" "${args[@]}"
+		else
+		    # Fallback to gosu
+		    exec gosu postgres "$postgres_binary" "${args[@]}"
+		fi
 	fi
 	# =========================================================================
 
