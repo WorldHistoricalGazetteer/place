@@ -198,6 +198,18 @@ else
 fi
 
 # -----------------------------------------
+# Create Postgres Root Entrypoint ConfigMap if missing
+# -----------------------------------------
+if ! kubectl get configmap postgres-root-entrypoint -n whg >/dev/null 2>&1; then
+  echo "Creating Postgres root entrypoint ConfigMap..."
+  kubectl create configmap postgres-root-entrypoint \
+    --from-file="$REPO_DIR/deployment/postgres-root-entrypoint.sh" \
+    -n whg
+else
+  echo "ConfigMap 'postgres-root-entrypoint' already exists."
+fi
+
+# -----------------------------------------
 # Apply consistent node labels from values.yaml
 # -----------------------------------------
 echo "Applying node labels from values.yaml..."

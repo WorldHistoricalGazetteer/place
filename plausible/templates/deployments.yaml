@@ -31,7 +31,6 @@ spec:
       containers:
       - name: postgres
         image: {{ .Values.postgres.image }}
-{{/*        command: ["sleep", "infinity"]*/}}
         command: ["/custom-entrypoint/postgres-root-entrypoint.sh"]
         args: ["postgres", "-c", "shared_buffers=256MB"]
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
