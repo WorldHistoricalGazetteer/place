@@ -203,7 +203,7 @@ def pull_application_directory(application: str):
         raise RuntimeError(f"Git sparse clone failed: {e.stderr or e.stdout}")
 
 
-def run_deployment(application: str, namespace: str = "default") -> dict:
+def run_deployment(application: str, namespace: str = "whg") -> dict:
     application, _, version = application.partition("-")
 
     try:
