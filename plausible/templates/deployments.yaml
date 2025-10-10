@@ -48,7 +48,7 @@ spec:
           - containerPort: {{ .Values.postgres.service.port }}
         volumeMounts:
           - name: nfs-volume
-            subPath: plausible/postgres
+            subPath: plausible/db-data
             mountPath: /var/lib/postgresql/data
           - name: run
             mountPath: /var/run/postgresql
@@ -105,7 +105,7 @@ spec:
           - containerPort: 8123
         volumeMounts:
           - name: nfs-volume
-            subPath: plausible/clickhouse
+            subPath: plausible/event-data
             mountPath: /var/lib/clickhouse
           - name: clickhouse-logs
             mountPath: /var/log/clickhouse-server
@@ -156,7 +156,7 @@ spec:
         command:
           - sh
           - -c
-          - "/entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+          - "/entrypoint.sh run"
         envFrom:
           - configMapRef:
               name: plausible-config
@@ -180,10 +180,8 @@ spec:
           - containerPort: {{ .Values.plausible.service.targetPort }}
             name: http
         volumeMounts:
-          - name: nfs-volume
-            subPath: plausible/plausible
+          - name: run
             mountPath: /var/lib/plausible
       volumes:
-        - name: nfs-volume
-          persistentVolumeClaim:
-            claimName: nfs-pvc
+        - name: run
+          emptyDir: {}
