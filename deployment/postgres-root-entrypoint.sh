@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Adapted from postgres:16-alpine entrypoint script
 # Seeks to overcome issues with NFS root-squash by removing all chown commands
 # and allowing the container to run as root throughout
