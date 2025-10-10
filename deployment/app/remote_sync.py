@@ -43,7 +43,7 @@ SYNC_PATHS = {
             "host": "main_host"
         },
         {
-            "remote": "/var/lib/docker/volumes/plausible_event-data/_data/",
+            "remote": "/var/lib/docker/volumes/plausible-ce_event-data/_data/",
             "local": f"{PV_MOUNT_ROOT}/plausible/event-data/",
             "host": "main_host"
         }
