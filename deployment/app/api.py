@@ -66,7 +66,7 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/install/{application}")
-def install_chart(application: str, namespace: str = "default"):
+def install_chart(application: str, namespace: str = "whg"):
     """
     For internal use from inside Pitt VM (no other authentication).
     """
@@ -80,7 +80,7 @@ def install_chart(application: str, namespace: str = "default"):
 def rollback_chart(
         application: str,
         revision: Optional[int] = Query(None, description="Revision number to roll back to"),
-        namespace: str = "default"
+        namespace: str = "whg"
 ):
     """
     Roll back a Helm release to a previous revision.
@@ -113,7 +113,7 @@ def rollback_chart(
 
 
 @app.get("/uninstall/{application}")
-def uninstall_chart(application: str, namespace: str = "default"):
+def uninstall_chart(application: str, namespace: str = "whg"):
     """
     Uninstall a Helm release.
     """
