@@ -155,10 +155,10 @@ spec:
       initContainers:
         - name: wait-for-postgres
           image: busybox:1.36
-          command: [ 'sh', '-c', 'until nc -z plausible-postgres 5432; do echo waiting for postgres; sleep 2; done;' ]
+          command: [ 'sh', '-c', 'until nc -4 -z plausible-postgres 5432; do echo waiting for postgres; sleep 2; done;' ]
         - name: wait-for-clickhouse
           image: busybox:1.36
-          command: [ 'sh', '-c', 'until nc -z plausible-clickhouse 8123; do echo waiting for clickhouse; sleep 2; done;' ]
+          command: [ 'sh', '-c', 'until nc -4 -z plausible-clickhouse 8123; do echo waiting for clickhouse; sleep 2; done;' ]
       containers:
       - name: plausible
         image: {{ .Values.plausible.image }}
