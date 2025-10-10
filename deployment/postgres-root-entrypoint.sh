@@ -31,15 +31,15 @@ _is_sourced() {
 docker_create_db_directories() {
 	local user; user="$(id -u)"
 
-	mkdir -p "$PGDATA"
-	chmod 00700 "$PGDATA" || :
+	mkdir -p "$PGDATA" 2>/dev/null || :
+	chmod 00700 "$PGDATA" 2>/dev/null || :
 
-	mkdir -p /var/run/postgresql || :
-	chmod 03775 /var/run/postgresql || :
+	mkdir -p /var/run/postgresql 2>/dev/null || :
+	chmod 03775 /var/run/postgresql 2>/dev/null || :
 
 	if [ -n "${POSTGRES_INITDB_WALDIR:-}" ]; then
-		mkdir -p "$POSTGRES_INITDB_WALDIR"
-		chmod 700 "$POSTGRES_INITDB_WALDIR"
+		mkdir -p "$POSTGRES_INITDB_WALDIR" 2>/dev/null || :
+		chmod 700 "$POSTGRES_INITDB_WALDIR" 2>/dev/null || :
 	fi
 }
 
@@ -274,9 +274,16 @@ _main() {
 		docker_setup_env
 		docker_create_db_directories
 
-		# MODIFIED: Switch to postgres user for actual postgres execution
-		# but skip chown operations (already removed from docker_create_db_directories)
+		# MODIFIED: For NFS root-squash scenarios where files appear as root-owned
+		# We need to actually run as root, but PostgreSQL refuses this.
+		# Solution: Create a fake postgres user entry matching root's UID
 		if [ "$(id -u)" = '0' ]; then
+			# Modify /etc/passwd to make postgres user have UID 0 (root)
+			# This allows postgres binary to think it's running as postgres user
+			sed -i 's/^postgres:x:[0-9]*:[0-9]*/postgres:x:0:0/' /etc/passwd 2>/dev/null || true
+			sed -i 's/^postgres:x:[0-9]*/postgres:x:0/' /etc/group 2>/dev/null || true
+
+			# Now switch to "postgres" user (which is actually UID 0)
 			exec gosu postgres "$BASH_SOURCE" "$@"
 		fi
 
