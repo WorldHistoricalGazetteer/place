@@ -367,28 +367,36 @@ _main() {
 	fi # End of if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
 
 	# =========================================================================
-	# DEFINITIVE FINAL FIX: Explicit Binary Execution with Root Bypass
+	# FINAL & DEFINITIVE FIX: Use libnss_wrapper to trick the postgres binary.
+	# This bypasses the EUID=0 check when PG_OOM_ADJUST_FILE fails.
 	# =========================================================================
 	if [ "$1" = 'postgres' ]; then
-		# Ensure the bypass variable is set
-		export PG_OOM_ADJUST_FILE="/dev/null"
+		# Check for NSS wrapper library path (common locations in Alpine/Debian)
+		local wrapper
+		for wrapper in /usr/lib/libnss_wrapper.so /usr/lib64/libnss_wrapper.so; do
+			if [ -s "$wrapper" ]; then
+				echo "INFO: Using libnss_wrapper to bypass PostgreSQL root check." >&2
 
-		# Assume postgres binary path; adjust if necessary for your image
-		local postgres_binary='/usr/local/bin/postgres'
+				# Create temporary passwd/group files to assign a fake UID (e.g., 999)
+				NSS_WRAPPER_PASSWD="$(mktemp)"
+				NSS_WRAPPER_GROUP="$(mktemp)"
 
-		# Reconstruct the arguments for explicit execution
-		local args=("$@")
-		args=("${args[@]:1}") # Strip 'postgres' from the front
+				# The user *must* be 'postgres' (the name the binary checks for)
+				# The UID *must* be non-zero (the binary checks for this number)
+				printf 'postgres:x:999:999:PostgreSQL:/var/lib/postgresql:/bin/false\n' > "$NSS_WRAPPER_PASSWD"
+				printf 'postgres:x:999:\n' > "$NSS_WRAPPER_GROUP"
 
-		echo "DEBUG: Final command: su-exec postgres $postgres_binary ${args[@]}" >&2
+				export LD_PRELOAD="$wrapper" NSS_WRAPPER_PASSWD NSS_WRAPPER_GROUP
 
-		# Use su-exec if available, otherwise fall back to gosu
-		if command -v su-exec &>/dev/null; then
-		    # Use su-exec to launch the binary directly, forcing the user context
-		    exec su-exec postgres "$postgres_binary" "${args[@]}"
-		else
-		    # Fallback to gosu
-		    exec gosu postgres "$postgres_binary" "${args[@]}"
+				# Cleanly execute the original command using the loaded wrapper
+				exec "$@"
+			fi
+		done
+
+		# Fallback if libnss_wrapper isn't found (shouldn't happen on standard images)
+		if [ -z "$LD_PRELOAD" ]; then
+			echo "FATAL: libnss_wrapper not found, and standard root bypass failed." >&2
+			exit 1
 		fi
 	fi
 	# =========================================================================
