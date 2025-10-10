@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: tileserver-exec-role
+  name: tileserver-exec-role-{{ .Values.namespace }}
 rules:
 - apiGroups: [""]
   resources: ["pods", "pods/exec"]
@@ -14,7 +14,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}-{{ .Values.namespace }}
 roleRef:
   kind: ClusterRole
   name: tileserver-exec-role
