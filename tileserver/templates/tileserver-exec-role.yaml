@@ -14,8 +14,8 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: {{ .Values.namespace }}-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
 roleRef:
   kind: ClusterRole
-  name: tileserver-exec-role
+  name: tileserver-exec-role-{{ .Values.namespace }}
   apiGroup: rbac.authorization.k8s.io
