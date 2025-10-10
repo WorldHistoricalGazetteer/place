@@ -395,11 +395,16 @@ _main() {
         local args=("$@")
         args=("${args[@]:1}") # Strip 'postgres' from the front
 
-        echo "DEBUG: Final NSS Wrapper command: gosu postgres $postgres_binary ${args[@]}" >&2
-
-        # Use gosu (or su-exec if available) to ensure a clean execution context
-        # The gosu utility will be PID 1 and execute the postgres binary directly.
-        exec gosu postgres "$postgres_binary" "${args[@]}"
+        # Attempt to use su-exec with a specific fake UID:GID
+        # We use the fake UID 999 and GID 999 defined in NSS_WRAPPER_PASSWD/GROUP
+        if command -v su-exec &>/dev/null; then
+            echo "DEBUG: Final NSS Wrapper command: su-exec 999:999 $postgres_binary ${args[@]}" >&2
+            exec su-exec 999:999 "$postgres_binary" "${args[@]}"
+        else
+            # Fallback to gosu
+            echo "DEBUG: Final NSS Wrapper command (gosu fallback): gosu postgres $postgres_binary ${args[@]}" >&2
+            exec gosu postgres "$postgres_binary" "${args[@]}"
+        fi
         # ==========================================================
 			fi
 		done
