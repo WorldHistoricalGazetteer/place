@@ -135,6 +135,7 @@ def rsync_directory(remote_path: str, local_path: str, ssh_key: str,
         command = [
             "rsync",
             "-avz",
+            "--rsync-path", "sudo rsync",
             # "--delete",  # BEWARE: Uncommenting this would delete local files not present on remote, including locally-augmented terrarium.mbtiles
             "-e", f"ssh -i {ssh_key} -o StrictHostKeyChecking=no",
             remote_source,
