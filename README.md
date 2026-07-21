@@ -1,4 +1,4 @@
-> ## ⚠️ ARCHIVED — not in production use
+> ## ⚠️ NOT IN PRODUCTION USE
 >
 > This repository holds **Kubernetes configuration** created when WHG planned to migrate
 > hosting from DigitalOcean to Pitt CRC on a K8s cluster. That migration proved unworkable
